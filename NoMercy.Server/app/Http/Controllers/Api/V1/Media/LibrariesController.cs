@@ -2,9 +2,9 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NoMercy.Database;
+using NoMercy.Networking;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
-using NoMercy.Server.app.Http.Middleware;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 
@@ -13,25 +13,28 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/libraries")]
-public class LibrariesController : Controller
+public class LibrariesController: BaseController
 {
     [HttpGet]
-    public async Task<LibrariesResponseDto> Libraries()
+    public async Task<IActionResult> Libraries()
     {
-        List<LibrariesResponseItemDto> libraries = [];
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view libraries");
+        
+        List<LibrariesResponseItemDto> libraries = [];
 
         await using MediaContext mediaContext = new();
-        await foreach (var library in LibrariesResponseDto.GetLibraries(mediaContext, userId))
+        await foreach (var library in LibrariesDto.GetLibraries(mediaContext, userId))
         {
             if (library is null) continue;
             libraries.Add(new LibrariesResponseItemDto(library));
         }
 
-        return new LibrariesResponseDto
+        return Ok(new LibrariesDto
         {
             Data = libraries.OrderBy(library => library.Order)
-        };
+        });
     }
 
     [HttpGet]
@@ -39,26 +42,27 @@ public class LibrariesController : Controller
     public async Task<IActionResult> Library(Ulid libraryId, [FromQuery] PageRequestDto request)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view library");
 
-        await using MediaContext mediaContext = new();
+        var language = Language();
+        
+        var movies = await LibraryResponseDto.GetLibraryMovies(userId, libraryId,
+            language, request.Take + 1, request.Page);
 
-        var library = await LibraryResponseDto.GetLibrary(mediaContext, userId, libraryId,
-            HttpContext.Request.Headers.AcceptLanguage.LastOrDefault() ?? "US", request.Take, request.Page);
+        var shows = await LibraryResponseDto.GetLibraryShows(userId, libraryId,
+            language, request.Take + 1, request.Page);
 
         if (request.Version != "lolomo")
-            return Ok(new LibraryResponseDto
-            {
-                Data = library.LibraryMovies
-                    .Select(movie => new LibraryResponseItemDto(movie))
-                    .Concat(library.LibraryTvs
-                        .Select(tv => new LibraryResponseItemDto(tv)))
-                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort),
-
-                NextId = library.LibraryMovies.Count + library.LibraryTvs.Count < request.Take
-                    ? null
-                    : library.LibraryMovies.Count + library.LibraryTvs.Count + request.Page * request.Take
-            });
-
+        {
+            IEnumerable<LibraryResponseItemDto> concat = movies
+                .Select(movie => new LibraryResponseItemDto(movie))
+                .Concat(shows.Select(movie => new LibraryResponseItemDto(movie)))
+                .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort);
+            
+            return GetPaginatedResponse(concat, request);
+        }
+        
         string[] numbers = ["*", "#", "'", "\"", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
         string[] letters =
         [
@@ -73,18 +77,16 @@ public class LibrariesController : Controller
                 Title = genre,
                 Id = genre,
 
-                Items = library.LibraryMovies
+                Items = movies.Select(movie => new LibraryResponseItemDto(movie))
                     .Where(libraryMovie => genre == "#"
-                        ? numbers.Any(p => libraryMovie.Movie.Title.StartsWith(p))
-                        : libraryMovie.Movie.Title.StartsWith(genre))
-                    .Select(movie => new LibraryResponseItemDto(movie))
-                    .Concat(library.LibraryTvs
+                        ? numbers.Any(p => libraryMovie.Title.StartsWith(p))
+                        : libraryMovie.Title.StartsWith(genre))
+                    .Concat(shows.Select(movie => new LibraryResponseItemDto(movie))
                         .Where(libraryTv => genre == "#"
-                            ? numbers.Any(p => libraryTv.Tv.Title.StartsWith(p))
-                            : libraryTv.Tv.Title.StartsWith(genre))
-                        .Select(tv => new LibraryResponseItemDto(tv)))
-                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
+                            ? numbers.Any(p => libraryTv.Title.StartsWith(p))
+                            : libraryTv.Title.StartsWith(genre)))
             })
         });
     }
+
 }

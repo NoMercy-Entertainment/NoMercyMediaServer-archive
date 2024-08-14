@@ -3,8 +3,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
-using NoMercy.Providers.TMDB.Models.TV;
+using NoMercy.NmSystem;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -72,40 +71,20 @@ public class Tv : ColorPaletteTimeStamps
     {
     }
 
-    public Tv(TmdbTvShowAppends tmdbTvShowAppends, Ulid libraryId, string folder, string mediaType)
+    public string CreateFolderName()
     {
-        Id = tmdbTvShowAppends.Id;
-        Backdrop = tmdbTvShowAppends.BackdropPath;
-        Duration = tmdbTvShowAppends.EpisodeRunTime?.Length > 0
-            ? (int?)tmdbTvShowAppends.EpisodeRunTime?.Average()
-            : 0;
-        FirstAirDate = tmdbTvShowAppends.FirstAirDate;
-        HaveEpisodes = 0;
-        Homepage = tmdbTvShowAppends.Homepage?.ToString();
-        ImdbId = tmdbTvShowAppends.ExternalIds.ImdbId;
-        InProduction = tmdbTvShowAppends.InProduction;
-        LastEpisodeToAir = tmdbTvShowAppends.LastEpisodeToAir?.Id;
-        NextEpisodeToAir = tmdbTvShowAppends.NextEpisodeToAir?.Id;
-        NumberOfEpisodes = tmdbTvShowAppends.NumberOfEpisodes;
-        NumberOfSeasons = tmdbTvShowAppends.NumberOfSeasons;
-        OriginCountry = tmdbTvShowAppends.OriginCountry.Length > 0 ? tmdbTvShowAppends.OriginCountry[0] : null;
-        OriginalLanguage = tmdbTvShowAppends.OriginalLanguage;
-        Overview = tmdbTvShowAppends.Overview;
-        Popularity = tmdbTvShowAppends.Popularity;
-        Poster = tmdbTvShowAppends.PosterPath;
-        SpokenLanguages = tmdbTvShowAppends.SpokenLanguages.Length > 0 ? tmdbTvShowAppends.SpokenLanguages[0].Name : null;
-        Status = tmdbTvShowAppends.Status;
-        Tagline = tmdbTvShowAppends.Tagline;
-        Title = tmdbTvShowAppends.Name;
-        TitleSort = tmdbTvShowAppends.Name.TitleSort(tmdbTvShowAppends.FirstAirDate);
-        Trailer = tmdbTvShowAppends.Videos.Results.Length > 0 ? tmdbTvShowAppends.Videos.Results[0].Key : null;
-        TvdbId = tmdbTvShowAppends.ExternalIds.TvdbId;
-        Type = tmdbTvShowAppends.Type;
-        VoteAverage = tmdbTvShowAppends.VoteAverage;
-        VoteCount = tmdbTvShowAppends.VoteCount;
+        return "/" + string
+            .Concat(Title.CleanFileName(), ".(", FirstAirDate.ParseYear(), ")")
+            .CleanFileName();
+    }
 
-        Folder = folder;
-        LibraryId = libraryId;
-        MediaType = mediaType;
+    public string CreateTitle()
+    {
+        return string.Concat(Title, " (", FirstAirDate.ParseYear(), ") NoMercy");
+    }
+
+    public string CreateFileName()
+    {
+        return string.Concat(Title.CleanFileName(), ".(", FirstAirDate.ParseYear(), ").NoMercy");
     }
 }

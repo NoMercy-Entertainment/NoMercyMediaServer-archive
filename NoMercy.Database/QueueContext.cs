@@ -2,7 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Database;
 

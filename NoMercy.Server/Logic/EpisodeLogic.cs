@@ -12,7 +12,7 @@ using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
 using Episode = NoMercy.Database.Models.Episode;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 
 namespace NoMercy.Server.Logic;
 
@@ -26,14 +26,14 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
         {
             try
             {
-                await using TmdbEpisodeClient tmdbEpisodeClient = new(show.Id, episode.SeasonNumber, episode.EpisodeNumber);
+                using TmdbEpisodeClient tmdbEpisodeClient = new(show.Id, episode.SeasonNumber, episode.EpisodeNumber);
                 var episodeTask = await tmdbEpisodeClient.WithAllAppends();
                 if (episodeTask is null) return;
                 _episodeAppends.Push(episodeTask);
             }
             catch (Exception e)
             {
-                Logger.MovieDb(e, LogLevel.Error);
+                Logger.MovieDb(e, LogEventLevel.Error);
             }
         });
 
@@ -49,10 +49,24 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
         MediaContext mediaContext = new();
         try
         {
-            Episode[] episodes = _episodeAppends.ToList()
-                .ConvertAll<Episode>(episode => new Episode(episode, show.Id, tmdbSeason.Id)
-                {
-                    _colorPalette = MovieDbImage.ColorPalette("still", episode.StillPath).Result
+            var episodes = _episodeAppends.ToList()
+                .ConvertAll<Episode>(episode => new Episode {
+                        Id = episode.Id,
+                        Title = episode.Name,
+                        AirDate = episode.AirDate,
+                        EpisodeNumber = episode.EpisodeNumber,
+                        ImdbId = episode.TmdbEpisodeExternalIds.ImdbId,
+                        Overview = episode.Overview,
+                        ProductionCode = episode.ProductionCode,
+                        SeasonNumber = episode.SeasonNumber,
+                        Still = episode.StillPath,
+                        TvdbId = episode.TmdbEpisodeExternalIds.TvdbId,
+                        VoteAverage = episode.VoteAverage,
+                        VoteCount = episode.VoteCount,
+                    
+                        TvId = show.Id,
+                        SeasonId = tmdbSeason.Id,
+                        // _colorPalette = MovieDbImage.ColorPalette("still", episode.StillPath).Result
                 })
                 .ToArray();
 
@@ -70,7 +84,7 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
                     Still = ei.Still,
                     TvId = ei.TvId,
                     SeasonId = ei.SeasonId,
-                    _colorPalette = ei._colorPalette
+                    // _colorPalette = ei._colorPalette
                 })
                 .Run();
 
@@ -79,7 +93,7 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
 
         return Task.CompletedTask;
@@ -106,7 +120,7 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
             await mediaContext.SaveChangesAsync();
         }
 
-        Image[] images = await mediaContext.Images
+        var images = await mediaContext.Images
             .Where(e => e.EpisodeId == id)
             .Where(e => e._colorPalette == "")
             .Where(e => e.Iso6391 == null || e.Iso6391 == "en" || e.Iso6391 == "" ||
@@ -119,12 +133,12 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
 
             Logger.Queue($"Fetching color palette for Episode Image {image.FilePath}");
 
-            ColorPaletteJob colorPaletteJob = new(image.FilePath, "image", image.Iso6391);
-            JobDispatcher.Dispatch(colorPaletteJob, "image", 2);
+            TmdbColorPaletteJob tmdbColorPaletteJob = new(image.FilePath, "image", image.Iso6391);
+            JobDispatcher.Dispatch(tmdbColorPaletteJob, "image", 2);
         }
     }
 
-    public static async Task StoreImages(int show, int season, int episodeNumber)
+    public static async Task StoreImages(int show, int season, TmdbEpisodeAppends episodeAppends)
     {
         try
         {
@@ -135,12 +149,19 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
 
             if (tv is null) return;
 
-            TmdbEpisodeClient tmdbEpisodeClient = new(show, season, episodeNumber);
-            var episode = await tmdbEpisodeClient.WithAllAppends();
-            if (episode is null) return;
-
-            List<Image> images = episode.TmdbEpisodeImages.Stills.ToList()
-                .ConvertAll<Image>(image => new Image(image, episode, "still"));
+            var images = episodeAppends.TmdbEpisodeImages.Stills.ToList()
+                .ConvertAll<Image>(image => new Image {
+                    AspectRatio = image.AspectRatio,
+                    FilePath = image.FilePath,
+                    Height = image.Height,
+                    Iso6391 = image.Iso6391,
+                    VoteAverage = image.VoteAverage,
+                    VoteCount = image.VoteCount,
+                    Width = image.Width,
+                    CollectionId = episodeAppends.Id,
+                    Type = "still",
+                    Site = "https://image.tmdb.org/t/p/",
+                });
 
             await mediaContext.Images.UpsertRange(images)
                 .On(v => new { v.FilePath, v.EpisodeId })
@@ -159,16 +180,16 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
                 })
                 .RunAsync();
 
-            ColorPaletteJob colorPaletteJob = new(episode.Id, "episode");
-            JobDispatcher.Dispatch(colorPaletteJob, "image", 2);
+            TmdbColorPaletteJob tmdbColorPaletteJob = new(episodeAppends.Id, "episode");
+            JobDispatcher.Dispatch(tmdbColorPaletteJob, "image", 2);
 
             Logger.MovieDb(
-                $@"TvShow {tv.Title}, Season {episode.SeasonNumber}, Episode {episode.EpisodeNumber}: Images stored");
+                $@"TvShow {tv.Title}, Season {episodeAppends.SeasonNumber}, Episode {episodeAppends.EpisodeNumber}: Images stored");
             await Task.CompletedTask;
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
@@ -177,8 +198,17 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
         foreach (var episode in _episodeAppends)
             try
             {
-                Translation[] translations = episode.Translations.Translations.ToList()
-                    .ConvertAll<Translation>(x => new Translation(x, episode)).ToArray();
+                var translations = episode.Translations.Translations.ToList()
+                    .ConvertAll<Translation>(translation => new Translation {
+                            Iso31661 = translation.Iso31661,
+                            Iso6391 = translation.Iso6391,
+                            Name = translation.Name == "" ? null : translation.Name,
+                            Title = translation.Data.Title == "" ? null : translation.Data.Title,
+                            Overview = translation.Data.Overview == "" ? null : translation.Data.Overview,
+                            EnglishName = translation.EnglishName,
+                            Homepage = translation.Data.Homepage?.ToString(),
+                            EpisodeId = episode.Id,
+                        }).ToArray();
 
                 using MediaContext mediaContext = new();
                 mediaContext.Translations
@@ -209,7 +239,7 @@ public class EpisodeLogic(TmdbTvShow show, TmdbSeasonDetails tmdbSeason) : IDisp
             }
             catch (Exception e)
             {
-                Logger.MovieDb(e, LogLevel.Error);
+                Logger.MovieDb(e, LogEventLevel.Error);
             }
 
         return Task.CompletedTask;

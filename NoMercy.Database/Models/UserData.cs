@@ -1,6 +1,5 @@
 ﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -9,6 +8,7 @@ namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
 [Index(nameof(VideoFileId), nameof(UserId), IsUnique = true)]
+[Index(nameof(UserId)), Index(nameof(MovieId)), Index(nameof(TvId)), Index(nameof(CollectionId)), Index(nameof(SpecialId)), Index(nameof(VideoFileId))]
 public class UserData : Timestamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]

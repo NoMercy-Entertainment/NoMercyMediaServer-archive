@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Encoder.Format.Container;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 using NoMercy.Server.app.Http.Middleware;
@@ -18,12 +22,13 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/encoderprofiles", Order = 10)]
-public class EncoderController : Controller
+public class EncoderController: BaseController
 {
     [HttpGet]
-    public async Task<List<EncoderProfileDto>> Index()
+    public async Task<IActionResult> Index()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view encoder profiles");
 
         await using MediaContext mediaContext = new();
         var profiles = await mediaContext.EncoderProfiles.ToListAsync();
@@ -58,47 +63,115 @@ public class EncoderController : Controller
             encoderProfiles.Add(profileDto);
         }
 
-        return encoderProfiles;
+        return Ok(encoderProfiles);
     }
 
     [HttpPost]
-    public async Task<StatusResponseDto<EncoderProfile>> Create()
+    public async Task<IActionResult> Create()
     {
-        var userId = HttpContext.User.UserId();
-
-        await using MediaContext mediaContext = new();
-        var libraries = await mediaContext.EncoderProfiles.CountAsync();
-
-        EncoderProfile profile = new()
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to create encoder profiles");
+        
+        try
         {
-            Name = $"Profile {libraries}",
-            Container = "mp4",
-            Param = JsonConvert.SerializeObject(new ParamsDto
+            await using MediaContext mediaContext = new();
+            var encoderProfiles = await mediaContext.EncoderProfiles.CountAsync();
+
+            EncoderProfile profile = new()
             {
-                Width = 1920,
-                Crf = 23,
-                Preset = "medium",
-                Profile = "main",
-                Codec = "libx264",
-                Audio = "aac"
-            })
-        };
+                Id = Ulid.NewUlid(),
+                Name = $"Profile {encoderProfiles}",
+                Container = "mp4",
+                Param = JsonConvert.SerializeObject(new ParamsDto
+                {
+                    Width = 1920,
+                    Crf = 23,
+                    Preset = "medium",
+                    Profile = "main",
+                    Codec = "libx264",
+                    Audio = "aac"
+                })
+            };
 
-        return new StatusResponseDto<EncoderProfile>
+            await mediaContext.EncoderProfiles.Upsert(profile)
+                .On(l => new { l.Id })
+                .WhenMatched((ls, li) => new EncoderProfile
+                {
+                    Id = li.Id,
+                    Name = li.Name,
+                    Container = li.Container,
+                    Param = li.Param
+                })
+                .RunAsync();
+            
+            return Ok(new StatusResponseDto<EncoderProfile>
+            {
+                Status = "ok",
+                Data = profile,
+                Message = "Successfully created a new encoder profile.",
+                Args = []
+            });
+        }
+        catch (Exception e)
         {
-            Status = "ok",
-            Data = profile
-        };
+            return Ok(new StatusResponseDto<EncoderProfile>()
+            {
+                Status = "error",
+                Message = "Something went wrong creating a new library: {0}",
+                Args = [e.Message]
+            });
+        }
+        
     }
 
     [HttpDelete]
-    public IActionResult Destroy()
+    [Route("{id:ulid}")]
+    public async Task<IActionResult> Destroy(Ulid id)
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to remove encoder profiles");
+        
+        await using MediaContext mediaContext = new();
+        var profile = await mediaContext.EncoderProfiles
+            .Where(profile => profile.Id == id)
+            .FirstOrDefaultAsync();
+        
+        if (profile == null)
+            return NotFound(new StatusResponseDto<string>
+            {
+                Status = "error",
+                Data = "Encoder profile not found"
+            });
+        
+        mediaContext.EncoderProfiles.Remove(profile);
+        await mediaContext.SaveChangesAsync();
 
-        return Ok(new PlaceholderResponse
+        return Ok(new StatusResponseDto<string>
         {
-            Data = []
+            Status = "ok",
+            Data = "Profile removed"
+        });
+    }
+    
+    [HttpGet]
+    [Route("containers")]
+    public IActionResult Containers()
+    {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to remove encoder profiles");
+        
+        var containers = BaseContainer.AvailableContainers
+            .Select(container => new ContainerDto
+            {
+                Label = container.Name,
+                Value = container.Name,
+                Type = container.Type,
+                IsDefault = container.IsDefault
+            });
+
+        return Ok(new DataResponseDto<ContainerDto[]>
+        {
+            Data = containers.ToArray()
         });
     }
 }
@@ -115,8 +188,10 @@ public class EncoderProfileDto
 
 public class ContainerDto
 {
-    [JsonProperty("key")] public string Key { get; set; }
-    [JsonProperty("val")] public string Val { get; set; }
+    [JsonProperty("label")] public string Label { get; set; }
+    [JsonProperty("value")] public string Value { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
+    [JsonProperty("default")] public bool IsDefault { get; set; }
 }
 
 public class ParamsDto

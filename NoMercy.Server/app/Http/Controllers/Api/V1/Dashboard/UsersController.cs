@@ -1,16 +1,15 @@
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
-using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
-using NoMercy.Server.app.Http.Middleware;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 
@@ -19,48 +18,48 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/users", Order = 10)]
-public class UsersController : Controller
+public class UsersController: BaseController
 {
     [HttpGet]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var userId = HttpContext.User.UserId();
+        if(!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to view users");
+        
+        await using MediaContext mediaContext = new();
 
-
-        return Ok(new PlaceholderResponse
+        var users = await mediaContext.Users
+            .Include(user => user.LibraryUser)
+            .ToListAsync();
+        
+        return Ok(new DataResponseDto<IEnumerable<PermissionsResponseItemDto>>
         {
-            Data = []
+            Data = users.Select(user => new PermissionsResponseItemDto(user))
         });
     }
 
     [HttpPost]
-    public async Task<StatusResponseDto<string>> Store([FromBody] UserRequest request)
+    public async Task<IActionResult> Store([FromBody] UserRequest request)
     {
         var userId = HttpContext.User.UserId();
+        if(!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to create a user");
 
-        Logger.Access($"User {userId} attempting to create a user");
+        Logger.Access($"User {HttpContext.User.Email()} attempting to create a user, if this user is not your email then please contact support.");
 
         await using MediaContext mediaContext = new();
 
         var hasPermission = mediaContext.Users.FirstOrDefault(user => user.Id == userId);
 
         if (hasPermission is null || hasPermission.Owner is false)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "You do not have permission to create a user"
-            };
+            return NotFoundResponse("You do not have permission to create a user");
 
         var user = await mediaContext.Users
             .Include(user => user.LibraryUser)
             .FirstOrDefaultAsync(user => user.Id == request.Id);
 
         if (user != null)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "User already exists"
-            };
+            return UnprocessableEntityResponse("User already exists");
 
         User newUser = new()
         {
@@ -81,46 +80,23 @@ public class UsersController : Controller
             .Include(u => u.LibraryUser)
             .First(u => u.Id == newUser.Id);
 
-        TokenParamAuthMiddleware.Users.Add(createdUser);
+        ClaimsPrincipleExtensions.AddUser(createdUser);
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "success",
             Message = "User {0} created successfully",
             Data = createdUser.Name
-        };
-    }
-
-    [HttpPatch("{id:guid}")]
-    public async Task<StatusResponseDto<string>> Update(Guid id)
-    {
-        var userId = HttpContext.User.UserId();
-
-        await using MediaContext mediaContext = new();
-        var user = await mediaContext.Users
-            .Include(user => user.LibraryUser)
-            .FirstOrDefaultAsync(user => user.Id == id);
-
-        if (user == null)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "User not found"
-            };
-
-        // TODO Implement user update
-
-        return new StatusResponseDto<string>
-        {
-            Status = "success",
-            Message = "User updated"
-        };
+        });
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<StatusResponseDto<string>> Destroy(Guid id)
+    public async Task<IActionResult> Destroy(Guid id)
     {
-        var userId = HttpContext.User.UserId();
+        if(!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to delete a user");
+        
+        Logger.Access($"User {HttpContext.User.Email()} attempting to delete a user, if this user is not your email then please contact support.");
 
         await using MediaContext mediaContext = new();
         var user = await mediaContext.Users
@@ -128,150 +104,169 @@ public class UsersController : Controller
             .FirstOrDefaultAsync(user => user.Id == id);
 
         if (user == null)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "User not found"
-            };
+            return NotFoundResponse("User not found");
+        
+        if (user.Owner)
+            return UnauthorizedResponse("The owner cannot be deleted");
 
         mediaContext.Users.Remove(user);
         await mediaContext.SaveChangesAsync();
 
-        TokenParamAuthMiddleware.Users.Remove(user);
+        ClaimsPrincipleExtensions.RemoveUser(user);
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "success",
             Message = "User deleted"
-        };
+        });
     }
-
+    
     [HttpGet]
     [Route("permissions")]
-    public async Task<PermissionsResponseDto> UserPermissions()
+    public async Task<IActionResult> PermissionS()
     {
+        if(!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to view user permissions");
+        
         await using MediaContext mediaContext = new();
 
-        var permissions = await mediaContext.Users
+        var users = await mediaContext.Users
             .Include(user => user.LibraryUser)
             .ThenInclude(libraryUser => libraryUser.Library)
             .ToListAsync();
 
-        return new PermissionsResponseDto
+        return Ok(new DataResponseDto<IEnumerable<PermissionsResponseItemDto>>
         {
-            Data = permissions.Select(user => new PermissionsResponseItemDto(user)) ?? []
-        };
+            Data = users.Select(user => new PermissionsResponseItemDto(user))
+        });
     }
-
-    [HttpPatch]
-    [Route("permissions/{id:guid}")]
-    public async Task<StatusResponseDto<string>> UpdateUserPermissions(Guid id)
+    
+    [HttpPatch("notifications")]
+    public async Task<IActionResult> NotificationS([FromBody] object request)
     {
         var userId = HttpContext.User.UserId();
+        if(!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to update notification settings");
 
         await using MediaContext mediaContext = new();
         var user = await mediaContext.Users
-            .Include(user => user.LibraryUser)
-            .FirstOrDefaultAsync(user => user.Id == id);
-
-        if (user == null)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "User not found"
-            };
-
-        // TODO Implement user permissions
-
-        return new StatusResponseDto<string>
-        {
-            Status = "success",
-            Message = "User permissions updated"
-        };
-    }
-
-    [HttpPatch("notificationsettings")]
-    public async Task<StatusResponseDto<string>> NotificationSettings([FromBody] object request)
-    {
-        var userId = HttpContext.User.UserId();
-
-        await using MediaContext mediaContext = new();
-        var user = await mediaContext.Users
+            .Where(user => user.Id == userId)
             .Include(user => user.LibraryUser)
             .Include(user => user.NotificationUser)
             .ThenInclude(notificationUser => notificationUser.Notification)
             .FirstOrDefaultAsync(user => user.Id == userId);
 
         if (user == null)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "User not found"
-            };
+            return NotFoundResponse("User not found");
 
         // TODO Implement notification settings
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "success",
             Message = "Notification settings updated"
-        };
+        });
     }
-}
-
-public class PermissionsResponseDto
-{
-    [JsonProperty("data")] public IEnumerable<PermissionsResponseItemDto> Data { get; set; }
-}
-
-public class PermissionsResponseItemDto : User
-{
-    [JsonProperty("library_user")] public new LibraryUserDto[] LibraryUser { get; set; }
-    [JsonProperty("libraries")] public Ulid[] Libraries { get; set; }
-
-    public PermissionsResponseItemDto(User user)
+    
+    [HttpGet]
+    [Route("{id:guid}/permissions")]
+    public async Task<IActionResult> UserPermissions(Guid id)
     {
-        Id = user.Id;
-        Email = user.Email;
-        Manage = user.Manage;
-        Owner = user.Owner;
-        Name = user.Name;
-        Allowed = user.Allowed;
-        AudioTranscoding = user.AudioTranscoding;
-        VideoTranscoding = user.VideoTranscoding;
-        NoTranscoding = user.NoTranscoding;
-        CreatedAt = user.CreatedAt;
-        UpdatedAt = user.UpdatedAt;
+        if(!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view user permissions");
+        
+        if(HttpContext.User.IsSelf(id))
+            return UnauthorizedResponse("You do not have permission to edit your own permissions");
+        
+        await using MediaContext mediaContext = new();
 
-        LibraryUser = user.LibraryUser
-            .Select(libraryUser => new LibraryUserDto
-            {
-                LibraryId = libraryUser.LibraryId,
-                UserId = libraryUser.UserId
-            })
-            .ToArray();
+        var user = await mediaContext.Users
+            .Where(user => user.Id == id)
+            .Include(user => user.LibraryUser)
+            .ThenInclude(libraryUser => libraryUser.Library)
+            .FirstOrDefaultAsync();
+        
+        if (user == null)
+            return NotFoundResponse("User not found");
 
-        Libraries = user.LibraryUser
-            .Select(libraryUser => libraryUser.Library.Id)
-            .ToArray();
+        return Ok(new DataResponseDto<UserPermissionRequest>
+        {
+            Data = new UserPermissionRequest(user)
+        });
     }
-}
+    
+    [HttpPatch("{id:guid}/permissions")]
+    public async Task<IActionResult> UserPermissionUpdate(Guid id, [FromBody] UserPermissionRequest request)
+    {
+        var userId = HttpContext.User.UserId();
+        if(!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to update a user");
+        
+        if(HttpContext.User.IsSelf(id))
+            return UnauthorizedResponse("You do not have permission to update your own permissions");
 
-public class LibraryUserDto
-{
-    [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
-    [JsonProperty("UserId")] public Guid UserId { get; set; }
-}
+        await using MediaContext mediaContext = new();
+        var user = await mediaContext.Users
+            .Include(user => user.LibraryUser)
+            .FirstOrDefaultAsync(user => user.Id == id);
 
-public class UserRequest
-{
-    [JsonProperty("id")] public Guid Id { get; set; }
-    [JsonProperty("email")] public string Email { get; set; }
-    [JsonProperty("manage")] public bool Manage { get; set; }
-    [JsonProperty("owner")] public bool Owner { get; set; }
-    [JsonProperty("name")] public string Name { get; set; }
-    [JsonProperty("allowed")] public bool Allowed { get; set; }
-    [JsonProperty("audio_transcoding")] public bool AudioTranscoding { get; set; }
-    [JsonProperty("video_transcoding")] public bool VideoTranscoding { get; set; }
-    [JsonProperty("no_transcoding")] public bool NoTranscoding { get; set; }
+        if (user == null)
+            return NotFoundResponse("User not found");
+
+        if (HttpContext.User.IsOwner())
+        {
+            user.Manage = request.Manage;
+        }
+        
+        user.Allowed = request.Allowed;
+        user.AudioTranscoding = request.AudioTranscoding;
+        user.VideoTranscoding = request.VideoTranscoding;
+        user.NoTranscoding = request.NoTranscoding;
+
+        user.LibraryUser.Clear();
+        
+        foreach (var libraryId in request.Libraries)
+        {
+            user.LibraryUser.Add(new LibraryUser
+            {
+                LibraryId = libraryId,
+                UserId = userId
+            });
+        }
+        
+        await mediaContext.SaveChangesAsync();
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "success",
+            Message = "User updated"
+        });
+    }
+
+    [HttpPatch("{id:guid}/notifications")]
+    public async Task<IActionResult> UserNotification([FromBody] object request)
+    {
+        var userId = HttpContext.User.UserId();
+        if(!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to update notification settings");
+
+        await using MediaContext mediaContext = new();
+        var user = await mediaContext.Users
+            .Where(user => user.Id == userId)
+            .Include(user => user.LibraryUser)
+            .Include(user => user.NotificationUser)
+                .ThenInclude(notificationUser => notificationUser.Notification)
+            .FirstOrDefaultAsync(user => user.Id == userId);
+
+        if (user == null)
+            return NotFoundResponse("User not found");
+
+        // TODO Implement notification settings
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "success",
+            Message = "Notification settings updated"
+        });
+    }
 }

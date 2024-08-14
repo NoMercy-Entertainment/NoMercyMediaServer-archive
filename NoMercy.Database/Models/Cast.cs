@@ -1,15 +1,9 @@
 ﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Episode;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.Season;
-using NoMercy.Providers.TMDB.Models.Shared;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -21,9 +15,6 @@ namespace NoMercy.Database.Models;
 // [Index(nameof(Id),nameof(PersonId), IsUnique = true)]
 public class Cast
 {
-    private readonly TmdbMovie _tmdbMovie;
-    private readonly TmdbTvShowAppends _tmdbTv;
-    private readonly TmdbSeason _tmdbSeason;
 
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -52,53 +43,5 @@ public class Cast
 
     public Cast()
     {
-    }
-
-    public Cast(TmdbCast tmdbCast, TmdbMovie tmdbMovieAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Role> roles)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCast.CreditId;
-        PersonId = tmdbCast.Id;
-        MovieId = tmdbMovieAppends.Id;
-        RoleId = roles.Where(r => r.CreditId == tmdbCast.CreditId)?.FirstOrDefault()?.Id;
-    }
-
-    public Cast(TmdbCast tmdbCast, TmdbTvShowAppends tmdbTvAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Role> roles)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCast.CreditId;
-        PersonId = tmdbCast.Id;
-        TvId = tmdbTvAppends.Id;
-        RoleId = roles.Where(r => r.CreditId == tmdbCast.CreditId)?.FirstOrDefault()?.Id;
-    }
-
-    public Cast(TmdbCast tmdbCast, TmdbSeason tmdbSeasonAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Role> roles)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCast.CreditId;
-        PersonId = tmdbCast.Id;
-        SeasonId = tmdbSeasonAppends.Id;
-        RoleId = roles.Where(r => r.CreditId == tmdbCast.CreditId)?.FirstOrDefault()?.Id;
-    }
-
-    public Cast(TmdbCast tmdbCast, TmdbEpisode tmdbEpisodeAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Role> roles)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCast.CreditId;
-        PersonId = tmdbCast.Id;
-        EpisodeId = tmdbEpisodeAppends.Id;
-        RoleId = roles.Where(r => r.CreditId == tmdbCast.CreditId).FirstOrDefault()?.Id;
     }
 }

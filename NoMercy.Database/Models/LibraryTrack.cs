@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(LibraryId), nameof(TrackId))]
+[Index(nameof(LibraryId)), Index(nameof(TrackId))]
 public class LibraryTrack
 {
     [JsonProperty("library_id")] public Ulid LibraryId { get; set; }

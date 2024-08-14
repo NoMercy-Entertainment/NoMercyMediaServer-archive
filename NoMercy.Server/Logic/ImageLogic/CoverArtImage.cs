@@ -1,7 +1,9 @@
+using System.Runtime.Versioning;
 using NoMercy.Providers.CoverArt.Client;
 
 namespace NoMercy.Server.Logic.ImageLogic;
 
+[SupportedOSPlatform("windows10.0.18362")]
 public abstract class CoverArtImage : BaseImage
 {
     public static async Task<string> ColorPalette(string type, Uri url, bool? download = true)

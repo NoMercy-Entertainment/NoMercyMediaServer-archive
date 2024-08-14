@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
-using FlexLabs.EntityFrameworkCore.Upsert;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -11,7 +11,6 @@ using NoMercy.Providers.TMDB.Models.People;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
-using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
@@ -23,7 +22,8 @@ using Job = NoMercy.Database.Models.Job;
 using Exception = System.Exception;
 using GuestStar = NoMercy.Database.Models.GuestStar;
 using Image = NoMercy.Database.Models.Image;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
+using TmdbGender = NoMercy.Database.Models.TmdbGender;
 
 namespace NoMercy.Server.Logic;
 
@@ -46,10 +46,13 @@ public class PersonLogic : IDisposable, IAsyncDisposable
     private readonly string? _logPrefix;
     private readonly Type _currentType;
 
-    public PersonLogic(TmdbTvShowAppends? show)
+    public PersonLogic()
     {
-        if (show is null) return;
+        //
+    }
 
+    public PersonLogic(TmdbTvShowAppends show)
+    {
         _show = show;
         _logPrefix = $"TvShow {show.Name}:";
         _currentType = Type.TvShow;
@@ -60,10 +63,8 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         _movie = new TmdbMovieAppends();
     }
 
-    public PersonLogic(TmdbTvShowAppends? show, TmdbSeasonAppends? season)
+    public PersonLogic(TmdbTvShowAppends show, TmdbSeasonAppends season)
     {
-        if (show is null || season is null) return;
-
         _show = show;
         _season = season;
         _logPrefix = $"TvShow {show.Name}, Season {season.SeasonNumber}:";
@@ -74,10 +75,8 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         _movie = new TmdbMovieAppends();
     }
 
-    public PersonLogic(TmdbTvShowAppends? show, TmdbSeasonAppends? season, TmdbEpisodeAppends? episode)
+    public PersonLogic(TmdbTvShowAppends show, TmdbSeasonAppends season, TmdbEpisodeAppends episode)
     {
-        if (show is null || season is null || episode is null) return;
-
         _show = show;
         _season = season;
         _episode = episode;
@@ -88,10 +87,8 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         _movie = new TmdbMovieAppends();
     }
 
-    public PersonLogic(TmdbMovieAppends? movie)
+    public PersonLogic(TmdbMovieAppends movie)
     {
-        if (movie is null) return;
-
         _movie = movie;
         _logPrefix = $"Movie {movie.Title}:";
         _currentType = Type.Movie;
@@ -103,63 +100,6 @@ public class PersonLogic : IDisposable, IAsyncDisposable
     }
 
     private readonly ConcurrentStack<TmdbPersonAppends?> _personAppends = [];
-
-    private async Task FetchPeopleByCast(TmdbCast[] cast)
-    {
-        await Parallel.ForEachAsync(cast, async (person, _) =>
-        {
-            try
-            {
-                await using var personClient = new TmdbPersonClient(person.Id);
-                var personTask = await personClient.WithAllAppends();
-                _personAppends.Push(personTask);
-
-                await Task.CompletedTask;
-            }
-            catch (Exception e)
-            {
-                Logger.MovieDb(e, LogLevel.Error);
-            }
-        });
-    }
-
-    private async Task FetchPeopleByGuestStars(TmdbGuestStar[] cast)
-    {
-        await Parallel.ForEachAsync(cast, async (person, _) =>
-        {
-            try
-            {
-                await using var personClient = new TmdbPersonClient(person.Id);
-                var personTask = await personClient.WithAllAppends();
-                _personAppends.Push(personTask);
-
-                await Task.CompletedTask;
-            }
-            catch (Exception e)
-            {
-                Logger.MovieDb(e, LogLevel.Error);
-            }
-        });
-    }
-
-    private async Task FetchPeopleByCrew(TmdbCrew[] crew)
-    {
-        await Parallel.ForEachAsync(crew, async (person, _) =>
-        {
-            try
-            {
-                await using TmdbPersonClient tmdbPersonClient = new(person.Id);
-                var personTask = await tmdbPersonClient.WithAllAppends();
-                _personAppends.Push(personTask);
-
-                await Task.CompletedTask;
-            }
-            catch (Exception e)
-            {
-                Logger.MovieDb(e, LogLevel.Error);
-            }
-        });
-    }
 
     public async Task FetchPeople()
     {
@@ -232,7 +172,25 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         try
         {
             var people = _personAppends.ToList()
-                .ConvertAll<Person>(x => new Person(x)).ToArray();
+                .ConvertAll<Person>(person => new Person
+                {
+                    Id = person!.Id,
+                    Adult = person.Adult,
+                    AlsoKnownAs = person.AlsoKnownAs.Length > 0 ? person.AlsoKnownAs.ToJson() : null,
+                    Biography = person.Biography,
+                    BirthDay = person.BirthDay,
+                    DeathDay = person.DeathDay,
+                    TmdbGender = (TmdbGender)person.TmdbGender,
+                    _externalIds = person.ExternalIds.ToJson(),
+                    Homepage = person.Homepage?.ToString(),
+                    ImdbId = person.ImdbId,
+                    KnownForDepartment = person.KnownForDepartment,
+                    Name = person.Name,
+                    PlaceOfBirth = person.PlaceOfBirth,
+                    Popularity = person.Popularity,
+                    Profile = person.ProfilePath,
+                    TitleSort = person.Name,
+                }).ToArray();
 
             await using var mediaContext = new MediaContext();
             await mediaContext.People.UpsertRange(people)
@@ -260,22 +218,79 @@ public class PersonLogic : IDisposable, IAsyncDisposable
 
             await StoreTranslations(_personAppends);
 
-            Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+            Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
             {
                 QueryKey = ["person"]
             });
 
-            Logger.MovieDb($@"{_logPrefix} {_name} stored {people.Length} people");
+            Logger.MovieDb($"{_logPrefix} {_name} stored {people.Length} people");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
+    }
+
+    private async Task FetchPeopleByCast(TmdbCast[] cast)
+    {
+        await Parallel.ForEachAsync(cast, async (person, _) =>
+        {
+            try
+            {
+                using var personClient = new TmdbPersonClient(person.Id);
+                var personTask = await personClient.WithAllAppends();
+                _personAppends.Push(personTask);
+
+                await Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogEventLevel.Error);
+            }
+        });
+    }
+
+    private async Task FetchPeopleByGuestStars(TmdbGuestStar[] cast)
+    {
+        await Parallel.ForEachAsync(cast, async (person, _) =>
+        {
+            try
+            {
+                using var personClient = new TmdbPersonClient(person.Id);
+                var personTask = await personClient.WithAllAppends();
+                _personAppends.Push(personTask);
+
+                await Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogEventLevel.Error);
+            }
+        });
+    }
+
+    private async Task FetchPeopleByCrew(TmdbCrew[] crew)
+    {
+        await Parallel.ForEachAsync(crew, async (person, _) =>
+        {
+            try
+            {
+                using TmdbPersonClient tmdbPersonClient = new(person.Id);
+                var personTask = await tmdbPersonClient.WithAllAppends();
+                _personAppends.Push(personTask);
+
+                await Task.CompletedTask;
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogEventLevel.Error);
+            }
+        });
     }
 
     private static Role[] Roles(Role[]? roles)
     {
-        if (roles is null || roles.Length == 0) return Array.Empty<Role>();
+        if (roles is null || roles.Length == 0) return [];
 
         using var mediaContext = new MediaContext();
         return mediaContext.Roles
@@ -289,7 +304,13 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         {
             var roles = casts
                 .ToList()
-                .ConvertAll<Role>(x => new Role(x))
+                .ConvertAll<Role>(role => new Role
+                {
+                    Character = role.Character,
+                    CreditId = role.CreditId,
+                    Order = role.Order,
+                    EpisodeCount = 0,
+                })
                 .Where(cast => cast.CreditId is not null)
                 .ToArray();
 
@@ -306,17 +327,17 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 })
                 .RunAsync();
 
-            Logger.MovieDb($@"{_logPrefix} {_name} Roles stored");
+            Logger.MovieDb($"{_logPrefix} {_name} Roles stored");
 
-            Role[] crewArray = Roles(roles);
+            var crewArray = Roles(roles);
 
-            Cast[] cast = casts
+            var cast = casts
                 .Where(cast => cast.CreditId is not "" && cast.CreditId is not null)
                 .ToList()
-                .ConvertAll<Cast>(x => new Cast(x, model, _movie, _show, _season, crewArray))
+                .ConvertAll<Cast>(x => new PersonCast(x, model, _movie, _show, _season, crewArray))
                 .ToArray();
 
-            UpsertCommandBuilder<Cast> query = _currentType switch
+            var query = _currentType switch
             {
                 Type.Movie => mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.MovieId, c.RoleId }),
                 Type.TvShow => mediaContext.Casts.UpsertRange(cast).On(c => new { c.CreditId, c.TvId, c.RoleId }),
@@ -338,17 +359,17 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 })
                 .RunAsync();
 
-            Logger.MovieDb($@"{_logPrefix} {_name} Cast stored");
+            Logger.MovieDb($"{_logPrefix} {_name} Cast stored");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
     private static Job[] Jobs(Job[]? jobs)
     {
-        if (jobs is null || jobs.Length == 0) return Array.Empty<Job>();
+        if (jobs is null || jobs.Length == 0) return [];
 
         using var mediaContext = new MediaContext();
         return mediaContext.Jobs
@@ -362,7 +383,12 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         {
             var jobs = crews
                 .ToList()
-                .ConvertAll<Job>(x => new Job(x))
+                .ConvertAll<Job>(job => new Job {
+                        Task = job.Job ?? "Unknown",
+                        EpisodeCount = 0,
+                        CreditId = job.CreditId,
+                        Order = job.Order,
+                    })
                 .Where(crew => crew.CreditId is not null)
                 .ToArray();
 
@@ -376,17 +402,17 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 })
                 .RunAsync();
 
-            Logger.MovieDb($@"{_logPrefix} {_name} Jobs stored");
+            Logger.MovieDb($"{_logPrefix} {_name} Jobs stored");
 
-            Job[] jobArray = Jobs(jobs);
+            var jobArray = Jobs(jobs);
 
-            Crew[] crew = crews
+            var crew = crews
                 .Where(crew => crew.CreditId is not "" && crew.CreditId is not null)
                 .ToList()
-                .ConvertAll<Crew>(x => new Crew(x, model, _movie, _show, _season, jobArray))
+                .ConvertAll<Crew>(x => new PersonCrew(x, model, _movie, _show, _season, jobArray))
                 .ToArray();
 
-            UpsertCommandBuilder<Crew> c1 = _currentType switch
+            var c1 = _currentType switch
             {
                 Type.Movie => mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.MovieId, c.JobId }),
                 Type.TvShow => mediaContext.Crews.UpsertRange(crew).On(c => new { c.CreditId, c.TvId, c.JobId }),
@@ -407,11 +433,11 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 })
                 .RunAsync();
 
-            Logger.MovieDb($@"{_logPrefix} {_name} Crew stored");
+            Logger.MovieDb($"{_logPrefix} {_name} Crew stored");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
@@ -421,7 +447,10 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         {
             var creators = showCreatedBy
                 .ToList()
-                .ConvertAll<Creator>(x => new Creator(x, show))
+                .ConvertAll<Creator>(input => new Creator {
+                        PersonId = input.Id,
+                        TvId = show.Id,
+                    })
                 .ToArray();
 
             await using var mediaContext = new MediaContext();
@@ -434,11 +463,11 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 })
                 .RunAsync();
 
-            Logger.MovieDb($@"{_logPrefix} {_name} Creator stored");
+            Logger.MovieDb($"{_logPrefix} {_name} Creator stored");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
@@ -448,7 +477,11 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         {
             var guestStars = guests
                 .ToList()
-                .ConvertAll<GuestStar>(x => new GuestStar(x, episode))
+                .ConvertAll<GuestStar>(cast => new GuestStar{
+                        CreditId = cast.CreditId,
+                        PersonId = cast.Id,
+                        EpisodeId = episode?.Id ?? 0,
+                    })
                 .Where(crew => crew.CreditId is not "")
                 .ToArray();
 
@@ -465,17 +498,22 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 })
                 .RunAsync();
 
-            Logger.MovieDb($@"{_logPrefix} Cast stored");
+            Logger.MovieDb($"{_logPrefix} Cast stored");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
 
         try
         {
-            Role[] roles = guests.ToList()
-                .ConvertAll<Role>(x => new Role(x))
+            var roles = guests.ToList()
+                .ConvertAll<Role>(role => new Role {
+                        Character = role.CharacterName,
+                        EpisodeCount = 0,
+                        Order = role.Order,
+                        CreditId = role.CreditId,
+                    })
                 .ToArray();
 
             await using var mediaContext = new MediaContext();
@@ -491,11 +529,11 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 })
                 .RunAsync();
 
-            Logger.MovieDb($@"{_logPrefix} Roles stored");
+            Logger.MovieDb($"{_logPrefix} Roles stored");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
@@ -508,15 +546,16 @@ public class PersonLogic : IDisposable, IAsyncDisposable
             await StoreAggregateCast(showAggregateCredits.Cast, show);
             await StoreAggregateCrew(showAggregateCredits.Crew, show);
 
-            Logger.MovieDb($@"{_logPrefix} {show.Name}: AggregateCredits stored");
+            Logger.MovieDb($"{_logPrefix} {show.Name}: AggregateCredits stored");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
-    private async Task StoreAggregateCredits(TmdbSeasonAggregatedCredits tmdbSeasonAggregateCredits, TmdbSeasonAppends? season)
+    private async Task StoreAggregateCredits(TmdbSeasonAggregatedCredits tmdbSeasonAggregateCredits,
+        TmdbSeasonAppends? season)
     {
         if (_show is null || season is null) return;
         try
@@ -524,11 +563,11 @@ public class PersonLogic : IDisposable, IAsyncDisposable
             await StoreAggregateCast(tmdbSeasonAggregateCredits.Cast, season);
             await StoreAggregateCrew(tmdbSeasonAggregateCredits.Crew, season);
 
-            Logger.MovieDb($@"{_logPrefix} TvShow {_show.Name}, Season {season.SeasonNumber}: AggregateCredits stored");
+            Logger.MovieDb($"{_logPrefix} TvShow {_show.Name}, Season {season.SeasonNumber}: AggregateCredits stored");
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
@@ -580,7 +619,12 @@ public class PersonLogic : IDisposable, IAsyncDisposable
     private async Task StoreRoles(TmdbAggregatedCreditRole[] role)
     {
         var roles = role.ToList()
-            .ConvertAll<Role>(x => new Role(x)).ToArray();
+            .ConvertAll<Role>(r => new Role {
+                    Character = r.Character,
+                    EpisodeCount = r.EpisodeCount,
+                    Order = r.Order,
+                    CreditId = r.CreditId,
+                }).ToArray();
 
         try
         {
@@ -598,15 +642,20 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
     private async Task StoreJobs(TmdbAggregatedCrewJob[] job)
     {
         var jobs = job.ToList()
-            .ConvertAll<Job>(x => new Job(x)).ToArray();
-
+            .ConvertAll<Job>(j => new Job{
+                    Task = j.Job ?? "Unknown",
+                    EpisodeCount = j.EpisodeCount,
+                    CreditId = j.CreditId,
+                    Order = j.Order,
+                }).ToArray();
+        
         try
         {
             await using var mediaContext = new MediaContext();
@@ -622,7 +671,7 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
@@ -632,20 +681,27 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         {
             if (person is null) continue;
 
-            var personImagesJob = new PersonImagesJob(person.Id);
+            var personImagesJob = new TmdbImagesJob(person);
             JobDispatcher.Dispatch(personImagesJob, "data", 2);
         }
     }
 
-    public static async Task StoreImages(int id)
+    public static async Task StoreImages(TmdbPersonAppends personAppends)
     {
-        TmdbPersonClient tmdbPersonClient = new(id);
-        var personAppend = await tmdbPersonClient.WithAllAppends();
-
-        if (personAppend is null) return;
-
-        var images = personAppend.Images.Profiles.ToList()
-            .ConvertAll<Image>(profile => new Image(profile, personAppend, "profile"));
+        var images = personAppends.Images.Profiles.ToList()
+            .ConvertAll<Image>(profile => new Image{
+                    AspectRatio = profile.AspectRatio,
+                    Height = profile.Height,
+                    Iso6391 = profile.Iso6391,
+                    FilePath = profile.FilePath,
+                    Width = profile.Width,
+                    VoteAverage = profile.VoteAverage,
+                    VoteCount = profile.VoteCount,
+                    PersonId = personAppends.Id,
+                    Type = "profile",
+                    Site = "https://image.tmdb.org/t/p/",
+                    // _colorPalette = MovieDbImage.ColorPalette("image", profile.FilePath).Result
+            });
 
         await using MediaContext mediaContext = new();
         await mediaContext.Images.UpsertRange(images)
@@ -665,17 +721,17 @@ public class PersonLogic : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        var personColorPaletteJob = new ColorPaletteJob(id: personAppend.Id, model: "person");
+        var personColorPaletteJob = new TmdbColorPaletteJob(id: personAppends.Id, model: "person");
         JobDispatcher.Dispatch(personColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"Person {personAppend.Name}: Images stored");
+        Logger.MovieDb($"Person {personAppends.Name}: Images stored");
         await Task.CompletedTask;
     }
 
     public static async Task Palette(int id)
     {
         await using var mediaContext = new MediaContext();
-        Logger.Queue($"Fetching color palette for Movie {id}");
+        Logger.Queue($"Fetching color palette for Person {id}");
 
         var person = await mediaContext.People
             .Where(e => e._colorPalette == "")
@@ -683,6 +739,8 @@ public class PersonLogic : IDisposable, IAsyncDisposable
 
         if (person is { _colorPalette: "" })
         {
+            if (string.IsNullOrEmpty(person.Profile)) return;
+
             person._colorPalette = await MovieDbImage.ColorPalette("profile", person.Profile);
 
             await mediaContext.SaveChangesAsync();
@@ -712,7 +770,14 @@ public class PersonLogic : IDisposable, IAsyncDisposable
                 if (person is null) return;
 
                 translations.PushRange(person.Translations.Translations.ToList()
-                    .ConvertAll<Translation>(x => new Translation(x, person)).ToArray());
+                    .ConvertAll<Translation>(translation => new Translation{
+                            Iso31661 = translation.Iso31661,
+                            Iso6391 = translation.Iso6391,
+                            Name = translation.Name == "" ? null : translation.Name,
+                            EnglishName = translation.EnglishName,
+                            Biography = translation.TmdbPersonTranslationData.Overview,
+                            PersonId = person.Id,
+                        }).ToArray());
             });
 
             await using var mediaContext = new MediaContext();
@@ -740,7 +805,7 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
             throw;
         }
     }
@@ -752,10 +817,110 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         GC.WaitForPendingFinalizers();
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         GC.Collect();
         GC.WaitForFullGCComplete();
         GC.WaitForPendingFinalizers();
+
+        return new ValueTask(Task.CompletedTask);
     }
 }
+
+    public class PersonCast: Cast
+    {
+        public PersonCast(TmdbCast tmdbCast, TmdbMovie tmdbMovieAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv,
+            TmdbSeason tmdbSeason,
+            IEnumerable<Role> roles)
+        {
+            CreditId = tmdbCast.CreditId;
+            PersonId = tmdbCast.Id;
+            MovieId = tmdbMovieAppends.Id;
+            RoleId = roles.Where(r => r.CreditId == tmdbCast.CreditId)?.FirstOrDefault()?.Id;
+        }
+
+        public PersonCast(TmdbCast tmdbCast, TmdbTvShowAppends tmdbTvAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv,
+            TmdbSeason tmdbSeason,
+            IEnumerable<Role> roles)
+        {
+            CreditId = tmdbCast.CreditId;
+            PersonId = tmdbCast.Id;
+            TvId = tmdbTvAppends.Id;
+            RoleId = roles.Where(r => r.CreditId == tmdbCast.CreditId)?.FirstOrDefault()?.Id;
+        }
+
+        public PersonCast(TmdbCast tmdbCast, TmdbSeason tmdbSeasonAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv,
+            TmdbSeason tmdbSeason,
+            IEnumerable<Role> roles)
+        {
+            CreditId = tmdbCast.CreditId;
+            PersonId = tmdbCast.Id;
+            SeasonId = tmdbSeasonAppends.Id;
+            RoleId = roles.Where(r => r.CreditId == tmdbCast.CreditId)?.FirstOrDefault()?.Id;
+        }
+
+        public PersonCast(TmdbCast tmdbCast, TmdbEpisode tmdbEpisodeAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv,
+            TmdbSeason tmdbSeason,
+            IEnumerable<Role> roles)
+        {
+            CreditId = tmdbCast.CreditId;
+            PersonId = tmdbCast.Id;
+            EpisodeId = tmdbEpisodeAppends.Id;
+            RoleId = roles.FirstOrDefault(r => r.CreditId == tmdbCast.CreditId)?.Id;
+        }
+    }
+
+    public class PersonCrew : Crew
+    {
+        private readonly TmdbMovie _tmdbMovie;
+        private readonly TmdbTvShowAppends _tmdbTv;
+        private readonly TmdbSeason _tmdbSeason;
+
+        public PersonCrew(TmdbCrew tmdbCrew, TmdbMovie tmdbMovieAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
+            IEnumerable<Job> jobs)
+        {
+            _tmdbMovie = tmdbMovie;
+            _tmdbTv = tmdbTv;
+            _tmdbSeason = tmdbSeason;
+            CreditId = tmdbCrew.CreditId;
+            PersonId = tmdbCrew.Id;
+            MovieId = tmdbMovieAppends.Id;
+            JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
+        }
+        
+        public PersonCrew(TmdbCrew tmdbCrew, TmdbTvShowAppends tmdbTvAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
+            IEnumerable<Job> jobs)
+        {
+            _tmdbMovie = tmdbMovie;
+            _tmdbTv = tmdbTv;
+            _tmdbSeason = tmdbSeason;
+            CreditId = tmdbCrew.CreditId;
+            PersonId = tmdbCrew.Id;
+            TvId = tmdbTvAppends.Id;
+            JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
+        }
+        
+        public PersonCrew(TmdbCrew tmdbCrew, TmdbSeason tmdbSeasonAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
+            IEnumerable<Job> jobs)
+        {
+            _tmdbMovie = tmdbMovie;
+            _tmdbTv = tmdbTv;
+            _tmdbSeason = tmdbSeason;
+            CreditId = tmdbCrew.CreditId;
+            PersonId = tmdbCrew.Id;
+            SeasonId = tmdbSeasonAppends.Id;
+            JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
+        }
+        
+        public PersonCrew(TmdbCrew tmdbCrew, TmdbEpisode tmdbEpisodeAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
+            IEnumerable<Job> jobs)
+        {
+            _tmdbMovie = tmdbMovie;
+            _tmdbTv = tmdbTv;
+            _tmdbSeason = tmdbSeason;
+            CreditId = tmdbCrew.CreditId;
+            PersonId = tmdbCrew.Id;
+            EpisodeId = tmdbEpisodeAppends.Id;
+            JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
+        }
+    }

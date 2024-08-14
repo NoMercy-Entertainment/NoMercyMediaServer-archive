@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Providers.TADB.Client;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 
 namespace NoMercy.Server.app.Jobs;
 
@@ -86,7 +87,7 @@ public class MusicDescriptionJob : IShouldQueue
         catch (Exception e)
         {
             if(e.Message.Contains("404")) return;
-            Logger.AudioDb(e.Message, LogLevel.Verbose);
+            Logger.AudioDb(e.Message, LogEventLevel.Verbose);
         }
     }
     
@@ -136,7 +137,7 @@ public class MusicDescriptionJob : IShouldQueue
         catch (Exception e)
         {
             if(e.Message.Contains("404")) return;
-            Logger.AudioDb(e.Message, LogLevel.Verbose);
+            Logger.AudioDb(e.Message, LogEventLevel.Verbose);
         }
     }
 }

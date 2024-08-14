@@ -18,4 +18,22 @@ public static class Screen
     {
         return GetSystemMetrics(screenIndex);
     }
+    
+    public static bool IsDesktopEnvironment()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return true;
+        }
+
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return false;
+        
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WSL_DISTRO_NAME")))
+        {
+            return false;
+        }
+        
+        return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY"));
+
+    }
 }

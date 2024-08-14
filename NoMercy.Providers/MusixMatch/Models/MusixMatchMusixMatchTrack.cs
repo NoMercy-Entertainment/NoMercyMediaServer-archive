@@ -3,6 +3,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.MusixMatch.Models;
 

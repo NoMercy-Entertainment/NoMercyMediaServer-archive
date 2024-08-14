@@ -1,7 +1,10 @@
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using NoMercy.Providers.TMDB.Client;
 
 namespace NoMercy.Server.Logic.ImageLogic;
 
+[SupportedOSPlatform("windows10.0.18362")]
 public abstract class MovieDbImage : BaseImage
 {
     public static async Task<string> ColorPalette(string type, string? path, bool? download = true)

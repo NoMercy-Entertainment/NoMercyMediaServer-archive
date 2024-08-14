@@ -1,30 +1,290 @@
-// using System.Globalization;
-// using Microsoft.EntityFrameworkCore;
-// using NoMercy.Database;
-// using NoMercy.Helpers;
-// using NoMercy.Server.app.Jobs;
-// using NoMercy.Server.Logic;
-// using NoMercy.Server.system;
-
+using Microsoft.EntityFrameworkCore;
+using NoMercy.Database;
+using NoMercy.Database.Models;
+using NoMercy.Encoder;
+using NoMercy.Encoder.Core;
+using NoMercy.Encoder.Format.Audio;
+using NoMercy.Encoder.Format.Container;
+using NoMercy.Encoder.Format.Image;
+using NoMercy.Encoder.Format.Rules;
+using NoMercy.Encoder.Format.Subtitle;
+using NoMercy.Encoder.Format.Video;
 using NoMercy.Helpers;
-using NoMercy.Providers.TADB.Client;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Dithering;
+using SixLabors.ImageSharp.Processing.Processors.Quantization;
+using AppFiles = NoMercy.NmSystem.AppFiles;
 
 namespace NoMercy.Server;
 
 public class Dev
 {
-    // public class CollectionItem
-    // {
-    //     public int index { get; set; }
-    //     public string type { get; set; }
-    //     public string title { get; set; }
-    //     public int year { get; set; }
-    //     public int[] seasons { get; set; }
-    //     public int[] episodes { get; set; }
-    // }
-
-    public static void Run()
+    public static async void Run()
     {
+        // await using MediaContext mediaContext = new();
+        //
+        // var stream0 = new X264(VideoCodecs.H264Nvenc.Value)
+        //     .SetScale(FrameSizes._4k.Width, -2)
+        //     .SetConstantRateFactor(20)
+        //     .AllowHdr()
+        //     .SetHlsSegmentFilename(":type:_:framesize:/:type:_:framesize:")
+        //     .SetHlsPlaylistFilename(":type:_:framesize:/:type:_:framesize:")
+        //     .SetColorSpace(ColorSpaces.Yuv444p)
+        //     .SetPreset(VideoPresets.Slow)
+        //     .SetTune(VideoTunes.Hq)
+        //     .AddOpts("no-scenecut")
+        //     .AddOpts("keyint=48")
+        //     .AddCustomArgument("-x264opts", "no-scenecut")
+        //     .AddCustomArgument("-crf", 52);
+        //
+        // var stream1 = new X264(VideoCodecs.H264.Value)
+        //     .SetScale(FrameSizes._1080p.Width)
+        //     .SetConstantRateFactor(20)
+        //     .AllowHdr()
+        //     .SetHlsSegmentFilename(":type:_:framesize:/:type:_:framesize:")
+        //     .SetHlsPlaylistFilename(":type:_:framesize:/:type:_:framesize:")
+        //     .SetColorSpace(ColorSpaces.Yuv444p)
+        //     .SetPreset(VideoPresets.Slow)
+        //     .SetTune(VideoTunes.Film)
+        //     .AddOpts("no-scenecut")
+        //     .AddOpts("keyint", 48)
+        //     .AddCustomArgument("-x264opts", "no-scenecut");
+        //
+        // var stream2 = new X264(VideoCodecs.H264Nvenc.Value)
+        //     .SetScale(FrameSizes._4k.Width, -2)
+        //     .SetConstantRateFactor(20)
+        //     .ConvertHdrToSdr()
+        //     .SetHlsSegmentFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+        //     .SetHlsPlaylistFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+        //     .SetColorSpace(ColorSpaces.Yuv420p)
+        //     .SetPreset(VideoPresets.Slow)
+        //     .SetTune(VideoTunes.Hq)
+        //     .AddOpts("no-scenecut")
+        //     .AddOpts("keyint=48")
+        //     .AddCustomArgument("-x264opts", "no-scenecut");
+        //
+        // var stream3 = new X264(VideoCodecs.H264Nvenc.Value)
+        //     .SetScale(FrameSizes._1080p.Width)
+        //     .SetConstantRateFactor(20)
+        //     .ConvertHdrToSdr()
+        //     .SetHlsSegmentFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+        //     .SetHlsPlaylistFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+        //     .SetColorSpace(ColorSpaces.Yuv420p)
+        //     .SetPreset(VideoPresets.Slow)
+        //     .SetTune(VideoTunes.Hq)
+        //     .AddOpts("no-scenecut")
+        //     .AddOpts("keyint", 48)
+        //     .AddCustomArgument("-x264opts", "no-scenecut");
+        //
+        // var stream4 = new Aac()
+        //     .SetAudioChannels(2)
+        //     .SetAllowedLanguages([Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita])
+        //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
+        //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
+        //
+        // var stream5 = new DolbyDigitalPlus()
+        //     .SetAllowedLanguages([Languages.Eng])
+        //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
+        //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
+        //
+        // var stream6 = new DolbyDigital()
+        //     .SetAllowedLanguages([Languages.Eng])
+        //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
+        //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
+        //
+        // var stream7 = new Sprite()
+        //     .SetScale(256)
+        //     .SetFilename("thumbs_:framesize:");
+        //
+        // var stream8 = new Vtt()
+        //     .SetAllowedLanguages([Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita])
+        //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
+        //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
+        //
+        // var container = new Hls()
+        //     .SetHlsFlags("independent_segments")
+        //     .AddStream(stream0)
+        //     .AddStream(stream1)
+        //     .AddStream(stream2)
+        //     .AddStream(stream3)
+        //     .AddStream(stream4)
+        //     // .AddStream(stream5)
+        //     // .AddStream(stream6)
+        //     .AddStream(stream7);
+        //     // .AddStream(stream8);
+        //
+        // var ffmpeg = new FfMpeg()
+        //     // .Open("G:\\Marvels\\Films\\Download\\Iron.Man.2.2010.2160p.US.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT\\Iron.Man.2.2010.2160p.US.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv");
+        //     .Open("M:\\Films\\Films\\Sintel.(2010)\\original\\[SDR-HEVC] Sintel.mkv");
+        //     // .Open("C:\\Users\\Stoney\\AppData\\Local\\NoMercy_C#\\cache\\transcode\\[HDR-HEVC] Cosmos.Laundromat.S01E01.First.Cycle.mkv");
+        //
+        // var movie = await mediaContext.Movies
+        //     // .FirstOrDefaultAsync(x => x.Id == 10138); // Iron Man 2
+        //     .FirstOrDefaultAsync(x => x.Id == 45745); // Sintel
+        //     // .FirstOrDefaultAsync(x => x.Id == 358332); // Cosmos Laundromat
+        // if (movie == null) return;
+        //
+        // var folder = await mediaContext.Folders
+        //     .FirstOrDefaultAsync(x => x.Id == Ulid.Parse("01HQ5W67GRBPHJKNAZMDYKMVXA"));
+        // if (folder == null) return;
+        //
+        // var folderName = movie.CreateFolderName();
+        // var title = movie.CreateTitle();
+        // var fileName = movie.CreateFileName();
+        // var basePath = Path.Combine(folder.Path, folderName);
+        // // var basePath = "C:\\Users\\Stoney\\AppData\\Local\\NoMercy_C#\\cache\\transcode\\ironman";
+        // // var basePath = "C:\\Users\\Stoney\\AppData\\Local\\NoMercy_C#\\cache\\transcode\\sintel";
+        //
+        // ffmpeg.SetBasePath(basePath);
+        // ffmpeg.SetTitle(title);
+        // ffmpeg.ToFile(fileName);
+        //
+        // ffmpeg.AddContainer(container);
+        //
+        // ffmpeg.Build();
+        //
+        // var ffmpegFile = Path.Combine(AppFiles.CachePath, "ffmpeg.json");
+        //
+        // var fullCommand = ffmpeg.GetFullCommand();
+        // await File.WriteAllTextAsync(ffmpegFile, fullCommand);
+        //
+        // var progressMeta = new ProgressMeta()
+        // {
+        //     Id = movie.Id,
+        //     Title = title,
+        //     BaseFolder = basePath,
+        //     ShareBasePath = folder.Id + "/" + folderName,
+        //     AudioStreams = container.AudioStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.AudioCodec.SimpleValue}").ToList(),
+        //     VideoStreams = container.VideoStreams.Select(x => $"{x.StreamIndex}:{x.Scale.W}x{x.Scale.H}_{x.VideoCodec.SimpleValue}").ToList(),
+        //     SubtitleStreams = container.SubtitleStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.SubtitleCodec.SimpleValue}").ToList(),
+        //     HasGpu = container.VideoStreams.Any(x =>
+        //         x.VideoCodec.Value == VideoCodecs.H264Nvenc.Value || x.VideoCodec.Value == VideoCodecs.H265Nvenc.Value),
+        //     IsHDR = container.VideoStreams.Any(x => x.IsHdr),
+        // };
+        //
+        // var result = await FfMpeg.Run(fullCommand, basePath, progressMeta);
+        // Logger.Encoder(result);
+        //
+        // await stream7.BuildSprite(progressMeta);
+        //
+        // container.BuildMasterPlaylist();
+
+        // await Task.Run(async () =>
+        // {
+        //     await Task.Delay(10000);
+        //
+        //     Process process = new();
+        //     process.StartInfo = new ProcessStartInfo
+        //     {
+        //         WindowStyle = ProcessWindowStyle.Hidden,
+        //         FileName = AppFiles.FfmpegPath,
+        //         Arguments = "/C -h encoder=webp",
+        //         RedirectStandardOutput = true,
+        //         UseShellExecute = false,
+        //     };
+        //
+        //     process.Start();
+        // });
+
+
+
+
+
+
+
+
+        // await using MediaContext mediaContext = new();
+        // var images = await mediaContext.Images
+        //     .Where(image => image.Type == "backdrop" && image.FilePath != null && image.Width > 1920 && image.Height > 1080)
+        //     .Where(image => image.VoteAverage > 5)
+        //     .Where(image => image.MovieId != null || image.TvId != null)
+        //     .Where(e => e.Iso6391 == null || e.Iso6391 == "en" || e.Iso6391 == "" ||
+        //                 e.Iso6391 != CultureInfo.CurrentCulture.TwoLetterISOLanguageName)
+        //     // .GroupBy(image => image.MovieId ?? image.TvId)
+        //     .ToListAsync();
+        //
+        // Logger.LoggerConfig.Information(images.Take(5).ToJson());
+
+        // await Task.Run(async () =>
+        // {
+        //     await using MediaContext mediaContext = new();
+        //     var images = await mediaContext.Images
+        //         .Where(image => image.Type == "backdrop" && image.FilePath != null && image.Width > 1920 && image.Height > 1080)
+        //         .Where(image => image.VoteAverage > 5)
+        //         .Where(image => image.MovieId != null || image.TvId != null)
+        //         .Where(e => e.Iso6391 == null || e.Iso6391 == "en" || e.Iso6391 == "" ||
+        //                     e.Iso6391 != CultureInfo.CurrentCulture.TwoLetterISOLanguageName)
+        //         // .GroupBy(image => image.MovieId ?? image.TvId)
+        //         .ToListAsync();
+        //
+        //     Logger.App($"Processing {images.Count} Episode images");
+        //     
+        //     var day = new List<ScreenSaver>();
+        //
+        //     foreach (var image in images)
+        //     {
+        //         day.Add(new ScreenSaver{
+        //             Path = Path.Combine(AppFiles.ImagesPath, "original", image.FilePath!.Replace("/", "")),
+        //         });
+        //     }
+        //     
+        //     await Ticker(day.Shuffle().ToList());
+        // });
+
+        // await Task.Run(async () =>
+        // {
+        //     await using MediaContext mediaContext = new();
+        //     var images = await mediaContext.Images
+        //         .Where(image => image.Type == "backdrop" && image.FilePath != null)
+        //         .Where(image => image.MovieId != null || image.TvId != null)
+        //         .Where(e => e.Iso6391 != null && e.Iso6391 != "en" && e.Iso6391 != "" &&
+        //                     e.Iso6391 != CultureInfo.CurrentCulture.TwoLetterISOLanguageName)
+        //         .ToListAsync();
+        //
+        //     Logger.App($"Processing {images.Count} Episode images");
+        //
+        //     foreach (var image in images)
+        //     {
+        //         if(image.FilePath == null) continue;
+        //         
+        //         var path = Path.Combine(AppFiles.ImagesPath, "original", image.FilePath.Replace("/", ""));
+        //         // Logger.App(path);
+        //         if (!Path.Exists(path))
+        //         {
+        //             Logger.App($"Image not found: {path}");
+        //             mediaContext.Images.Remove(image);
+        //             // File.Delete(path);
+        //         }
+        //     }
+        //     
+        //     await mediaContext.SaveChangesAsync();
+        // });
+
+        // var input = await process.StandardOutput.ReadToEndAsync();
+        //     
+        // await process.WaitForExitAsync();
+        // input = input.Replace(Environment.NewLine, "\r\n");
+        //     
+        //     await File.WriteAllTextAsync("./output.txt", input);
+        //
+        // var pattern = @"Encoder (?<Encoder>\w+)\s\[(?<EncoderName>.*)\](?:.*[\r\n]{2}\s+)+?Supported pixel formats:\s(?<PixelFormats>.*)[\r\n]{2}.+\sAVOptions:[\r\n]{2}(?<Options>\s{2}(?<Options_flag>\-[\w-]+)\s+(?<Options_Type><\w*>|\d)\s+(?<Options_Codecs>[DEVASIL\.]{11})\s(?<Options_Description>.*)?[\r\n]{2}){2,}";
+        // string pattern = @"Encoder (?<Encpder>\w+)\s\[(?<EncoderName>.*)\](?:.*[\r\n]\s+)+?Supported pixel formats:\s(?<PixelFormats>.*)[\r\n].+\sAVOptions:[\r\n](?<Options>\s{2}(?<Options_flag>\-[\w-]+)\s+(?<Options_Type><\w*>|\d)\s+(?<Options_Codecs>[DEVASIL\.]{11})\s(?<Options_Description>.*)[\r\n]((?<Options_Type_Values>\s{5}(?<Options_Type_Values_Name>[\w\d\.-]+)\s+(?<Options_Type_Values_Value>-\d+|\d+|\w+)\s+(?<Options_Type_Values_Codecs>[DEVASIL\.]{11})(?<Options_Type_Values_Description>.*)[\r\n])+)?)+";
+
+        // var regex = new Regex(pattern, RegexOptions.Multiline,TimeSpan.FromMinutes(100));
+        // var matches = regex.Matches(input);
+        // Logger.Encoder(matches);
+
+        //     var regex = new Regex(pattern, RegexOptions.IgnorePatternWhitespace | RegexOptions.Multiline, TimeSpan.FromSeconds(300));
+        //     var matches = regex.Matches(input);
+        //     Logger.Encoder(input);
+        // 
+        // foreach (Match m in matches)
+        // {
+        //     Console.WriteLine("'{0}' found at index {1}.", m.Value, m.Index);
+        // }
+        // });
+
         // var artistClient = new ArtistClient();
         // var result = artistClient.ByMusicBrainzId(new Guid("056e4f3e-d505-4dad-8ec1-d04f521cbb56")).Result;
         // Logger.App(result?.Descriptions);
@@ -32,887 +292,6 @@ public class Dev
         // var releaseGroupClient = new ReleaseGroupClient();
         // var result2 = releaseGroupClient.ByMusicBrainzId(new Guid("f9e8042a-674e-3f01-80ec-7f0ab1c537df")).Result;
         // Logger.App(result2?.Descriptions);
-        
-        // Task.Run(async () =>
-        // {
-        // CollectionItem[] items = 
-        // [
-        //     new CollectionItem{ 
-        //         index = 1, 
-        //         type = "movie", 
-        //         title = "Captain America: The First Avenger",
-        //         year = 2011,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 2, 
-        //         type = "movie", 
-        //         title = "Marvel One-Shot: Agent Carter",
-        //         year = 2013,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 3, 
-        //         type = "tv", 
-        //         title = "Agent Carter",
-        //         year = 2015,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 4, 
-        //         type = "tv", 
-        //         title = "Agent Carter",
-        //         year = 2015,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 5, 
-        //         type = "movie", 
-        //         title = "Captain Marvel",
-        //         year = 2019,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 6, 
-        //         type = "movie", 
-        //         title = "Iron Man",
-        //         year = 2008,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 7, 
-        //         type = "movie", 
-        //         title = "Iron Man 2",
-        //         year = 2010,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 8, 
-        //         type = "movie", 
-        //         title = "The Incredible Hulk",
-        //         year = 2008,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 9, 
-        //         type = "movie", 
-        //         title = "The Consultant",
-        //         year = 2011,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 10, 
-        //         type = "movie", 
-        //         title = "A Funny Thing Happened on the Way to Thor's Hammer",
-        //         year = 2011,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 11, 
-        //         type = "movie", 
-        //         title = "Thor",
-        //         year = 2011,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 12, 
-        //         type = "movie", 
-        //         title = "The Avengers",
-        //         year = 2012,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 13, 
-        //         type = "movie", 
-        //         title = "Item 47",
-        //         year = 2012,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 14, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [1],
-        //         episodes = [1,2,3,4,5,6,7],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 15, 
-        //         type = "movie", 
-        //         title = "Thor: The Dark World",
-        //         year = 2013,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 16, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [1],
-        //         episodes = [8,9,10,11,12,13,14,15,16],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 17, 
-        //         type = "movie", 
-        //         title = "Iron Man 3",
-        //         year = 2013,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 18, 
-        //         type = "movie", 
-        //         title = "All Hail the King",
-        //         year = 2014,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 19, 
-        //         type = "movie", 
-        //         title = "Captain America: The Winter Soldier",
-        //         year = 2014,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 20, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [1],
-        //         episodes = [17,18,19,20,21,22],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 21, 
-        //         type = "movie", 
-        //         title = "Guardians of the Galaxy",
-        //         year = 2014,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 22, 
-        //         type = "movie", 
-        //         title = "Guardians of the Galaxy Vol 2",
-        //         year = 2017,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 23, 
-        //         type = "tv", 
-        //         title = "I Am Groot",
-        //         year = 2022,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 24, 
-        //         type = "tv", 
-        //         title = "I Am Groot",
-        //         year = 2022,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 25, 
-        //         type = "tv", 
-        //         title = "Daredevil",
-        //         year = 2015,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 26, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [2],
-        //         episodes = [1,2,3,4,5,6,7,8,9,10],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 27, 
-        //         type = "tv", 
-        //         title = "Jessica Jones",
-        //         year = 2015,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 28, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [2],
-        //         episodes = [11,12,13,14,15,16,17,18,19],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 29, 
-        //         type = "movie", 
-        //         title = "Avengers: Age of Ultron",
-        //         year = 2015,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 30, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [2],
-        //         episodes = [20,21,22],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 31, 
-        //         type = "tv", 
-        //         title = "Daredevil",
-        //         year = 2015,
-        //         seasons = [2],
-        //         episodes = [1,2,3,4],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 32, 
-        //         type = "tv", 
-        //         title = "Luke Cage",
-        //         year = 2016,
-        //         seasons = [1],
-        //         episodes = [1,2,3,4],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 33, 
-        //         type = "tv", 
-        //         title = "Daredevil",
-        //         year = 2015,
-        //         seasons = [2],
-        //         episodes = [5,6,7,8,9,10,11],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 34, 
-        //         type = "tv", 
-        //         title = "Luke Cage",
-        //         year = 2016,
-        //         seasons = [1],
-        //         episodes = [5,6,7,8],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 35, 
-        //         type = "tv", 
-        //         title = "Daredevil",
-        //         year = 2015,
-        //         seasons = [2],
-        //         episodes = [12,13],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 36, 
-        //         type = "tv", 
-        //         title = "Luke Cage",
-        //         year = 2016,
-        //         seasons = [1],
-        //         episodes = [9,10,11,12,13],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 37, 
-        //         type = "movie", 
-        //         title = "Ant-Man",
-        //         year = 2015,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 38, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [3],
-        //         episodes = [1,2,3,4,5,6,7,8,9,10],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 39, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [3],
-        //         episodes = [11,12,13,14,15,16,17,18,19],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 40, 
-        //         type = "tv", 
-        //         title = "Iron Fist",
-        //         year = 2017,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 41, 
-        //         type = "movie", 
-        //         title = "Captain America: Civil War",
-        //         year = 2016,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 42, 
-        //         type = "movie", 
-        //         title = "Team Thor",
-        //         year = 2016,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 43, 
-        //         type = "movie", 
-        //         title = "Team Thor: Part 2",
-        //         year = 2017,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 44, 
-        //         type = "movie", 
-        //         title = "Black Widow",
-        //         year = 2021,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 45, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [3],
-        //         episodes = [20,21,22],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 46, 
-        //         type = "tv", 
-        //         title = "The Defenders",
-        //         year = 2017,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 47, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [4],
-        //         episodes = [1,2,3,4,5,6],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 48, 
-        //         type = "movie", 
-        //         title = "Doctor Strange",
-        //         year = 2016,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 49, 
-        //         type = "movie", 
-        //         title = "Black Panther",
-        //         year = 2018,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 50, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [4],
-        //         episodes = [7,8],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 51, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD: Slingshot",
-        //         year = 2016,
-        //         seasons = [1],
-        //         episodes = [1,2,3,4,5,6],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 52, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [4],
-        //         episodes = [9,10,11,12,13,14,15,16,17,18,19,20,21,22],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 53, 
-        //         type = "movie", 
-        //         title = "Spider-Man: Homecoming",
-        //         year = 2017,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 54, 
-        //         type = "movie", 
-        //         title = "Thor: Ragnarok",
-        //         year = 2017,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 55, 
-        //         type = "movie", 
-        //         title = "Team Darryl",
-        //         year = 2018,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 56, 
-        //         type = "tv", 
-        //         title = "Inhumans",
-        //         year = 2017,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 57, 
-        //         type = "tv", 
-        //         title = "The Punisher",
-        //         year = 2017,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 58, 
-        //         type = "tv", 
-        //         title = "Runaways",
-        //         year = 2017,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 59, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [5],
-        //         episodes = [1,2,3,4,5,6,7,8,9,10],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 60, 
-        //         type = "tv", 
-        //         title = "Jessica Jones",
-        //         year = 2015,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 61, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [5],
-        //         episodes = [11,12,13,14,15,16,17,18],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 62, 
-        //         type = "tv", 
-        //         title = "Cloak & Dagger",
-        //         year = 2018,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 63, 
-        //         type = "tv", 
-        //         title = "Cloak & Dagger",
-        //         year = 2018,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 64, 
-        //         type = "tv", 
-        //         title = "Luke Cage",
-        //         year = 2016,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 65, 
-        //         type = "tv", 
-        //         title = "Iron Fist",
-        //         year = 2017,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 66, 
-        //         type = "tv", 
-        //         title = "Daredevil",
-        //         year = 2015,
-        //         seasons = [3],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 67, 
-        //         type = "tv", 
-        //         title = "Runaways",
-        //         year = 2017,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 68, 
-        //         type = "tv", 
-        //         title = "The Punisher",
-        //         year = 2017,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 69, 
-        //         type = "tv", 
-        //         title = "Jessica Jones",
-        //         year = 2015,
-        //         seasons = [3],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 70, 
-        //         type = "movie", 
-        //         title = "Ant-Man and the Wasp",
-        //         year = 2018,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 71, 
-        //         type = "movie", 
-        //         title = "Avengers: Infinity War",
-        //         year = 2018,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 72, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [5],
-        //         episodes = [19,20,21,22],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 73, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [6],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 74, 
-        //         type = "tv", 
-        //         title = "Agents of SHIELD",
-        //         year = 2013,
-        //         seasons = [7],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 75, 
-        //         type = "tv", 
-        //         title = "Runaways",
-        //         year = 2017,
-        //         seasons = [3],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 76, 
-        //         type = "movie", 
-        //         title = "Avengers: Endgame",
-        //         year = 2019,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 77, 
-        //         type = "tv", 
-        //         title = "Loki",
-        //         year = 2021,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 78, 
-        //         type = "tv", 
-        //         title = "Loki",
-        //         year = 2021,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 79, 
-        //         type = "tv", 
-        //         title = "What If...?",
-        //         year = 2021,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 80, 
-        //         type = "tv", 
-        //         title = "What If...?",
-        //         year = 2021,
-        //         seasons = [2],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 81, 
-        //         type = "tv", 
-        //         title = "WandaVision",
-        //         year = 2021,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 82, 
-        //         type = "tv", 
-        //         title = "The Falcon and the Winter Soldier",
-        //         year = 2021,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 83, 
-        //         type = "movie", 
-        //         title = "Shang-Chi and the Legend of the Ten Rings",
-        //         year = 2021,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 84, 
-        //         type = "movie", 
-        //         title = "Eternals",
-        //         year = 2021,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 85, 
-        //         type = "movie", 
-        //         title = "Spider-Man: Far From Home",
-        //         year = 2019,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 86, 
-        //         type = "movie", 
-        //         title = "Spider-Man: No Way Home",
-        //         year = 2021,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 87, 
-        //         type = "movie", 
-        //         title = "Doctor Strange in the Multiverse of Madness",
-        //         year = 2022,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 88, 
-        //         type = "tv", 
-        //         title = "Hawkeye",
-        //         year = 2021,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 89, 
-        //         type = "tv", 
-        //         title = "Moon Knight",
-        //         year = 2022,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 90, 
-        //         type = "movie", 
-        //         title = "Black Panther: Wakanda Forever",
-        //         year = 2022,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 91, 
-        //         type = "tv", 
-        //         title = "Echo",
-        //         year = 2024,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 92, 
-        //         type = "tv", 
-        //         title = "She-Hulk: Attorney at Law",
-        //         year = 2022,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 93, 
-        //         type = "tv", 
-        //         title = "Ms Marvel",
-        //         year = 2022,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 94, 
-        //         type = "movie", 
-        //         title = "Thor: Love and Thunder",
-        //         year = 2022,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 95, 
-        //         type = "movie", 
-        //         title = "Werewolf by Night",
-        //         year = 2022,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 96, 
-        //         type = "movie", 
-        //         title = "The Guardians of the Galaxy Holiday Special",
-        //         year = 2022,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 97, 
-        //         type = "movie", 
-        //         title = "Ant-Man and The Wasp: Quantumania",
-        //         year = 2023,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 98, 
-        //         type = "movie", 
-        //         title = "Guardians of the Galaxy Vol 3",
-        //         year = 2023,
-        //     },
-        //     new CollectionItem{ 
-        //         index = 99, 
-        //         type = "tv", 
-        //         title = "Secret Invasion",
-        //         year = 2023,
-        //         seasons = [1],
-        //         episodes = [],
-        //     },
-        //     new CollectionItem{ 
-        //         index = 100, 
-        //         type = "movie", 
-        //         title = "The Marvels",
-        //         year = 2023,
-        //     },
-        // ];
-        //
-        // using MediaContext context = new();
-        //             
-        // var movieLibrary = context.Libraries
-        //     .Where(f => f.Type == "movie")
-        //     .Include(l => l.FolderLibraries)
-        //     .ThenInclude(fl => fl.Folder)
-        //     .FirstOrDefault();
-        //
-        // var tvLibrary = context.Libraries
-        //     .Where(f => f.Type == "tv")
-        //     .Include(l => l.FolderLibraries)
-        //     .ThenInclude(fl => fl.Folder)
-        //     .FirstOrDefault();
-        //
-        // SearchClient client = new();
-        // List<int> tvIds = [];
-        // List<int> movieIds = [];     
-        // List<SpecialItem> specialItems = [];
-        //
-        // Parallel.ForEachAsync(items, async (item, _) =>
-        // {
-        //     Logger.App($"Searching for {item.title} ({item.year})");
-        //     switch (item.type)
-        //     {
-        //         case "movie":
-        //         {
-        //             var result = client.Movie(item.title, item.year.ToString()).Result;
-        //             var movie = result?.Results.FirstOrDefault(
-        //                 r => r.Title.ToLower().Contains("making of") == false);
-        //
-        //             if (movie is null) return;
-        //             if (movieIds.Contains(movie.Id)) return;
-        //
-        //             movieIds.Add(movie.Id);
-        //
-        //             try
-        //             {
-        //                 await using MovieLogic movieLogic = new(movie.Id, movieLibrary);
-        //                 await movieLogic.Process();
-        //             }
-        //             catch (Exception e)
-        //             {
-        //                 Console.WriteLine(e);
-        //                 throw;
-        //             }
-        //
-        //             break;
-        //         }
-        //         case "tv":
-        //         {
-        //             var result = client.TvShow(item.title, item.year.ToString()).Result;
-        //             var tv = result?.Results.FirstOrDefault(r => r.Name.ToLower().Contains("making of") == false);
-        //
-        //             if (tv is null) return;
-        //             if (tvIds.Contains(tv.Id)) return;
-        //
-        //             tvIds.Add(tv.Id);
-        //
-        //             try
-        //             {
-        //                 await using TvShowLogic tvShowLogic = new(tv.Id, tvLibrary);
-        //                 await tvShowLogic.Process();
-        //             }
-        //             catch (Exception e)
-        //             {
-        //                 Console.WriteLine(e);
-        //                 throw;
-        //             }
-        //
-        //             break;
-        //         }
-        //     }
-        // });
-        //
-        // foreach (var item in items)
-        // {
-        //     Logger.App($"Searching for {item.title} ({item.year})");
-        //     switch (item.type)
-        //     {
-        //         case "movie":
-        //         {
-        //             var result = client.Movie(item.title, item.year.ToString()).Result;
-        //             var movie = result?.Results.FirstOrDefault(r => r.Title.ToLower().Contains("making of") == false);
-        //             if (movie is null) continue;
-        //
-        //             specialItems.Add(new SpecialItem
-        //             {
-        //                 SpecialId = Ulid.Parse("01HSBYSE7ZNGN7P586BQJ7W9ZB"),
-        //                 MovieId = movie.Id,
-        //                 Order = specialItems.Count,
-        //             });
-        //             
-        //             break;
-        //         }
-        //         case "tv":
-        //         {
-        //             var result = client.TvShow(item.title, item.year.ToString()).Result;
-        //             var tv = result?.Results.FirstOrDefault(r => r.Name.ToLower().Contains("making of") == false);
-        //             if (tv is null) continue;
-        //
-        //             if (item.episodes is null)
-        //             {
-        //                 Logger.App(item);
-        //                 throw new Exception("Episodes is null");
-        //             }
-        //
-        //             if (item.episodes.Length == 0)
-        //             {
-        //                 item.episodes = context.Episodes
-        //                     .Where(x => x.TvId == tv.Id)
-        //                     .Where(x => x.SeasonNumber == item.seasons[0])
-        //                     .Select(x => x.EpisodeNumber)
-        //                     .ToArray();
-        //             }
-        //             
-        //             foreach (var episodeNumber in item.episodes ?? [])
-        //             {
-        //                 var episode = context.Episodes
-        //                     .FirstOrDefault(x =>
-        //                         x.TvId == tv.Id 
-        //                         && x.SeasonNumber == item.seasons[0] 
-        //                         && x.EpisodeNumber == episodeNumber);
-        //                 
-        //                 if (episode is null) continue;
-        //
-        //                 specialItems.Add(new SpecialItem
-        //                 {
-        //                     SpecialId = Ulid.Parse("01HSBYSE7ZNGN7P586BQJ7W9ZB"),
-        //                     EpisodeId = episode.Id,
-        //                     Order = specialItems.Count,
-        //                 });
-        //             }
-        //             
-        //             break;
-        //         }
-        //     }
-        // }
-        //
-        // Logger.App($"Upserting {specialItems.Count} SpecialItems");
-        // context.SpecialItems.UpsertRange(specialItems.Where(s => s.MovieId is not null))
-        //     .On(x => new { x.SpecialId, x.MovieId })
-        //     .WhenMatched((old, @new) => new SpecialItem
-        //     {
-        //         SpecialId = @new.SpecialId,
-        //         MovieId = @new.MovieId,
-        //         Order = @new.Order,
-        //     })
-        //     .Run();
-        // context.SpecialItems.UpsertRange(specialItems.Where(s => s.EpisodeId is not null))
-        //     .On(x => new { x.SpecialId, x.EpisodeId })
-        //     .WhenMatched((old, @new) => new SpecialItem
-        //     {
-        //         SpecialId = @new.SpecialId,
-        //         EpisodeId = @new.EpisodeId,
-        //         Order = @new.Order,
-        //     })
-        //     .Run();
-
-        // });
-
 
         // Task.Run(async () =>
         // {
@@ -1143,4 +522,70 @@ public class Dev
         //     }
         // });
     }
+    //
+    // public static string GetDominantColor(string path)
+    // {
+    //     using var image = SixLabors.ImageSharp.Image.Load<Rgb24>(path);
+    //     image.Mutate(
+    //         x => x
+    //             // Scale the image down preserving the aspect ratio. This will speed up quantization.
+    //             // We use nearest neighbor as it will be the fastest approach.
+    //             .Resize(new ResizeOptions()
+    //             {
+    //                 Sampler = KnownResamplers.NearestNeighbor, 
+    //                 Size = new SixLabors.ImageSharp.Size(100, 0)
+    //             })
+    //             // Reduce the color palette to 1 color without dithering.
+    //             .Quantize(new OctreeQuantizer
+    //             {
+    //                 Options =
+    //                 {
+    //                     MaxColors = 1, 
+    //                     Dither = new OrderedDither(1),
+    //                     DitherScale = 1
+    //                 }
+    //             }));
+    //
+    //     var dominant = image[0, 0];
+    //         
+    //     return dominant.ToHexString();
+    //
+    // }
+    // private static int _day = 0;
+    // // private const int TotalSecondsInDay = 24 * 60 * 60;
+    //
+    // private class ScreenSaver
+    // {
+    //     public string Path { get; set; } = "";
+    //     // public string Color { get; set; } = "#000000";
+    // }
+    //
+    // private static async Task Ticker(List<ScreenSaver> list)
+    // {
+    //     Logger.App("Starting Ticker");
+    //
+    //     // var intervalSeconds = TotalSecondsInDay / list.Count;
+    //     using var itemTimer = new PeriodicTimer(TimeSpan.FromSeconds(300));
+    //     
+    //     _day = new Random().Next(0, list.Count);
+    //
+    //     do
+    //     {
+    //         if (_day >= list.Count)
+    //         {
+    //             _day = 0;
+    //         }
+    //
+    //         var path = list[_day];
+    //
+    //         Logger.App("New Item: " + path.Path);
+    //
+    //         var color = GetDominantColor(Path.Combine(AppFiles.ImagesPath, "original", path.Path.Replace("/", "")));
+    //
+    //         Wallpaper.SilentSet(path.Path, WallpaperStyle.Fit, color);
+    //
+    //         _day++;
+    //     }
+    //     while (await itemTimer.WaitForNextTickAsync());
+    // }
 }

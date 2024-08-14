@@ -1,8 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
-using NoMercy.Providers.TMDB.Models.Collections;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -41,15 +39,15 @@ public class Collection : ColorPalettes
     {
     }
 
-    public Collection(TmdbCollectionAppends tmdbCollection, Ulid libraryId)
-    {
-        Id = tmdbCollection.Id;
-        Title = tmdbCollection.Name;
-        TitleSort = tmdbCollection.Name.TitleSort(tmdbCollection.Parts.MinBy(movie => movie.ReleaseDate)?.ReleaseDate);
-        Backdrop = tmdbCollection.BackdropPath;
-        Poster = tmdbCollection.PosterPath;
-        Overview = tmdbCollection.Overview;
-        Parts = tmdbCollection.Parts.Length;
-        LibraryId = libraryId;
-    }
+    // public Collection(TmdbCollectionAppends tmdbCollection, Ulid libraryId)
+    // {
+    //     Id = tmdbCollection.Id;
+    //     Title = tmdbCollection.Name;
+    //     TitleSort = tmdbCollection.Name.TitleSort(tmdbCollection.Parts.MinBy(movie => movie.ReleaseDate)?.ReleaseDate);
+    //     Backdrop = tmdbCollection.BackdropPath;
+    //     Poster = tmdbCollection.PosterPath;
+    //     Overview = tmdbCollection.Overview;
+    //     Parts = tmdbCollection.Parts.Length;
+    //     LibraryId = libraryId;
+    // }
 }

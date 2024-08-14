@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
+[Index(nameof(UserId)), Index(nameof(TrackId))]
 public class MusicPlay : Timestamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

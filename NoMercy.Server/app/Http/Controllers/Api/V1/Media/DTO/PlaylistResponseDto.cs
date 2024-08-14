@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
-using NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
+using NoMercy.NmSystem;
 using NoMercy.Server.Logic;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -64,7 +63,7 @@ public record PlaylistResponseDto
         Show = index is not null
             ? null
             : tvTitle;
-        Origin = SystemInfo.DeviceId;
+        Origin = Info.DeviceId;
         Uuid = episode.Tv.Id + episode.Id;
         VideoId = videoFile.Id;
         Duration = videoFile.Duration ?? "0";
@@ -77,7 +76,7 @@ public record PlaylistResponseDto
             {
                 Percentage =
                     (int)Math.Round((double)(100 * (userData.Time ?? 0)) / (videoFile.Duration?.ToSeconds() ?? 0)),
-                Date = userData?.UpdatedAt
+                Date = userData.UpdatedAt
             }
             : null;
         Poster = episode.Tv.Poster is not null ? "https://image.tmdb.org/t/p/w300" + episode.Tv.Poster : null;
@@ -91,7 +90,8 @@ public record PlaylistResponseDto
                 Type = videoFile.Filename.Contains(".mp4")
                     ? "video/mp4"
                     : "application/x-mpegURL",
-                Languages = JsonConvert.DeserializeObject<string[]>(videoFile.Languages)
+                Languages = JsonConvert.DeserializeObject<string?[]>(videoFile.Languages)
+                    ?.Where(lang => lang != null).ToArray()
             }
         ];
         Fonts = subs.Fonts;
@@ -123,12 +123,6 @@ public record PlaylistResponseDto
                 File = $"{baseFolder}/fonts.json",
                 Kind = "fonts"
             },
-
-            new TrackDto()
-            {
-                File = "",
-                Kind = "thumbnails"
-            }
         ];
         TextTracks = subs.TextTracks;
 
@@ -155,7 +149,7 @@ public record PlaylistResponseDto
         Id = movie.Id;
         Title = title;
         Description = overview;
-        Origin = SystemInfo.DeviceId;
+        Origin = Info.DeviceId;
         Uuid = movie.Id;
         VideoId = videoFile.Id;
         Duration = videoFile.Duration ?? "0";
@@ -168,7 +162,7 @@ public record PlaylistResponseDto
             {
                 Percentage =
                     (int)Math.Round((double)(100 * (userData.Time ?? 0)) / (videoFile.Duration?.ToSeconds() ?? 0)),
-                Date = userData?.UpdatedAt
+                Date = userData.UpdatedAt
             }
             : null;
         Poster = movie.Poster is not null ? "https://image.tmdb.org/t/p/w300" + movie.Poster : null;
@@ -182,7 +176,8 @@ public record PlaylistResponseDto
                 Type = videoFile.Filename.Contains(".mp4")
                     ? "video/mp4"
                     : "application/x-mpegURL",
-                Languages = JsonConvert.DeserializeObject<string[]>(videoFile.Languages)
+                Languages = JsonConvert.DeserializeObject<string?[]>(videoFile.Languages)
+                    ?.Where(lang => lang != null).ToArray()
             }
         ];
         Fonts = subs.Fonts;
@@ -191,7 +186,7 @@ public record PlaylistResponseDto
         [
             new TrackDto()
             {
-                File = $"{baseFolder}/previews.vtt",
+                File = $"{baseFolder}/thumbs_256x144.vtt",
                 Kind = "thumbnails"
             },
             new TrackDto()
@@ -206,7 +201,7 @@ public record PlaylistResponseDto
             },
             new TrackDto()
             {
-                File = $"{baseFolder}/sprite.webp",
+                File = $"{baseFolder}/thumbs_256x144.webp",
                 Kind = "sprite"
             },
             new TrackDto()
@@ -237,7 +232,7 @@ public record PlaylistResponseDto
         public string FontsFile { get; set; }
     }
 
-    private Subs Subtitles(VideoFile videoFile)
+    private static Subs Subtitles(VideoFile videoFile)
     {
         var baseFolder = $"/{videoFile.Share}{videoFile.Folder}";
 
@@ -297,7 +292,7 @@ public record SourceDto
 {
     [JsonProperty("src")] public string Src { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
-    [JsonProperty("languages")] public string[]? Languages { get; set; }
+    [JsonProperty("languages")] public string?[]? Languages { get; set; }
 }
 
 public record TextTrackDto

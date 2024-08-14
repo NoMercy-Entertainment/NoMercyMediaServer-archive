@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.Logic;
 using NoMercy.Server.system;
@@ -51,9 +52,7 @@ public class FindMediaFilesJob : IShouldQueue
                 .ThenInclude(lt => lt.Tv)
             
             .FirstOrDefaultAsync();
-
-        Logger.Queue($"Found library {library?.Id} with {library?.FolderLibraries.Count} folders");
-
+        
         if (library == null) return;
 
         await using FileLogic file = new(Id, library);
@@ -61,44 +60,36 @@ public class FindMediaFilesJob : IShouldQueue
 
         if (file.Files.Count > 0)
         {
-            Logger.MovieDb($@"Found {file.Files.Count} files in {file.Files.FirstOrDefault()?.Path}");
-            Console.WriteLine("");
+            Logger.App($"Found {file.Files.Count} files in {file.Files.FirstOrDefault()?.Path}");
 
-            // if(library.LibraryMovies.Count > 0)
-            // {
-            //     LibraryMovie? libraryMovie = library.LibraryMovies?.FirstOrDefault();
-            //     if (libraryMovie == null) return;
-            //     
-            //     libraryMovie.Movie.Folder = file.Files.FirstOrDefault()?.Path;
-            //
-            //     await context.SaveChangesAsync();
-            //     
-            // }
-            // else if(library.LibraryTvs.Count > 0)
-            // {
-            //     LibraryTv? libraryTv = library.LibraryTvs?.FirstOrDefault();
-            //     if (libraryTv == null) return;
-            //     
-            //     libraryTv.Tv.Folder = file.Files.FirstOrDefault()?.Path;
-            //     
-            //     await context.SaveChangesAsync();
-            //     
-            // }
+            if(library.LibraryMovies.Count > 0)
+            {
+                var libraryMovie = library.LibraryMovies?.FirstOrDefault();
+                if (libraryMovie == null) return;
+                
+                libraryMovie.Movie.Folder = file.Files.FirstOrDefault()?.Path;
+            
+                await context.SaveChangesAsync();
+            }
+            else if(library.LibraryTvs.Count > 0)
+            {
+                var libraryTv = library.LibraryTvs?.FirstOrDefault();
+                if (libraryTv == null) return;
+                
+                libraryTv.Tv.Folder = file.Files.FirstOrDefault()?.Path;
+                
+                await context.SaveChangesAsync();
+            }
 
-            Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+            Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
             {
                 QueryKey = ["libraries", library.Id.ToString()]
             });
         }
 
-        Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
             QueryKey = [library.Type == "movie" ? "movie" : "tv", Id]
         });
     }
-}
-
-public class RefreshLibraryDto
-{
-    [JsonProperty("queryKey")] public dynamic?[] QueryKey { get; set; } = [];
 }

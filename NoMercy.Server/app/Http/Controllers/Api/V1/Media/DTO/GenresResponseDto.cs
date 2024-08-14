@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
@@ -120,8 +120,8 @@ public record GenresResponseItemDto
         MediaType = "tv";
 
         NumberOfItems = tv.Tv.NumberOfEpisodes;
-        HaveItems = tv.Tv.Episodes?.Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null)) ??
-                    0;
+        HaveItems = tv.Tv.Episodes
+            .Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null));
 
         Genres = tv.Tv.GenreTvs
             .Select(genreTv => new GenreDto(genreTv))
@@ -190,17 +190,16 @@ public record GenresResponseItemDto
         Type = "collection";
 
         NumberOfItems = collection.Parts;
-        HaveItems = collection.CollectionMovies?
-            .Where(collectionMovie => collectionMovie.Movie.VideoFiles.Any(v => v.Folder != null))
-            .Count() ?? 0;
-        Genres = collection.CollectionMovies?
+        HaveItems = collection.CollectionMovies
+            .Count(collectionMovie => collectionMovie.Movie.VideoFiles.Any(v => v.Folder != null));
+        Genres = collection.CollectionMovies
             .Select(genreTv => genreTv.Movie)
-            .SelectMany(movie => movie.GenreMovies?
-                .Select(genreMovie => genreMovie.Genre) ?? [])
+            .SelectMany(movie => movie.GenreMovies
+                .Select(genreMovie => genreMovie.Genre))
             .Select(genre => new GenreDto(genre))
-            .ToArray() ?? [];
+            .ToArray();
 
-        VideoId = collection.CollectionMovies?
+        VideoId = collection.CollectionMovies
             .FirstOrDefault()
             ?.Movie.Video;
     }

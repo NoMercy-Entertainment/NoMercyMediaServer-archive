@@ -3,7 +3,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Database.Models;
 
@@ -30,27 +29,27 @@ public class Role
     {
     }
 
-    public Role(TmdbAggregatedCreditRole role)
-    {
-        Character = role.Character;
-        EpisodeCount = role.EpisodeCount;
-        Order = role.Order;
-        CreditId = role.CreditId;
-    }
-
-    public Role(Providers.TMDB.Models.Shared.TmdbCast tmdbCast)
-    {
-        Character = tmdbCast.Character;
-        CreditId = tmdbCast.CreditId;
-        Order = tmdbCast.Order;
-        EpisodeCount = 0;
-    }
-
-    public Role(Providers.TMDB.Models.Shared.TmdbGuestStar tmdbGuest)
-    {
-        Character = tmdbGuest.CharacterName;
-        CreditId = tmdbGuest.CreditId;
-        Order = tmdbGuest.Order;
-        EpisodeCount = 0;
-    }
+    // public Role(TmdbAggregatedCreditRole role)
+    // {
+    //     Character = role.Character;
+    //     EpisodeCount = role.EpisodeCount;
+    //     Order = role.Order;
+    //     CreditId = role.CreditId;
+    // }
+    //
+    // public Role(Providers.TMDB.Models.Shared.TmdbCast tmdbCast)
+    // {
+    //     Character = tmdbCast.Character;
+    //     CreditId = tmdbCast.CreditId;
+    //     Order = tmdbCast.Order;
+    //     EpisodeCount = 0;
+    // }
+    //
+    // public Role(Providers.TMDB.Models.Shared.TmdbGuestStar tmdbGuest)
+    // {
+    //     Character = tmdbGuest.CharacterName;
+    //     CreditId = tmdbGuest.CreditId;
+    //     Order = tmdbGuest.Order;
+    //     EpisodeCount = 0;
+    // }
 }

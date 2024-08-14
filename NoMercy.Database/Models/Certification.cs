@@ -3,7 +3,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Certifications;
 
 namespace NoMercy.Database.Models;
 
@@ -27,19 +26,19 @@ public class Certification
     {
     }
 
-    public Certification(string? country, TmdbTvShowCertification certification)
-    {
-        Iso31661 = country;
-        Rating = certification.Rating;
-        Meaning = certification.Meaning;
-        Order = certification.Order;
-    }
-
-    public Certification(string? country, TmdbMovieCertification certification)
-    {
-        Iso31661 = country;
-        Rating = certification.Rating;
-        Meaning = certification.Meaning;
-        Order = certification.Order;
-    }
+    // public Certification(string? country, TmdbTvShowCertification certification)
+    // {
+    //     Iso31661 = country;
+    //     Rating = certification.Rating;
+    //     Meaning = certification.Meaning;
+    //     Order = certification.Order;
+    // }
+    //
+    // public Certification(string? country, TmdbMovieCertification certification)
+    // {
+    //     Iso31661 = country;
+    //     Rating = certification.Rating;
+    //     Meaning = certification.Meaning;
+    //     Order = certification.Order;
+    // }
 }

@@ -2,31 +2,32 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.FanArt.Client;
 using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 
 namespace NoMercy.Server.app.Jobs;
 
 [Serializable]
-public class FanartImagesJob : IShouldQueue
+public class FanArtImagesJob : IShouldQueue
 {
     public MusicBrainzArtist? MusicBrainzArtist { get; set; }
     public MusicBrainzReleaseAppends? MusicBrainzRelease { get; set; }
 
-    public FanartImagesJob()
+    public FanArtImagesJob()
     {
         //
     }
 
-    public FanartImagesJob(MusicBrainzArtist musicBrainzArtist)
+    public FanArtImagesJob(MusicBrainzArtist musicBrainzArtist)
     {
         MusicBrainzArtist = musicBrainzArtist;
     }
 
-    public FanartImagesJob(MusicBrainzReleaseAppends musicBrainzRelease)
+    public FanArtImagesJob(MusicBrainzReleaseAppends musicBrainzRelease)
     {
         MusicBrainzRelease = musicBrainzRelease;
     }
@@ -50,29 +51,54 @@ public class FanartImagesJob : IShouldQueue
             if (fanArt is null) return;
 
             var thumbs = fanArt.Thumbs.ToList()
-                .ConvertAll<Image>(image => new Image(image, musicBrainzArtist.Id, "artist", "thumb")
-                {
-                    _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                .ConvertAll<Image>(image => new Image{
+                        AspectRatio = 1,
+                        Type = "thumb",
+                        VoteCount = image.Likes,
+                        FilePath = "/" + image.Url.FileName(),
+                        ArtistId =  musicBrainzArtist.Id,
+                        Site = image.Url.BasePath(),
+                         _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
                 });
 
             var logos = fanArt.Logos.ToList()
-                .ConvertAll<Image>(image => new Image(image, musicBrainzArtist.Id, "artist", "logo")
-                {
+                .ConvertAll<Image>(image => new Image{
+                    AspectRatio = 1,
+                    Type = "logo",
+                    VoteCount = image.Likes,
+                    FilePath = "/" + image.Url.FileName(),
+                    ArtistId =  musicBrainzArtist.Id,
+                    Site = image.Url.BasePath(),
                     _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
                 });
             var banners = fanArt.Banners.ToList()
-                .ConvertAll<Image>(image => new Image(image, musicBrainzArtist.Id, "artist", "banner")
-                {
+                .ConvertAll<Image>(image => new Image{
+                    AspectRatio = 1,
+                    Type = "banner",
+                    VoteCount = image.Likes,
+                    FilePath = "/" + image.Url.FileName(),
+                    ArtistId =  musicBrainzArtist.Id,
+                    Site = image.Url.BasePath(),
                     _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
                 });
             var hdLogos = fanArt.HdLogos.ToList()
-                .ConvertAll<Image>(image => new Image(image, musicBrainzArtist.Id, "artist", "hdLogo")
-                {
+                .ConvertAll<Image>(image => new Image{
+                    AspectRatio = 1,
+                    Type = "hdLogo",
+                    VoteCount = image.Likes,
+                    FilePath = "/" + image.Url.FileName(),
+                    ArtistId =  musicBrainzArtist.Id,
+                    Site = image.Url.BasePath(),
                     _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
                 });
             var artistBackgrounds = fanArt.Backgrounds.ToList()
-                .ConvertAll<Image>(image => new Image(image, musicBrainzArtist.Id, "artist", "background")
-                {
+                .ConvertAll<Image>(image => new Image{
+                    AspectRatio = 1,
+                    Type = "background",
+                    VoteCount = image.Likes,
+                    FilePath = "/" + image.Url.FileName(),
+                    ArtistId =  musicBrainzArtist.Id,
+                    Site = image.Url.BasePath(),
                     _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
                 });
 
@@ -116,7 +142,7 @@ public class FanartImagesJob : IShouldQueue
         catch (Exception e)
         {
             if(e.Message.Contains("404")) return;
-            Logger.FanArt(e.Message, LogLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
     }
 
@@ -133,15 +159,25 @@ public class FanartImagesJob : IShouldQueue
             foreach (var (_, albums) in fanArt.Albums)
             {
                 covers.AddRange(albums.Cover
-                    .Select(image => new Image(image, musicBrainzRelease.Id, "album", "cover")
-                    {
+                    .Select(image => new Image{
+                        AspectRatio = 1,
+                        Type = "cover",
+                        VoteCount = image.Likes,
+                        FilePath = "/" + image.Url.FileName(),
+                        ArtistId =  musicBrainzRelease.Id,
+                        Site = image.Url.BasePath(),
                         Name = fanArt.Name,
                         _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
                     }));
 
                 cdArts.AddRange(albums.CdArt
-                    .Select(image => new Image(image, musicBrainzRelease.Id, "album", "cdArt")
-                    {
+                    .Select(image => new Image{
+                        AspectRatio = 1,
+                        Type = "cdArt",
+                        VoteCount = image.Likes,
+                        FilePath = "/" + image.Url.FileName(),
+                        ArtistId =  musicBrainzRelease.Id,
+                        Site = image.Url.BasePath(),
                         Name = fanArt.Name,
                         _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
                     }));
@@ -195,7 +231,7 @@ public class FanartImagesJob : IShouldQueue
         catch (Exception e)
         {
             if(e.Message.Contains("404")) return;
-            Logger.FanArt(e.Message, LogLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
     }
 

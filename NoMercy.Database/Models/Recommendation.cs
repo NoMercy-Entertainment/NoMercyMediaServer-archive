@@ -3,9 +3,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -40,28 +37,5 @@ public class Recommendation : ColorPalettes
     public Recommendation()
     {
     }
-
-    public Recommendation(TmdbTvShow show, TmdbTvShowAppends showAppends)
-    {
-        Backdrop = show.BackdropPath;
-        Overview = show.Overview;
-        Poster = show.PosterPath;
-        Title = show.Name;
-        TitleSort = show.Name.TitleSort();
-        MediaId = show.Id;
-        TvFromId = showAppends.Id;
-        // TvToId = recommendation.Id;
-    }
-
-    public Recommendation(TmdbMovie movie, TmdbMovieAppends movieAppends)
-    {
-        Backdrop = movie.BackdropPath;
-        Overview = movie.Overview;
-        Poster = movie.PosterPath;
-        Title = movie.Title;
-        TitleSort = movie.Title.TitleSort();
-        MediaId = movie.Id;
-        MovieFromId = movieAppends.Id;
-        // TvToId = recommendation.Id;
-    }
+    
 }

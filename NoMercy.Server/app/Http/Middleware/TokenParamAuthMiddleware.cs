@@ -1,33 +1,24 @@
 using System.Net;
 using System.Security.Claims;
 using Microsoft.Extensions.Primitives;
-using NoMercy.Database;
-using NoMercy.Database.Models;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
 
 namespace NoMercy.Server.app.Http.Middleware;
 
-public class TokenParamAuthMiddleware
+public class TokenParamAuthMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-    private static readonly MediaContext MediaContext = new();
-    public static readonly List<User> Users = MediaContext.Users.ToList();
-    public static readonly List<Ulid> FolderIds = MediaContext.Folders.Select(x => x.Id).ToList();
-
-    public TokenParamAuthMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
         context.Request.Headers.Authorization = context.Request.Headers.Authorization.ToString().Split(",")[0];
         
         string url = context.Request.Path;
 
-        if (!FolderIds.Any(x => url.StartsWith("/" + x)) ||
+        if (!ClaimsPrincipleExtensions.FolderIds.Any(x => url.StartsWith("/" + x)) ||
             context.Request.Headers.Authorization.ToString().Contains("Bearer"))
         {
-            await _next(context);
+            await next(context);
             return;
         }
 
@@ -56,7 +47,7 @@ public class TokenParamAuthMiddleware
                 return;
             }
 
-            var user = Users.FirstOrDefault(x => x.Id == userId);
+            var user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
 
             if (user is null)
             {
@@ -65,6 +56,6 @@ public class TokenParamAuthMiddleware
             }
         }
 
-        await _next(context);
+        await next(context);
     }
 }

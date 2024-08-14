@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
@@ -13,7 +13,6 @@ using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using Episode = NoMercy.Database.Models.Episode;
 using Movie = NoMercy.Database.Models.Movie;
 using Season = NoMercy.Database.Models.Season;
-
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
@@ -28,12 +27,15 @@ public record InfoResponseDto
                 .Where(tv => tv.Library.LibraryUsers
                     .FirstOrDefault(u => u.UserId == userId) != null)
                 .Include(tv => tv.TvUser)
+                
                 .Include(tv => tv.Library)
-                .ThenInclude(library => library.LibraryUsers)
+                    .ThenInclude(library => library.LibraryUsers)
+                
                 .Include(tv => tv.Media)
                 .Include(tv => tv.AlternativeTitles)
                 .Include(tv => tv.Translations
                     .Where(translation => translation.Iso6391 == language))
+                
                 .Include(tv => tv.Images
                     .Where(image =>
                         (image.Type == "logo" && image.Iso6391 == "en")
@@ -43,55 +45,63 @@ public record InfoResponseDto
                     .OrderByDescending(image => image.VoteAverage)
                 )
                 .Include(tv => tv.CertificationTvs)
-                .ThenInclude(certificationTv => certificationTv.Certification)
+                    .ThenInclude(certificationTv => certificationTv.Certification)
+                
                 .Include(tv => tv.Creators)
-                .ThenInclude(genreTv => genreTv.Person)
+                    .ThenInclude(genreTv => genreTv.Person)
+                
                 .Include(tv => tv.GenreTvs)
-                .ThenInclude(genreTv => genreTv.Genre)
+                    .ThenInclude(genreTv => genreTv.Genre)
+                
                 .Include(tv => tv.KeywordTvs)
-                .ThenInclude(keywordTv => keywordTv.Keyword)
+                    .ThenInclude(keywordTv => keywordTv.Keyword)
 
                 // .Include(tv => tv.Cast)
-                //     .ThenInclude(castTv => castTv.Person)
+                    //     .ThenInclude(castTv => castTv.Person)
                 //
                 // .Include(tv => tv.Cast)
-                //     .ThenInclude(castTv => castTv.Role)
+                    //     .ThenInclude(castTv => castTv.Role)
                 .Include(tv => tv.Crew)
-                .ThenInclude(crewTv => crewTv.Person)
+                    .ThenInclude(crewTv => crewTv.Person)
                 .Include(tv => tv.Crew)
-                .ThenInclude(crewTv => crewTv.Job)
+                    .ThenInclude(crewTv => crewTv.Job)
                 .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Translations
+                    .ThenInclude(season => season.Translations
                     .Where(translation => translation.Iso6391 == language)
                 )
                 .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(episode => episode.Translations
+                    .ThenInclude(season => season.Episodes)
+                    .ThenInclude(episode => episode.Translations
                     .Where(translation => translation.Iso6391 == language)
                 )
                 .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(episode => episode.VideoFiles)
-                .ThenInclude(file => file.UserData.Where(
-                    userData => userData.UserId == userId))
+                    .ThenInclude(season => season.Episodes)
+                        .ThenInclude(episode => episode.VideoFiles)
+                            .ThenInclude(file => file.UserData.Where(
+                                userData => userData.UserId == userId)
+                            )
                 .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.VideoFiles)
-                .ThenInclude(file => file.UserData.Where(
-                    userData => userData.UserId == userId))
+                    .ThenInclude(episode => episode.VideoFiles)
+                        .ThenInclude(file => file.UserData.Where(
+                            userData => userData.UserId == userId))
+                
                 .Include(tv => tv.RecommendationFrom)
                 .Include(tv => tv.SimilarFrom)
                 .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Cast)
-                .ThenInclude(castTv => castTv.Person)
+                    .ThenInclude(episode => episode.Cast)
+                        .ThenInclude(castTv => castTv.Person)
+                
                 .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Cast)
-                .ThenInclude(castTv => castTv.Role)
+                    .ThenInclude(episode => episode.Cast)
+                        .ThenInclude(castTv => castTv.Role)
+                
                 .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Crew)
-                .ThenInclude(crewTv => crewTv.Person)
+                    .ThenInclude(episode => episode.Crew)
+                        .ThenInclude(crewTv => crewTv.Person)
+                
                 .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Crew)
-                .ThenInclude(crewTv => crewTv.Job)
+                    .ThenInclude(episode => episode.Crew)
+                        .ThenInclude(crewTv => crewTv.Job)
                 .FirstOrDefault());
 
     public static readonly Func<MediaContext, Guid, int, Task<Tv?>> GetTvAvailable =
@@ -111,7 +121,7 @@ public record InfoResponseDto
                 .Where(tv => tv.Library.LibraryUsers
                     .FirstOrDefault(u => u.UserId == userId) != null)
                 .Include(tv => tv.Seasons.OrderBy(season => season.SeasonNumber))
-                .ThenInclude(season => season.Episodes.OrderBy(episode => episode.EpisodeNumber))
+                    .ThenInclude(season => season.Episodes.OrderBy(episode => episode.EpisodeNumber))
                 .Include(tv => tv.Translations
                     .Where(translation => translation.Iso6391 == language))
                 .Include(tv => tv.Seasons)
@@ -282,7 +292,8 @@ public record InfoResponseItemDto
         VoteAverage = movie.VoteAverage ?? 0;
 
         ColorPalette = movie.ColorPalette;
-        Backdrop = movie.Backdrop;
+        Backdrop = movie.Images.FirstOrDefault(image => image is { Type: "backdrop", Iso6391: null })?.FilePath ??
+                   movie.Backdrop;
         Poster = movie.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ??
                  movie.Poster;
 
@@ -497,7 +508,7 @@ public record InfoResponseItemDto
         VoteAverage = tv.VoteAverage ?? 0;
 
         ColorPalette = tv.ColorPalette;
-        Backdrop = tv.Backdrop;
+        Backdrop = tv.Images.FirstOrDefault(image => image is { Type: "backdrop", Iso6391: null })?.FilePath ?? tv.Backdrop;
         Poster = tv.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ?? tv.Poster;
 
         ExternalIds = new ExternalIds
@@ -639,7 +650,9 @@ public record InfoResponseItemDto
         VoteAverage = tmdbTv.VoteAverage;
 
         // ColorPalette = tv.ColorPalette;
-        Backdrop = tmdbTv.BackdropPath;
+        Backdrop = tmdbTv.Images.Backdrops.FirstOrDefault(media => media.Iso6391 is "")?.FilePath ??
+                   tmdbTv.Images.Backdrops.FirstOrDefault()?.FilePath;
+        
         Poster = tmdbTv.Images.Posters.FirstOrDefault(poster => poster.Iso6391 is "")?.FilePath ??
                  tmdbTv.Images.Posters.FirstOrDefault()?.FilePath;
 
@@ -752,7 +765,8 @@ public record InfoResponseItemDto
             .Average(collectionMovie => collectionMovie.Movie.VoteAverage) ?? 0;
 
         ColorPalette = collection.ColorPalette;
-        Backdrop = collection.Backdrop;
+        Backdrop = collection.Images.FirstOrDefault(image => image is { Type: "backdrop", Iso6391: null })?.FilePath ??
+                   collection.Backdrop;
         Poster = collection.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ??
                  collection.Poster;
 
@@ -857,7 +871,7 @@ public record DirectorDto
         ColorPalette = crew.Person.ColorPalette;
     }
 
-    public DirectorDto(Providers.TMDB.Models.Shared.TmdbCrew tmdbCrew)
+    public DirectorDto(TmdbCrew tmdbCrew)
     {
         Id = tmdbCrew.Id;
         Name = tmdbCrew.Name;
@@ -890,6 +904,7 @@ public record RelatedDto
         Id = recommendation.MediaId;
         Overview = recommendation.Overview;
         Poster = recommendation.Poster;
+        Backdrop = recommendation.Backdrop;
         Title = recommendation.Title;
         TitleSort = recommendation.TitleSort;
         MediaType = type;
@@ -910,6 +925,7 @@ public record RelatedDto
         Id = similar.MediaId;
         Overview = similar.Overview;
         Poster = similar.Poster;
+        Backdrop = similar.Backdrop;
         Title = similar.Title;
         TitleSort = similar.TitleSort;
         MediaType = type;
@@ -928,6 +944,7 @@ public record RelatedDto
         Id = tmdbSimilar.Id;
         Overview = tmdbSimilar.Overview;
         Poster = tmdbSimilar.PosterPath;
+        Backdrop = tmdbSimilar.BackdropPath;
         Title = tmdbSimilar.Title;
         TitleSort = tmdbSimilar.Title.TitleSort(tmdbSimilar.ReleaseDate);
         MediaType = type;
@@ -941,6 +958,7 @@ public record RelatedDto
         Id = recommendation.Id;
         Overview = recommendation.Overview;
         Poster = recommendation.PosterPath;
+        Backdrop = recommendation.BackdropPath;
         Title = recommendation.Name;
         TitleSort = recommendation.Name.TitleSort();
         MediaType = type;

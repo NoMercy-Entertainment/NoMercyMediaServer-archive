@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Middleware;
 
@@ -16,76 +17,76 @@ namespace NoMercy.Server.app.Http.Controllers.Socket;
 
 public class Song
 {
-    [JsonPropertyName("color_palette")] public ColorPalette ColorPalette { get; set; }
-    [JsonPropertyName("cover")] public string Cover { get; set; }
-    [JsonPropertyName("date")] public DateTime Date { get; set; }
-    [JsonPropertyName("disc")] public int Disc { get; set; }
-    [JsonPropertyName("duration")] public string Duration { get; set; }
-    [JsonPropertyName("favorite")] public bool Favorite { get; set; }
-    [JsonPropertyName("filename")] public string Filename { get; set; }
-    [JsonPropertyName("folder")] public string Folder { get; set; }
-    [JsonPropertyName("id")] public Guid Id { get; set; }
-    [JsonPropertyName("library_id")] public Ulid LibraryId { get; set; }
-    [JsonPropertyName("folder_id")] public Ulid FolderId { get; set; }
-    [JsonPropertyName("name")] public string Name { get; set; }
-    [JsonPropertyName("origin")] public string Origin { get; set; }
-    [JsonPropertyName("path")] public string Path { get; set; }
-    [JsonPropertyName("quality")] public int Quality { get; set; }
-    [JsonPropertyName("track")] public int Track { get; set; }
+    [JsonProperty("color_palette")] public ColorPalette ColorPalette { get; set; }
+    [JsonProperty("cover")] public string Cover { get; set; }
+    [JsonProperty("date")] public DateTime Date { get; set; }
+    [JsonProperty("disc")] public int Disc { get; set; }
+    [JsonProperty("duration")] public string Duration { get; set; }
+    [JsonProperty("favorite")] public bool Favorite { get; set; }
+    [JsonProperty("filename")] public string Filename { get; set; }
+    [JsonProperty("folder")] public string Folder { get; set; }
+    [JsonProperty("id")] public Guid Id { get; set; }
+    [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
+    [JsonProperty("folder_id")] public Ulid FolderId { get; set; }
+    [JsonProperty("name")] public string Name { get; set; }
+    [JsonProperty("origin")] public string Origin { get; set; }
+    [JsonProperty("path")] public string Path { get; set; }
+    [JsonProperty("quality")] public int Quality { get; set; }
+    [JsonProperty("track")] public int Track { get; set; }
 
-    [JsonPropertyName("type")] public string Type { get; set; }
+    [JsonProperty("type")] public string Type { get; set; }
 
-    [JsonPropertyName("lyrics")] public Lyric[]? Lyrics { get; set; }
-    [JsonPropertyName("artist_track")] public Track[] ArtistTrack { get; set; }
-    [JsonPropertyName("album_track")] public Track[] AlbumTrack { get; set; }
-    [JsonPropertyName("full_cover")] public string FullCover { get; set; }
+    [JsonProperty("lyrics")] public Lyric[]? Lyrics { get; set; }
+    [JsonProperty("artist_track")] public Track[] ArtistTrack { get; set; }
+    [JsonProperty("album_track")] public Track[] AlbumTrack { get; set; }
+    [JsonProperty("full_cover")] public string FullCover { get; set; }
 }
 
 public class Lyric
 {
-    [JsonPropertyName("text")] public string Text;
-    [JsonPropertyName("time")] public LineTime Time;
+    [JsonProperty("text")] public string Text;
+    [JsonProperty("time")] public LineTime Time;
 
     public class LineTime
     {
-        [JsonPropertyName("total")] public double Total;
-        [JsonPropertyName("minutes")] public int Minutes;
-        [JsonPropertyName("seconds")] public int Seconds;
-        [JsonPropertyName("hundredths")] public int Hundredths;
+        [JsonProperty("total")] public double Total;
+        [JsonProperty("minutes")] public int Minutes;
+        [JsonProperty("seconds")] public int Seconds;
+        [JsonProperty("hundredths")] public int Hundredths;
     }
 }
 
 public class Track
 {
-    [JsonPropertyName("color_palette")] public ColorPalette ColorPalette { get; set; }
-    [JsonPropertyName("cover")] public string Cover { get; set; }
-    [JsonPropertyName("description")] public string Description { get; set; }
-    [JsonPropertyName("folder")] public string Folder { get; set; }
-    [JsonPropertyName("id")] public Guid Id { get; set; }
-    [JsonPropertyName("library_id")] public Ulid LibraryId { get; set; }
-    [JsonPropertyName("name")] public string Name { get; set; }
-    [JsonPropertyName("origin")] public string Origin { get; set; }
+    [JsonProperty("color_palette")] public ColorPalette ColorPalette { get; set; }
+    [JsonProperty("cover")] public string Cover { get; set; }
+    [JsonProperty("description")] public string Description { get; set; }
+    [JsonProperty("folder")] public string Folder { get; set; }
+    [JsonProperty("id")] public Guid Id { get; set; }
+    [JsonProperty("library_id")] public Ulid LibraryId { get; set; }
+    [JsonProperty("name")] public string Name { get; set; }
+    [JsonProperty("origin")] public string Origin { get; set; }
 }
 
 public class ColorPalette
 {
-    [JsonPropertyName("cover")] public PaletteColors Cover { get; set; }
+    [JsonProperty("cover")] public PaletteColors Cover { get; set; }
 }
 
 public class PlayerState
 {
-    public string PlayState { get; set; } = "idle";
-    public double Time { get; set; } = 0;
-    public int Volume { get; set; } = 20;
-    public bool Muted { get; set; }
-    public bool Shuffle { get; set; }
-    public string Repeat { get; set; }
-    public int Percentage { get; set; } = 0;
-    public string? CurrentDevice { get; set; }
-    public string? CurrentPlaylist { get; set; }
-    public Song? CurrentItem { get; set; }
-    public IEnumerable<Song> Queue { get; set; } = [];
-    public IEnumerable<Song> Backlog { get; set; } = [];
+    [JsonProperty("play_State")] public string PlayState { get; set; } = "idle";
+    [JsonProperty("time")] public double Time { get; set; } = 0;
+    [JsonProperty("volume")] public double Volume { get; set; } = 20;
+    [JsonProperty("muted")] public bool Muted { get; set; }
+    [JsonProperty("shuffle")] public bool Shuffle { get; set; }
+    [JsonProperty("repeat")] public string Repeat { get; set; }
+    [JsonProperty("percentage")] public int Percentage { get; set; } = 0;
+    [JsonProperty("current_device")] public string? CurrentDevice { get; set; }
+    [JsonProperty("current_playlist")] public string? CurrentPlaylist { get; set; }
+    [JsonProperty("currentItem")] public Song? CurrentItem { get; set; }
+    [JsonProperty("queue")] public IEnumerable<Song> Queue { get; set; } = [];
+    [JsonProperty("backlog")] public IEnumerable<Song> Backlog { get; set; } = [];
 }
 
 public class VideoHub : ConnectionHub
@@ -101,7 +102,7 @@ public class VideoHub : ConnectionHub
     {
         var userId = Guid.Parse(Context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
-        var user = TokenParamAuthMiddleware.Users.FirstOrDefault(x => x.Id == userId);
+        var user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
 
         if (user is null) return;
 
@@ -139,12 +140,12 @@ public class VideoHub : ConnectionHub
     {
         var userId = Guid.Parse(Context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
-        var user = TokenParamAuthMiddleware.Users.FirstOrDefault(x => x.Id == userId);
+        var user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
 
         if (user is null) return;
 
         await using MediaContext mediaContext = new();
-        UserData[] userdata = await mediaContext.UserData
+        var userdata = await mediaContext.UserData
             .Where(x => x.UserId == user.Id)
             .Where(x => x.Type == request.PlaylistType)
             .Where(x => x.MovieId == request.TmdbId
@@ -229,7 +230,7 @@ public class VideoHub : ConnectionHub
 
     private PlayerState MusicPlayerState()
     {
-        var user = User();
+        var user = Context.User.User();
 
         if (user is null)
         {        
@@ -258,9 +259,9 @@ public class VideoHub : ConnectionHub
 
     public List<Device> ConnectedDevices()
     {
-        var user = User();
+        var user = Context.User.User();
 
-        return Networking.SocketClients.Values
+        return Networking.Networking.SocketClients.Values
             .Where(x => x.Sub.Equals(user?.Id))
             .Select(c => new Device
             {
@@ -280,12 +281,12 @@ public class VideoHub : ConnectionHub
 
     public class CurrentDeviceRequest
     {
-        [JsonPropertyName("deviceId")] public string DeviceId { get; set; }
+        [JsonProperty("deviceId")] public string DeviceId { get; set; }
     }
 
     public void SetCurrentDevice(CurrentDeviceRequest request)
     {
-        var user = User();
+        var user = Context.User.User();
 
         var state = MusicPlayerState();
         state.CurrentDevice = request.DeviceId;
@@ -356,8 +357,11 @@ public class VideoHub : ConnectionHub
         state.CurrentItem = null;
         state.Queue = [];
         state.Backlog = [];
+        
+        Logger.Socket(state);
 
         await Clients.All.SendAsync("Stop");
+        await Clients.All.SendAsync("State", state);
         await Clients.All.SendAsync("Queue", state.Queue);
         await Clients.All.SendAsync("Backlog", state.Backlog);
         
@@ -423,7 +427,7 @@ public class VideoHub : ConnectionHub
         await Clients.Others.SendAsync("Mute", mute);
     }
 
-    public async Task Volume(int volume)
+    public async Task Volume(double volume)
     {
         var state = MusicPlayerState();
         state.Volume = volume;
@@ -453,8 +457,6 @@ public class VideoHub : ConnectionHub
 
     public async Task CurrentItem(Song? currentItem)
     {
-        if (currentItem is null) return;
-
         var state = MusicPlayerState();
         state.CurrentItem = currentItem;
 

@@ -19,9 +19,9 @@ public class MusicGenre
     {
     }
 
-    public MusicGenre(Providers.MusicBrainz.Models.MusicBrainzGenre musicBrainzGenre)
-    {
-        Id = musicBrainzGenre.Id;
-        Name = musicBrainzGenre.Name;
-    }
+    // public MusicGenre(Providers.MusicBrainz.Models.MusicBrainzGenre musicBrainzGenre)
+    // {
+    //     Id = musicBrainzGenre.Id;
+    //     Name = musicBrainzGenre.Name;
+    // }
 }

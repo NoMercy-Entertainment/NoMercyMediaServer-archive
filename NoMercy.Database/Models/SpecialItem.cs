@@ -11,9 +11,8 @@ namespace NoMercy.Database.Models;
 [Index(nameof(SpecialId), nameof(MovieId), IsUnique = true)]
 public class SpecialItem
 {
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [JsonProperty("id")]
-    public string Id { get; set; }
+    public int Id { get; set; }
 
     [JsonProperty("order")] public int Order { get; set; }
 

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -15,32 +15,46 @@ public record CollectionsResponseDto
 
     [JsonProperty("data")] public IOrderedEnumerable<CollectionsResponseItemDto> Data { get; set; }
 
-    public static readonly Func<MediaContext, Guid, string, IAsyncEnumerable<Collection?>> GetCollections =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string language) =>
-            mediaContext.Collections.AsNoTracking()
-                .Where(collection => collection.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null)
-                .Where(collection => collection.CollectionMovies
-                    .Any(movie => movie.Movie.VideoFiles.Any()))
-                .Include(collection => collection.Library)
-                .ThenInclude(library => library.FolderLibraries)
-                .ThenInclude(folderLibrary => folderLibrary.Folder)
-                .Include(collection => collection.Images)
-                .Include(collection => collection.Translations
-                    .Where(translation => translation.Iso6391 == language))
-                .Include(collection => collection.CollectionMovies)
+    public static async Task<List<Collection>> GetCollections(Guid userId, string language, int take, int page = 0)
+    {        
+        await using MediaContext mediaContext = new();
+
+        var query = mediaContext.Collections.AsNoTracking()
+            .Where(collection => collection.Library.LibraryUsers
+                .Any(u => u.UserId == userId)
+            )
+            .Where(collection => collection.CollectionMovies
+                .Any(collectionMovie => collectionMovie.Movie.VideoFiles.Count != 0)
+            )
+
+            .Include(collection => collection.Images)
+
+            .Include(collection => collection.Translations
+                .Where(translation => translation.Iso6391 == language))
+
+            .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)
-                .ThenInclude(movie => movie.VideoFiles)
-                .Include(collection => collection.CollectionMovies)
+                    .ThenInclude(movie => movie.VideoFiles)
+
+            .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)
-                .ThenInclude(movie => movie.Images)
-                .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
-                .ThenInclude(movie => movie.Media)
-                .Include(collection => collection.CollectionMovies)
-                .ThenInclude(movie => movie.Movie)
+                    .ThenInclude(movie => movie.Media)
+
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
                 .ThenInclude(movie => movie.GenreMovies)
-                .ThenInclude(genreMovie => genreMovie.Genre));
+                    .ThenInclude(genreMovie => genreMovie.Genre)
+            
+            .OrderBy(collection => collection.TitleSort);
+
+        var collections = await query
+            .Skip(page * take)
+            .Take(take)
+            .ToListAsync();
+
+        return collections;
+    }
+
 }
 
 public record CollectionsResponseItemDto

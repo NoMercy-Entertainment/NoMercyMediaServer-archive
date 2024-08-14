@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -25,11 +26,25 @@ public static class FileNameParsers
             .Concat(show.Name.CleanFileName(), ".(", show.FirstAirDate.ParseYear(), ")")
             .CleanFileName();
     }
+    
+    public static string CreateBaseFolder(Tv show)
+    {
+        return "/" + string
+            .Concat(show.Title.CleanFileName(), ".(", show.FirstAirDate.ParseYear(), ")")
+            .CleanFileName();
+    }
 
     public static string CreateBaseFolder(TmdbMovieDetails tmdbMovie)
     {
         return "/" + string
             .Concat(tmdbMovie.Title, ".(", tmdbMovie.ReleaseDate.ParseYear(), ")")
+            .CleanFileName();
+    }
+    
+    public static string CreateBaseFolder(Movie movie)
+    {
+        return "/" + string
+            .Concat(movie.Title, ".(", movie.ReleaseDate.ParseYear(), ")")
             .CleanFileName();
     }
 

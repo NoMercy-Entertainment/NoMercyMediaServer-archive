@@ -1,5 +1,6 @@
 ﻿using AcoustID;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Providers.FanArt.Models;
 
 namespace NoMercy.Providers.FanArt.Client;

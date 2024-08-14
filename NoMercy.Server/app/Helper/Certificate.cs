@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Server.app.Helper;
 
@@ -85,11 +87,19 @@ public static class Certificate
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
 
-        var response = client
-            .GetStringAsync($"{Config.ApiServerBaseUrl}renewcertificate?server_id=" + SystemInfo.DeviceId)
-            .Result;
+        var serverUrl = $"{Networking.Config.ApiServerBaseUrl}certificate?server_id={Info.DeviceId}";
+        
+        if (File.Exists(AppFiles.CertFile))
+        {
+            serverUrl = $"{Networking.Config.ApiServerBaseUrl}renewcertificate?server_id={Info.DeviceId}";
+        }
 
-        dynamic data = JsonConvert.DeserializeObject(response)
+        var response = client
+            .GetStringAsync(serverUrl)
+            .Result;
+        // Logger.Certificate(response);
+        
+        var data = JsonConvert.DeserializeObject<CertificateResponse>(response)
                        ?? throw new Exception("Failed to deserialize JSON");
 
         if (File.Exists(AppFiles.KeyFile))
@@ -101,12 +111,21 @@ public static class Certificate
         if (File.Exists(AppFiles.CertFile))
             File.Delete(AppFiles.CertFile);
 
-        await File.WriteAllTextAsync(AppFiles.KeyFile, $"{data.private_key}");
-        await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.certificate_authority}");
-        await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.certificate}\n{data.issuer_certificate}");
+        await File.WriteAllTextAsync(AppFiles.KeyFile, $"{data.PrivateKey}");
+        await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.CertificateAuthority}");
+        await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.Certificate}\n{data.IssuerCertificate}");
 
         Logger.Certificate(@"SSL Certificate renewed");
 
         await Task.CompletedTask;
+    }
+    
+    public class CertificateResponse
+    {
+        [JsonProperty("status")] public string Status { get; set; }
+        [JsonProperty("certificate")] public string Certificate { get; set; }
+        [JsonProperty("private_key")] public string PrivateKey { get; set; }
+        [JsonProperty("issuer_certificate")] public string IssuerCertificate { get; set; }
+        [JsonProperty("certificate_authority")] public string CertificateAuthority { get; set; }
     }
 }

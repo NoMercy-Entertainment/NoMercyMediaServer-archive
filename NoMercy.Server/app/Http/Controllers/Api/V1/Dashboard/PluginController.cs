@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Providers.AniDb.Clients;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Middleware;
 
@@ -18,69 +20,59 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/plugins", Order = 10)]
-public class PluginController : Controller
+public class PluginController: BaseController
 {
     [HttpGet]
-    public async Task<AniDBAnimeItem> Index()
+    public async Task<IActionResult> Index()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to view plugins");
 
         var randomAnime = await AniDbRandomAnime.GetRandomAnime();
 
-        return randomAnime;
+        return Ok(randomAnime);
     }
 
     [HttpGet]
     [Route("credentials")]
-    public async Task<List<AniDbCredentialsResponse>> Credentials()
+    public IActionResult Credentials()
     {
-        var userId = HttpContext.User.UserId();
-
-        await using MediaContext context = new();
-        var ownerId = TokenParamAuthMiddleware.Users.Where(u => u.Owner).Select(u => u.Id).FirstOrDefault();
-
-        if (userId != ownerId) return [];
+        if (!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to view credentials");
 
         var aniDb = CredentialManager.Credential("AniDb");
 
-        if (aniDb == null) return [];
+        if (aniDb == null) return NotFound(new StatusResponseDto<string>
+        {
+            Status = "error",
+            Message = "No credentials found for AniDb"
+        });
 
-        return
-        [
-            new AniDbCredentialsResponse
-            {
-                Key = "AniDb",
-                Username = aniDb.Username,
-                ApiKey = aniDb.ApiKey
-            }
-        ];
+        return Ok(new AniDbCredentialsResponse
+        {
+            Key = "AniDb",
+            Username = aniDb.Username,
+            ApiKey = aniDb.ApiKey
+        });
     }
 
     [HttpPost]
     [Route("credentials")]
-    public StatusResponseDto<string> Credentials([FromBody] AniDbCredentialsRequest request)
+    public IActionResult Credentials([FromBody] AniDbCredentialsRequest request)
     {
-        var userId = HttpContext.User.UserId();
-
-        var ownerId = TokenParamAuthMiddleware.Users.Where(u => u.Owner).Select(u => u.Id).FirstOrDefault();
-
-        if (userId != ownerId)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "You do not have permission to set credentials"
-            };
+        if (!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to set credentials");
 
         var aniDb = CredentialManager.Credential(request.Key);
         CredentialManager.SetCredentials(request.Key, request.Username, request.Password ?? aniDb?.Password ?? "",
             request.ApiKey);
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "Credentials set successfully for {0}",
             Args = [request.Key]
-        };
+        });
     }
 }
 

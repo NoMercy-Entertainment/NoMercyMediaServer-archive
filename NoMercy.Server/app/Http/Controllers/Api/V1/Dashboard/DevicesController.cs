@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 using NoMercy.Server.app.Http.Middleware;
 
@@ -16,13 +20,14 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/devices", Order = 10)]
-public class DevicesController : Controller
+public class DevicesController : BaseController
 {
     [HttpGet]
-    public async Task<DevicesDto[]> Index()
+    public async Task<IActionResult> Index()
     {
-        var userId = HttpContext.User.UserId();
-
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view devices");
+        
         await using MediaContext mediaContext = new();
         var devices = await mediaContext.Devices
             .Include(device => device.ActivityLogs)
@@ -57,13 +62,14 @@ public class DevicesController : Controller
                     })
             });
 
-        return devicesDtos.ToArray();
+        return Ok(devicesDtos.ToArray());
     }
 
     [HttpPost]
     public IActionResult Create()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to create devices");
 
         return Ok(new PlaceholderResponse
         {
@@ -74,7 +80,8 @@ public class DevicesController : Controller
     [HttpDelete]
     public IActionResult Destroy()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to delete devices");
 
         return Ok(new PlaceholderResponse
         {

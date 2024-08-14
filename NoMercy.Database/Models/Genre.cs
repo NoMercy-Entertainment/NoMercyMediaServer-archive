@@ -22,9 +22,9 @@ public class Genre
     {
     }
 
-    public Genre(Providers.TMDB.Models.Shared.TmdbGenre tmdbGenre)
-    {
-        Id = tmdbGenre.Id;
-        Name = tmdbGenre.Name;
-    }
+    // public Genre(Providers.TMDB.Models.Shared.TmdbGenre tmdbGenre)
+    // {
+    //     Id = tmdbGenre.Id;
+    //     Name = tmdbGenre.Name;
+    // }
 }

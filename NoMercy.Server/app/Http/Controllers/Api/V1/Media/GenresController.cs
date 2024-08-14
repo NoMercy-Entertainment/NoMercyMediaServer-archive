@@ -2,6 +2,10 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NoMercy.Database;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 using NoMercy.Server.app.Http.Middleware;
 using static NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO.GenresResponseDto;
@@ -13,23 +17,26 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/genres")]
-public class GenresController : Controller
+public class GenresController: BaseController
 {
     [HttpGet]
-    public async Task<GenresResponseDto> Genres()
+    public async Task<IActionResult> Genres()
     {
         List<GenresResponseItemDto> genres = [];
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view genres");
+        
+        var language = Language();
 
         await using MediaContext mediaContext = new();
-        await foreach (var genre in GetGenres(mediaContext, userId,
-                           HttpContext.Request.Headers.AcceptLanguage.FirstOrDefault() ?? string.Empty))
+        await foreach (var genre in GetGenres(mediaContext, userId, language))
             genres.Add(new GenresResponseItemDto(genre));
 
-        return new GenresResponseDto
+        return Ok(new GenresResponseDto
         {
             Data = genres.OrderBy(genre => genre.Title)
-        };
+        });
     }
 
     [HttpGet]
@@ -37,23 +44,29 @@ public class GenresController : Controller
     public async Task<IActionResult> Genre(int genreId, [FromQuery] PageRequestDto request)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view genres");
 
+        var language = Language();
+        
         await using MediaContext mediaContext = new();
-        var library = await GenreResponseDto.GetGenre(mediaContext, userId, genreId,
-            HttpContext.Request.Headers.AcceptLanguage.FirstOrDefault() ?? string.Empty, request.Take, request.Page);
+        var genre = await GenreResponseDto.GetGenre(mediaContext, userId, genreId, language, request.Take  + 1, request.Page);
+        
+        if (genre.GenreTvShows.Count == 0 && genre.GenreMovies.Count == 0)
+            return NotFoundResponse("Genre not found");
 
         if (request.Version != "lolomo")
             return Ok(new GenreResponseDto
             {
-                Data = library.GenreMovies
+                Data = genre.GenreMovies.Take(request.Take)
                     .Select(movie => new GenreResponseItemDto(movie))
-                    .Concat(library.GenreTvShows
+                    .Concat(genre.GenreTvShows.Take(request.Take)
                         .Select(tv => new GenreResponseItemDto(tv)))
                     .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort),
 
-                NextId = library.GenreMovies.Count + library.GenreTvShows.Count < request.Take
+                NextId = genre.GenreMovies.Count + genre.GenreTvShows.Count < request.Take
                     ? null
-                    : library.GenreMovies.Count + library.GenreTvShows.Count + request.Page * request.Take
+                    : genre.GenreMovies.Count + genre.GenreTvShows.Count + request.Page * request.Take
             });
 
         string[] numbers = ["*", "#", "'", "\"", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
@@ -65,20 +78,19 @@ public class GenresController : Controller
 
         return Ok(new LoloMoResponseDto<GenreResponseItemDto>
         {
-            Data = letters.Select(genre => new LoloMoRowDto<GenreResponseItemDto>
+            Data = letters.Select(g => new LoloMoRowDto<GenreResponseItemDto>
             {
-                Title = genre,
-                Id = genre,
-
-                Items = library.GenreMovies
-                    .Where(libraryMovie => genre == "#"
+                Title = g,
+                Id = g,
+                Items = genre.GenreMovies.Take(request.Take)
+                    .Where(libraryMovie => g == "#"
                         ? numbers.Any(p => libraryMovie.Movie.Title.StartsWith(p))
-                        : libraryMovie.Movie.Title.StartsWith(genre))
+                        : libraryMovie.Movie.Title.StartsWith(g))
                     .Select(movie => new GenreResponseItemDto(movie))
-                    .Concat(library.GenreTvShows
-                        .Where(libraryTv => genre == "#"
+                    .Concat(genre.GenreTvShows.Take(request.Take)
+                        .Where(libraryTv => g == "#"
                             ? numbers.Any(p => libraryTv.Tv.Title.StartsWith(p))
-                            : libraryTv.Tv.Title.StartsWith(genre))
+                            : libraryTv.Tv.Title.StartsWith(g))
                         .Select(tv => new GenreResponseItemDto(tv)))
                     .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
             })

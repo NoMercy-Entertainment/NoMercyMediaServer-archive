@@ -5,13 +5,15 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Providers.TMDB.Client;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.app.Jobs;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 
@@ -20,81 +22,99 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/movie/{id:int}")] // match themoviedb.org API
-public class MoviesController : Controller
+public class MoviesController: BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Movie(int id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view movies");
+        
+        var language = Language();
+        var country = Country();
 
         await using MediaContext mediaContext = new();
-        var movie = await InfoResponseDto.GetMovie(mediaContext, userId, id,
-            HttpContext.Request.Headers.AcceptLanguage.FirstOrDefault() ?? string.Empty);
+        var movie = await InfoResponseDto.GetMovie(mediaContext, userId, id, language);
 
         if (movie is not null)
             return Ok(new InfoResponseDto
             {
-                Data = new InfoResponseItemDto(movie, HttpContext.Request.Headers.AcceptLanguage[1])
+                Data = new InfoResponseItemDto(movie, country)
             });
 
         TmdbMovieClient tmdbMovieClient = new(id);
         var movieAppends = await tmdbMovieClient.WithAllAppends(true);
 
         if (movieAppends is null)
-            return NotFound(new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Movie not found"
-            });
+            return NotFoundResponse("Movie not found");
 
-        AddMovieJob addMovieJob = new(id);
-        JobDispatcher.Dispatch(addMovieJob, "queue", 10);
+        TmdbMovieJob tmdbMovieJob = new(id);
+        JobDispatcher.Dispatch(tmdbMovieJob, "queue", 10);
 
         return Ok(new InfoResponseDto
         {
-            Data = new InfoResponseItemDto(movieAppends, HttpContext.Request.Headers.AcceptLanguage[1])
+            Data = new InfoResponseItemDto(movieAppends, country)
         });
     }
 
     [HttpGet]
     [Route("available")]
-    public async Task<AvailableResponseDto> Available(int id)
+    public async Task<IActionResult> Available(int id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view movies");
 
         await using MediaContext mediaContext = new();
         var movie = await InfoResponseDto.GetMovieAvailable(mediaContext, userId, id);
+        
+        var hasFiles = movie?.VideoFiles.Any() ?? false;
+        
+        if (!hasFiles)
+            return NotFound(new AvailableResponseDto
+            {
+                Available = false
+            });
 
-        return new AvailableResponseDto
+        return Ok(new AvailableResponseDto
         {
-            Available = movie?.VideoFiles.Any() ?? false
-        };
+            Available = true
+        });
     }
 
     [HttpGet]
     [Route("watch")]
-    public async Task<PlaylistResponseDto[]> Watch(int id)
+    public async Task<IActionResult> Watch(int id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view movies");
 
+        var language = Language();
+        
         await using MediaContext mediaContext = new();
-        var movie = await InfoResponseDto
-            .GetMoviePlaylist(mediaContext, userId, id,
-                HttpContext.Request.Headers.AcceptLanguage.FirstOrDefault() ?? string.Empty);
+        var movie = await InfoResponseDto.GetMoviePlaylist(mediaContext, userId, id,
+                language);
 
-        return movie is not null
-            ?
-            [
-                new PlaylistResponseDto(movie)
-            ]
-            : [];
+        if (movie is null)
+            return NotFoundResponse("Movie not found");
+
+        List<PlaylistResponseDto> playlist =
+        [
+            new PlaylistResponseDto(movie)
+        ];
+        
+        return Ok(playlist);
     }
 
     [HttpPost]
     [Route("like")]
-    public async Task<StatusResponseDto<string>> Like(int id, [FromBody] LikeRequestDto request)
+    public async Task<IActionResult> Like(int id, [FromBody] LikeRequestDto request)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to like movies");
 
         await using MediaContext mediaContext = new();
         var movie = await mediaContext.Movies
@@ -103,11 +123,7 @@ public class MoviesController : Controller
             .FirstOrDefaultAsync();
 
         if (movie is null)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Movie not found"
-            };
+            return UnprocessableEntityResponse("Movie not found");
 
         if (request.Value)
         {
@@ -131,7 +147,7 @@ public class MoviesController : Controller
             await mediaContext.SaveChangesAsync();
         }
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "{0}: {1}",
@@ -140,13 +156,16 @@ public class MoviesController : Controller
                 movie.Title,
                 request.Value ? "liked" : "unliked"
             }
-        };
+        });
     }
 
     [HttpPost]
     [Route("rescan")]
-    public async Task<StatusResponseDto<string>> Like(int id)
+    public async Task<IActionResult> Like(int id)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to rescan movies");
+        
         await using MediaContext mediaContext = new();
         var movies = await mediaContext.Movies
             .AsNoTracking()
@@ -155,11 +174,7 @@ public class MoviesController : Controller
             .ToArrayAsync();
 
         if (movies.Length == 0)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Movie not found"
-            };
+            return UnprocessableEntityResponse("Movie not found");
 
         foreach (var movie in movies)
             try
@@ -169,10 +184,10 @@ public class MoviesController : Controller
             }
             catch (Exception e)
             {
-                Logger.MovieDb(e, LogLevel.Error);
+                Logger.MovieDb(e, LogEventLevel.Error);
             }
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "Rescanning {0} for files",
@@ -180,13 +195,16 @@ public class MoviesController : Controller
             {
                 movies[0].Title
             }
-        };
+        });
     }
 
     [HttpPost]
     [Route("refresh")]
-    public async Task<StatusResponseDto<string>> Refresh(int id)
+    public async Task<IActionResult> Refresh(int id)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to refresh movies");
+        
         await using MediaContext mediaContext = new();
         var movies = await mediaContext.Movies
             .AsNoTracking()
@@ -195,16 +213,20 @@ public class MoviesController : Controller
             .ToArrayAsync();
 
         if (movies.Length == 0)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Movie not found"
-            };
+            return UnprocessableEntityResponse("Movie not found");
+        
+        try
+        {
+            TmdbMovieJob tmdbMovieJob = new(id);
+            JobDispatcher.Dispatch(tmdbMovieJob, "queue", 10);
+        }
+        catch (Exception e)
+        {
+            Logger.Encoder(e, LogEventLevel.Error);
+            return InternalServerErrorResponse(e.Message);
+        }
 
-        AddMovieJob addMovieJob = new(id);
-        JobDispatcher.Dispatch(addMovieJob, "queue", 10);
-
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "Refreshing {0}",
@@ -212,6 +234,6 @@ public class MoviesController : Controller
             {
                 movies[0].Title
             }
-        };
+        });
     }
 }

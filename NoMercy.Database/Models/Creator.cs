@@ -2,8 +2,6 @@
 
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Shared;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -15,12 +13,6 @@ public class Creator
 
     [JsonProperty("tv_id")] public int TvId { get; set; }
     public Tv Tv { get; set; }
-
-    public Creator(TmdbCreatedBy input, TmdbTvShowAppends show)
-    {
-        PersonId = input.Id;
-        TvId = show.Id;
-    }
 
     public Creator()
     {

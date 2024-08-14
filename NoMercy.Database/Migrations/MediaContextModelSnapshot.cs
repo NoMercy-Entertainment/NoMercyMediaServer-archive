@@ -142,6 +142,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("AlbumId", "ArtistId");
 
+                    b.HasIndex("AlbumId");
+
                     b.HasIndex("ArtistId");
 
                     b.ToTable("AlbumArtist");
@@ -156,6 +158,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("AlbumId", "LibraryId");
+
+                    b.HasIndex("AlbumId");
 
                     b.HasIndex("LibraryId");
 
@@ -172,6 +176,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("AlbumId", "MusicGenreId");
 
+                    b.HasIndex("AlbumId");
+
                     b.HasIndex("MusicGenreId");
 
                     b.ToTable("AlbumMusicGenre");
@@ -186,6 +192,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("AlbumId", "ReleaseGroupId");
+
+                    b.HasIndex("AlbumId");
 
                     b.HasIndex("ReleaseGroupId");
 
@@ -202,6 +210,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("AlbumId", "TrackId");
 
+                    b.HasIndex("AlbumId");
+
                     b.HasIndex("TrackId");
 
                     b.ToTable("AlbumTrack");
@@ -216,6 +226,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("AlbumId", "UserId");
+
+                    b.HasIndex("AlbumId");
 
                     b.HasIndex("UserId");
 
@@ -341,6 +353,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("ArtistId", "LibraryId");
 
+                    b.HasIndex("ArtistId");
+
                     b.HasIndex("LibraryId");
 
                     b.ToTable("ArtistLibrary");
@@ -355,6 +369,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("ArtistId", "MusicGenreId");
+
+                    b.HasIndex("ArtistId");
 
                     b.HasIndex("MusicGenreId");
 
@@ -371,6 +387,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("ArtistId", "ReleaseGroupId");
 
+                    b.HasIndex("ArtistId");
+
                     b.HasIndex("ReleaseGroupId");
 
                     b.ToTable("ArtistReleaseGroup");
@@ -386,6 +404,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("ArtistId", "TrackId");
 
+                    b.HasIndex("ArtistId");
+
                     b.HasIndex("TrackId");
 
                     b.ToTable("ArtistTrack");
@@ -400,6 +420,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("ArtistId", "UserId");
+
+                    b.HasIndex("ArtistId");
 
                     b.HasIndex("UserId");
 
@@ -504,6 +526,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("CertificationId", "MovieId");
 
+                    b.HasIndex("CertificationId");
+
                     b.HasIndex("MovieId");
 
                     b.ToTable("CertificationMovie");
@@ -518,6 +542,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("CertificationId", "TvId");
+
+                    b.HasIndex("CertificationId");
 
                     b.HasIndex("TvId");
 
@@ -580,6 +606,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("CollectionId", "LibraryId");
 
+                    b.HasIndex("CollectionId");
+
                     b.HasIndex("LibraryId");
 
                     b.ToTable("CollectionLibrary");
@@ -595,6 +623,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("CollectionId", "MovieId");
 
+                    b.HasIndex("CollectionId");
+
                     b.HasIndex("MovieId");
 
                     b.ToTable("CollectionMovie");
@@ -609,6 +639,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("CollectionId", "UserId");
+
+                    b.HasIndex("CollectionId");
 
                     b.HasIndex("UserId");
 
@@ -722,6 +754,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreditId");
 
                     b.HasIndex("EpisodeId");
 
@@ -866,6 +900,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("EncoderProfileId", "FolderId");
 
+                    b.HasIndex("EncoderProfileId");
+
                     b.HasIndex("FolderId");
 
                     b.ToTable("EncoderProfileFolder");
@@ -960,6 +996,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("FileId", "LibraryId");
 
+                    b.HasIndex("FileId");
+
                     b.HasIndex("LibraryId");
 
                     b.ToTable("FileLibrary");
@@ -974,6 +1012,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("FileId", "MovieId");
+
+                    b.HasIndex("FileId");
 
                     b.HasIndex("MovieId");
 
@@ -1008,6 +1048,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("FolderId", "LibraryId");
 
+                    b.HasIndex("FolderId");
+
                     b.HasIndex("LibraryId");
 
                     b.ToTable("FolderLibrary");
@@ -1038,6 +1080,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("GenreId", "MovieId");
 
+                    b.HasIndex("GenreId");
+
                     b.HasIndex("MovieId");
 
                     b.ToTable("GenreMovie");
@@ -1052,6 +1096,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("GenreId", "TvId");
+
+                    b.HasIndex("GenreId");
 
                     b.HasIndex("TvId");
 
@@ -1075,6 +1121,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreditId");
 
                     b.HasIndex("EpisodeId");
 
@@ -1196,13 +1244,19 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("ArtistId");
 
+                    b.HasIndex("CastCreditId");
+
                     b.HasIndex("CastId");
 
                     b.HasIndex("CollectionId");
 
+                    b.HasIndex("CrewCreditId");
+
                     b.HasIndex("CrewId");
 
                     b.HasIndex("EpisodeId");
+
+                    b.HasIndex("FilePath");
 
                     b.HasIndex("MovieId");
 
@@ -1303,6 +1357,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("KeywordId", "MovieId");
 
+                    b.HasIndex("KeywordId");
+
                     b.HasIndex("MovieId");
 
                     b.ToTable("KeywordMovie");
@@ -1317,6 +1373,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("KeywordId", "TvId");
+
+                    b.HasIndex("KeywordId");
 
                     b.HasIndex("TvId");
 
@@ -1360,6 +1418,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("LanguageId", "LibraryId");
+
+                    b.HasIndex("LanguageId");
 
                     b.HasIndex("LibraryId");
 
@@ -1440,6 +1500,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("LibraryId", "MovieId");
 
+                    b.HasIndex("LibraryId");
+
                     b.HasIndex("MovieId");
 
                     b.ToTable("LibraryMovie");
@@ -1454,6 +1516,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("LibraryId", "TrackId");
+
+                    b.HasIndex("LibraryId");
 
                     b.HasIndex("TrackId");
 
@@ -1470,6 +1534,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("LibraryId", "TvId");
 
+                    b.HasIndex("LibraryId");
+
                     b.HasIndex("TvId");
 
                     b.ToTable("LibraryTv");
@@ -1484,6 +1550,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("LibraryId", "UserId");
+
+                    b.HasIndex("LibraryId");
 
                     b.HasIndex("UserId");
 
@@ -1751,6 +1819,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("MovieId", "UserId");
 
+                    b.HasIndex("MovieId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("MovieUser");
@@ -1781,6 +1851,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("GenreId", "ReleaseGroupId");
 
+                    b.HasIndex("GenreId");
+
                     b.HasIndex("ReleaseGroupId");
 
                     b.ToTable("MusicGenreReleaseGroup");
@@ -1795,6 +1867,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("GenreId", "TrackId");
+
+                    b.HasIndex("GenreId");
 
                     b.HasIndex("TrackId");
 
@@ -1853,6 +1927,8 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("NotificationId", "UserId");
+
+                    b.HasIndex("NotificationId");
 
                     b.HasIndex("UserId");
 
@@ -1920,6 +1996,10 @@ namespace NoMercy.Database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("TmdbGender")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("Gender");
+
                     b.Property<DateTime>("UpdatedAt")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -1936,10 +2016,6 @@ namespace NoMercy.Database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT")
                         .HasColumnName("ExternalIds");
-
-                    b.Property<int>("_gender")
-                        .HasColumnType("INTEGER")
-                        .HasColumnName("Gender");
 
                     b.HasKey("Id");
 
@@ -2010,6 +2086,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasKey("PlaylistId", "TrackId");
 
+                    b.HasIndex("PlaylistId");
+
                     b.HasIndex("TrackId");
 
                     b.ToTable("PlaylistTrack");
@@ -2029,6 +2107,10 @@ namespace NoMercy.Database.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Priority", "Country", "ProviderId");
+
+                    b.HasIndex("Country");
+
+                    b.HasIndex("Priority");
 
                     b.HasIndex("ProviderId");
 
@@ -2386,10 +2468,9 @@ namespace NoMercy.Database.Migrations
 
             modelBuilder.Entity("NoMercy.Database.Models.SpecialItem", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("EpisodeId")
                         .HasColumnType("INTEGER");
@@ -2507,9 +2588,6 @@ namespace NoMercy.Database.Migrations
                     b.HasIndex("Folder");
 
                     b.HasIndex("FolderId");
-
-                    b.HasIndex("Filename", "HostFolder")
-                        .IsUnique();
 
                     b.ToTable("Tracks");
                 });
@@ -2874,9 +2952,8 @@ namespace NoMercy.Database.Migrations
                     b.Property<string>("SpecialId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SpecialItemId")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                    b.Property<int?>("SpecialItemId")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Subtitle")
                         .HasMaxLength(256)
@@ -2922,6 +2999,8 @@ namespace NoMercy.Database.Migrations
                     b.HasIndex("TvId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("VideoFileId");
 
                     b.HasIndex("VideoFileId", "UserId")
                         .IsUnique();
