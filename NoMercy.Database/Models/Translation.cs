@@ -3,13 +3,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Collections;
-using NoMercy.Providers.TMDB.Models.Combined;
-using NoMercy.Providers.TMDB.Models.Episode;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.People;
-using NoMercy.Providers.TMDB.Models.Season;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -23,6 +16,7 @@ namespace NoMercy.Database.Models;
 [Index(nameof(ReleaseGroupId), nameof(Iso31661), IsUnique = true)]
 [Index(nameof(ArtistId), nameof(Iso31661), IsUnique = true)]
 [Index(nameof(AlbumId), nameof(Iso31661), IsUnique = true)]
+[Index(nameof(TvId)), Index(nameof(SeasonId)), Index(nameof(EpisodeId)), Index(nameof(MovieId)), Index(nameof(CollectionId)), Index(nameof(PersonId)), Index(nameof(ReleaseGroupId)), Index(nameof(ArtistId)), Index(nameof(AlbumId))]
 public class Translation : Timestamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -70,99 +64,4 @@ public class Translation : Timestamps
     {
     }
 
-    public Translation(TmdbCombinedTranslation translation, TmdbTvShow show)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name == "" ? null : translation.Name;
-        Title = translation.Data.Title == "" ? null : translation.Data.Title;
-        Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
-        EnglishName = translation.EnglishName;
-        Homepage = translation.Data.Homepage?.ToString();
-        Biography = translation.Data.Biography;
-        TvId = show.Id;
-    }
-
-    public Translation(TmdbCombinedTranslation translation, TmdbSeasonAppends tmdbSeason)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name == "" ? null : translation.Name;
-        Title = translation.Data.Title == "" ? null : translation.Data.Title;
-        Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
-        EnglishName = translation.EnglishName;
-        Homepage = translation.Data.Homepage?.ToString();
-        SeasonId = tmdbSeason.Id;
-    }
-
-    public Translation(TmdbCombinedTranslation translation, TmdbEpisodeAppends tmdbEpisode)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name == "" ? null : translation.Name;
-        Title = translation.Data.Title == "" ? null : translation.Data.Title;
-        Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
-        EnglishName = translation.EnglishName;
-        Homepage = translation.Data.Homepage?.ToString();
-        EpisodeId = tmdbEpisode.Id;
-    }
-
-    public Translation(TmdbCombinedTranslation translation, TmdbMovieAppends tmdbMovie)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name == "" ? null : translation.Name;
-        Title = translation.Data.Title == "" ? null : translation.Data.Title;
-        Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
-        EnglishName = translation.EnglishName;
-        Homepage = translation.Data.Homepage?.ToString();
-        MovieId = tmdbMovie.Id;
-    }
-
-    public Translation(TmdbCombinedTranslation translation, Collection collection)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name == "" ? null : translation.Name;
-        Title = translation.Data.Title == "" ? null : translation.Data.Title;
-        Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
-        EnglishName = translation.EnglishName;
-        Homepage = translation.Data.Homepage?.ToString();
-        CollectionId = collection.Id;
-    }
-
-    public Translation(TmdbCombinedTranslation translation, Person person)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name == "" ? null : translation.Name;
-        Title = translation.Data.Title == "" ? null : translation.Data.Title;
-        Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
-        EnglishName = translation.EnglishName;
-        Homepage = translation.Data.Homepage?.ToString();
-        Biography = translation.Data.Biography;
-        PersonId = person.Id;
-    }
-
-    public Translation(TmdbPersonTranslation translation, TmdbPersonAppends? person)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name;
-        Overview = translation.TmdbPersonTranslationData.Overview == "" ? null : translation.TmdbPersonTranslationData.Overview;
-        EnglishName = translation.EnglishName;
-        PersonId = person?.Id;
-    }
-
-    public Translation(TmdbCombinedTranslation translation, TmdbCollectionAppends tmdbCollection)
-    {
-        Iso31661 = translation.Iso31661;
-        Iso6391 = translation.Iso6391;
-        Name = translation.Name == "" ? null : translation.Name;
-        Title = translation.Data.Title == "" ? null : translation.Data.Title;
-        Overview = translation.Data.Overview == "" ? null : translation.Data.Overview;
-        EnglishName = translation.EnglishName;
-        Homepage = translation.Data.Homepage?.ToString();
-        CollectionId = tmdbCollection.Id;
-    }
 }

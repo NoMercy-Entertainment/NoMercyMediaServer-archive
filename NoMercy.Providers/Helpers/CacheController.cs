@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.Helpers;
 
@@ -21,8 +22,6 @@ public static class CacheController
 
     public static bool Read<T>(string url, out T? value) where T : class?
     {
-        // Console.WriteLine(@"Reading from cache for {0} path {1}", url, GenerateFileName(url));
-
         var fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
         lock (fullname)
         {
@@ -71,6 +70,7 @@ public static class CacheController
         }
         catch (Exception)
         {
+            Logger.App($"CacheController: Failed to write {fullname}");
             await Write(url, data);
         }
     }

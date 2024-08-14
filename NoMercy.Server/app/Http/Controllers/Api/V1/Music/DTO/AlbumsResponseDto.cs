@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
 
@@ -57,7 +56,7 @@ public record AlbumsResponseItemDto
         Id = album.Id;
         Name = album.Name;
         Type = "albums";
-        
+
         Tracks = album.AlbumTrack?
             .Select(albumTrack => albumTrack.Track)
             .Count(albumTrack => albumTrack.Duration != null) ?? 0;
@@ -99,7 +98,7 @@ public record AlbumsResponseTrackDto
         Id = artistTrack.Track.Id;
         LibraryId = libraryId;
         Name = artistTrack.Track.Name;
-        Origin = SystemInfo.DeviceId;
+        Origin = NmSystem.Info.DeviceId;
         Path = artistTrack.Track.Folder + "/" + artistTrack.Track.Filename;
         Quality = artistTrack.Track.Quality;
         Track = artistTrack.Track.TrackNumber;

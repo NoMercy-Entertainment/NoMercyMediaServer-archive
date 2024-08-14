@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 using NoMercy.Server.app.Http.Middleware;
 
@@ -15,17 +19,18 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/activity", Order = 10)]
-public class ServerActivityController : Controller
+public class ServerActivityController: BaseController
 {
     [HttpGet]
-    public async Task<ServerActivityDto[]> Index()
+    public async Task<IActionResult> Index([FromQuery] ServerActivityRequest request)
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view activity");
 
         await using MediaContext mediaContext = new();
-        ServerActivityDto[] activityDtos = mediaContext.ActivityLogs
+        var activityDtos = mediaContext.ActivityLogs
             .OrderByDescending(x => x.CreatedAt)
-            .Take(7)
+            .Take((request.Take ?? 10) + 1)
             .Select(x => new ServerActivityDto
             {
                 Id = x.Id,
@@ -40,13 +45,14 @@ public class ServerActivityController : Controller
             })
             .ToArray();
 
-        return activityDtos;
+        return Ok(activityDtos);
     }
 
     [HttpPost]
     public IActionResult Create()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to create activity");
 
         return Ok(new PlaceholderResponse
         {
@@ -57,7 +63,8 @@ public class ServerActivityController : Controller
     [HttpDelete]
     public IActionResult Destroy()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to delete activity");
 
         return Ok(new PlaceholderResponse
         {
@@ -77,4 +84,9 @@ public class ServerActivityDto
     [JsonProperty("device_id")] public Ulid DeviceId { get; set; }
     [JsonProperty("device")] public string Device { get; set; }
     [JsonProperty("user")] public string User { get; set; }
+}
+
+public class ServerActivityRequest
+{
+    [JsonProperty("take")] public int? Take { get; set; } = 10;
 }

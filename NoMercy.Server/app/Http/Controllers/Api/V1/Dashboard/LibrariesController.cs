@@ -1,6 +1,5 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-using System.Security.Claims;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +8,8 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Middleware;
@@ -21,46 +22,66 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/libraries", Order = 10)]
-public class LibrariesController : Controller
+public class LibrariesController: BaseController
 {
     [HttpGet]
-    public async Task<LibrariesResponseDto> Index()
+    public async Task<IActionResult> Index()
     {
-        var userId = Guid.Parse(HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view libraries");
 
         await using MediaContext mediaContext = new();
         var libraries = await mediaContext.Libraries
             .AsNoTracking()
+            
             .Include(library => library.LibraryUsers)
-            .ThenInclude(libraryUser => libraryUser.User)
+                .ThenInclude(libraryUser => libraryUser.User)
+            
+            .Include(library => library.LibraryTvs
+                .Where(libraryTv => libraryTv.Library.Type == "anime" || libraryTv.Library.Type == "tv")
+                .Where(libraryTv => libraryTv.Tv.Backdrop != null)
+            )
+                .ThenInclude(libraryTv => libraryTv.Tv)
+            
+            .Include(library => library.LibraryMovies
+                .Where(libraryTv => libraryTv.Library.Type == "movie")
+                .Where(libraryMovie => libraryMovie.Movie.Backdrop != null))
+                .ThenInclude(libraryMovie => libraryMovie.Movie)
+            
             .Include(library => library.FolderLibraries)
-            .ThenInclude(folderLibrary => folderLibrary.Folder)
-            .ThenInclude(library => library.EncoderProfileFolder)
-            .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
+                .ThenInclude(folderLibrary => folderLibrary.Folder)
+                    .ThenInclude(library => library.EncoderProfileFolder)
+                        .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
+            
             .Include(library => library.LanguageLibraries)
-            .ThenInclude(languageLibrary => languageLibrary.Language)
+                .ThenInclude(languageLibrary => languageLibrary.Language)
+            
             .Where(library => library.LibraryUsers
                 .FirstOrDefault(u => u.UserId == userId) != null)
+            
             .OrderBy(library => library.Order)
             .ToListAsync();
 
-        return new LibrariesResponseDto
+        return Ok(new LibrariesDto
         {
             Data = libraries.Select(library => new LibrariesResponseItemDto(library))
-        };
+        });
     }
 
     [HttpPost]
-    public async Task<StatusResponseDto<Library>> Store()
+    public async Task<IActionResult> Store()
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to create a new library");
 
         try
         {
             await using MediaContext mediaContext = new();
             var libraries = await mediaContext.Libraries.CountAsync();
 
-            Library profile = new()
+            Library library = new()
             {
                 Id = Ulid.NewUlid(),
                 Title = $"Library {libraries}",
@@ -75,7 +96,7 @@ public class LibrariesController : Controller
                 Order = 99
             };
 
-            await mediaContext.Libraries.Upsert(profile)
+            await mediaContext.Libraries.Upsert(library)
                 .On(l => new { l.Id })
                 .WhenMatched((ls, li) => new Library
                 {
@@ -91,10 +112,10 @@ public class LibrariesController : Controller
                     Order = li.Order
                 })
                 .RunAsync();
-
+            
             await mediaContext.LibraryUser.Upsert(new LibraryUser
                 {
-                    LibraryId = profile.Id,
+                    LibraryId = library.Id,
                     UserId = userId
                 })
                 .On(lu => new { lu.LibraryId, lu.UserId })
@@ -105,39 +126,45 @@ public class LibrariesController : Controller
                 })
                 .RunAsync();
 
-            return new StatusResponseDto<Library>()
+            return Ok(new StatusResponseDto<Library>
             {
                 Status = "ok",
-                Data = profile,
+                Data = library,
                 Message = "Successfully created a new library.",
                 Args = []
-            };
+            });
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<Library>()
+            return Ok(new StatusResponseDto<Library>()
             {
                 Status = "error",
                 Message = "Something went wrong creating a new library: {0}",
                 Args = [e.Message]
-            };
+            });
         }
     }
 
     [HttpPatch]
-    [Route("{id}")]
-    public async Task<StatusResponseDto<string>> Update(Ulid id, [FromBody] LibraryUpdateRequest request)
+    [Route("{id:ulid}")]
+    public async Task<IActionResult> Update(Ulid id, [FromBody] LibraryUpdateRequest request)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to update the library");
+        
         await using MediaContext mediaContext = new();
-        var library = await mediaContext.Libraries.FindAsync(id);
+        var library = await mediaContext.Libraries
+            .Include(library => library.LanguageLibraries)
+            .Where(library => library.Id == id)
+            .FirstOrDefaultAsync();
 
         if (library is null)
-            return new StatusResponseDto<string>()
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Library {0} does not exist.",
                 Args = [id.ToString()]
-            };
+            });
 
         try
         {
@@ -146,26 +173,44 @@ public class LibrariesController : Controller
             library.Realtime = request.Realtime;
             library.SpecialSeasonName = request.SpecialSeasonName;
             library.Type = request.Type;
+            
+            library.LanguageLibraries.Clear();
+            
+            var languages = await mediaContext.Languages
+                .ToListAsync();
+            
+            foreach (var subtitle in request.Subtitles)
+            {
+                var language = languages.FirstOrDefault(l => l.Iso6391 == subtitle);
+                if (language is null) continue;
+            
+                library.LanguageLibraries.Add(new LanguageLibrary
+                {
+                    LibraryId = library.Id,
+                    LanguageId = language.Id
+                });
+                
+            }
 
             await mediaContext.SaveChangesAsync();
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong updating the library: {0}",
                 Args = [e.Message]
-            };
+            });
         }
 
         try
         {
-            List<Folder> folders = await mediaContext.Folders
+            var folders = await mediaContext.Folders
                 .Where(folder => request.FolderLibrary.Select(f => f.FolderId).Contains(folder.Id))
                 .ToListAsync();
 
-            FolderLibrary[] folderLibraries = folders.Select(folder => new FolderLibrary
+            var folderLibraries = folders.Select(folder => new FolderLibrary
             {
                 LibraryId = library.Id,
                 FolderId = folder.Id
@@ -182,21 +227,21 @@ public class LibrariesController : Controller
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong updating the library folders: {0}",
                 Args = [e.Message]
-            };
+            });
         }
 
         try
         {
-            List<LanguageLibrary> languages = await mediaContext.LanguageLibrary
+            var languages = await mediaContext.LanguageLibrary
                 .Where(language => request.Subtitles.Contains(language.Language.Iso6391))
                 .ToListAsync();
 
-            LanguageLibrary[] languageLibraries = languages.Select(language => new LanguageLibrary
+            var languageLibraries = languages.Select(language => new LanguageLibrary
             {
                 LibraryId = library.Id,
                 LanguageId = language.LanguageId
@@ -213,17 +258,17 @@ public class LibrariesController : Controller
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong updating the library subtitles: {0}",
                 Args = [e.Message]
-            };
+            });
         }
 
         try
         {
-            List<FolderDto> folders = request.FolderLibrary
+            var folders = request.FolderLibrary
                 .Select(f => f.Folder)
                 .ToList();
 
@@ -250,76 +295,82 @@ public class LibrariesController : Controller
         catch (Exception e)
         {
             Logger.App(e);
-            return new StatusResponseDto<string>()
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong updating the library encoder profiles: {0}",
                 Args = [e.Message]
-            };
+            });
         }
 
-        return new StatusResponseDto<string>()
+        return Ok(new StatusResponseDto<string>()
         {
             Status = "ok",
             Message = "Successfully updated {0} library.",
             Args = [library.Title]
-        };
+        });
     }
 
     [HttpDelete]
-    [Route("{id}")]
-    public async Task<StatusResponseDto<string>> Delete(Ulid id)
+    [Route("{id:ulid}")]
+    public async Task<IActionResult> Delete(Ulid id)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to delete the library");
+        
         try
         {
             await using MediaContext mediaContext = new();
             var library = await mediaContext.Libraries.FindAsync(id);
 
             if (library is null)
-                return new StatusResponseDto<string>()
+                return Ok(new StatusResponseDto<string>()
                 {
                     Status = "error",
                     Message = "Library {0} does not exist.",
                     Args = [id.ToString()]
-                };
+                });
 
             mediaContext.Libraries.Remove(library);
             await mediaContext.SaveChangesAsync();
-
-            return new StatusResponseDto<string>()
+            
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "ok",
                 Message = "Successfully deleted {0} library.",
                 Args = [library.Title]
-            };
+            });
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong deleting the library: {0}",
                 Args = [e.Message]
-            };
+            });
         }
     }
 
     [HttpPatch]
     [Route("sort")]
-    public async Task<StatusResponseDto<string>> Sort(Ulid id, [FromBody] LibrarySortRequest request)
+    public async Task<IActionResult> Sort(Ulid id, [FromBody] LibrarySortRequest request)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to sort the libraries");
+        
         await using MediaContext mediaContext = new();
         var libraries = await mediaContext.Libraries
             .AsTracking()
             .ToListAsync();
 
         if (libraries.Count == 0)
-            return new StatusResponseDto<string>()
+            return Ok(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "No libraries exist.",
                 Args = []
-            };
+            });
 
         try
         {
@@ -334,26 +385,29 @@ public class LibrariesController : Controller
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
-            {
-                Status = "error",
-                Message = "Something went wrong sorting the libraries: {0}",
-                Args = [e.Message]
-            };
+            return Problem(
+                title: "Internal Server Error.",
+                detail: $"Something went wrong sorting the libraries {e}",
+                instance:HttpContext.Request.Path,
+                statusCode: StatusCodes.Status403Forbidden,
+                type: "/docs/errors/internal-server-error");
         }
 
-        return new StatusResponseDto<string>()
+        return Ok(new StatusResponseDto<string>()
         {
             Status = "ok",
             Message = "Successfully sorted libraries.",
             Args = []
-        };
+        });
     }
 
     [HttpPost]
     [Route("rescan")]
-    public async Task<StatusResponseDto<List<string?>>> RescanAll()
+    public async Task<IActionResult> RescanAll()
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to rescan all libraries");
+        
         await using MediaContext mediaContext = new();
         var librariesList = await mediaContext.Libraries
             .Include(library => library.FolderLibraries)
@@ -361,11 +415,11 @@ public class LibrariesController : Controller
             .ToListAsync();
 
         if (librariesList.Count == 0)
-            return new StatusResponseDto<List<string?>>()
+            return NotFound(new StatusResponseDto<List<string?>>()
             {
                 Status = "error",
                 Message = "No libraries exist."
-            };
+            });
 
         // const int depth = 1;
 
@@ -445,51 +499,57 @@ public class LibrariesController : Controller
             // }
         }
 
-        return new StatusResponseDto<List<string?>>()
+        return Ok(new StatusResponseDto<List<string?>>()
         {
             Status = "ok",
             Data = titles,
             Message = "Rescanning all libraries."
-        };
+        });
     }
 
     [HttpPost]
-    [Route("{id}/rescan")]
-    public async Task<StatusResponseDto<List<dynamic>>> Rescan(Ulid id)
+    [Route("{id:ulid}/rescan")]
+    public async Task<IActionResult> Rescan(Ulid id)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to rescan the library");
+        
         LibraryLogic libraryLogic = new(id);
 
         if (await libraryLogic.Process())
-            return new StatusResponseDto<List<dynamic>>()
+            return Ok(new StatusResponseDto<List<dynamic>>()
             {
                 Status = "ok",
                 Data = libraryLogic.Titles,
                 Message = "Rescanning {0} library.",
                 Args = [libraryLogic.Id]
-            };
+            });
 
-        return new StatusResponseDto<List<dynamic>>()
+        return NotFound(new StatusResponseDto<List<dynamic>>()
         {
             Status = "error",
             Message = "Library {0} does not exist.",
             Args = [id]
-        };
+        });
     }
 
     [HttpPost]
-    [Route("{id}/folders")]
-    public async Task<StatusResponseDto<string>> AddFolder(Ulid id, [FromBody] FolderRequest request)
+    [Route("{id:ulid}/folders")]
+    public async Task<IActionResult> AddFolder(Ulid id, [FromBody] FolderRequest request)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to add a new folder to the library");
+        
         await using MediaContext mediaContext = new();
         var library = await mediaContext.Libraries.FindAsync(id);
 
         if (library is null)
-            return new StatusResponseDto<string>()
+            return NotFound(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Library {0} does not exist.",
                 Args = [id.ToString()]
-            };
+            });
 
         try
         {
@@ -506,15 +566,13 @@ public class LibrariesController : Controller
                     Path = fi.Path
                 })
                 .RunAsync();
+            
+            DynamicStaticFilesMiddleware.AddPath(library.Id, folder.Path);
+
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
-            {
-                Status = "error",
-                Message = "Something went wrong adding a new folder {0}: {1}",
-                Args = [id.ToString(), e.Message]
-            };
+            return UnprocessableEntity($"Something went wrong adding a new folder {id} to {library} library: {e.Message}");
         }
 
         try
@@ -524,12 +582,12 @@ public class LibrariesController : Controller
                 .FirstOrDefaultAsync();
 
             if (folder is null)
-                return new StatusResponseDto<string>()
+                return NotFound(new StatusResponseDto<string>()
                 {
                     Status = "error",
                     Message = "Folder {0} does not exist.",
                     Args = [id.ToString()]
-                };
+                });
 
             var folderLibrary = new FolderLibrary()
             {
@@ -548,80 +606,135 @@ public class LibrariesController : Controller
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return UnprocessableEntity(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong adding a new folder to {0} library: {1}",
                 Args = [id.ToString(), e.Message]
-            };
+            });
         }
 
-        return new StatusResponseDto<string>()
+        return Ok(new StatusResponseDto<string>()
         {
             Status = "ok",
             Message = "Successfully added folder to {0} library.",
             Args = [id.ToString()]
-        };
+        });
     }
-
-    [HttpDelete]
-    [Route("{id}/folders/{folderId}")]
-    public async Task<StatusResponseDto<string>> DeleteFolder(Ulid id, Ulid folderId)
+    
+    [HttpPatch]
+    [Route("{id:ulid}/folders/{folderId:ulid}")]
+    public async Task<IActionResult> UpdateFolder(Ulid id, Ulid folderId, [FromBody] FolderRequest request)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to update the library folder");
+        
         await using MediaContext mediaContext = new();
         var folder = await mediaContext.Folders
             .Where(folder => folder.Id == folderId)
             .FirstOrDefaultAsync();
 
         if (folder is null)
-            return new StatusResponseDto<string>()
+            return NotFound(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Folder {0} does not exist.",
                 Args = [id.ToString()]
-            };
+            });
+
+        try
+        {
+            folder.Path = request.Path;
+
+            await mediaContext.SaveChangesAsync();
+            
+            DynamicStaticFilesMiddleware.RemovePath(folder.Id);
+            DynamicStaticFilesMiddleware.AddPath(id, folder.Path);
+        }
+        catch (Exception e)
+        {
+            return UnprocessableEntity(new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Something went wrong updating the library folder: {0}",
+                Args = [e.Message]
+            });
+        }
+
+        return Ok(new StatusResponseDto<string>()
+        {
+            Status = "ok",
+            Message = "Successfully updated folder {0}.",
+            Args = [folder.Path]
+        });
+    }
+
+    [HttpDelete]
+    [Route("{id:ulid}/folders/{folderId:ulid}")]
+    public async Task<IActionResult> DeleteFolder(Ulid id, Ulid folderId)
+    {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to delete the library folder");
+        
+        await using MediaContext mediaContext = new();
+        var folder = await mediaContext.Folders
+            .Where(folder => folder.Id == folderId)
+            .FirstOrDefaultAsync();
+
+        if (folder is null)
+            return NotFound(new StatusResponseDto<string>()
+            {
+                Status = "error",
+                Message = "Folder {0} does not exist.",
+                Args = [id.ToString()]
+            });
 
         try
         {
             mediaContext.Folders.Remove(folder);
 
             await mediaContext.SaveChangesAsync();
+            
+            DynamicStaticFilesMiddleware.RemovePath(folder.Id);
+
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return UnprocessableEntity(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong deleting the library folder: {0}",
                 Args = [e.Message]
-            };
+            });
         }
 
-        return new StatusResponseDto<string>()
+        return Ok(new StatusResponseDto<string>()
         {
             Status = "ok",
             Message = "Successfully deleted folder {0}.",
             Args = [folder.Path]
-        };
+        });
     }
 
     [HttpPost]
-    [Route("{id}/folders/{folderId}/encoder_profiles")]
-    public async Task<StatusResponseDto<string>> AddEncoderProfile(Ulid id, Ulid folderId,
-        [FromBody] ProfilesRequest request)
+    [Route("{id:ulid}/folders/{folderId:ulid}/encoder_profiles")]
+    public async Task<IActionResult> AddEncoderProfile(Ulid id, Ulid folderId, [FromBody] ProfilesRequest request)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to add a new encoder profile to the folder");
+        
         await using MediaContext mediaContext = new();
         var folder = await mediaContext.Folders
             .Where(folder => folder.Id == folderId)
             .FirstOrDefaultAsync();
 
         if (folder is null)
-            return new StatusResponseDto<string>()
+            return NotFound(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Folder {0} does not exist.",
                 Args = [id.ToString()]
-            };
+            });
 
         try
         {
@@ -644,38 +757,41 @@ public class LibrariesController : Controller
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return UnprocessableEntity(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong adding a new encoder profile to {0} folder: {1}",
                 Args = [id.ToString(), e.Message]
-            };
+            });
         }
 
-        return new StatusResponseDto<string>()
+        return Ok(new StatusResponseDto<string>()
         {
             Status = "ok",
             Message = "Successfully added encoder profile to {0} folder.",
             Args = [id.ToString()]
-        };
+        });
     }
 
     [HttpDelete]
-    [Route("{id}/folders/{folderId}/encoder_profiles/{encoderProfileId}")]
-    public async Task<StatusResponseDto<string>> DeleteEncoderProfile(Ulid id, Ulid profileId)
+    [Route("{id:ulid}/folders/{folderId:ulid}/encoder_profiles/{encoderProfileId:ulid}")]
+    public async Task<IActionResult> DeleteEncoderProfile(Ulid id, Ulid profileId)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to delete the encoder profile");
+        
         await using MediaContext mediaContext = new();
         var encoderProfile = await mediaContext.EncoderProfiles
             .Where(folder => folder.Id == profileId)
             .FirstOrDefaultAsync();
 
         if (encoderProfile is null)
-            return new StatusResponseDto<string>()
+            return NotFound(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Folder {0} does not exist.",
                 Args = [id.ToString()]
-            };
+            });
 
         try
         {
@@ -685,20 +801,20 @@ public class LibrariesController : Controller
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>()
+            return UnprocessableEntity(new StatusResponseDto<string>()
             {
                 Status = "error",
                 Message = "Something went wrong deleting the encoder profile: {0}",
                 Args = [e.Message]
-            };
+            });
         }
 
-        return new StatusResponseDto<string>()
+        return Ok(new StatusResponseDto<string>()
         {
             Status = "ok",
             Message = "Successfully deleted encoder profile {0}.",
             Args = [encoderProfile.Name]
-        };
+        });
     }
 }
 
@@ -715,11 +831,6 @@ public class LibraryUpdateRequest
     [JsonProperty("subtitles")] public string[] Subtitles { get; set; }
 }
 
-// public class Type
-// {
-//     [JsonProperty("title")] public string? Title { get; set; }
-//     [JsonProperty("value")] public string Value { get; set; }
-// }
 
 public class FolderLibraryDto
 {

@@ -2,16 +2,17 @@
 using NoMercy.Helpers;
 using NoMercy.Providers.AcoustId.Models;
 using NoMercy.Providers.Helpers;
+using Serilog.Events;
 
 namespace NoMercy.Providers.AcoustId.Client;
 
 public class AcoustIdBaseClient : BaseClient
 {
     protected override Uri BaseUrl => new("https://api.acoustid.org/v2/");
-    protected override int ConcurrentRequests => 3;
+    protected override int ConcurrentRequests => 2;
     protected override int Interval => 1000;
 
-    protected override async Task<T?> Get<T>(string url, Dictionary<string, string?>? query, bool? priority = false)
+    protected override async Task<T?> Get<T>(string url, Dictionary<string, string?>? query = default, bool? priority = false)
         where T : class
     {
         query ??= new Dictionary<string, string?>();
@@ -24,9 +25,9 @@ public class AcoustIdBaseClient : BaseClient
                         .Any(recording => recording?.Title != null)))
                 return result as T;
 
-        Logger.AcoustId(newUrl, LogLevel.Verbose);
+        Logger.AcoustId(newUrl, LogEventLevel.Verbose);
 
-        var response = await Queue().Enqueue(() => Client!.GetStringAsync(newUrl), newUrl, priority);
+        var response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
 
         await CacheController.Write(newUrl, response);
 
@@ -42,11 +43,11 @@ public class AcoustIdBaseClient : BaseClient
                    .Any(fpResult => fpResult.Recordings is not null && fpResult.Recordings
                        .Any(recording => recording?.Title == null)) && iteration < 10)
         {
-            response = await Queue().Enqueue(() => Client!.GetStringAsync(newUrl), newUrl, priority);
+            response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
 
             await CacheController.Write(newUrl, response);
 
-            Logger.Request(response, LogLevel.Verbose);
+            Logger.Request(response, LogEventLevel.Verbose);
 
             data = JsonHelper.FromJson<AcoustIdFingerprint>(response);
 

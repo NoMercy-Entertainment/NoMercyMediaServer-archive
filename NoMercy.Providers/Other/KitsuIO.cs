@@ -1,6 +1,8 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 using Newtonsoft.Json;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using Serilog.Events;
 
 namespace NoMercy.Providers.Other;
 
@@ -19,7 +21,7 @@ public static class KitsuIo
 
         try
         {
-            var anime = JsonConvert.DeserializeObject<KitsuAnime>(content);
+            var anime = content.FromJson<KitsuAnime>();
 
             foreach (var data in anime?.Data ?? [])
                 if (data.Attributes.Titles.En?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
@@ -31,13 +33,12 @@ public static class KitsuIo
                 else if (data.Attributes.Titles.ThTh?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
                     isAnime = true;
                 else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle =>
-                             abbreviatedTitle.Equals(abbreviatedTitle, StringComparison.CurrentCultureIgnoreCase)))
+                             abbreviatedTitle.Equals(title, StringComparison.CurrentCultureIgnoreCase)))
                     isAnime = true;
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
-            throw;
+            Logger.AniDb(e, LogEventLevel.Fatal);
         }
 
         return isAnime;

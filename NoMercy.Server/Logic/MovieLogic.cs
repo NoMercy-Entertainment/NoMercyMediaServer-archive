@@ -3,13 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 using Movie = NoMercy.Database.Models.Movie;
 using Translation = NoMercy.Database.Models.Translation;
 
@@ -30,14 +31,14 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         // Movie? movie = _mediaContext.Movies.FirstOrDefault(e => e.Id == Id);
         // if (movie is not null)
         // {
-        //     Logger.MovieDb($@"Movie {movie.Title}: already exists");
+        //     Logger.MovieDb($"Movie {movie.Title}: already exists");
         //     return;
         // }
 
         Movie = await TmdbMovieClient.WithAllAppends();
         if (Movie is null)
         {
-            Logger.MovieDb($@"Movie {TmdbMovieClient.Id}: not found");
+            Logger.MovieDb($"Movie {id}: not found");
             return;
         }
 
@@ -64,7 +65,11 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
     private async Task StoreAlternativeTitles()
     {
         var alternativeTitles = Movie?.AlternativeTitles.Results.ToList()
-            .ConvertAll<AlternativeTitle>(x => new AlternativeTitle(x, Movie.Id)).ToArray() ?? [];
+            .ConvertAll<AlternativeTitle>(tmdbMovieAlternativeTitles => new AlternativeTitle{
+                    Iso31661 = tmdbMovieAlternativeTitles.Iso31661,
+                    Title = tmdbMovieAlternativeTitles.Title,
+                    MovieId = Movie.Id,
+                }).ToArray() ?? [];
 
         await _mediaContext.AlternativeTitles.UpsertRange(alternativeTitles)
             .On(a => new { a.Title, a.MovieId })
@@ -76,12 +81,12 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: AlternativeTitles stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: AlternativeTitles stored");
     }
 
     private async Task StoreWatchProviders()
     {
-        Logger.MovieDb($@"Movie {Movie?.Title}: WatchProviders stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: WatchProviders stored");
         await Task.CompletedTask;
     }
 
@@ -90,7 +95,16 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         try
         {
             var translations = Movie?.Translations.Translations.ToList()
-                .ConvertAll<Translation>(x => new Translation(x, Movie)).ToArray() ?? [];
+                .ConvertAll<Translation>(translation => new Translation{
+                    Iso31661 = translation.Iso31661,
+                    Iso6391 = translation.Iso6391,
+                    Name = translation.Name == "" ? null : translation.Name,
+                    Title = translation.Data.Title == "" ? null : translation.Data.Title,
+                    Overview = translation.Data.Overview == "" ? null : translation.Data.Overview,
+                    EnglishName = translation.EnglishName,
+                    Homepage = translation.Data.Homepage?.ToString(),
+                    MovieId = Movie.Id,
+                }).ToArray() ?? [];
 
             await _mediaContext.Translations
                 .UpsertRange(translations.Where(translation => translation.Title != "" || translation.Overview != ""))
@@ -115,7 +129,7 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
             throw;
         }
     }
@@ -134,7 +148,10 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
                         c.Rating == movieContentRating.ReleaseDates[0].Certification);
                 if (certification is null) continue;
 
-                certifications.Add(new CertificationMovie(certification, Movie));
+                certifications.Add(new CertificationMovie {
+                        CertificationId = certification.Id,
+                        MovieId = Movie!.Id,
+                    });
             }
 
             await _mediaContext.CertificationMovie.UpsertRange(certifications)
@@ -148,18 +165,26 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.App(e, LogEventLevel.Fatal);
             throw;
         }
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: ContentRatings stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: ContentRatings stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreSimilar()
     {
         var data = Movie?.Similar.Results.ToList()
-            .ConvertAll<Similar>(x => new Similar(x, Movie)) ?? [];
+            .ConvertAll<Similar>(tmdbSimilar => new Similar {
+                    Backdrop = tmdbSimilar.BackdropPath,
+                    Overview = tmdbSimilar.Overview,
+                    Poster = tmdbSimilar.PosterPath,
+                    Title = tmdbSimilar.Title,
+                    TitleSort = tmdbSimilar.Title,
+                    MediaId = tmdbSimilar.Id,
+                    MovieFromId = Movie.Id,
+                }) ?? [];
 
         await _mediaContext.Similar.UpsertRange(data)
             .On(v => new { v.MediaId, v.MovieFromId })
@@ -176,17 +201,25 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        ColorPaletteJob similarColorPaletteJob = new(id, model: "similar", type: "movie");
-        JobDispatcher.Dispatch(similarColorPaletteJob, "image", 2);
+        TmdbColorPaletteJob similarTmdbColorPaletteJob = new(id, model: "similar", type: "movie");
+        JobDispatcher.Dispatch(similarTmdbColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: Similar stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: Similar stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreRecommendations()
     {
         var data = Movie?.Recommendations.Results.ToList()
-            .ConvertAll<Recommendation>(x => new Recommendation(x, Movie)) ?? [];
+            .ConvertAll<Recommendation>(movie => new Recommendation {
+                    Backdrop = movie.BackdropPath,
+                    Overview = movie.Overview,
+                    Poster = movie.PosterPath,
+                    Title = movie.Title,
+                    TitleSort = movie.Title.TitleSort(),
+                    MediaId = movie.Id,
+                    MovieFromId = Movie.Id,
+                }) ?? [];
 
         await _mediaContext.Recommendations.UpsertRange(data)
             .On(v => new { v.MediaId, v.MovieFromId })
@@ -203,10 +236,10 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        ColorPaletteJob recommendationColorPaletteJob = new(id, model: "recommendation", type: "movie");
-        JobDispatcher.Dispatch(recommendationColorPaletteJob, "image", 2);
+        TmdbColorPaletteJob recommendationTmdbColorPaletteJob = new(id, model: "recommendation", type: "movie");
+        JobDispatcher.Dispatch(recommendationTmdbColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: Recommendations stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: Recommendations stored");
         await Task.CompletedTask;
     }
 
@@ -215,7 +248,17 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         try
         {
             var videos = Movie?.Videos.Results.ToList()
-                .ConvertAll<Media>(x => new Media(x, Movie, "video")) ?? [];
+                .ConvertAll<Media>(media => new Media {
+                            _type = "video",
+                            Id = Ulid.NewUlid(),
+                            Iso6391 = media.Iso6391,
+                            Name = media.Name,
+                            Site = media.Site,
+                            Size = media.Size,
+                            Src = media.Key,
+                            Type = media.Type,
+                            MovieId = Movie.Id,
+                        }) ?? [];
 
             await _mediaContext.Medias.UpsertRange(videos)
                 .On(v => new { v.Src, v.MovieId })
@@ -233,29 +276,58 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.App(e, LogEventLevel.Error);
         }
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: Videos stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: Videos stored");
         await Task.CompletedTask;
     }
 
-    public static async Task StoreImages(int id)
+    public static async Task StoreImages(TmdbMovieAppends movie)
     {
-        TmdbMovieClient tmdbMovieClient = new(id);
-        var movie = await tmdbMovieClient.WithAllAppends();
-        if (movie is null) return;
-
         var posters = movie.Images.Posters.ToList()
-            .ConvertAll<Image>(image => new Image(image, movie, "poster"));
+            .ConvertAll<Image>(image => new Image {
+                AspectRatio = image.AspectRatio,
+                FilePath = image.FilePath,
+                Height = image.Height,
+                Iso6391 = image.Iso6391,
+                VoteAverage = image.VoteAverage,
+                VoteCount = image.VoteCount,
+                Width = image.Width,
+                MovieId = movie.Id,
+                Type = "poster",
+                Site = "https://image.tmdb.org/t/p/",
+            });
 
-        List<Image> backdrops = movie.Images.Backdrops.ToList()
-            .ConvertAll<Image>(image => new Image(image, movie, "backdrop"));
+        var backdrops = movie.Images.Backdrops.ToList()
+            .ConvertAll<Image>(image => new Image {
+                AspectRatio = image.AspectRatio,
+                FilePath = image.FilePath,
+                Height = image.Height,
+                Iso6391 = image.Iso6391,
+                VoteAverage = image.VoteAverage,
+                VoteCount = image.VoteCount,
+                Width = image.Width,
+                MovieId = movie.Id,
+                Type = "backdrop",
+                Site = "https://image.tmdb.org/t/p/",
+            });
 
-        List<Image> logos = movie.Images.Logos.ToList()
-            .ConvertAll<Image>(image => new Image(image, movie, "logo"));
+        var logos = movie.Images.Logos.ToList()
+            .ConvertAll<Image>(image => new Image {
+                AspectRatio = image.AspectRatio,
+                FilePath = image.FilePath,
+                Height = image.Height,
+                Iso6391 = image.Iso6391,
+                VoteAverage = image.VoteAverage,
+                VoteCount = image.VoteCount,
+                Width = image.Width,
+                MovieId = movie.Id,
+                Type = "logo",
+                Site = "https://image.tmdb.org/t/p/",
+            });
 
-        List<Image> images = posters
+        var images = posters
             .Concat(backdrops)
             .Concat(logos)
             .ToList();
@@ -278,10 +350,10 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        ColorPaletteJob movieColorPaletteJob = new(id, "movie");
-        JobDispatcher.Dispatch(movieColorPaletteJob, "image", 2);
+        TmdbColorPaletteJob movieTmdbColorPaletteJob = new(movie);
+        JobDispatcher.Dispatch(movieTmdbColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"Movie {movie.Title}: Images stored");
+        Logger.MovieDb($"Movie {movie.Title}: Images stored");
         await Task.CompletedTask;
     }
 
@@ -299,7 +371,7 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         //     })
         //     .RunAsync();
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: Networks stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: Networks stored");
         await Task.CompletedTask;
     }
 
@@ -317,14 +389,17 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         //     })
         //     .RunAsync();
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: Companies stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: Companies stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreKeywords()
     {
         var keywords = Movie?.Keywords.Results.ToList()
-            .ConvertAll<Keyword>(x => new Keyword(x)).ToArray() ?? [];
+            .ConvertAll<Keyword>(keyword => new Keyword {
+                    Id = keyword.Id,
+                    Name = keyword.Name,
+                }).ToArray() ?? [];
 
         await _mediaContext.Keywords.UpsertRange(keywords)
             .On(v => new { v.Id })
@@ -335,8 +410,11 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        KeywordMovie[] keywordMovies = Movie?.Keywords.Results.ToList()
-            .ConvertAll<KeywordMovie>(x => new KeywordMovie(x, Movie)).ToArray() ?? [];
+        var keywordMovies = Movie?.Keywords.Results.ToList()
+            .ConvertAll<KeywordMovie>(keyword => new KeywordMovie{
+                    KeywordId = keyword.Id,
+                    MovieId = Movie.Id,
+                }).ToArray() ?? [];
 
         await _mediaContext.KeywordMovie.UpsertRange(keywordMovies)
             .On(v => new { v.KeywordId, v.MovieId })
@@ -347,14 +425,17 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: Keywords stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: Keywords stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreGenres()
     {
         var genreMovies = Movie?.Genres.ToList()
-            .ConvertAll<GenreMovie>(x => new GenreMovie(x, Movie)).ToArray() ?? [];
+            .ConvertAll<GenreMovie>(genre => new GenreMovie{
+                    GenreId = genre.Id,
+                    MovieId = Movie.Id,
+                }).ToArray() ?? [];
 
         await _mediaContext.GenreMovie.UpsertRange(genreMovies)
             .On(v => new { v.GenreId, v.MovieId })
@@ -365,7 +446,7 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        Logger.MovieDb($@"Movie {Movie?.Title}: Genres stored");
+        Logger.MovieDb($"Movie {Movie?.Title}: Genres stored");
         await Task.CompletedTask;
     }
 
@@ -387,14 +468,39 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
     {
         if (Movie == null) return;
 
-        Movie movieResponse = new(Movie, library.Id, Folder)
+        Movie movieResponse = new Movie 
         {
-            _colorPalette = await MovieDbImage
-                .MultiColorPalette(new[]
-                {
-                new BaseImage.MultiStringType("poster", Movie.PosterPath),
-                new BaseImage.MultiStringType("backdrop", Movie.BackdropPath)
-            })
+                Id = Movie.Id,
+                Title = Movie.Title,
+                TitleSort = Movie.Title.TitleSort(Movie.ReleaseDate),
+                Duration = Movie.Runtime,
+                Folder = Folder,
+                Adult = Movie.Adult,
+                Backdrop = Movie.BackdropPath,
+                Budget = Movie.Budget,
+                Homepage = Movie.Homepage?.ToString(),
+                ImdbId = Movie.ImdbId,
+                OriginalTitle = Movie.OriginalTitle,
+                OriginalLanguage = Movie.OriginalLanguage,
+                Overview = Movie.Overview,
+                Popularity = Movie.Popularity,
+                Poster = Movie.PosterPath,
+                ReleaseDate = Movie.ReleaseDate,
+                Revenue = Movie.Revenue,
+                Runtime = Movie.Runtime,
+                Status = Movie.Status,
+                Tagline = Movie.Tagline,
+                Trailer = Movie.Video,
+                Video = Movie.Video,
+                VoteAverage = Movie.VoteAverage,
+                VoteCount = Movie.VoteCount,
+                LibraryId = library.Id,
+                _colorPalette = await MovieDbImage
+                    .MultiColorPalette(new[]
+                    {
+                    new BaseImage.MultiStringType("poster", Movie.PosterPath),
+                    new BaseImage.MultiStringType("backdrop", Movie.BackdropPath)
+                })
         };
 
         await _mediaContext.Movies.Upsert(movieResponse)
@@ -433,7 +539,7 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
             })
             .RunAsync();
 
-        Logger.MovieDb($@"Movie {Movie.Title}: Movie stored");
+        Logger.MovieDb($"Movie {Movie.Title}: Movie stored");
     }
 
     private Task DispatchJobs()
@@ -443,16 +549,24 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         FindMediaFilesJob findMediaFilesJob = new(id, library);
         JobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
 
-        PersonJob personJob = new(id, "movie");
-        JobDispatcher.Dispatch(personJob, "queue", 3);
+        TmdbPersonJob tmdbPersonJob = new(new TmdbMovieAppends()
+        {
+            Id = id,
+            Credits = Movie.Credits,
+        });
+        JobDispatcher.Dispatch(tmdbPersonJob, "queue", 3);
 
-        MovieImagesJob imagesJob = new(id);
+        TmdbImagesJob imagesJob = new(new TmdbMovieAppends()
+        {
+            Id = id,
+            Images = Movie.Images,
+        });
         JobDispatcher.Dispatch(imagesJob, "data", 2);
 
         if (Movie.BelongsToCollection is null) return Task.CompletedTask;
 
-        AddCollectionJob addCollectionJob = new(Movie.BelongsToCollection.Id, library);
-        JobDispatcher.Dispatch(addCollectionJob, "queue", 4);
+        TmdbCollectionJob tmdbCollectionJob = new(Movie.BelongsToCollection, library);
+        JobDispatcher.Dispatch(tmdbCollectionJob, "queue", 4);
 
         return Task.CompletedTask;
     }
@@ -557,7 +671,6 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
     {
         Movie = null;
         await _mediaContext.DisposeAsync();
-        await TmdbMovieClient.DisposeAsync();
         GC.Collect();
         GC.WaitForFullGCComplete();
     }

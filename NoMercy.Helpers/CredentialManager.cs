@@ -2,6 +2,7 @@ using System.Security;
 using System.Text;
 using NeoSmart.SecureStore;
 using Newtonsoft.Json;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Helpers;
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.Other;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.TV;
@@ -10,7 +11,7 @@ using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 using Translation = NoMercy.Database.Models.Translation;
 
 namespace NoMercy.Server.Logic;
@@ -27,26 +28,19 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
 
     public async Task Process()
     {
-        // Tv? show = _mediaContext.Tvs.FirstOrDefault(e => e.Id == id);
-        // if (show is not null)
-        // {
-        //     Logger.MovieDb($@"TvShow {show.Title}: already exists");
-        //     return;
-        // }
-
         Show = await TmdbTvClient.WithAllAppends();
         if (Show is null)
         {
-            Logger.MovieDb($@"TvShow {TmdbTvClient.Id}: not found");
+            Logger.MovieDb($"TvShow {id}: not found");
             return;
         }
-        
-        Logger.MovieDb($@"TvShow {Show.Name}: found");
+
+        Logger.MovieDb($"TvShow {Show.Name}: found");
 
         Folder = FindFolder();
         MediaType = GetMediaType();
 
-        Logger.MovieDb($@"TvShow {Show.Name}: Folder: {Folder} MediaType: {MediaType}");
+        Logger.MovieDb($"TvShow {Show.Name}: Folder: {Folder} MediaType: {MediaType}");
 
         await Store();
 
@@ -71,7 +65,12 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
     private async Task StoreAlternativeTitles()
     {
         var alternativeTitles = Show?.AlternativeTitles.Results.ToList()
-            .ConvertAll<AlternativeTitle>(x => new AlternativeTitle(x, Show.Id)).ToArray() ?? [];
+            .ConvertAll<AlternativeTitle>(alternativeTitle => new AlternativeTitle
+            {
+                Iso31661 = alternativeTitle.Iso31661,
+                Title = alternativeTitle.Title,
+                TvId = Show.Id,
+            }).ToArray() ?? [];
 
         await _mediaContext.AlternativeTitles.UpsertRange(alternativeTitles)
             .On(a => new { a.Title, a.TvId })
@@ -83,18 +82,18 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: AlternativeTitles stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: AlternativeTitles stored");
     }
 
     private async Task StoreAggregateCredits()
     {
-        Logger.MovieDb($@"TvShow {Show?.Name}: AggregateCredits stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: AggregateCredits stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreWatchProviders()
     {
-        Logger.MovieDb($@"TvShow {Show?.Name}: WatchProviders stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: WatchProviders stored");
         await Task.CompletedTask;
     }
 
@@ -102,8 +101,19 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
     {
         try
         {
-            Translation[] translations = Show?.Translations.Translations.ToList()
-                .ConvertAll<Translation>(x => new Translation(x, Show)).ToArray() ?? [];
+            var translations = Show?.Translations.Translations.ToList()
+                .ConvertAll<Translation>(translation => new Translation
+                {
+                    Iso31661 = translation.Iso31661,
+                    Iso6391 = translation.Iso6391,
+                    Name = translation.Name == "" ? null : translation.Name,
+                    Title = translation.Data.Title == "" ? null : translation.Data.Title,
+                    Overview = translation.Data.Overview == "" ? null : translation.Data.Overview,
+                    EnglishName = translation.EnglishName,
+                    Homepage = translation.Data.Homepage?.ToString(),
+                    Biography = translation.Data.Biography,
+                    TvId = Show.Id,
+                }).ToArray() ?? [];
 
             await _mediaContext.Translations
                 .UpsertRange(translations.Where(translation => translation.Title != null || translation.Overview != ""))
@@ -129,7 +139,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
     }
 
@@ -143,7 +153,11 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
                 .FirstOrDefault(c => c.Iso31661 == tvContentRating.Iso31661 && c.Rating == tvContentRating.Rating);
             if (certification is null) continue;
 
-            certifications.Add(new CertificationTv(certification, Show));
+            certifications.Add(new CertificationTv
+            {
+                CertificationId = certification.Id,
+                TvId = Show?.Id ?? 0
+            });
         }
 
         await _mediaContext.CertificationTv.UpsertRange(certifications)
@@ -155,14 +169,23 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: ContentRatings stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: ContentRatings stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreSimilar()
     {
-        List<Similar> data = Show?.Similar.Results.ToList()
-            .ConvertAll<Similar>(x => new Similar(x, Show)) ?? [];
+        var data = Show?.Similar.Results.ToList()
+            .ConvertAll<Similar>(similar => new Similar
+            {
+                Backdrop = similar.BackdropPath,
+                Overview = similar.Overview,
+                Poster = similar.PosterPath,
+                Title = similar.Name,
+                TitleSort = similar.Name,
+                MediaId = similar.Id,
+                TvFromId = Show.Id,
+            }) ?? [];
 
         await _mediaContext.Similar.UpsertRange(data)
             .On(v => new { v.MediaId, v.TvFromId })
@@ -179,17 +202,26 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        var similarColorPaletteJob = new ColorPaletteJob(id, model: "similar", type: "tv");
-        JobDispatcher.Dispatch(similarColorPaletteJob, "queue", 2);
+        var similarColorPaletteJob = new TmdbColorPaletteJob(id, model: "similar", type: "tv");
+        JobDispatcher.Dispatch(similarColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: Similar stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: Similar stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreRecommendations()
     {
-        List<Recommendation> data = Show?.Recommendations.Results.ToList()
-            .ConvertAll<Recommendation>(x => new Recommendation(x, Show)) ?? [];
+        var data = Show?.Recommendations.Results.ToList()
+            .ConvertAll<Recommendation>(recommendation => new Recommendation
+            {
+                Backdrop = recommendation.BackdropPath,
+                Overview = recommendation.Overview,
+                Poster = recommendation.PosterPath,
+                Title = recommendation.Name,
+                TitleSort = recommendation.Name.TitleSort(),
+                MediaId = recommendation.Id,
+                TvFromId = Show.Id,
+            }) ?? [];
 
         await _mediaContext.Recommendations.UpsertRange(data)
             .On(v => new { v.MediaId, v.TvFromId })
@@ -206,10 +238,10 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        var recommendationColorPaletteJob = new ColorPaletteJob(id, model: "recommendation", type: "tv");
-        JobDispatcher.Dispatch(recommendationColorPaletteJob, "queue", 2);
+        var recommendationColorPaletteJob = new TmdbColorPaletteJob(id, model: "recommendation", type: "tv");
+        JobDispatcher.Dispatch(recommendationColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: Recommendations stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: Recommendations stored");
         await Task.CompletedTask;
     }
 
@@ -217,8 +249,19 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
     {
         try
         {
-            List<Media> videos = Show?.Videos.Results.ToList()
-                .ConvertAll<Media>(x => new Media(x, Show, "video")) ?? [];
+            var videos = Show?.Videos.Results.ToList()
+                .ConvertAll<Media>(media => new Media
+                {
+                    _type = "video",
+                    Id = Ulid.NewUlid(),
+                    Iso6391 = media.Iso6391,
+                    Name = media.Name,
+                    Site = media.Site,
+                    Size = media.Size,
+                    Src = media.Key,
+                    Type = media.Type,
+                    TvId = Show.Id,
+                }) ?? [];
 
             await _mediaContext.Medias.UpsertRange(videos)
                 .On(v => new { v.Src, v.TvId })
@@ -237,29 +280,61 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogLevel.Error);
+            Logger.MovieDb(e, LogEventLevel.Error);
         }
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: Videos stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: Videos stored");
         await Task.CompletedTask;
     }
 
-    public static async Task StoreImages(int id)
+    public static async Task StoreImages(TmdbTvShowAppends tvShowAppends)
     {
-        TmdbTvClient tmdbTvClient = new(id);
-        var show = await tmdbTvClient.WithAllAppends();
-        if (show is null) return;
+        var posters = tvShowAppends.Images.Posters.ToList()
+            .ConvertAll<Image>(image => new Image
+            {
+                AspectRatio = image.AspectRatio,
+                Height = image.Height,
+                Iso6391 = image.Iso6391,
+                FilePath = image.FilePath,
+                Width = image.Width,
+                VoteAverage = image.VoteAverage,
+                VoteCount = image.VoteCount,
+                TvId = tvShowAppends.Id,
+                Type = "poster",
+                Site = "https://image.tmdb.org/t/p/",
+            });
 
-        List<Image> posters = show.Images.Posters.ToList()
-            .ConvertAll<Image>(image => new Image(image, show, "poster"));
+        var backdrops = tvShowAppends.Images.Backdrops.ToList()
+            .ConvertAll<Image>(image => new Image
+            {
+                AspectRatio = image.AspectRatio,
+                Height = image.Height,
+                Iso6391 = image.Iso6391,
+                FilePath = image.FilePath,
+                Width = image.Width,
+                VoteAverage = image.VoteAverage,
+                VoteCount = image.VoteCount,
+                TvId = tvShowAppends.Id,
+                Type = "backdrop",
+                Site = "https://image.tmdb.org/t/p/",
+            });
 
-        List<Image> backdrops = show.Images.Backdrops.ToList()
-            .ConvertAll<Image>(image => new Image(image, show, "backdrop"));
+        var logos = tvShowAppends.Images.Logos.ToList()
+            .ConvertAll<Image>(image => new Image
+            {
+                AspectRatio = image.AspectRatio,
+                Height = image.Height,
+                Iso6391 = image.Iso6391,
+                FilePath = image.FilePath,
+                Width = image.Width,
+                VoteAverage = image.VoteAverage,
+                VoteCount = image.VoteCount,
+                TvId = tvShowAppends.Id,
+                Type = "logo",
+                Site = "https://image.tmdb.org/t/p/",
+            });
 
-        List<Image> logos = show.Images.Logos.ToList()
-            .ConvertAll<Image>(image => new Image(image, show, "logo"));
-
-        List<Image> images = posters
+        var images = posters
             .Concat(backdrops)
             .Concat(logos)
             .ToList();
@@ -282,10 +357,10 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        var tvColorPaletteJob = new ColorPaletteJob(id, "tv");
-        JobDispatcher.Dispatch(tvColorPaletteJob, "queue", 2);
+        var tvColorPaletteJob = new TmdbColorPaletteJob(tvShowAppends);
+        JobDispatcher.Dispatch(tvColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"TvShow {show.Name}: Images stored");
+        Logger.MovieDb($"TvShow {tvShowAppends.Name}: Images stored");
         await Task.CompletedTask;
     }
 
@@ -303,7 +378,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         //     })
         //     .RunAsync();
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: Networks stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: Networks stored");
         await Task.CompletedTask;
     }
 
@@ -321,14 +396,18 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         //     })
         //     .RunAsync();
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: Companies stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: Companies stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreKeywords()
     {
-        Keyword[] keywords = Show?.Keywords.Results.ToList()
-            .ConvertAll<Keyword>(x => new Keyword(x)).ToArray() ?? [];
+        var keywords = Show?.Keywords.Results.ToList()
+            .ConvertAll<Keyword>(keyword => new Keyword
+            {
+                Id = keyword.Id,
+                Name = keyword.Name,
+            }).ToArray() ?? [];
 
         await _mediaContext.Keywords.UpsertRange(keywords)
             .On(v => new { v.Id })
@@ -339,8 +418,12 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        KeywordTv[] keywordTvs = Show?.Keywords.Results.ToList()
-            .ConvertAll<KeywordTv>(x => new KeywordTv(x, Show)).ToArray() ?? [];
+        var keywordTvs = Show?.Keywords.Results.ToList()
+            .ConvertAll<KeywordTv>(keyword => new KeywordTv
+            {
+                KeywordId = keyword.Id,
+                TvId = Show.Id,
+            }).ToArray() ?? [];
 
         await _mediaContext.KeywordTv.UpsertRange(keywordTvs)
             .On(v => new { v.KeywordId, v.TvId })
@@ -351,32 +434,44 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: Keywords stored");
+        Logger.MovieDb($"TvShow {Show?.Name}: Keywords stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreGenres()
     {
-        GenreTv[] genreTvs = Show?.Genres.ToList()
-            .ConvertAll<GenreTv>(x => new GenreTv(x, Show)).ToArray() ?? [];
+        try
+        {
+            var genreTvs = Show?.Genres.ToList()
+                .ConvertAll<GenreTv>(genre => new GenreTv
+                {
+                    GenreId = genre.Id,
+                    TvId = Show.Id,
+                }).ToArray() ?? [];
 
-        await _mediaContext.GenreTv.UpsertRange(genreTvs)
-            .On(v => new { v.GenreId, v.TvId })
-            .WhenMatched((ts, ti) => new GenreTv
-            {
-                GenreId = ti.GenreId,
-                TvId = ti.TvId
-            })
-            .RunAsync();
+            await _mediaContext.GenreTv.UpsertRange(genreTvs)
+                .On(v => new { v.GenreId, v.TvId })
+                .WhenMatched((ts, ti) => new GenreTv
+                {
+                    GenreId = ti.GenreId,
+                    TvId = ti.TvId
+                })
+                .RunAsync();
 
-        Logger.MovieDb($@"TvShow {Show?.Name}: Genres stored");
+            Logger.MovieDb($"TvShow {Show?.Name}: Genres stored");
+        }
+        catch (Exception e)
+        {
+            Logger.MovieDb(e, LogEventLevel.Error);
+        }
+
         await Task.CompletedTask;
     }
 
     private string GetMediaType()
     {
         if (Show is null) return "";
-        
+
         var searchName = string.IsNullOrEmpty(Show.OriginalName)
             ? Show.Name
             : Show.OriginalName;
@@ -394,9 +489,41 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
     private async Task Store()
     {
         if (Show == null) return;
-        
-        var tvResponse = new Tv(Show, library.Id, Folder, MediaType)
+
+        var tvResponse = new Tv
         {
+            Id = Show.Id,
+            Backdrop = Show.BackdropPath,
+            Duration = Show.EpisodeRunTime?.Length > 0
+                ? (int?)Show.EpisodeRunTime?.Average()
+                : 0,
+            FirstAirDate = Show.FirstAirDate,
+            HaveEpisodes = 0,
+            Homepage = Show.Homepage?.ToString(),
+            ImdbId = Show.ExternalIds.ImdbId,
+            InProduction = Show.InProduction,
+            LastEpisodeToAir = Show.LastEpisodeToAir?.Id,
+            NextEpisodeToAir = Show.NextEpisodeToAir?.Id,
+            NumberOfEpisodes = Show.NumberOfEpisodes,
+            NumberOfSeasons = Show.NumberOfSeasons,
+            OriginCountry = Show.OriginCountry.Length > 0 ? Show.OriginCountry[0] : null,
+            OriginalLanguage = Show.OriginalLanguage,
+            Overview = Show.Overview,
+            Popularity = Show.Popularity,
+            Poster = Show.PosterPath,
+            SpokenLanguages = Show.SpokenLanguages.Length > 0 ? Show.SpokenLanguages[0].Name : null,
+            Status = Show.Status,
+            Tagline = Show.Tagline,
+            Title = Show.Name,
+            TitleSort = Show.Name.TitleSort(Show.FirstAirDate),
+            Trailer = Show.Videos.Results.Length > 0 ? Show.Videos.Results[0].Key : null,
+            TvdbId = Show.ExternalIds.TvdbId,
+            Type = Show.Type,
+            VoteAverage = Show.VoteAverage,
+            VoteCount = Show.VoteCount,
+            Folder = Folder,
+            LibraryId = library.Id,
+            MediaType = "tv",
             _colorPalette = await MovieDbImage
                 .MultiColorPalette(new[]
                 {
@@ -451,7 +578,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($@"TvShow {Show.Name}: TvShow stored");
+        Logger.MovieDb($"TvShow {Show.Name}: TvShow stored");
     }
 
     private Task DispatchJobs()
@@ -461,10 +588,18 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         var findMediaFilesJob = new FindMediaFilesJob(id, library);
         JobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
 
-        var personJob = new PersonJob(id, "tv");
+        var personJob = new TmdbPersonJob(new TmdbTvShowAppends()
+        {
+            Id = id,
+            Credits = Show.Credits,
+        });
         JobDispatcher.Dispatch(personJob, "queue", 3);
 
-        var imagesJob = new TvImagesJob(id);
+        var imagesJob = new TmdbImagesJob(new TmdbTvShowAppends()
+        {
+            Id = id,
+            Images = Show.Images,
+        });
         JobDispatcher.Dispatch(imagesJob, "data", 2);
 
         return Task.CompletedTask;
@@ -482,16 +617,16 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         if (tv is { _colorPalette: "" })
         {
             tv._colorPalette = await MovieDbImage
-               .MultiColorPalette(new[]
-               {
-                   new BaseImage.MultiStringType("poster", tv.Poster),
-                   new BaseImage.MultiStringType("backdrop", tv.Backdrop)
-               });
+                .MultiColorPalette(new[]
+                {
+                    new BaseImage.MultiStringType("poster", tv.Poster),
+                    new BaseImage.MultiStringType("backdrop", tv.Backdrop)
+                });
 
             await mediaContext.SaveChangesAsync();
         }
 
-        Image[] images = await mediaContext.Images
+        var images = await mediaContext.Images
             .Where(e => e.TvId == id)
             .Where(e => e._colorPalette == "")
             .Where(e => e.Iso6391 == null || e.Iso6391 == "en" || e.Iso6391 == "" ||
@@ -501,10 +636,10 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         foreach (var image in images)
         {
             if (string.IsNullOrEmpty(image.FilePath)) continue;
-            
+
             image._colorPalette = await MovieDbImage.ColorPalette("image", image.FilePath);
         }
-        
+
         await mediaContext.SaveChangesAsync();
     }
 
@@ -528,7 +663,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
                     new BaseImage.MultiStringType("poster", similar.Poster),
                     new BaseImage.MultiStringType("backdrop", similar.Backdrop)
                 });
-            
+
             similar._colorPalette = palette;
         }
 
@@ -539,7 +674,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
     {
         await using MediaContext mediaContext = new();
 
-        List<Recommendation> recommendations = await mediaContext.Recommendations
+        var recommendations = await mediaContext.Recommendations
             .Where(e => e.TvFromId == id && e._colorPalette == "")
             .ToListAsync();
 
@@ -548,14 +683,14 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         foreach (var recommendation in recommendations)
         {
             if (recommendation is not { _colorPalette: "" }) continue;
-            
+
             var palette = await MovieDbImage
                 .MultiColorPalette(new[]
                 {
                     new BaseImage.MultiStringType("poster", recommendation.Poster),
                     new BaseImage.MultiStringType("backdrop", recommendation.Backdrop)
                 });
-            
+
             recommendation._colorPalette = palette;
         }
 
@@ -574,7 +709,6 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
     public async ValueTask DisposeAsync()
     {
         await _mediaContext.DisposeAsync();
-        await TmdbTvClient.DisposeAsync();
         GC.Collect();
         GC.WaitForFullGCComplete();
         GC.WaitForPendingFinalizers();

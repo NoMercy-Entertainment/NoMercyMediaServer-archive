@@ -1,7 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
+﻿using System.Drawing;
+using System.Runtime.Versioning;
 using AcoustID;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.CoverArt.Models;
 using Uri = System.Uri;
 
@@ -25,16 +27,17 @@ public class CoverArtCoverArtClient : CoverArtBaseClient
         {
             return Get<CoverArtCovers>("release/" + Id, queryParams, priority);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return Task.FromResult<CoverArtCovers?>(null);
         }
     }
 
-    [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
+    // [SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
+    [SupportedOSPlatform("windows10.0.18362")]
     public static async Task<Bitmap?> Download(Uri url, bool? download = true)
     {
-        var filePath = Path.Combine(AppFiles.MusicImagesPath, url.FileName());
+        var filePath = Path.Combine(AppFiles.MusicImagesPath, Path.GetFileName(url.LocalPath));
         
         if (File.Exists(filePath)) return new Bitmap(filePath);
         

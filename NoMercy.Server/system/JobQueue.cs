@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
+using Serilog.Events;
 
 namespace NoMercy.Server.system;
 
@@ -24,7 +26,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger.Queue(e, LogEventLevel.Error);
             }
         }
     }
@@ -44,7 +46,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger.Queue(e, LogEventLevel.Error);
             }
 
             return job;
@@ -123,7 +125,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger.Queue(e, LogEventLevel.Error);
             }
         }
     }
@@ -150,7 +152,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger.Queue(e, LogEventLevel.Error);
             }
         }
     }

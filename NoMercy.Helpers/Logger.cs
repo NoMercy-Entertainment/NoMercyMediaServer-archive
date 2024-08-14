@@ -1,69 +1,273 @@
 using System.Drawing;
+using System.Globalization;
 using System.Text;
-
-// ReSharper disable All
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using NoMercy.NmSystem;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
+using Pastel;
+using Serilog.Formatting.Compact;
+using ILogger = Serilog.ILogger;
 
 namespace NoMercy.Helpers;
 
-using Pastel;
-using System;
-using Microsoft.Extensions.Logging;
-
-public enum LogLevel
+internal class WithThreadId : ILogEventEnricher
 {
-    Verbose,
-    Debug,
-    Info,
-    Warning,
-    Error
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(
+            "ThreadId", Thread.CurrentThread.ManagedThreadId));
+    }
+}
+
+internal class ConsoleTimestampEnricher : ILogEventEnricher
+{
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Pastel(Color.DarkGray);
+
+        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(
+            "Time", timestamp));
+    }
+}
+
+internal class ConsoleTypeEnricher : ILogEventEnricher
+{
+    private static string SpacerEnd(string text, int padding)
+    {
+        StringBuilder spacing = new();
+        spacing.Append(text);
+        for (var i = 0; i < padding - text.Length; i++)
+        {
+            spacing.Append(' ');
+        }
+
+        return spacing.ToString();
+    }
+
+    private static string SpacerBegin(string text, int padding)
+    {
+        StringBuilder spacing = new();
+        for (var i = 0; i < padding - text.Length; i++)
+        {
+            spacing.Append(' ');
+        }
+        spacing.Append(text);
+
+        return spacing.ToString();
+    }
+
+    private static string Spacer(string text, int padding, bool begin = false)
+    {
+        return begin ? SpacerBegin(text, padding) : SpacerEnd(text, padding);
+    }
+    
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        logEvent.Properties.TryGetValue("ConsoleType", out var value);
+        
+        var type = value?.ToString().Replace("\"", "") ?? "app";
+        
+        var color = Logger.GetColor(type);
+        
+        logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(
+            "ConsoleType", Spacer(Logger.Capitalize[type], 12, true).Pastel(color)));
+    }
+}
+
+internal class FileMessageEnricher : ILogEventEnricher
+{
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        logEvent.RemovePropertyIfPresent("@mt");
+    }
+}
+
+internal class FileTimestampEnricher : ILogEventEnricher
+{
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        var timestamp = DateTime.UtcNow.ToString(CultureInfo.InvariantCulture);
+
+        logEvent.RemovePropertyIfPresent("@t");
+        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(
+            "Time", timestamp));
+    }
+}
+
+internal class FileTypeEnricher : ILogEventEnricher
+{
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        logEvent.Properties.TryGetValue("ConsoleType", out var value);
+        
+        var type = value?.ToString().Replace("\"", "") ?? "app";
+        
+        var color = Logger.GetColor(type);
+        
+        logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(
+            "Type", type.ToString()));
+    }
 }
 
 public static class Logger
 {
-    private static LogLevel _maxLogLevel = LogLevel.Debug;
+    private static Serilog.Core.Logger ConsoleLog { get; set; }
+    private static LogEventLevel _maxLogLevel = LogEventLevel.Debug;
+    private const string ConsoleTemplate = "{Time} {ConsoleType} | {@Message}{NewLine}{Exception}";
+    
+    private static LoggerConfiguration DefaultEnrich(this LoggerConfiguration lc) =>
+        lc
+            .Enrich.FromLogContext()
+            .Enrich.With<WithThreadId>();
 
-    static Logger()
-    {
-        // MediaContext mediaContext = new();
-        //
-        // Configuration? config = mediaContext.Configuration
-        //     .FirstOrDefault(c => c.Key == "logLevel");
-        //
-        // _maxLogLevel = (LogLevel) Enum.Parse(typeof(LogLevel), config?.Value ?? "Info");
+    private static LoggerConfiguration SinkFile(this LoggerConfiguration lc, string filePath) {
+        // add log to static list
+        return lc
+            .Enrich.With<FileTypeEnricher>()
+            .Enrich.With<FileTimestampEnricher>()
+            .Enrich.With<FileMessageEnricher>()
+            .WriteTo.File(
+                formatter: new CompactJsonFormatter(), 
+                path: filePath,
+                rollingInterval: RollingInterval.Day
+            );
     }
 
-    public static void SetLogLevel(LogLevel level)
+    private static LoggerConfiguration SinkConsole(this LoggerConfiguration lc) =>
+        lc
+            .Enrich.With<ConsoleTimestampEnricher>()
+            .Enrich.With<ConsoleTypeEnricher>()
+            .WriteTo.Console(
+                applyThemeToRedirectedOutput: true,
+                outputTemplate: ConsoleTemplate
+            );
+    
+    static Logger()
+    {
+        ConsoleLog = CreateConsoleConfiguration()
+            .CreateLogger();
+    }
+
+    private static LoggerConfiguration CreateConsoleConfiguration() =>
+        new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .DefaultEnrich()
+            .WriteTo.Logger(lc => lc
+                .SinkFile(Path.Join(AppFiles.LogPath, "log.txt"))
+            )
+            .WriteTo.Logger(lc => lc
+                .SinkConsole()
+            );
+    
+    public static void SetLogLevel(LogEventLevel level)
     {
         _maxLogLevel = level;
     }
 
-    private static bool ShouldLog(LogLevel level)
+    private static bool ShouldLog(LogEventLevel level)
     {
         return level >= _maxLogLevel;
     }
+    
+    public class LogType
+    {
+        [JsonProperty("name")] public string Name { get; set; }
+        [JsonProperty("display_name")] public string DisplayName { get; set; }
+        [JsonProperty("color")] public string Color { get; set; }
+        [JsonProperty("type")] public string Type { get; set; }
+
+        public LogType(string name, string displayName, Color color, string type)
+        {
+            Name = name;
+            DisplayName = displayName;
+            Color = color.ToHexString();
+            Type = type ?? "log";
+        }
+
+    }
+
+    public static readonly List<LogType> LogTypes = [
+        new LogType("_", "System", Color.DimGray, "spacer"),
+        new LogType("app", "Access", Color.MediumPurple, "System"),
+        new LogType("access", "App", Color.MediumPurple, "System"),
+        new LogType("configuration", "Configuration", Color.MediumPurple, "System"),
+        new LogType("auth", "Auth", Color.CornflowerBlue, "System"),
+        new LogType("register", "Register", Color.CornflowerBlue, "System"),
+        new LogType("setup", "Setup", Color.CornflowerBlue, "System"),
+        new LogType("certificate", "Certificate", Color.CornflowerBlue, "System"),
+
+        new LogType("_", "Workers", Color.DimGray, "spacer"),
+        new LogType("queue", "Queue", Color.Chocolate, "Workers"),
+        new LogType("encoder", "Encoder", Color.Chocolate, "Workers"),
+        new LogType("ripper", "Ripper", Color.Chocolate, "Workers"),
+
+        new LogType("_", "Networking", Color.DimGray, "spacer"),
+        new LogType("http", "Http", Color.Orange, "Networking"),
+        new LogType("notify", "Notify", Color.Orange, "Networking"),
+        new LogType("ping", "Ping", Color.Orange, "Networking"),
+        new LogType("socket", "Socket", Color.Orange, "Networking"),
+        new LogType("request", "Request", Color.Orange, "Networking"),
+
+        new LogType("_", "Providers", Color.DimGray, "spacer"),
+        new LogType("acoustid", "AcoustID", Color.DodgerBlue, "Providers"),
+        new LogType("anidb", "AniDB", Color.DodgerBlue, "Providers"),
+        new LogType("audiodb", "AudioDB", Color.DodgerBlue, "Providers"),
+        new LogType("coverart", "CoverArt", Color.DodgerBlue, "Providers"),
+        new LogType("fanart", "Fanart", Color.DodgerBlue, "Providers"),
+        new LogType("fingerprint", "Fingerprint", Color.DodgerBlue, "Providers"),
+        new LogType("moviedb", "TheMovieDB", Color.DodgerBlue, "Providers"),
+        new LogType("musicbrainz", "MusicBrainz", Color.DodgerBlue, "Providers"),
+        new LogType("musixmatch", "MusixMatch", Color.DodgerBlue, "Providers"),
+        new LogType("openSubs", "OpenSubs", Color.DodgerBlue, "Providers"),
+        new LogType("tvdb", "TheTVDB", Color.DodgerBlue, "Providers"),
+        new LogType("youtube", "YouTube", Color.DodgerBlue, "Providers"),
+
+        new LogType("_", "Notifications", Color.DimGray, "spacer"),
+        new LogType("discord", "Discord", Color.Green, "Notifications"),
+        new LogType("twitter", "Twiitter", Color.Green, "Notifications"),
+        new LogType("whatsapp", "Whatsapp", Color.Green, "Notifications"),
+        new LogType("telegram", "Telegram", Color.Green, "Notifications"),
+        new LogType("webhook", "Webhook", Color.Green, "Notifications"),
+        
+        // new LogType("_", "Unused", Color.DimGray, "spacer"),
+        // new LogType("qbittorrent", "QBitTorrent", Color.Olive, "Unused"),
+        // new LogType("transmission", "Transmission", Color.Olive, "Unused"),
+        // new LogType("rutorrent", "RuTorrent", Color.Olive, "Unused"),
+        // new LogType("sabnzbd", "SabNzbd", Color.Olive, "Unused"),
+        // new LogType("deluge", "Deluge" , Color.Olive, "Unused"),
+        // new LogType("emby", "Emby" , Color.Olive, "Unused"),
+        // new LogType("jackett", "Jackett" , Color.Olive, "Unused"),
+        // new LogType("jellyfin", "Jellyfin" , Color.Olive, "Unused"),
+        // new LogType("kodi", "Kodi" , Color.Olive, "Unused"),
+        // new LogType("lidarr", "Lidarr" , Color.Olive, "Unused"),
+        // new LogType("ombi", "Ombi" , Color.Olive, "Unused"),
+        // new LogType("plex", "Plex" , Color.Olive, "Unused"),
+        // new LogType("radarr", "Radarr" , Color.Olive, "Unused"),
+        // new LogType("sickchill", "SickChill" , Color.Olive, "Unused"),
+        // new LogType("sickgear", "SickGear" , Color.Olive, "Unused"),
+        // new LogType("sonarr", "sonarr" , Color.Olive, "Unused"),
+        // new LogType("usenet", "Usenet" , Color.Olive, "Unused"),
+    ];
 
     private static readonly Dictionary<string, Color>? LogColors = new()
     {
-        { "debug", Color.DarkGray },
-        { "info", Color.White },
-        { "warning", Color.Yellow },
-        { "error", Color.Red },
-
-        { "system", Color.DimGray },
-
+        // { "system", Color.DimGray },
+        { "server", Color.MediumPurple },
         { "app", Color.MediumPurple },
         { "access", Color.MediumPurple },
         { "configuration", Color.MediumPurple },
-
         { "auth", Color.CornflowerBlue },
         { "register", Color.CornflowerBlue },
         { "setup", Color.CornflowerBlue },
         { "certificate", Color.CornflowerBlue },
 
-        { "queue", Color.Salmon },
-        { "encoder", Color.Salmon },
-        { "ripper", Color.Salmon },
+        { "queue", Color.Chocolate },
+        { "encoder", Color.Chocolate },
+        { "ripper", Color.Chocolate },
 
         { "http", Color.Orange },
         { "notify", Color.Orange },
@@ -84,16 +288,24 @@ public static class Logger
         { "coverart", Color.DodgerBlue },
         { "musixmatch", Color.DodgerBlue },
 
-        { "qbittorrent", Color.Olive },
-        { "transmission", Color.Olive },
-        { "rutorrent", Color.Olive },
-        { "sabnzbd", Color.Olive },
+        // { "qbittorrent", Color.Olive },
+        // { "transmission", Color.Olive },
+        // { "rutorrent", Color.Olive },
+        // { "sabnzbd", Color.Olive },
 
-        { "discord", Color.Lime },
-        { "twitter", Color.Lime },
-        { "whatsapp", Color.Lime },
-        { "telegram", Color.Lime },
-        { "webhook", Color.Lime }
+        { "discord", Color.Green },
+        { "twitter", Color.Green },
+        { "whatsapp", Color.Green },
+        { "telegram", Color.Green },
+        { "webhook", Color.Green },
+        
+        
+        {"_", Color.White},
+        {"__", Color.White},
+        {"___", Color.White},
+        {"____", Color.White},
+        {"_____", Color.White},
+        {"______", Color.White},
 
 
         // { "deluge", Color.White },
@@ -117,80 +329,86 @@ public static class Logger
         // { "xteve", Color.White },
     };
 
-    private static readonly Dictionary<string, string> Capitalize = new()
+    public static readonly Dictionary<string, string> Capitalize = new()
     {
-        { "debug", "DEBUG" },
-        { "info", "INFO" },
-        { "warning", "WARNING" },
-        { "error", "ERROR" },
-        { "system", "system" },
-        { "app", "App" },
+        {"_","System"},
+        // { "system", "System" },
         { "access", "Access" },
-        { "anidb", "AniDb" },
+        { "app", "App" },
         { "configuration", "Configuration" },
         { "auth", "Auth" },
         { "register", "Register" },
         { "setup", "Setup" },
         { "certificate", "Certificate" },
+        
+        {"__","Workers"},
         { "queue", "Queue" },
         { "encoder", "Encoder" },
         { "ripper", "Ripper" },
+        
+        {"___", "Networking"},
         { "http", "Http" },
         { "notify", "Notify" },
         { "ping", "Ping" },
         { "socket", "Socket" },
-        { "fanart", "FanArt" },
+        { "request", "Request" },
+        
+        {"____", "Providers"},
+        { "acoustid", "AcoustId" },
+        { "anidb", "AniDb" },
         { "audiodb", "AudioDb" },
+        { "coverart", "CoverArt" },
+        { "fanart", "FanArt" },
         { "fingerprint", "Fingerprint" },
         { "moviedb", "MovieDb" },
         { "musicbrainz", "MusicBrainz" },
         { "musixmatch", "MusixMatch" },
-        { "acoustid", "AcoustId" },
-        { "coverart", "CoverArt" },
-        { "request", "Request" },
         { "tvdb", "Tvdb" },
-        { "youtube", "Youtube" },
-        { "opensubs", "OpenSubs" },
-        { "qbittorrent", "QBitTorrent" },
-        { "transmission", "Transmission" },
-        { "ruTorrent", "RuTorrent" },
-        { "sabnzbd", "SabNzbd" },
+        
+        // { "youtube", "Youtube" },
+        // { "opensubs", "OpenSubs" },
+        // { "qbittorrent", "QBitTorrent" },
+        // { "transmission", "Transmission" },
+        // { "ruTorrent", "RuTorrent" },
+        // { "sabnzbd", "SabNzbd" },
+        
+        {"_____", "Notifications"},
         { "discord", "Discord" },
         { "twitter", "Twitter" },
         { "whatsapp", "Whatsapp" },
         { "telegram", "Telegram" },
         { "webhook", "Webhook" },
 
-        { "deluge", "Deluge" },
-        { "emby", "Emby" },
-        { "jackett", "Jackett" },
-        { "jellyfin", "Jellyfin" },
-        { "kodi", "Kodi" },
-        { "lidarr", "Lidarr" },
-        { "ombi", "Ombi" },
-        { "plex", "Plex" },
-        { "radarr", "Radarr" },
-        { "sickchill", "SickChill" },
-        { "sickrage", "SickRage" },
-        { "sickgear", "SickGear" },
-        { "sonarr", "sonarr" },
-        { "trakt", "Trakt" },
-        { "tvmaze", "TvMaze" },
-        { "usenet", "Usenet" },
-        { "xteve", "Xteve" }
+        // { "deluge", "Deluge" },
+        // { "emby", "Emby" },
+        // { "jackett", "Jackett" },
+        // { "jellyfin", "Jellyfin" },
+        // { "kodi", "Kodi" },
+        // { "lidarr", "Lidarr" },
+        // { "ombi", "Ombi" },
+        // { "plex", "Plex" },
+        // { "radarr", "Radarr" },
+        // { "sickchill", "SickChill" },
+        // { "sickgear", "SickGear" },
+        // { "sickrage", "SickRage" },
+        // { "sonarr", "sonarr" },
+        // { "trakt", "Trakt" },
+        // { "tvmaze", "TvMaze" },
+        // { "usenet", "Usenet" },
+        // { "xteve", "Xteve" }
     };
-
-    private static Color GetColor(string type)
+    
+    internal static Color GetColor(string type)
     {
         return LogColors?[type] ?? Color.White;
     }
 
     public static T Log<T>(this T self, string type = "server") where T : class
     {
-        return Log<T>(self, LogLevel.Debug, type);
+        return Log<T>(self, LogEventLevel.Debug, type);
     }
 
-    private static T Log<T>(this T self, LogLevel level = LogLevel.Debug, string type = "server") where T : class
+    private static T Log<T>(this T self, LogEventLevel level = LogEventLevel.Debug, string type = "server") where T : class
     {
         Log(level, self, type);
         return self;
@@ -198,282 +416,364 @@ public static class Logger
 
     public static T Log<T>(this T self) where T : class
     {
-        Log(LogLevel.Debug, self);
+        Log(LogEventLevel.Debug, self);
         return self;
     }
 
-    private static void Log<T>(LogLevel level, T? message, string type = "server") where T : class?
-    {
-        Log(level, message.ToJson(), type);
-    }
-
-    private static void Log(LogLevel level, string message, string type = "server")
+    private static void Log<T>(LogEventLevel level, T? message, string type = "server") where T : class?
     {
         if (!ShouldLog(level))
             return;
 
-        Color color = GetColor(type);
+        var color = GetColor(type);
+        
+        var log = ConsoleLog
+            .ForContext("Message", message.ToJson())
+            .ForContext("Level", level)
+            .ForContext("Color", color.ToHexString())
+            .ForContext("ConsoleType", type);
+        
+        var messageString =  Regex.Replace(Regex.Replace(message.ToJson(), "^\"", ""), "\"$", "");
+            
         switch (level)
         {
-            case LogLevel.Info:
+            case LogEventLevel.Information:
+                log.Information(messageString);
                 break;
-            case LogLevel.Debug:
-                color = Color.DarkGray;
+            case LogEventLevel.Debug:
+                log.Debug(messageString);
                 break;
-            case LogLevel.Warning:
-                color = Color.Yellow;
+            case LogEventLevel.Warning:
+                log.Warning(messageString);
                 break;
-            case LogLevel.Error:
-                color = Color.Red;
+            case LogEventLevel.Error:
+                log.Error(messageString);
+                break;
+            case LogEventLevel.Verbose:
+                log.Verbose(messageString);
+                break;
+            case LogEventLevel.Fatal:
+                log.Fatal(messageString);
                 break;
             default:
-                color = Color.DimGray;
+                log.Information(messageString);
                 break;
         }
-
-        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Pastel(Color.DarkGray);
-        string formattedMessage = message.Replace("\\n", Environment.NewLine);
-        string logEntry = $"{Spacer(Capitalize[type] ?? type, 12).Pastel(color)}: {timestamp} {formattedMessage}";
-        Console.WriteLine(logEntry);
+        
+        Networking.Networking.SendToAll("NewLog", "dashboardHub", new LogEntry
+        {
+            Color = color.ToHexString(),
+            LogLevel = level,
+            Message = message.ToJson(),
+            Time = DateTime.Now,
+            Type = type,
+            ThreadId = Thread.CurrentThread.ManagedThreadId,
+        });
     }
 
-    private static void Log(LogLevel level, int message, string type = "server")
+    private static void Log(LogEventLevel level, string message, string type = "server")
     {
         if (!ShouldLog(level))
             return;
 
-        Color color = GetColor(type);
+        var color = GetColor(type);
+        
+        var log = ConsoleLog
+            .ForContext("Message", message.ToJson())
+            .ForContext("Level", level)
+            .ForContext("Color", color.ToHexString())
+            .ForContext("ConsoleType", type);
+        
+        var messageString =  Regex.Replace(Regex.Replace(message, "^\"", ""), "\"$", "");
+        
         switch (level)
         {
-            case LogLevel.Info:
+            case LogEventLevel.Information:
+                log.Information(messageString);
                 break;
-            case LogLevel.Debug:
-                color = Color.DarkGray;
+            case LogEventLevel.Debug:
+                log.Debug(messageString);
                 break;
-            case LogLevel.Warning:
-                color = Color.Yellow;
+            case LogEventLevel.Warning:
+                log.Warning(messageString);
                 break;
-            case LogLevel.Error:
-                color = Color.Red;
+            case LogEventLevel.Error:
+                log.Error(messageString);
+                break;
+            case LogEventLevel.Verbose:
+                log.Verbose(messageString);
                 break;
             default:
-                color = Color.DimGray;
+                log.Information(messageString);
                 break;
         }
-
-        string timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Pastel(Color.DimGray);
-        string logEntry = $"{Spacer(Capitalize[type] ?? type, 12).Pastel(color)}: {timestamp} {message}";
-        Console.WriteLine(logEntry);
+        
+        Networking.Networking.SendToAll("NewLog", "dashboardHub", new LogEntry
+        {
+            Color = color.ToHexString(),
+            LogLevel = level,
+            Message = message,
+            Time = DateTime.Now,
+            Type = type,
+            ThreadId = Thread.CurrentThread.ManagedThreadId,
+        });
     }
 
-    public static void Debug(string message) => Log(LogLevel.Debug, message, "debug");
-    public static void Debug<T>(T? message, LogLevel level = LogLevel.Debug) where T : class => Log(level, message);
-    public static void Info(string message) => Log(LogLevel.Info, message, "info");
-    public static void Info<T>(T? message, LogLevel level = LogLevel.Debug) where T : class => Log(level, message);
-    public static void Warning(string message) => Log(LogLevel.Warning, message, "warning");
-    public static void Warning<T>(T? message, LogLevel level = LogLevel.Debug) where T : class => Log(level, message);
-    public static void Error(string message) => Log(LogLevel.Error, message, "error");
-    public static void Error<T>(T? message, LogLevel level = LogLevel.Debug) where T : class => Log(level, message);
+    private static string ToHexString(this Color color)
+    {
+        return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+    }
+    
+    private static void Log(LogEventLevel level, int message, string type = "server")
+    {
+        if (!ShouldLog(level))
+            return;
 
-    public static void System(string message, LogLevel level = LogLevel.Info) => Log(level, message, "system");
+        var color = GetColor(type);
+        
+        var log = ConsoleLog
+            .ForContext("Message", message)
+            .ForContext("Level", level)
+            .ForContext("Color", color.ToHexString())
+            .ForContext("ConsoleType", type);
+            
+        var messageString =  Regex.Replace(Regex.Replace(message.ToString(), "^\"", ""), "\"$", "");
+        
+        switch (level)
+        {
+            case LogEventLevel.Information:
+                log.Information(messageString);
+                break;
+            case LogEventLevel.Debug:
+                log.Debug(messageString);
+                break;
+            case LogEventLevel.Warning:
+                log.Warning(messageString);
+                break;
+            case LogEventLevel.Error:
+                log.Error(messageString);
+                break;
+            case LogEventLevel.Verbose:
+                log.Verbose(messageString);
+                break;
+            default:
+                log.Information(messageString);
+                break;
+        }
+        
+        Networking.Networking.SendToAll("NewLog", "dashboardHub", new LogEntry
+        {
+            Color = color.ToHexString(),
+            LogLevel = level,
+            Message = message.ToString(),
+            Time = DateTime.Now,
+            Type = type,
+            ThreadId = Thread.CurrentThread.ManagedThreadId,
+        });
+    }
 
-    public static void System<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Debug(string message) => Log(LogEventLevel.Debug, message, "debug");
+    public static void Debug<T>(T? message, LogEventLevel level = LogEventLevel.Debug) where T : class => Log(level, message);
+    public static void Info(string message) => Log(LogEventLevel.Information, message, "info");
+    public static void Info<T>(T? message, LogEventLevel level = LogEventLevel.Debug) where T : class => Log(level, message);
+    public static void Warning(string message) => Log(LogEventLevel.Warning, message, "warning");
+    public static void Warning<T>(T? message, LogEventLevel level = LogEventLevel.Debug) where T : class => Log(level, message);
+    public static void Error(string message) => Log(LogEventLevel.Error, message, "error");
+    public static void Error<T>(T? message, LogEventLevel level = LogEventLevel.Debug) where T : class => Log(level, message);
+
+    public static void System(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "system");
+
+    public static void System<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "system");
 
-    public static void App(string message, LogLevel level = LogLevel.Info) => Log(level, message, "app");
-    public static void App<T>(T? message, LogLevel level = LogLevel.Info) where T : class => Log(level, message, "app");
+    public static void App(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "app");
+    public static void App<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class => Log(level, message, "app");
 
-    public static void Request(string message, LogLevel level = LogLevel.Debug) => Log(level, message, "request");
+    public static void Request(string message, LogEventLevel level = LogEventLevel.Debug) => Log(level, message, "request");
 
-    public static void Request<T>(T? message, LogLevel level = LogLevel.Debug) where T : class =>
+    public static void Request<T>(T? message, LogEventLevel level = LogEventLevel.Debug) where T : class =>
         Log(level, message, "request");
 
-    public static void AniDb(string message, LogLevel level = LogLevel.Info) => Log(level, message, "anidb");
+    public static void AniDb(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "anidb");
 
-    public static void AniDb<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void AniDb<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "anidb");
 
-    public static void Access(string? message, LogLevel level = LogLevel.Info) => Log(level, message, "access");
+    public static void Access(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "access");
 
-    public static void Access<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Access<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "access");
 
-    public static void AcoustId(string message, LogLevel level = LogLevel.Info) => Log(level, message, "acoustid");
+    public static void AcoustId(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "acoustid");
 
-    public static void AcoustId<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void AcoustId<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "acoustid");
 
-    public static void Configuration(string message, LogLevel level = LogLevel.Info) =>
+    public static void Configuration(string message, LogEventLevel level = LogEventLevel.Information) =>
         Log(level, message, "configuration");
 
-    public static void Configuration<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Configuration<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "configuration");
 
-    public static void Auth(string message, LogLevel level = LogLevel.Info) => Log(level, message, "auth");
+    public static void Auth(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "auth");
 
-    public static void Auth<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Auth<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "auth");
 
-    public static void Register(string message, LogLevel level = LogLevel.Info) => Log(level, message, "register");
+    public static void Register(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "register");
 
-    public static void Register<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Register<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "register");
 
-    public static void Certificate(string message, LogLevel level = LogLevel.Info) =>
+    public static void Certificate(string message, LogEventLevel level = LogEventLevel.Information) =>
         Log(level, message, "certificate");
 
-    public static void Certificate<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Certificate<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "certificate");
 
-    public static void CoverArt(string message, LogLevel level = LogLevel.Info) => Log(level, message, "coverart");
+    public static void CoverArt(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "coverart");
 
-    public static void CoverArt<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void CoverArt<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "coverart");
 
-    public static void Setup(string message, LogLevel level = LogLevel.Info) => Log(level, message, "setup");
+    public static void Setup(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "setup");
 
-    public static void Setup<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Setup<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "setup");
 
-    public static void Queue(string message, LogLevel level = LogLevel.Verbose) => Log(level, message, "queue");
+    public static void Queue(string message, LogEventLevel level = LogEventLevel.Debug) => Log(level, message, "queue");
 
-    public static void Queue<T>(T? message, LogLevel level = LogLevel.Verbose) where T : class =>
+    public static void Queue<T>(T? message, LogEventLevel level = LogEventLevel.Debug) where T : class =>
         Log(level, message, "queue");
 
-    public static void Encoder(string message, LogLevel level = LogLevel.Info) => Log(level, message, "encoder");
+    public static void Encoder(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "encoder");
 
-    public static void Encoder<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Encoder<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "encoder");
 
-    public static void Ripper(string message, LogLevel level = LogLevel.Info) => Log(level, message, "ripper");
+    public static void Ripper(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "ripper");
 
-    public static void Ripper<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Ripper<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "ripper");
 
-    public static void Http(string message, LogLevel level = LogLevel.Info) => Log(level, message, "http");
+    public static void Http(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "http");
 
-    public static void Http<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Http<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "http");
 
-    public static void Notify(string message, LogLevel level = LogLevel.Info) => Log(level, message, "notify");
+    public static void Notify(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "notify");
 
-    public static void Notify<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Notify<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "notify");
 
-    public static void Ping(string message, LogLevel level = LogLevel.Info) => Log(level, message, "ping");
+    public static void Ping(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "ping");
 
-    public static void Ping<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Ping<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "ping");
 
-    public static void Socket(string message, LogLevel level = LogLevel.Info) => Log(level, message, "socket");
+    public static void Socket(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "socket");
 
-    public static void Socket<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Socket<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "socket");
 
-    public static void FanArt(string message, LogLevel level = LogLevel.Info) => Log(level, message, "fanart");
+    public static void FanArt(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "fanart");
 
-    public static void FanArt<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void FanArt<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "fanart");
 
-    public static void Fingerprint(string message, LogLevel level = LogLevel.Info) =>
+    public static void Fingerprint(string message, LogEventLevel level = LogEventLevel.Information) =>
         Log(level, message, "fingerprint");
 
-    public static void Fingerprint<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Fingerprint<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "fingerprint");
 
-    public static void MovieDb(string message, LogLevel level = LogLevel.Info) => Log(level, message, "moviedb");
+    public static void MovieDb(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "moviedb");
 
-    public static void MovieDb<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void MovieDb<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "moviedb");
 
-    public static void MusicBrainz(string message, LogLevel level = LogLevel.Info) =>
+    public static void MusicBrainz(string message, LogEventLevel level = LogEventLevel.Information) =>
         Log(level, message, "musicbrainz");
 
-    public static void MusicBrainz<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void MusicBrainz<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "musicbrainz");
 
-    public static void AudioDb(string message, LogLevel level = LogLevel.Info) =>
+    public static void AudioDb(string message, LogEventLevel level = LogEventLevel.Information) =>
         Log(level, message, "audiodb");
 
-    public static void AudioDb<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void AudioDb<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "audiodb");
 
-    public static void MusixMatch(string message, LogLevel level = LogLevel.Info) => Log(level, message, "musixmatch");
+    public static void MusixMatch(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "musixmatch");
 
-    public static void MusixMatch<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void MusixMatch<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "musixmatch");
 
-    public static void Tvdb(string message, LogLevel level = LogLevel.Info) => Log(level, message, "tvdb");
+    public static void Tvdb(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "tvdb");
 
-    public static void Tvdb<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Tvdb<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "tvdb");
 
-    public static void Youtube(string message, LogLevel level = LogLevel.Info) => Log(level, message, "youtube");
+    public static void Youtube(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "youtube");
 
-    public static void Youtube<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Youtube<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "youtube");
 
-    public static void OpenSubs(string message, LogLevel level = LogLevel.Info) => Log(level, message, "opensubs");
+    public static void OpenSubs(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "opensubs");
 
-    public static void OpenSubs<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void OpenSubs<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "opensubs");
 
-    public static void QBitTorrent(string message, LogLevel level = LogLevel.Info) =>
+    public static void QBitTorrent(string message, LogEventLevel level = LogEventLevel.Information) =>
         Log(level, message, "qbittorrent");
 
-    public static void QBitTorrent<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void QBitTorrent<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "qbittorrent");
 
-    public static void Transmission(string message, LogLevel level = LogLevel.Info) =>
+    public static void Transmission(string message, LogEventLevel level = LogEventLevel.Information) =>
         Log(level, message, "transmission");
 
-    public static void Transmission<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Transmission<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "transmission");
 
-    public static void RuTorrent(string message, LogLevel level = LogLevel.Info) => Log(level, message, "rutorrent");
+    public static void RuTorrent(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "rutorrent");
 
-    public static void RuTorrent<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void RuTorrent<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "rutorrent");
 
-    public static void SabNzbd(string message, LogLevel level = LogLevel.Info) => Log(level, message, "sabnzbd");
+    public static void SabNzbd(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "sabnzbd");
 
-    public static void SabNzbd<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void SabNzbd<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "sabnzbd");
 
-    public static void Discord(string message, LogLevel level = LogLevel.Info) => Log(level, message, "discord");
+    public static void Discord(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "discord");
 
-    public static void Discord<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Discord<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "discord");
 
-    public static void Twitter(string message, LogLevel level = LogLevel.Info) => Log(level, message, "twitter");
+    public static void Twitter(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "twitter");
 
-    public static void Twitter<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Twitter<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "twitter");
 
-    public static void Whatsapp(string message, LogLevel level = LogLevel.Info) => Log(level, message, "whatsapp");
+    public static void Whatsapp(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "whatsapp");
 
-    public static void Whatsapp<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Whatsapp<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "whatsapp");
 
-    public static void Telegram(string message, LogLevel level = LogLevel.Info) => Log(level, message, "telegram");
+    public static void Telegram(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "telegram");
 
-    public static void Telegram<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Telegram<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "telegram");
 
-    public static void Webhook(string message, LogLevel level = LogLevel.Info) => Log(level, message, "webhook");
+    public static void Webhook(string message, LogEventLevel level = LogEventLevel.Information) => Log(level, message, "webhook");
 
-    public static void Webhook<T>(T? message, LogLevel level = LogLevel.Info) where T : class =>
+    public static void Webhook<T>(T? message, LogEventLevel level = LogEventLevel.Information) where T : class =>
         Log(level, message, "webhook");
 
-    private static string Spacer(string text, int rightPadding)
+    public static async Task<List<LogEntry>> GetLogs(int limit = 10, Func<LogEntry, bool>? filter = null)
     {
-        StringBuilder spacing = new();
-        spacing.Append(text);
-        for (int i = 0; i < rightPadding - text.Length; i++)
-        {
-            spacing.Append(' ');
-        }
-
-        return spacing.ToString();
+        return await LogReader.GetLastDailyLogsAsync(AppFiles.LogPath, limit, filter);
     }
+    
 }

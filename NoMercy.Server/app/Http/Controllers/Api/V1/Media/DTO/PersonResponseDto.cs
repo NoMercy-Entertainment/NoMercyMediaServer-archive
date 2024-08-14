@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Combined;
 using NoMercy.Providers.TMDB.Models.People;
 using Person = NoMercy.Database.Models.Person;
+using TmdbGender = NoMercy.Providers.TMDB.Models.People.TmdbGender;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
@@ -15,6 +16,7 @@ public record PersonResponseDto
 {
     [JsonProperty("nextId")] public long NextId { get; set; }
     [JsonProperty("data")] public PersonResponseItemDto? Data { get; set; }
+
 }
 
 public record PersonResponseItemDto
@@ -40,7 +42,7 @@ public record PersonResponseItemDto
 
     [JsonProperty("combined_credits")] public Credits CombinedCredits { get; set; }
 
-    [JsonProperty("external_ids")] public TmdbPersonExternalIds? ExternalIds { get; set; }
+    [JsonProperty("external_ids")] public Database.Models.TmdbPersonExternalIds? ExternalIds { get; set; }
     [JsonProperty("translations")] public TranslationsDto TranslationsDto { get; set; }
     [JsonProperty("knownFor")] public KnownFor[] KnownFor { get; set; }
     [JsonProperty("images")] public Images Images { get; set; }
@@ -189,14 +191,13 @@ public record Credits
 public record KnownFor
 {
     [JsonProperty("adult")] public bool Adult { get; set; }
-    [JsonProperty("backdrop_path")] public string? BackdropPath { get; set; }
+    [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("genre_ids")] public int[]? GenreIds { get; set; }
     [JsonProperty("id")] public int? Id { get; set; }
     [JsonProperty("original_language")] public string OriginalLanguage { get; set; }
     [JsonProperty("original_title")] public string OriginalTitle { get; set; }
     [JsonProperty("overview")] public string Overview { get; set; }
     [JsonProperty("popularity")] public double Popularity { get; set; }
-    [JsonProperty("poster_path")] public string? PosterPath { get; set; }
     [JsonProperty("release_date")] public DateTime? ReleaseDate { get; set; }
     [JsonProperty("title")] public string? Title { get; set; }
     [JsonProperty("video")] public bool? Video { get; set; }
@@ -223,17 +224,16 @@ public record KnownFor
     public KnownFor(Cast cast)
     {
         Character = cast.Role.Character;
-        PosterPath = cast.Movie?.Poster ?? cast.Tv?.Poster;
         Title = cast.Movie?.Title ?? cast.Tv?.Title;
         MediaType = cast.Movie is not null ? "movie" : "tv";
         Year = cast.Movie?.ReleaseDate.ParseYear() ?? cast.Tv?.FirstAirDate.ParseYear();
         Id = cast.Movie?.Id ?? cast.Tv?.Id;
         Adult = cast.Movie?.Adult ?? false;
-        BackdropPath = cast.Movie?.Backdrop ?? cast.Tv?.Backdrop;
         OriginalLanguage = cast.Movie?.OriginalLanguage ?? cast.Tv?.OriginalLanguage ?? string.Empty;
         Overview = cast.Movie?.Overview ?? cast.Tv?.Overview ?? string.Empty;
         Popularity = cast.Movie?.Popularity ?? cast.Tv?.Popularity ?? 0;
         Poster = cast.Movie?.Poster ?? cast.Tv?.Poster ?? string.Empty;
+        Backdrop = cast.Movie?.Backdrop ?? cast.Tv?.Backdrop;
         ReleaseDate = cast.Movie?.ReleaseDate ?? cast.Tv?.FirstAirDate;
         VoteAverage = cast.Movie?.VoteAverage ?? cast.Tv?.VoteAverage ?? 0;
         VoteCount = cast.Movie?.VoteCount ?? cast.Tv?.VoteCount ?? 0;
@@ -244,13 +244,12 @@ public record KnownFor
 
     public KnownFor(Crew crew)
     {
-        PosterPath = crew.Movie?.Poster ?? crew.Tv!.Poster;
         Title = crew.Movie?.Title ?? crew.Tv!.Title;
         MediaType = crew.Movie is not null ? "movie" : "tv";
         Year = crew.Movie?.ReleaseDate.ParseYear() ?? crew.Tv!.FirstAirDate.ParseYear();
         Id = crew.Movie?.Id ?? crew.Tv!.Id;
         Adult = crew.Movie?.Adult ?? false;
-        BackdropPath = crew.Movie?.Backdrop ?? crew.Tv!.Backdrop;
+        Backdrop = crew.Movie?.Backdrop ?? crew.Tv!.Backdrop;
         OriginalLanguage = crew.Movie?.OriginalLanguage ?? crew.Tv!.OriginalLanguage ?? string.Empty;
         Overview = crew.Movie?.Overview ?? crew.Tv!.Overview ?? string.Empty;
         Popularity = crew.Movie?.Popularity ?? crew.Tv!.Popularity ?? 0;
@@ -270,9 +269,8 @@ public record KnownFor
         if (year == 0) year = crew.FirstAirDate.ParseYear();
 
         Character = crew.Character;
-        PosterPath = crew.PosterPath;
         Title = crew.Title ?? crew.Name;
-        BackdropPath = crew.BackdropPath;
+        Backdrop = crew.BackdropPath;
         MediaType = crew.MediaType;
         Type = crew.MediaType;
         Id = crew.Id;
@@ -311,9 +309,8 @@ public record KnownFor
         var year = crew.ReleaseDate.ParseYear();
         if (year == 0) year = crew.FirstAirDate.ParseYear();
         Character = crew.Character;
-        PosterPath = crew.PosterPath;
         Title = crew.Title ?? crew.Name;
-        BackdropPath = crew.BackdropPath;
+        Backdrop = crew.BackdropPath;
         MediaType = type;
         Type = type;
         Id = crew.Id;

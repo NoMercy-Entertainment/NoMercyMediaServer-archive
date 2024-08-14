@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using System.Web;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
 
 namespace NoMercy.Server.app.Http.Middleware;
 
@@ -25,7 +27,8 @@ public class AccessLogMiddleware
         "/swagger-ui/swagger-ui-bundle.js",
         "/swagger-ui/swagger-ui-standalone-preset.js",
         "/swagger-ui/swagger-ui.css",
-        "/swagger/v1/swagger.json"
+        "/swagger/v1/swagger.json",
+        "/api/v1/dashboard/logs"
     ];
 
     private readonly string[] _ignoreIfAuthenticated =
@@ -100,13 +103,13 @@ public class AccessLogMiddleware
             return;
         }
 
-        if (TokenParamAuthMiddleware.FolderIds.Any(x => path.StartsWith("/" + x)))
+        if (ClaimsPrincipleExtensions.FolderIds.Any(x => path.StartsWith("/" + x)))
         {
             await _next(context);
             return;
         }
 
-        var user = TokenParamAuthMiddleware.Users.FirstOrDefault(x => x.Id == userId);
+        var user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
 
         Logger.Http($"{user?.Name ?? $"Unknown: {context.Connection.RemoteIpAddress}:"}: {path}");
 

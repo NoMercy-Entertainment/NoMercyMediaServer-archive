@@ -16,7 +16,6 @@ public record ArtistsResponseDto
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string letter) =>
             mediaContext.Artists
                 .AsNoTracking()
-                .OrderBy(artist => artist.Name)
                 .Where(album => letter == "_"
                     ? Letters.Any(p => album.Name.StartsWith(p))
                     : album.Name.StartsWith(letter)

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -53,10 +53,12 @@ public record GenreRowItemDto
     [JsonProperty("year")] public int? Year { get; set; }
     [JsonProperty("media_type")] public string? MediaType { get; set; }
     [JsonProperty("genres")] public GenreDto[]? Genres { get; set; }
+    [JsonProperty("tags")] public IEnumerable<string> Tags { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("rating")] public RatingClass? Rating { get; set; }
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
+    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; }
 
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
 
@@ -64,7 +66,7 @@ public record GenreRowItemDto
     {
     }
 
-    public GenreRowItemDto(Movie movie)
+    public GenreRowItemDto(Movie movie, string country)
     {
         var title = movie.Translations.FirstOrDefault()?.Title;
         var overview = movie.Translations.FirstOrDefault()?.Overview;
@@ -87,15 +89,26 @@ public record GenreRowItemDto
 
         NumberOfItems = 1;
         HaveItems = movie.VideoFiles.Count(v => v.Folder != null);
+        
+        Tags = movie.KeywordMovies.Select(tag => tag.Keyword.Name);
 
         ColorPalette = movie.ColorPalette;
         Videos = movie.Media
             .Where(media => media.Site == "YouTube")
             .Select(media => new VideoDto(media))
             .ToArray();
+        
+        ContentRatings = movie.CertificationMovies
+            .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                                         || certificationMovie.Certification.Iso31661 == country)
+            .Select(certificationMovie => new ContentRating
+            {
+                Rating = certificationMovie.Certification.Rating,
+                Iso31661 = certificationMovie.Certification.Iso31661
+            });
     }
 
-    public GenreRowItemDto(Tv tv)
+    public GenreRowItemDto(Tv tv, string country)
     {
         var title = tv.Translations.FirstOrDefault()?.Title;
         var overview = tv.Translations.FirstOrDefault()?.Overview;
@@ -113,7 +126,9 @@ public record GenreRowItemDto
         TitleSort = tv.Title.TitleSort(tv.FirstAirDate);
         Type = tv.Type;
         Year = tv.FirstAirDate.ParseYear();
-
+        
+        Tags = tv.KeywordTvs.Select(tag => tag.Keyword.Name);
+        
         MediaType = "tv";
         Type = "tv";
 
@@ -126,6 +141,15 @@ public record GenreRowItemDto
             .Where(media => media.Site == "YouTube")
             .Select(media => new VideoDto(media))
             .ToArray();
+        
+        ContentRatings = tv.CertificationTvs
+            .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                                         || certificationMovie.Certification.Iso31661 == country)
+            .Select(certificationTv => new ContentRating
+            {
+                Rating = certificationTv.Certification.Rating,
+                Iso31661 = certificationTv.Certification.Iso31661
+            });
     }
 }
 
@@ -140,30 +164,45 @@ public record RatingClass
 
 public abstract record HomeResponseDto
 {
-    public static readonly Func<MediaContext, Guid, string?, IAsyncEnumerable<Genre>> GetHome =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string? language) =>
-            mediaContext.Genres.AsNoTracking()
-                .OrderBy(genre => genre.Name)
-                .Where(genre =>
-                    genre.GenreMovies
-                        .Any(g => g.Movie.Library.LibraryUsers
-                            .FirstOrDefault(u => u.UserId == userId) != null) ||
-                    genre.GenreTvShows
-                        .Any(g => g.Tv.Library.LibraryUsers
-                            .FirstOrDefault(u => u.UserId == userId) != null))
-                .Include(genre => genre.GenreMovies
-                    .Where(genreTv => genreTv.Movie.VideoFiles
-                        .Any(videoFile => videoFile.Folder != null) == true
-                    )
+    public static async Task<List<Genre>> GetHome(MediaContext mediaContext, Guid userId, string? language, int take,
+        int page = 0)
+    {
+        var query = mediaContext.Genres.AsNoTracking()
+            .OrderBy(genre => genre.Name)
+            
+            .Where(genre =>
+                genre.GenreMovies
+                    .Any(g => g.Movie.Library.LibraryUsers
+                        .FirstOrDefault(u => u.UserId == userId) != null) ||
+                genre.GenreTvShows
+                    .Any(g => g.Tv.Library.LibraryUsers
+                        .FirstOrDefault(u => u.UserId == userId) != null))
+
+            .Include(genre => genre.GenreMovies
+                .Where(genreTv => genreTv.Movie.VideoFiles
+                    .Any(videoFile => videoFile.Folder != null) == true
                 )
-                .Include(genre => genre.GenreTvShows
-                    .Where(genreTv => genreTv.Tv.Episodes
-                        .Any(episode => episode.VideoFiles
-                            .Any(videoFile => videoFile.Folder != null)
-                        ) == true
-                    )
+            )
+            
+            
+            .Include(genre => genre.GenreTvShows
+                .Where(genreTv => genreTv.Tv.Episodes
+                    .Any(episode => episode.VideoFiles
+                        .Any(videoFile => videoFile.Folder != null)
+                    ) == true
                 )
-        );
+            )
+            
+            .OrderBy(genre => genre.Name);
+
+        var genres = await query
+            .Skip(page * take)
+            .Take(take)
+            .ToListAsync();
+
+        return genres;
+        
+    }
 
     public static readonly Func<MediaContext, List<int>, string?, IAsyncEnumerable<Tv>> GetHomeTvs =
         EF.CompileAsyncQuery((MediaContext mediaContext, List<int> tvIds, string? language) =>
@@ -177,9 +216,16 @@ public abstract record HomeResponseDto
                 .Include(movie => movie.Media
                     .Where(media => media.Site == "YouTube")
                 )
+                
+                .Include(genreTv => genreTv.KeywordTvs)
+                    .ThenInclude(genre => genre.Keyword)
+                
                 .Include(tv => tv.Episodes
                     .Where(episode => episode.SeasonNumber > 0 && episode.VideoFiles.Count != 0))
                 .ThenInclude(episode => episode.VideoFiles)
+            
+                .Include(tv => tv.CertificationTvs)
+                    .ThenInclude(certificationTv => certificationTv.Certification)
         );
 
 
@@ -189,11 +235,19 @@ public abstract record HomeResponseDto
                 .Where(movie => movieIds.Contains(movie.Id))
                 .Include(movie => movie.Translations
                     .Where(translation => translation.Iso6391 == language))
+                
                 .Include(movie => movie.Media
                     .Where(media => media.Site == "YouTube"))
+                
                 .Include(movie => movie.Images
                     .Where(image => image.Type == "logo" && image.Iso6391 == "en")
                 )
                 .Include(movie => movie.VideoFiles)
+                
+                .Include(movie => movie.KeywordMovies)
+                    .ThenInclude(genre => genre.Keyword)
+            
+                .Include(movie => movie.CertificationMovies)
+                    .ThenInclude(certificationMovie => certificationMovie.Certification)
         );
 }

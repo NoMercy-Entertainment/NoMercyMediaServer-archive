@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.AcoustId.Client;
 using NoMercy.Providers.AcoustId.Models;
 using NoMercy.Providers.MusicBrainz.Client;
@@ -11,7 +12,7 @@ using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Server.app.Jobs;
 using NoMercy.Server.system;
 
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 using Artist = NoMercy.Database.Models.Artist;
 using Track = NoMercy.Database.Models.Track;
 
@@ -146,12 +147,12 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
     private bool FindMatchByFingerprint()
     {
         if (FingerPrint is null) return false;
-        
-        var recordings = FingerPrint.Results?
+
+        var recordings = FingerPrint.Results
             .SelectMany(r => r.Recordings ?? [])
             .Where(rec =>
             {
-                if (rec.Title is null) return false;
+                if (rec?.Title is null) return false;
                 if (ParsedTrack?.Title is null) return false;
 
                 if (rec.Title.ToLower().RemoveDiacritics() !=
@@ -160,13 +161,13 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
 
                 if (Math.Abs(rec.Duration - (MediaAnalysis?.Duration.TotalSeconds ?? 0)) > 15) return false;
 
-                if (rec.Releases.Length == 0) return false;
-                
+                if (rec.Releases?.Length == 0) return false;
+
                 return true;
-            }) ?? [];
+            });
         
         var releases = recordings
-            .SelectMany(rec => rec.Releases
+            .SelectMany(rec => rec?.Releases?
                 .Where(rel =>
                 {
                     if (rel.TrackCount is null) return false;
@@ -322,7 +323,7 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
         }
         catch (Exception e)
         {
-            Logger.App(e, LogLevel.Error);
+            Logger.App(e, LogEventLevel.Error);
         }
     }
 
@@ -387,10 +388,10 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
             var coverArtImageJob = new CoverArtImageJob(musicBrainzRelease);
             JobDispatcher.Dispatch(coverArtImageJob, "image", 3);
             
-            var fanartImagesJob = new FanartImagesJob(musicBrainzRelease);
+            var fanartImagesJob = new FanArtImagesJob(musicBrainzRelease);
             JobDispatcher.Dispatch(fanartImagesJob, "image", 2);
             
-            // Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+            // Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
             // {
             //     QueryKey = ["music", "album", albumInsert.Id.ToString()]
             // });
@@ -399,7 +400,7 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
         }
         catch (Exception e)
         {
-            Logger.App(e, LogLevel.Error);
+            Logger.App(e, LogEventLevel.Error);
         }
 
     }
@@ -450,17 +451,17 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
                 })
                 .RunAsync();
             
-            var fanartImagesJob = new FanartImagesJob(artist);
+            var fanartImagesJob = new FanArtImagesJob(artist);
             JobDispatcher.Dispatch(fanartImagesJob, "image", 2);
             
-            // Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+            // Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
             // {
             //     QueryKey = ["music", "artist", artistInsert.Id.ToString()]
             // });
         }
         catch (Exception e)
         {
-            Logger.App(e, LogLevel.Error);
+            Logger.App(e, LogEventLevel.Error);
         }
     }
 
@@ -532,7 +533,7 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
         }
         catch (Exception e)
         {
-            Logger.App(e, LogLevel.Error);
+            Logger.App(e, LogEventLevel.Error);
         }
 
         return null;
@@ -704,7 +705,7 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
             })
             .RunAsync();
 
-        // Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+        // Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         // {
         //     QueryKey = ["music", "album", albumTrack.AlbumId.ToString()]
         // });
@@ -728,7 +729,7 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
             })
             .RunAsync();
 
-        // Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+        // Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         // {
         //     QueryKey = ["music", "artist", albumArtist.ArtistId.ToString()]
         // });
@@ -752,7 +753,7 @@ public partial class MusicLogic2(Library library, string inputFile) : IAsyncDisp
             })
             .RunAsync();
 
-        // Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+        // Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         // {
         //     QueryKey = ["music", "artist", artistTrack.ArtistId.ToString()]
         // });

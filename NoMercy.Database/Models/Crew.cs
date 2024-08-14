@@ -3,11 +3,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Episode;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.Season;
-using NoMercy.Providers.TMDB.Models.Shared;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -16,12 +11,9 @@ namespace NoMercy.Database.Models;
 [Index(nameof(CreditId), nameof(TvId), nameof(JobId), IsUnique = true)]
 [Index(nameof(CreditId), nameof(SeasonId), nameof(JobId), IsUnique = true)]
 [Index(nameof(CreditId), nameof(EpisodeId), nameof(JobId), IsUnique = true)]
+[Index(nameof(CreditId)), Index(nameof(MovieId)), Index(nameof(TvId)), Index(nameof(SeasonId)), Index(nameof(EpisodeId)), Index(nameof(PersonId)), Index(nameof(JobId))]
 public class Crew
 {
-    private readonly TmdbMovie _tmdbMovie;
-    private readonly TmdbTvShowAppends _tmdbTv;
-    private readonly TmdbSeason _tmdbSeason;
-
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [JsonProperty("id")]
@@ -51,51 +43,4 @@ public class Crew
     {
     }
 
-    public Crew(TmdbCrew tmdbCrew, TmdbMovie tmdbMovieAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Job> jobs)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCrew.CreditId;
-        PersonId = tmdbCrew.Id;
-        MovieId = tmdbMovieAppends.Id;
-        JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
-    }
-
-    public Crew(TmdbCrew tmdbCrew, TmdbTvShowAppends tmdbTvAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Job> jobs)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCrew.CreditId;
-        PersonId = tmdbCrew.Id;
-        TvId = tmdbTvAppends.Id;
-        JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
-    }
-
-    public Crew(TmdbCrew tmdbCrew, TmdbSeason tmdbSeasonAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Job> jobs)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCrew.CreditId;
-        PersonId = tmdbCrew.Id;
-        SeasonId = tmdbSeasonAppends.Id;
-        JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
-    }
-
-    public Crew(TmdbCrew tmdbCrew, TmdbEpisode tmdbEpisodeAppends, TmdbMovie tmdbMovie, TmdbTvShowAppends tmdbTv, TmdbSeason tmdbSeason,
-        IEnumerable<Job> jobs)
-    {
-        _tmdbMovie = tmdbMovie;
-        _tmdbTv = tmdbTv;
-        _tmdbSeason = tmdbSeason;
-        CreditId = tmdbCrew.CreditId;
-        PersonId = tmdbCrew.Id;
-        EpisodeId = tmdbEpisodeAppends.Id;
-        JobId = jobs.FirstOrDefault(r => r.CreditId == tmdbCrew.CreditId)?.Id;
-    }
 }

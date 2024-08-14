@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(CollectionId), nameof(LibraryId))]
+[Index(nameof(CollectionId)), Index(nameof(LibraryId))]
 public class CollectionLibrary
 {
     [JsonProperty("collection_id")] public int CollectionId { get; set; }

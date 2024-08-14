@@ -19,9 +19,4 @@ public class Keyword
     {
     }
 
-    public Keyword(Providers.TMDB.Models.Shared.TmdbKeyword input)
-    {
-        Id = input.Id;
-        Name = input.Name;
-    }
 }

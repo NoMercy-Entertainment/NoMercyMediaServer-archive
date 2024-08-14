@@ -2,11 +2,11 @@
 
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(CertificationId), nameof(TvId))]
+[Index(nameof(CertificationId)), Index(nameof(TvId))]
 public class CertificationTv
 {
     [JsonProperty("certification_id")] public int CertificationId { get; set; }
@@ -19,10 +19,4 @@ public class CertificationTv
     {
     }
 
-    public CertificationTv(Certification? certification, TmdbTvShowAppends? show)
-    {
-        if (certification == null || show == null) return;
-        CertificationId = certification.Id;
-        TvId = show.Id;
-    }
 }

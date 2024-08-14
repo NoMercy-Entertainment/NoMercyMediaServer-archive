@@ -3,8 +3,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -17,7 +15,7 @@ namespace NoMercy.Database.Models;
 [Index(nameof(VideoFileId), nameof(Src), IsUnique = true)]
 public class Media : ColorPaletteTimeStamps
 {
-    private readonly string _type;
+    public string _type;
 
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
     [JsonProperty("id")]
@@ -57,29 +55,4 @@ public class Media : ColorPaletteTimeStamps
     {
     }
 
-    public Media(TmdbTvVideo media, TmdbTvShow show, string type)
-    {
-        _type = type;
-        Id = Ulid.NewUlid();
-        Iso6391 = media.Iso6391;
-        Name = media.Name;
-        Site = media.Site;
-        Size = media.Size;
-        Src = media.Key;
-        Type = media.Type;
-        TvId = show.Id;
-    }
-
-    public Media(TmdbMovieVideo media, TmdbMovieAppends tmdbMovie, string type)
-    {
-        _type = type;
-        Id = Ulid.NewUlid();
-        Iso6391 = media.Iso6391;
-        Name = media.Name;
-        Site = media.Site;
-        Size = media.Size;
-        Src = media.Key;
-        Type = media.Type;
-        MovieId = tmdbMovie.Id;
-    }
 }

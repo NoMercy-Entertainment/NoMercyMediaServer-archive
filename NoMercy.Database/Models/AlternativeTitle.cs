@@ -4,8 +4,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -28,21 +26,7 @@ public class AlternativeTitle
     [JsonProperty("tv_id")] public int? TvId { get; set; }
     public Tv Tv { get; set; }
 
-    public AlternativeTitle(TmdbTvAlternativeTitle tmdbTvAlternativeTitles, int tvId)
-    {
-        Iso31661 = tmdbTvAlternativeTitles.Iso31661;
-        Title = tmdbTvAlternativeTitles.Title;
-        TvId = tvId;
-    }
-
     public AlternativeTitle()
     {
-    }
-
-    public AlternativeTitle(TmdbMovieAlternativeTitle tmdbMovieAlternativeTitles, int movieId)
-    {
-        Iso31661 = tmdbMovieAlternativeTitles.Iso31661;
-        Title = tmdbMovieAlternativeTitles.Title;
-        MovieId = movieId;
     }
 }

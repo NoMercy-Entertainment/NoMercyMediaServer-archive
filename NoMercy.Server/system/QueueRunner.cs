@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Helpers;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
+using Serilog.Events;
 
 // ReSharper disable All
 
@@ -42,7 +43,7 @@ public static class QueueRunner
 
         foreach (var keyValuePair in Workers)
         {
-            for (int i = 0; i < keyValuePair.Value.count; i++)
+            for (var i = 0; i < keyValuePair.Value.count; i++)
             {
                 taskList.Add(Task.Run(() => new Thread(() => SpawnWorker(keyValuePair.Key)).Start()));
                 await Task.Delay(2000);
@@ -156,7 +157,7 @@ public static class QueueRunner
             return Task.CompletedTask;
         }
 
-        int i = Workers[name].workerInstances.Count;
+        var i = Workers[name].workerInstances.Count;
 
         Task.Run(async () =>
         {
@@ -179,7 +180,7 @@ public static class QueueRunner
     {
         if (!Workers.ContainsKey(name)) return false;
 
-        Logger.Queue($"Setting queue {name} to {max} workers", LogLevel.Info);
+        Logger.Queue($"Setting queue {name} to {max} workers", LogEventLevel.Information);
         _isUpdating = true;
         Workers[name]._cancellationTokenSource.Cancel();
 

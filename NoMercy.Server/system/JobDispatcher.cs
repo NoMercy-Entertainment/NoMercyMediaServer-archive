@@ -1,7 +1,8 @@
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
+using Serilog.Events;
 
 namespace NoMercy.Server.system;
 
@@ -30,7 +31,7 @@ public static class JobDispatcher
         }
         catch (Exception e)
         {
-            Logger.Queue(e, LogLevel.Error);
+            Logger.Queue(e, LogEventLevel.Error);
         }
     }
 }

@@ -27,5 +27,5 @@ public class TmdbPerson
     [JsonProperty("profile_path")] public string? ProfilePath { get; set; }
     [JsonProperty("adult")] public bool Adult { get; set; }
     [JsonProperty("imdb_id")] public string? ImdbId { get; set; }
-    [JsonProperty("external_ids")] public TmdbPersonExternalIds? ExternalIds { get; set; }
+    [JsonProperty("external_ids")] public Database.Models.TmdbPersonExternalIds? ExternalIds { get; set; }
 }

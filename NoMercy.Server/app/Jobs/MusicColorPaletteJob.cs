@@ -1,7 +1,7 @@
 using NoMercy.Helpers;
 using NoMercy.Server.Logic;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 
 namespace NoMercy.Server.app.Jobs;
 
@@ -54,7 +54,7 @@ public class MusicColorPaletteJob : IShouldQueue
             //     await MusicLogic2.Palette(Id!, Model);
             //     break;
             default:
-                Logger.Queue(@"Invalid model Type: " + Model + @" id: " + Id, LogLevel.Error);
+                Logger.Queue(@"Invalid model Type: " + Model + @" id: " + Id, LogEventLevel.Error);
                 break;
         }
     }

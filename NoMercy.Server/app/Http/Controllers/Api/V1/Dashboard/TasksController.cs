@@ -2,6 +2,10 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 using NoMercy.Server.app.Http.Middleware;
 
@@ -14,14 +18,19 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/tasks", Order = 10)]
-public class TasksController : Controller
+public class TasksController: BaseController
 {
     [HttpGet]
-    public TaskDto[] Index()
+    public IActionResult Index()
     {
-        var userId = HttpContext.User.UserId();
-        return
-        [
+        if (!HttpContext.User.IsModerator())
+            return Unauthorized(new StatusResponseDto<string>
+            {
+                Status = "error",
+                Message = "You do not have permission to view tasks"
+            });
+        
+        List<TaskDto> list = [
             new TaskDto
             {
                 Id = "pqiilkpnf8lmwrcxn0l8tngf",
@@ -32,12 +41,15 @@ public class TasksController : Controller
                 UpdatedAt = DateTime.Parse("2024-01-25 09:26:56")
             }
         ];
+        
+        return Ok(list);
     }
 
     [HttpPost]
     public IActionResult Store()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to create tasks");
 
         return Ok(new PlaceholderResponse
         {
@@ -48,7 +60,8 @@ public class TasksController : Controller
     [HttpPatch]
     public IActionResult Update()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to update tasks");
 
         return Ok(new PlaceholderResponse
         {
@@ -59,7 +72,8 @@ public class TasksController : Controller
     [HttpDelete]
     public IActionResult Destroy()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to delete tasks");
 
         return Ok(new PlaceholderResponse
         {
@@ -71,7 +85,8 @@ public class TasksController : Controller
     [Route("pause")]
     public IActionResult PauseTask()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to pause tasks");
 
         return Ok(new PlaceholderResponse
         {
@@ -83,7 +98,8 @@ public class TasksController : Controller
     [Route("resume")]
     public IActionResult ResumeTask()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to resume tasks");
 
         return Ok(new PlaceholderResponse
         {
@@ -95,7 +111,8 @@ public class TasksController : Controller
     [Route("runners")]
     public IActionResult RunningTaskWorkers()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view task workers");
 
         return Ok(new PlaceholderResponse
         {
@@ -107,7 +124,8 @@ public class TasksController : Controller
     [Route("queue")]
     public IActionResult EncoderQueue()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view encoder queue");
 
         return Ok(new PlaceholderResponse
         {

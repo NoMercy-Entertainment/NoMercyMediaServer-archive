@@ -1,7 +1,10 @@
 using System.Net.Http.Headers;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 
 namespace NoMercy.Server.app.Helper;
 
@@ -18,13 +21,13 @@ public static class Register
     {
         Dictionary<string, string> serverData = new()
         {
-            { "server_id", SystemInfo.DeviceId.ToString() },
+            { "server_id", NmSystem.Info.DeviceId.ToString() },
             { "server_name", DeviceName() },
-            { "internal_ip", Networking.InternalIp },
-            { "internal_port", Networking.InternalServerPort.ToString() },
-            { "external_port", Networking.ExternalServerPort.ToString() },
+            { "internal_ip", Networking.Networking.InternalIp },
+            { "internal_port", Config.InternalServerPort.ToString() },
+            { "external_port", Config.ExternalServerPort.ToString() },
             { "server_version", ApiInfo.ApplicationVersion },
-            { "platform", SystemInfo.Platform }
+            { "platform", NmSystem.Info.Platform }
         };
 
         Logger.Register(@"Registering Server, this takes a moment...");
@@ -37,6 +40,8 @@ public static class Register
             .Result.Content.ReadAsStringAsync().Result;
 
         var data = JsonConvert.DeserializeObject(content);
+        
+        // Logger.Register(data);
 
         if (data == null) throw new Exception("Failed to register Server");
 
@@ -51,7 +56,7 @@ public static class Register
     {
         Dictionary<string, string> serverData = new()
         {
-            { "server_id", SystemInfo.DeviceId.ToString() }
+            { "server_id", NmSystem.Info.DeviceId.ToString() }
         };
 
         HttpClient client = new();
@@ -65,6 +70,28 @@ public static class Register
         var data = JsonConvert.DeserializeObject<ServerRegisterResponse>(content);
 
         if (data == null) throw new Exception("Failed to assign Server");
+        
+        var newUser = new User
+        {
+            Id = data.User.Id,
+            Name = data.User.Name,
+            Email = data.User.Email,
+            Owner = true,
+            Allowed = true,
+            Manage = true,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now,
+            AudioTranscoding = true,
+            NoTranscoding = true,
+            VideoTranscoding = true,
+        };
+        
+        using MediaContext mediaContext = new();
+        mediaContext.Users.Upsert(newUser)
+            .On(x => x.Id)
+            .Run();
+        
+        ClaimsPrincipleExtensions.AddUser(newUser);
 
         Logger.Register(@"Server assigned successfully");
 
@@ -76,4 +103,7 @@ public static class Register
 
 public class ServerRegisterResponse
 {
+    [JsonProperty("status")] public string Status { get; set; }
+    [JsonProperty("id")] public string ServerId { get; set; }
+    [JsonProperty("user")] public User User { get; set; }
 }

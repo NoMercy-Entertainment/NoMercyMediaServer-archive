@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
 using NoMercy.Server.app.Http.Middleware;
@@ -15,19 +18,26 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 [Tags("Music Collections")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/music/collection", Order = 2)]
-public class CollectionsController : Controller
+public class CollectionsController: BaseController
 {
     [HttpGet]
     [Route("tracks")]
     public async Task<IActionResult> Tracks()
     {
-        List<ArtistTrackDto> tracks = [];
-
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view tracks");
 
+        List<ArtistTrackDto> tracks = [];
+        
+        var language = Language();
+        
         await using MediaContext mediaContext = new();
         await foreach (var track in TracksResponseDto.GetTracks(mediaContext, userId))
-            tracks.Add(new ArtistTrackDto(track.Track, HttpContext.Request.Headers.AcceptLanguage[1]));
+            tracks.Add(new ArtistTrackDto(track.Track,language));
+        
+        if (tracks.Count == 0)
+            return NotFoundResponse("Tracks not found");
 
         return Ok(new TracksResponseDto
         {
@@ -43,13 +53,18 @@ public class CollectionsController : Controller
     [Route("artists")]
     public async Task<IActionResult> Artists([FromQuery] FilterRequest request)
     {
+        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view artists");
+
         List<ArtistsResponseItemDto> artists = [];
 
-        var userId = HttpContext.User.UserId();
-
         await using MediaContext mediaContext = new();
-        await foreach (var artist in ArtistsResponseDto.GetArtists(mediaContext, userId, request.Letter))
+        await foreach (var artist in ArtistsResponseDto.GetArtists(mediaContext, userId, request.Letter!))
             artists.Add(new ArtistsResponseItemDto(artist));
+        
+        if (artists.Count == 0)
+            return NotFoundResponse("Artists not found");
 
         var tracks = mediaContext.ArtistTrack
             .Where(artistTrack => artists.Select(a => a.Id)
@@ -74,20 +89,26 @@ public class CollectionsController : Controller
     [Route("albums")]
     public async Task<IActionResult> Albums([FromQuery] FilterRequest request)
     {
-        List<AlbumsResponseItemDto> albums = [];
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view albums");
+        
+        List<AlbumsResponseItemDto> albums = [];
 
         await using MediaContext mediaContext = new();
-        await foreach (var album in AlbumsResponseDto.GetAlbums(mediaContext, userId, request.Letter))
+        await foreach (var album in AlbumsResponseDto.GetAlbums(mediaContext, userId, request.Letter!))
             albums.Add(new AlbumsResponseItemDto(album));
 
+        if (albums.Count == 0)
+            return NotFoundResponse("Albums not found");
+        
         var tracks = mediaContext.AlbumTrack
             .Where(albumTrack => albums.Select(a => a.Id)
                 .Contains(albumTrack.AlbumId))
             .Where(albumTrack => albumTrack.Track.Duration != null)
             .Include(albumTrack => albumTrack.Track)
             .ToList();
-
+        
         foreach (var album in albums)
             album.Tracks = tracks
                 .DistinctBy(track => Regex.Replace(track.Track.Filename ?? "", @"[\d+-]\s", "").ToLower())
@@ -105,12 +126,17 @@ public class CollectionsController : Controller
     public async Task<IActionResult> Playlists()
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view playlists");
         
         List<PlaylistResponseItemDto> playlists = [];
         
         await using MediaContext mediaContext = new();
         await foreach (var playlist in PlaylistResponseDto.GetPlaylists(mediaContext, userId))
             playlists.Add(new PlaylistResponseItemDto(playlist));
+        
+        if (playlists.Count == 0)
+            return NotFoundResponse("Playlists not found");
 
         return Ok(new PlaylistResponseDto
         {

@@ -5,13 +5,12 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Episode;
-using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
 [Index(nameof(CreditId), nameof(EpisodeId), IsUnique = true)]
+[Index(nameof(CreditId)), Index(nameof(EpisodeId)), Index(nameof(PersonId))]
 public class GuestStar
 {
     [Key]
@@ -31,10 +30,4 @@ public class GuestStar
     {
     }
 
-    public GuestStar(TmdbGuestStar cast, TmdbEpisode? episodeAppends)
-    {
-        CreditId = cast.CreditId;
-        PersonId = cast.Id;
-        if (episodeAppends != null) EpisodeId = episodeAppends.Id;
-    }
 }

@@ -2,11 +2,11 @@
 
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(KeywordId), nameof(MovieId))]
+[Index(nameof(KeywordId)), Index(nameof(MovieId))]
 public class KeywordMovie
 {
     [JsonProperty("keyword_id")] public int KeywordId { get; set; }
@@ -19,9 +19,4 @@ public class KeywordMovie
     {
     }
 
-    public KeywordMovie(Providers.TMDB.Models.Shared.TmdbKeyword tmdbKeyword, TmdbMovieAppends tmdbMovie)
-    {
-        KeywordId = tmdbKeyword.Id;
-        MovieId = tmdbMovie.Id;
-    }
 }

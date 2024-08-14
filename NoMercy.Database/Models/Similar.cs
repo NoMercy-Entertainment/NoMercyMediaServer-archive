@@ -3,8 +3,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.Database.Models;
 
@@ -40,27 +38,4 @@ public class Similar : ColorPalettes
     {
     }
 
-    public Similar(TmdbTvShow tmdbSimilarTmdb, TmdbTvShowAppends show)
-    {
-        Backdrop = tmdbSimilarTmdb.BackdropPath;
-        Overview = tmdbSimilarTmdb.Overview;
-        Poster = tmdbSimilarTmdb.PosterPath;
-        Title = tmdbSimilarTmdb.Name;
-        TitleSort = tmdbSimilarTmdb.Name;
-        MediaId = tmdbSimilarTmdb.Id;
-        TvFromId = show.Id;
-        // TvToId = similar.Id;
-    }
-
-    public Similar(TmdbMovie tmdbSimilar, TmdbMovieAppends tmdbMovie)
-    {
-        Backdrop = tmdbSimilar.BackdropPath;
-        Overview = tmdbSimilar.Overview;
-        Poster = tmdbSimilar.PosterPath;
-        Title = tmdbSimilar.Title;
-        TitleSort = tmdbSimilar.Title;
-        MediaId = tmdbSimilar.Id;
-        MovieFromId = tmdbMovie.Id;
-        // TvToId = similar.Id;
-    }
 }

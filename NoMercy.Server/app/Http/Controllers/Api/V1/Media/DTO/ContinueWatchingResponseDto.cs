@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -25,7 +25,7 @@ public record ContinueWatchingItemDto
     [JsonProperty("updated_at")] public DateTime? UpdatedAt { get; set; }
     [JsonProperty("created_at")] public DateTime? CreatedAt { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
-    [JsonProperty("year")] public long? Year { get; set; }
+    [JsonProperty("year")] public int Year { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
     [JsonProperty("rating")] public RatingDto? Rating { get; set; }
@@ -33,8 +33,9 @@ public record ContinueWatchingItemDto
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
+    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; }
 
-    public ContinueWatchingItemDto(UserData item)
+    public ContinueWatchingItemDto(UserData item, string country)
     {
         Id = item.MovieId?.ToString() ?? item.TvId?.ToString() ??
             item.SpecialId?.ToString() ?? item.CollectionId.ToString() ?? string.Empty;
@@ -60,6 +61,15 @@ public record ContinueWatchingItemDto
             Videos = item.Movie.Media
                 .Select(media => new VideoDto(media))
                 .ToArray();
+            
+            ContentRatings = item.Movie.CertificationMovies
+                .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                                             || certificationMovie.Certification.Iso31661 == country)
+                .Select(certificationMovie => new ContentRating
+                {
+                    Rating = certificationMovie.Certification.Rating,
+                    Iso31661 = certificationMovie.Certification.Iso31661
+                });
         }
         else if (item.Tv is not null)
         {
@@ -83,6 +93,15 @@ public record ContinueWatchingItemDto
             Videos = item.Tv.Media
                 .Select(media => new VideoDto(media))
                 .ToArray();
+            
+            ContentRatings = item.Tv.CertificationTvs
+                .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                                             || certificationMovie.Certification.Iso31661 == country)
+                .Select(certificationTv => new ContentRating
+                {
+                    Rating = certificationTv.Certification.Rating,
+                    Iso31661 = certificationTv.Certification.Iso31661
+                });
         }
         else if (item.Special is not null)
         {
@@ -114,6 +133,9 @@ public record ContinueWatchingItemDto
             Title = item.Collection.Title;
             TitleSort = item.Collection.Title.TitleSort();
             Overview = item.Collection.Overview;
+            Year = item.Collection.CollectionMovies
+                .MinBy(movie => movie.Movie.ReleaseDate?.ParseYear())
+                ?.Movie.ReleaseDate.ParseYear() ?? 0;
 
             MediaType = "collection";
             Type = "collection";
@@ -127,6 +149,16 @@ public record ContinueWatchingItemDto
                 .SelectMany(collectionMovie => collectionMovie.Movie.Media)
                 .Select(media => new VideoDto(media))
                 .ToArray();
+            
+            ContentRatings = item.Collection.CollectionMovies
+                .SelectMany(collectionMovie => collectionMovie.Movie.CertificationMovies)
+                .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                                             || certificationMovie.Certification.Iso31661 == country)
+                .Select(certificationMovie => new ContentRating
+                {
+                    Rating = certificationMovie.Certification.Rating,
+                    Iso31661 = certificationMovie.Certification.Iso31661
+                });
         }
     }
 }
