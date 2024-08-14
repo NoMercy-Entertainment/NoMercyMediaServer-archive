@@ -26,10 +26,10 @@ public class Language
     {
     }
 
-    public Language(Providers.TMDB.Models.Configuration.TmdbLanguage tmdbLanguage)
-    {
-        Iso6391 = tmdbLanguage.Iso6391;
-        EnglishName = tmdbLanguage.EnglishName;
-        Name = tmdbLanguage.Name;
-    }
+    // public Language(Providers.TMDB.Models.Configuration.TmdbLanguage tmdbLanguage)
+    // {
+    //     Iso6391 = tmdbLanguage.Iso6391;
+    //     EnglishName = tmdbLanguage.EnglishName;
+    //     Name = tmdbLanguage.Name;
+    // }
 }

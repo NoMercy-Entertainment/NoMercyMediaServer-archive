@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Runtime.InteropServices;
 using ColorThiefDotNet;
 using Newtonsoft.Json;
 using NoMercy.Database;
@@ -82,6 +83,7 @@ public abstract class BaseImage: IDisposable
     
     internal static async Task<string> ColorPalette(DownloadUrl client, string type, Uri path, bool? download = true)
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "";
         var bitmap = await client.Invoke(path, download);
         
         return GenerateColorPalette(new List<ColorPaletteArgument>
@@ -95,6 +97,7 @@ public abstract class BaseImage: IDisposable
     
     internal static async Task<string> MultiColorPalette(DownloadUrl client, IEnumerable<MultiUriType> items, bool? download = true)
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "";
         var list = new List<ColorPaletteArgument>();
         foreach (var item in items)
         {
@@ -111,6 +114,7 @@ public abstract class BaseImage: IDisposable
     
     internal static async Task<string> ColorPalette(DownloadPath client, string type, string? path, bool? download = true)
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "";
         var bitmap = await client.Invoke(path, download);
         
         return GenerateColorPalette(new List<ColorPaletteArgument>
@@ -124,6 +128,7 @@ public abstract class BaseImage: IDisposable
     
     internal static async Task<string> MultiColorPalette(DownloadPath client, IEnumerable<MultiStringType> items, bool? download = true)
     {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "";
         var list = new List<ColorPaletteArgument>();
         foreach (var item in items)
         {

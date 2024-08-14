@@ -110,7 +110,7 @@ public record PlaylistTrackDto
         Id = artistTrack.Track.Id;
         LibraryId = artistTrack.Artist.LibraryId;
         Name = artistTrack.Track.Name;
-        Origin = SystemInfo.DeviceId;
+        Origin = NmSystem.Info.DeviceId;
         Path = artistTrack.Track.Folder + "/" + artistTrack.Track.Filename;
         Quality = artistTrack.Track.Quality;
         Track = artistTrack.Track.TrackNumber;
@@ -144,7 +144,7 @@ public record PlaylistTrackDto
         Id = trackTrack.Track.Id;
         LibraryId = trackTrack.Track.AlbumTrack.FirstOrDefault()?.Album.LibraryId;
         Name = trackTrack.Track.Name;
-        Origin = SystemInfo.DeviceId;
+        Origin = NmSystem.Info.DeviceId;
         Path = trackTrack.Track.Folder + "/" + trackTrack.Track.Filename;
         Quality = trackTrack.Track.Quality;
         Track = trackTrack.Track.TrackNumber;

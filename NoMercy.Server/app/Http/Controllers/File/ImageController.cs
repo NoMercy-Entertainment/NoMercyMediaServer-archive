@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using MimeMapping;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.Helpers;
 using NoMercy.Providers.TMDB.Client;
 
 namespace NoMercy.Server.app.Http.Controllers.File;
 
 [Route("images/{type}/{path}")]
-public class ImageController : Controller
+public class ImageController: Controller
 {
     [HttpGet]
     public async Task<IActionResult> Collections(string type, string path, [FromQuery] ImageConvertArguments request)

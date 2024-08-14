@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
-using NoMercy.Database.Models;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 using NoMercy.Server.app.Http.Middleware;
 
@@ -15,12 +18,13 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/configuration", Order = 10)]
-public class ConfigurationController : Controller
+public class ConfigurationController : BaseController
 {
     [HttpGet]
     public IActionResult Index()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to view configuration");
 
         return Ok(new PlaceholderResponse()
         {
@@ -31,7 +35,8 @@ public class ConfigurationController : Controller
     [HttpPost]
     public IActionResult Store()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to store configuration");
 
         return Ok(new PlaceholderResponse
         {
@@ -42,7 +47,8 @@ public class ConfigurationController : Controller
     [HttpPatch]
     public IActionResult Update()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to update configuration");
 
         return Ok(new PlaceholderResponse
         {
@@ -52,34 +58,40 @@ public class ConfigurationController : Controller
 
     [HttpGet]
     [Route("languages")]
-    public async Task<List<LanguageDto>> Languages()
+    public async Task<IActionResult> Languages()
     {
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view languages");
+        
         await using MediaContext context = new();
-        List<Language> languages = await context.Languages
+        var languages = await context.Languages
             .ToListAsync();
 
-        return languages.Select(language => new LanguageDto
+        return Ok(languages.Select(language => new LanguageDto
         {
             Id = language.Id,
             Iso6391 = language.Iso6391,
             EnglishName = language.EnglishName,
             Name = language.Name
-        }).ToList();
+        }).ToList());
     }
 
     [HttpGet]
     [Route("countries")]
-    public async Task<List<CountryDto>> Countries()
+    public async Task<IActionResult> Countries()
     {
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view countries");
+        
         await using MediaContext context = new();
-        List<Country> countries = await context.Countries
+        var countries = await context.Countries
             .ToListAsync();
 
-        return countries.Select(country => new CountryDto
+        return Ok(countries.Select(country => new CountryDto
         {
             Name = country.EnglishName,
             Code = country.Iso31661
-        }).ToList();
+        }).ToList());
     }
 }
 

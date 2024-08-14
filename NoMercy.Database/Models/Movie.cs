@@ -3,8 +3,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
-using NoMercy.Providers.TMDB.Models.Movies;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Database.Models;
 
@@ -52,85 +51,60 @@ public class Movie : ColorPaletteTimeStamps
         new HashSet<CertificationMovie>();
 
     [JsonProperty("crew")] public ICollection<Crew> Crew { get; set; } = new HashSet<Crew>();
-
     [JsonProperty("genre")] public ICollection<GenreMovie> GenreMovies { get; set; }
-
     [JsonProperty("keywords")] public ICollection<KeywordMovie> KeywordMovies { get; set; }
-
     [JsonProperty("media")] public ICollection<Media> Media { get; set; }
-
     [JsonProperty("images")] public ICollection<Image> Images { get; set; }
-
     [JsonProperty("seasons")] public ICollection<Season> Seasons { get; set; }
-
     [JsonProperty("translations")] public ICollection<Translation> Translations { get; set; }
-
     [JsonProperty("user_data")] public ICollection<UserData> UserData { get; set; }
-
     [InverseProperty("MovieFrom")] public ICollection<Recommendation> RecommendationFrom { get; set; }
-
     [InverseProperty("MovieTo")] public ICollection<Recommendation> RecommendationTo { get; set; }
-
     [InverseProperty("MovieFrom")] public ICollection<Similar> SimilarFrom { get; set; }
-
     [InverseProperty("MovieTo")] public ICollection<Similar> SimilarTo { get; set; }
-
     [JsonProperty("movie_user")] public ICollection<MovieUser> MovieUser { get; set; }
 
     [JsonProperty("video_files")]
     public ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
-
-    public Movie(TmdbMovieAppends tmdbMovie, Ulid libraryId, string folder)
-    {
-        Id = tmdbMovie.Id;
-        Title = tmdbMovie.Title;
-        TitleSort = tmdbMovie.Title.TitleSort(tmdbMovie.ReleaseDate);
-        Duration = tmdbMovie.Runtime;
-        Folder = folder;
-        Adult = tmdbMovie.Adult;
-        Backdrop = tmdbMovie.BackdropPath;
-        Budget = tmdbMovie.Budget;
-        Homepage = tmdbMovie.Homepage?.ToString();
-        ImdbId = tmdbMovie.ImdbId;
-        OriginalTitle = tmdbMovie.OriginalTitle;
-        OriginalLanguage = tmdbMovie.OriginalLanguage;
-        Overview = tmdbMovie.Overview;
-        Popularity = tmdbMovie.Popularity;
-        Poster = tmdbMovie.PosterPath;
-        ReleaseDate = tmdbMovie.ReleaseDate;
-        Revenue = tmdbMovie.Revenue;
-        Runtime = tmdbMovie.Runtime;
-        Status = tmdbMovie.Status;
-        Tagline = tmdbMovie.Tagline;
-        Trailer = tmdbMovie.Video;
-        Video = tmdbMovie.Video;
-        VoteAverage = tmdbMovie.VoteAverage;
-        VoteCount = tmdbMovie.VoteCount;
-
-        LibraryId = libraryId;
-    }
-
+    
     public Movie()
     {
     }
+    
+    // public Movie(Providers.TMDB.Models.Movies.TmdbMovie input, Ulid libraryId)
+    // {
+    //     Id = input.Id;
+    //     Title = input.Title;
+    //     TitleSort = input.Title.TitleSort(input.ReleaseDate);
+    //     Adult = input.Adult;
+    //     Backdrop = input.BackdropPath;
+    //     OriginalTitle = input.OriginalTitle;
+    //     OriginalLanguage = input.OriginalLanguage;
+    //     Overview = input.Overview;
+    //     Popularity = input.Popularity;
+    //     Poster = input.PosterPath;
+    //     ReleaseDate = input.ReleaseDate;
+    //     Tagline = input.Tagline;
+    //     VoteAverage = input.VoteAverage;
+    //     VoteCount = input.VoteCount;
+    //
+    //     LibraryId = libraryId;
+    // }
 
-    public Movie(Providers.TMDB.Models.Movies.TmdbMovie input, Ulid libraryId)
+    public string CreateFolderName()
     {
-        Id = input.Id;
-        Title = input.Title;
-        TitleSort = input.Title.TitleSort(input.ReleaseDate);
-        Adult = input.Adult;
-        Backdrop = input.BackdropPath;
-        OriginalTitle = input.OriginalTitle;
-        OriginalLanguage = input.OriginalLanguage;
-        Overview = input.Overview;
-        Popularity = input.Popularity;
-        Poster = input.PosterPath;
-        ReleaseDate = input.ReleaseDate;
-        Tagline = input.Tagline;
-        VoteAverage = input.VoteAverage;
-        VoteCount = input.VoteCount;
+        return string
+            .Concat(Title, ".(", ReleaseDate.ParseYear(), ")")
+            .CleanFileName();
+    }
 
-        LibraryId = libraryId;
+    public string CreateTitle()
+    {
+        return string.Concat(Title, " (", ReleaseDate.ParseYear(), ") NoMercy");
+    }
+
+    public string CreateFileName()
+    {
+        return string.Concat(Title.CleanFileName(), ".(", ReleaseDate.ParseYear(), ").NoMercy");
     }
 }

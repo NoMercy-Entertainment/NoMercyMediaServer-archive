@@ -5,8 +5,8 @@ using System.Text.RegularExpressions;
 using FFMpegCore;
 using MovieFileLibrary;
 using NoMercy.Helpers;
-using NoMercy.Providers.AcoustId.Client;
-using NoMercy.Providers.AcoustId.Models;
+using Serilog.Events;
+using AppFiles = NoMercy.NmSystem.AppFiles;
 
 namespace NoMercy.Server.app.Helper;
 
@@ -62,6 +62,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
             RegexOptions.IgnoreCase);
 
     private string[] _extensionFilter = [];
+    
 
     public MediaScan()
     {
@@ -84,22 +85,13 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
     public MediaScan FilterByMediaType(string mediaType)
     {
-        switch (mediaType)
+        _extensionFilter = mediaType switch
         {
-            case "tv":
-            case "movie":
-            case "video":
-                _extensionFilter = [".mp4", ".avi", ".mkv", ".m3u8"];
-                break;
-            case "music":
-                _extensionFilter = [".mp3", ".flac", ".wav", ".m4a"];
-                break;
-            case "subtitle":
-                _extensionFilter = [".srt", ".vtt", ".ass"];
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(mediaType), mediaType, null);
-        }
+            "anime" or "tv" or "movie" or "video" => [".mp4", ".avi", ".mkv", ".m3u8"],
+            "music" => [".mp3", ".flac", ".wav", ".m4a"],
+            "subtitle" => [".srt", ".vtt", ".ass"],
+            _ => throw new ArgumentOutOfRangeException(nameof(mediaType), mediaType, null)
+        };
 
         return this;
     }
@@ -120,7 +112,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         var files = Files(folderPath);
 
         var movieFile1 = _movieDetector.GetInfo(folderPath);
-        movieFile1.Year ??= Str.MatchYearRegex().Match(folderPath)
+        movieFile1.Year ??= NmSystem.Str.MatchYearRegex().Match(folderPath)
             .Value;
 
         folders.Add(new MediaFolder
@@ -138,7 +130,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 FilePath = movieFile1.Path
             },
 
-            Files = files?.Count > 0
+            Files = files.Count > 0
                 ? files
                 : null
         });
@@ -153,7 +145,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                 if ((_regexFilterEnabled && _folderNameRegex.IsMatch(folderName)) || depth == 0)
                 {
-                    files.Add(new MediaFile
+                    files?.Add(new MediaFile
                     {
                         Name = folderName,
                         Path = directory,
@@ -166,10 +158,10 @@ public class MediaScan : IDisposable, IAsyncDisposable
                     continue;
                 }
 
-                ConcurrentBag<MediaFile>? files2 = depth - 1 > 0 ? Files(directory) : [];
+                var files2 = depth - 1 > 0 ? Files(directory) : [];
 
                 var movieFile = _movieDetector.GetInfo(directory);
-                movieFile.Year ??= Str.MatchYearRegex()
+                movieFile.Year ??= NmSystem.Str.MatchYearRegex()
                     .Match(directory).Value;
 
                 folders.Add(new MediaFolder
@@ -187,7 +179,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                         FilePath = movieFile.Path
                     },
 
-                    Files = files2.Count > 0
+                    Files = files2 is { Count: > 0 }
                         ? files2
                         : null,
 
@@ -242,7 +234,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                 var movieFile = _movieDetector.GetInfo(directory);
 
-                movieFile.Year ??= Str.MatchYearRegex()
+                movieFile.Year ??= NmSystem.Str.MatchYearRegex()
                     .Match(directory).Value;
 
                 folders.Add(new MediaFolder
@@ -279,7 +271,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         }
     }
 
-    private ConcurrentBag<MediaFile>? Files(string folderPath)
+    private ConcurrentBag<MediaFile> Files(string folderPath)
     {
         try
         {
@@ -302,7 +294,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                 if (movieFile is not null)
                 {
-                    movieFile.Year ??= Str.MatchYearRegex()
+                    movieFile.Year ??= NmSystem.Str.MatchYearRegex()
                         .Match(file).Value;
                     movieFile.Title ??= animeInfo.Name;
                     movieFile.Season ??= animeInfo.Season;
@@ -329,7 +321,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Logger.App(e, LogEventLevel.Fatal);
                     throw;
                 }
                 
@@ -366,7 +358,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 files.Add(res);
             });
 
-            ConcurrentBag<MediaFile>? response = new(files
+            ConcurrentBag<MediaFile> response = new(files
                 .Where(f => f.Name is not "")
                 .OrderBy(f => f.Name));
 

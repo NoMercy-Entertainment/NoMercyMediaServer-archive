@@ -3,7 +3,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Database.Models;
 
@@ -25,18 +24,5 @@ public class Job
     public Job()
     {
     }
-
-    public Job(TmdbAggregatedCrewJob job)
-    {
-        Task = job.Job ?? "Unknown";
-        EpisodeCount = job.EpisodeCount;
-        CreditId = job.CreditId;
-        Order = job.Order;
-    }
-
-    public Job(TmdbCrew tmdbCrew)
-    {
-        Task = tmdbCrew.Job ?? "Unknown";
-        CreditId = tmdbCrew.CreditId;
-    }
+    
 }

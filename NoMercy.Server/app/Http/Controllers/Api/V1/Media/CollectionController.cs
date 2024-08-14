@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Providers.TMDB.Client;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 using NoMercy.Server.app.Http.Middleware;
@@ -19,28 +22,27 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/collection")] // match themoviedb.org API
-public class CollectionsController : Controller
+public class CollectionsController: BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Collections([FromQuery] PageRequestDto request)
     {
-        List<Collection> collections = [];
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view collections");
+        
+        var language = Language();
+        
+        var collections = await CollectionsResponseDto.GetCollections(userId, language, request.Take  + 1, request.Page);
 
-        await using MediaContext mediaContext = new();
-        await foreach (var collection in CollectionsResponseDto.GetCollections(mediaContext, userId,
-                           HttpContext.Request.Headers.AcceptLanguage.FirstOrDefault() ?? string.Empty))
-        {
-            if (collection is null) continue;
-            collections.Add(collection);
+        if (request.Version != "lolomo"){
+            
+            var concat = collections
+                .Select(collection => new CollectionsResponseItemDto(collection));
+            
+            return GetPaginatedResponse(concat, request);
+            
         }
-
-        if (request.Version != "lolomo")
-            return Ok(new CollectionsResponseDto
-            {
-                Data = collections.Select(collection => new CollectionsResponseItemDto(collection))
-                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
-            });
 
         string[] numbers = ["*", "#", "'", "\"", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
         string[] letters =
@@ -60,7 +62,6 @@ public class CollectionsController : Controller
                         ? numbers.Any(p => collection.Title.StartsWith(p))
                         : collection.Title.StartsWith(genre))
                     .Select(collection => new LibraryResponseItemDto(collection))
-                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
             })
         });
     }
@@ -70,16 +71,20 @@ public class CollectionsController : Controller
     public async Task<IActionResult> Collection(int id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view collections");
+        
+        var language = Language();
+        var country = Country();
 
         await using MediaContext mediaContext = new();
-        var collection = await CollectionResponseDto.GetCollection(mediaContext, userId, id,
-            HttpContext.Request.Headers.AcceptLanguage.FirstOrDefault() ?? string.Empty,
-            HttpContext.Request.Headers.AcceptLanguage[1] ?? string.Empty);
+        var collection = await CollectionResponseDto.GetCollection(mediaContext, userId, id, language,
+           language ?? string.Empty);
 
         if (collection is not null && collection.CollectionMovies.Count > 0 && collection.Images.Count > 0)
             return Ok(new CollectionResponseDto
             {
-                Data = new CollectionResponseItemDto(collection, HttpContext.Request.Headers.AcceptLanguage[1])
+                Data = new CollectionResponseItemDto(collection, country)
             });
 
         TmdbCollectionClient tmdbCollectionsClient = new(id);
@@ -97,8 +102,8 @@ public class CollectionsController : Controller
             .ThenInclude(fl => fl.Folder)
             .FirstOrDefaultAsync();
 
-        AddCollectionJob addJob = new(collectionAppends.Id, library);
-        JobDispatcher.Dispatch(addJob, "queue", 10);
+        TmdbCollectionJob tmdbJob = new(collectionAppends.Id, library);
+        JobDispatcher.Dispatch(tmdbJob, "queue", 10);
 
         return Ok(new CollectionResponseDto
         {
@@ -111,6 +116,8 @@ public class CollectionsController : Controller
     public async Task<IActionResult> Available(int id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view collections");
 
         await using MediaContext mediaContext = new();
         var collection = await mediaContext.Collections
@@ -127,12 +134,20 @@ public class CollectionsController : Controller
             .ThenInclude(file => file.UserData
                 .Where(movieUser => movieUser.UserId == userId))
             .FirstOrDefaultAsync();
+        
+        var available = collection is not null && collection.CollectionMovies
+            .Select(movie => movie.Movie.VideoFiles)
+            .Any();
+        
+        if (!available)
+            return NotFound(new AvailableResponseDto
+            {
+                Available = false
+            });
 
         return Ok(new AvailableResponseDto
         {
-            Available = collection is not null && collection.CollectionMovies
-                .Select(movie => movie.Movie.VideoFiles)
-                .Any()
+            Available = true
         });
     }
 
@@ -141,46 +156,57 @@ public class CollectionsController : Controller
     public async Task<IActionResult> Watch(int id)
     {
         var userId = HttpContext.User.UserId();
-
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view collections");
+        
+        var language = Language();
+        
         await using MediaContext mediaContext = new();
         var collection = await mediaContext.Collections
             .AsNoTracking()
             .Where(collection => collection.Id == id)
             .Include(collection =>
                 collection.CollectionMovies.OrderBy(collectionMovie => collectionMovie.Movie.ReleaseDate))
-            .ThenInclude(collectionMovie => collectionMovie.Movie)
-            .ThenInclude(movie => movie.Library.LibraryUsers)
-            .Where(collection => collection.Library.LibraryUsers
-                .FirstOrDefault(libraryUser => libraryUser.UserId == userId) != null)
+                .ThenInclude(collectionMovie => collectionMovie.Movie)
+                    .ThenInclude(movie => movie.Library.LibraryUsers)
+                    .Where(collection => collection.Library.LibraryUsers
+                        .FirstOrDefault(libraryUser => libraryUser.UserId == userId) != null)
+            
             .Include(collection => collection.CollectionMovies)
-            .ThenInclude(collectionMovie => collectionMovie.Movie)
-            .ThenInclude(movie => movie.Media
-                .Where(media => media.Type == "video"))
+                .ThenInclude(collectionMovie => collectionMovie.Movie)
+                    .ThenInclude(movie => movie.Media
+                        .Where(media => media.Type == "video"))
+            
             .Include(collection => collection.Images
                 .Where(image => image.Type == "logo"))
             .Include(collection => collection.Translations
                 .Where(translation =>
-                    translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage.LastOrDefault()))
+                    translation.Iso6391 == language))
+            
             .Include(collection => collection.CollectionMovies)
-            .ThenInclude(collectionMovie => collectionMovie.Movie)
-            .ThenInclude(movie => movie.Images)
+                .ThenInclude(collectionMovie => collectionMovie.Movie)
+                    .ThenInclude(movie => movie.Images)
+            
             .Include(collection => collection.CollectionMovies)
-            .ThenInclude(collectionMovie => collectionMovie.Movie)
-            .ThenInclude(movie => movie.Translations
-                .Where(translation => translation.Iso6391 == HttpContext.Request.Headers.AcceptLanguage.LastOrDefault())
-            )
+                .ThenInclude(collectionMovie => collectionMovie.Movie)
+                    .ThenInclude(movie => movie.Translations
+                        .Where(translation => translation.Iso6391 == language)
+                    )
+            
             .Include(collection => collection.CollectionMovies)
-            .ThenInclude(collectionMovie => collectionMovie.Movie)
-            .ThenInclude(movie => movie.VideoFiles)
-            .ThenInclude(file => file.UserData
-                .Where(movieUser => movieUser.UserId == userId))
+                .ThenInclude(collectionMovie => collectionMovie.Movie)
+                    .ThenInclude(movie => movie.VideoFiles)
+                        .ThenInclude(file => file.UserData
+                            .Where(movieUser => movieUser.UserId == userId))
+            
             .FirstOrDefaultAsync();
+        
+        if (collection is null)
+            return NotFoundResponse("Collection not found");
 
-        return Ok(collection is not null
-            ? collection.CollectionMovies
+        return Ok(collection.CollectionMovies
                 .Select((movie, index) => new PlaylistResponseDto(movie.Movie, index + 1, collection))
-                .ToArray()
-            : []);
+                .ToArray());
     }
 
     [HttpPost]
@@ -188,6 +214,8 @@ public class CollectionsController : Controller
     public async Task<IActionResult> Like(int id, [FromBody] LikeRequestDto request)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to like collections");
 
         await using MediaContext mediaContext = new();
         var collection = await mediaContext.Collections
@@ -196,11 +224,7 @@ public class CollectionsController : Controller
             .FirstOrDefaultAsync();
 
         if (collection is null)
-            return Ok(new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Collection not found"
-            });
+            return UnprocessableEntityResponse("Collection not found");
 
         if (request.Value)
         {

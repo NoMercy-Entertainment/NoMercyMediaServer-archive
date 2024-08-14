@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(PlaylistId), nameof(TrackId))]
+[Index(nameof(PlaylistId)), Index(nameof(TrackId))]
 public class PlaylistTrack
 {
     [JsonProperty("playlist_id")] public Ulid PlaylistId { get; set; }

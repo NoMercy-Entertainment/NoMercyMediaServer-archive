@@ -5,42 +5,38 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.MusixMatch.Client;
 using NoMercy.Providers.MusixMatch.Models;
-using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
-using NoMercy.Server.app.Http.Middleware;
-using NoMercy.Server.app.Jobs;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music;
-
-public class RouteModelBinding : Attribute
-{
-    public RouteModelBinding()
-    {
-        // get all other attributes from the method.
-        
-    }
-}
 
 [ApiController]
 [Tags("Music Tracks")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/music/tracks")]
-public class TracksController : Controller
+public class TracksController: BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Index()
     {
+        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view tracks");
+
         List<ArtistTrackDto> tracks = [];
 
-        var userId = HttpContext.User.UserId();
-
+        var language = Language();
+        
         await using MediaContext mediaContext = new();
         await foreach (var track in TracksResponseDto.GetTracks(mediaContext, userId))
-            tracks.Add(new ArtistTrackDto(track.Track, HttpContext.Request.Headers.AcceptLanguage[1]));
+            tracks.Add(new ArtistTrackDto(track.Track, language));
+        
+        if (tracks.Count == 0)
+            return NotFoundResponse("Tracks not found");
 
         return Ok(new TracksResponseDto
         {
@@ -54,10 +50,11 @@ public class TracksController : Controller
 
     [HttpPost]
     [Route("{id:guid}/like")]
-    // [RouteModelBinding]
     public async Task<IActionResult> Value(Guid id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to like tracks");
         
         await using MediaContext mediaContext = new();
         var track = await mediaContext.Tracks
@@ -72,11 +69,7 @@ public class TracksController : Controller
             .FirstOrDefaultAsync();
         
         if (track is null)
-            return NotFound(new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Track not found"
-            });
+            return NotFoundResponse("Track not found");
         
         var liked = false;
         
@@ -104,11 +97,11 @@ public class TracksController : Controller
             await mediaContext.SaveChangesAsync();
         }
         
-        Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto()
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto()
         {
             QueryKey = ["music", "albums", track.AlbumTrack.FirstOrDefault()?.Album.Id]
         });
-        Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto()
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto()
         {
             QueryKey = ["music", "artists", track.ArtistTrack.FirstOrDefault()?.Artist.Id]
         });
@@ -130,21 +123,21 @@ public class TracksController : Controller
     [Obsolete("Obsolete")]
     public async Task<IActionResult> Lyrics(Guid id)
     {
+        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view lyrics");
+        
         MediaContext mediaContext = new();
         var track = await mediaContext.Tracks
             .Where(track => track.Id == id)
             .Include(track => track.ArtistTrack)
-            .ThenInclude(artistTrack => artistTrack.Artist)
+                .ThenInclude(artistTrack => artistTrack.Artist)
             .Include(track => track.AlbumTrack)
-            .ThenInclude(albumTrack => albumTrack.Album)
+                .ThenInclude(albumTrack => albumTrack.Album)
             .FirstOrDefaultAsync();
 
         if (track is null)
-            return NotFound(new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Track not found"
-            });
+            return NotFoundResponse("Track not found");
 
         if (track.Lyrics is not null)
             return Ok(new DataResponseDto<Lyric[]>
@@ -152,42 +145,46 @@ public class TracksController : Controller
                 Data = track.Lyrics
             });
 
-        MusixmatchClient client = new();
-        var lyrics = await client.SongSearch(new MusixMatchTrackSearchParameters()
+        try
         {
-            Album = track.AlbumTrack.FirstOrDefault()?.Album.Name ?? "",
-            Artist = track.ArtistTrack.FirstOrDefault()?.Artist.Name ?? "",
-            Artists = track.ArtistTrack.Select(artistTrack => artistTrack.Artist.Name).ToArray(),
-            Title = track.Name,
-            Duration = track.Duration?.ToSeconds().ToString(),
-            Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc
-        });
-
-        dynamic? subtitles = lyrics?.Message?.Body?.MacroCalls?
-            .TrackSubtitlesGet?.Message?.Body?.SubtitleList.FirstOrDefault()?.Subtitle?.SubtitleBody;
-
-        if (subtitles is null)
-        {
-            subtitles = lyrics?.Message?.Body?.MacroCalls?.TrackLyricsGet?.Message?.Body?.Lyrics?.LyricsBody;
-            if (subtitles is not null) subtitles = Regex.Replace(subtitles, "^\"|\"$", "");
-        }
-
-        if (subtitles is null)
-            return NotFound(new StatusResponseDto<MusixMatchSubtitleGet?>
+            MusixmatchClient client = new();
+            var parameters = new MusixMatchTrackSearchParameters()
             {
-                Status = "error",
-                Message = "Subtitle not found"
-                // Data = lyrics,
+                Album = track.AlbumTrack.FirstOrDefault()?.Album.Name ?? "",
+                Artist = track.ArtistTrack.FirstOrDefault()?.Artist.Name ?? "",
+                Artists = track.ArtistTrack.Select(artistTrack => artistTrack.Artist.Name).ToArray(),
+                Title = track.Name,
+                Duration = track.Duration?.ToSeconds().ToString(),
+                Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc
+            };
+
+            var lyrics = await client.SongSearch(parameters);
+
+            dynamic? subtitles = lyrics?.Message?.Body?.MacroCalls?
+                .TrackSubtitlesGet?.Message?.Body?.SubtitleList.FirstOrDefault()?.Subtitle?.SubtitleBody;
+
+            if (subtitles is null)
+            {
+                subtitles = lyrics?.Message?.Body?.MacroCalls?.TrackLyricsGet?.Message?.Body?.Lyrics?.LyricsBody;
+                if (subtitles is not null) subtitles = Regex.Replace(subtitles, "^\"|\"$", "");
+            }
+
+            if (subtitles is null)
+                return NotFoundResponse("Subtitle not found");
+
+            track._lyrics = JsonConvert.SerializeObject(subtitles);
+            track.UpdatedAt = DateTime.UtcNow;
+            await mediaContext.SaveChangesAsync();
+
+            return Ok(new DataResponseDto<Lyric[]>
+            {
+                Data = track.Lyrics
             });
-
-        track._lyrics = JsonConvert.SerializeObject(subtitles);
-        track.UpdatedAt = DateTime.UtcNow;
-        await mediaContext.SaveChangesAsync();
-
-        return Ok(new DataResponseDto<Lyric[]>
+        }
+        catch (Exception e)
         {
-            Data = track.Lyrics
-        });
+            return NotFoundResponse(e.Message);
+        }
     }
 
     [HttpPost]
@@ -195,6 +192,8 @@ public class TracksController : Controller
     public async Task<IActionResult> Playback(Guid id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to record playback");
 
         await using MediaContext mediaContext = new();
         var track = await mediaContext.Tracks
@@ -203,11 +202,7 @@ public class TracksController : Controller
             .FirstOrDefaultAsync();
 
         if (track is null)
-            return NotFound(new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Track not found"
-            });
+            return NotFoundResponse("Track not found");
 
         await mediaContext.MusicPlays
             .AddAsync(new MusicPlay(userId, track.Id));

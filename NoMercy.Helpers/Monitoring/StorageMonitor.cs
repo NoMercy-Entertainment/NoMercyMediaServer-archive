@@ -2,25 +2,24 @@
 
 namespace NoMercy.Helpers.Monitoring
 {
-    public class StorageMonitor
+    public static class StorageMonitor
     {
         public static List<ResourceMonitorDto> Main()
         {
-            DriveInfo[] allDrives = DriveInfo.GetDrives();
-            List<ResourceMonitorDto> resourceMonitorDtos = new();
+            var allDrives = DriveInfo.GetDrives();
+            List<ResourceMonitorDto> resourceMonitorDtos = [];
 
             foreach (var d in allDrives)
             {
                 var resourceMonitorDto = new ResourceMonitorDto
                 {
                     Name = d.Name,
-                    Type = d.DriveType
+                    Type = d.DriveType.ToString()
                 };
                 if (d.IsReady)
                 {
-                    resourceMonitorDto.TotalStorage = $"Total size of drive: {d.TotalSize / 1024 / 1024 / 1024} GB";
-                    resourceMonitorDto.AvailableStorage =
-                        $"Total available space: {d.AvailableFreeSpace / 1024 / 1024 / 1024} GB";
+                    resourceMonitorDto.Total = (float)d.TotalSize / 1024 / 1024 / 1024;
+                    resourceMonitorDto.Available = (float)d.AvailableFreeSpace / 1024 / 1024 / 1024;
                 }
 
                 resourceMonitorDtos.Add(resourceMonitorDto);
@@ -34,7 +33,8 @@ namespace NoMercy.Helpers.Monitoring
 public class ResourceMonitorDto
 {
     public string Name { get; set; }
-    public DriveType Type { get; set; }
-    public string TotalStorage { get; set; }
-    public string AvailableStorage { get; set; }
+    public string Type { get; set; }
+    public float Total { get; set; }
+    public float Available { get; set; }
+    public float Percentage => (Available / Total) * 100;
 }

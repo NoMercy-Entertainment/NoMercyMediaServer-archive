@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Providers.Helpers;
+using Serilog.Events;
 
 namespace NoMercy.Providers.MusixMatch.Client;
 
@@ -30,7 +32,7 @@ public class MusixMatchBaseClient : BaseClient
 
         if (CacheController.Read(newUrl, out T? result)) return result;
 
-        Logger.MusixMatch(newUrl, LogLevel.Verbose);
+        Logger.MusixMatch(newUrl, LogEventLevel.Verbose);
 
         var response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
 

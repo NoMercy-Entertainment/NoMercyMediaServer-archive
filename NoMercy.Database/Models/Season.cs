@@ -3,11 +3,11 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Season;
 
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
+[Index(nameof(TvId))]
 public class Season : ColorPalettes
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -25,30 +25,14 @@ public class Season : ColorPalettes
     public Tv Tv { get; set; }
 
     [JsonProperty("episodes")] public ICollection<Episode> Episodes { get; set; }
-
     [JsonProperty("casts")] public ICollection<Cast> Cast { get; set; }
-
     [JsonProperty("crews")] public ICollection<Crew> Crew { get; set; }
-
     [JsonProperty("medias")] public ICollection<Media> Medias { get; set; }
-
     [JsonProperty("images")] public ICollection<Image> Images { get; set; }
-
     [JsonProperty("translations")] public ICollection<Translation> Translations { get; set; }
 
     public Season()
     {
     }
 
-    public Season(TmdbSeasonAppends s, int tvId)
-    {
-        Id = s.Id;
-        Title = s.Name;
-        AirDate = s.AirDate;
-        EpisodeCount = s.Episodes.Length;
-        Overview = s.Overview;
-        Poster = s.PosterPath;
-        SeasonNumber = s.SeasonNumber;
-        TvId = tvId;
-    }
 }

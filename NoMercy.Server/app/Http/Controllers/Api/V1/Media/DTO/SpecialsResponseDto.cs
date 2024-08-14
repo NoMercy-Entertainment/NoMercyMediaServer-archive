@@ -1,13 +1,20 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
+
+public record SpecialsResponseDto2
+{
+    [JsonProperty("nextId")] public object NextId { get; set; }
+
+    [JsonProperty("data")] public IEnumerable<SpecialResponseItemDto> Data { get; set; }
+}
 
 public record SpecialsResponseDto
 {
@@ -15,7 +22,7 @@ public record SpecialsResponseDto
 
     [JsonProperty("data")] public IOrderedEnumerable<SpecialsResponseItemDto> Data { get; set; }
 
-    public static readonly Func<MediaContext, Guid, string, IAsyncEnumerable<Special?>> GetSpecials =
+    public static readonly Func<MediaContext, Guid, string, IAsyncEnumerable<SpecialsResponseItemDto>> GetSpecials =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string language) =>
             mediaContext.Specials.AsNoTracking()
                 .Include(special => special.Items)
@@ -27,6 +34,7 @@ public record SpecialsResponseDto
                 .Include(special => special.Items)
                 .ThenInclude(item => item.Movie)
                 .ThenInclude(movie => movie!.VideoFiles)
+                .Select(special => new SpecialsResponseItemDto(special))
         );
 }
 

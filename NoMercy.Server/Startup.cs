@@ -10,30 +10,36 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using NoMercy.Database;
-using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Server.app.Helper;
+using NoMercy.Networking;
+using NoMercy.Server.app.Constraints;
 using NoMercy.Server.app.Http.Controllers.Socket;
 using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.system;
+using AppFiles = NoMercy.NmSystem.AppFiles;
+using Uri = System.Uri;
 
 namespace NoMercy.Server;
 
 public class Startup(IConfiguration _)
 {
+    
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddMemoryCache();
         services.AddLogging();
         // services.AddSingleton<AniDbBaseClient>();
         services.AddSingleton<JobQueue>();
-        services.AddScoped<Networking>();
-
-        services.AddControllers().AddJsonOptions(jsonOptions =>
-        {
-            jsonOptions.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-            jsonOptions.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        });
+        services.AddScoped<Networking.Networking>();
+        
+        // services.AddControllers().AddJsonOptions(jsonOptions =>
+        // {
+        //     jsonOptions.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        //     jsonOptions.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        //     jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        //     jsonOptions.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals;
+        //     
+        // });
 
         services.AddDbContext<QueueContext>(optionsAction =>
         {
@@ -49,12 +55,13 @@ public class Startup(IConfiguration _)
         services.AddTransient<MediaContext>();
 
         services.AddControllers().AddNewtonsoftJson(options =>
-            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        );
-
-        services.ConfigureHttpJsonOptions(config =>
         {
-            config.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        });
+
+        services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 
         services.AddAuthorizationBuilder()
@@ -79,7 +86,7 @@ public class Startup(IConfiguration _)
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = "https://auth-dev.nomercy.tv/realms/NoMercyTV";
+                options.Authority = Config.AuthBaseUrl;
                 options.RequireHttpsMetadata = true;
                 options.Audience = "nomercy-ui";
                 options.Audience = "nomercy-server";
@@ -88,7 +95,7 @@ public class Startup(IConfiguration _)
                     OnMessageReceived = context =>
                     {
                         var accessToken = context.Request.Query["access_token"];
-                        string[] result = accessToken.ToString().Split('&');
+                        var result = accessToken.ToString().Split('&');
 
                         if (result.Length > 0 && !string.IsNullOrEmpty(result[0])) context.Token = result[0];
 
@@ -182,7 +189,11 @@ public class Startup(IConfiguration _)
         services.AddSignalR(o =>
         {
             o.EnableDetailedErrors = true;
-            o.MaximumReceiveMessageSize = 1024 * 1000;
+            o.MaximumReceiveMessageSize = 1024 * 1000 * 100;
+        })
+        .AddNewtonsoftJsonProtocol(options =>
+        {
+            options.PayloadSerializerSettings = JsonHelper.Settings;
         });
 
         services.AddCors(options =>
@@ -198,7 +209,10 @@ public class Startup(IConfiguration _)
                         .WithOrigins("https://vue-dev.nomercy.tv")
                         .WithOrigins("https://vue.nomercy.tv")
                         .WithOrigins("https://app-vilt.nomercy.tv")
+                        .WithOrigins("https://vilt.nomercy.tv")
                         .WithOrigins("https://cast.nomercy.tv")
+                        .WithOrigins("https://vscode.nomercy.tv")
+                        .WithOrigins("https://hlsjs.video-dev.org")
 
                         // .AllowAnyOrigin()
                         .AllowAnyMethod()
@@ -210,13 +224,22 @@ public class Startup(IConfiguration _)
         });
 
         services.AddResponseCompression(options => { options.EnableForHttps = true; });
+        
+        services.Configure<RouteOptions>(options =>
+        {
+            options.ConstraintMap.Add("ulid", typeof(UlidRouteConstraint));
+        });
+        
+        services.AddTransient<DynamicStaticFilesMiddleware>();
     }
 
     public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        
         app.UseRouting();
         app.UseCors("AllowNoMercyOrigins");
 
+        app.UseHsts();
         app.UseHttpsRedirection();
         app.UseResponseCompression();
         app.UseRequestLocalization();
@@ -228,8 +251,11 @@ public class Startup(IConfiguration _)
         app.UseAuthentication();
 
         app.UseAuthorization();
-
+        
         app.UseMiddleware<AccessLogMiddleware>();
+
+        app.UseMiddleware<DynamicStaticFilesMiddleware>();
+
         // if (env.IsDevelopment())
         // {
         app.UseDeveloperExceptionPage();
@@ -248,14 +274,21 @@ public class Startup(IConfiguration _)
 
         app.UseMvcWithDefaultRoute();
 
-        app.UseWebSockets().UseEndpoints(endpoints =>
-        {
-            endpoints.MapHub<VideoHub>("/socket", options =>
+        app.UseWebSockets()
+            .UseEndpoints(endpoints =>
             {
-                options.Transports = HttpTransportType.WebSockets;
-                options.CloseOnAuthenticationExpiration = true;
+                endpoints.MapHub<VideoHub>("/socket", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets;
+                    options.CloseOnAuthenticationExpiration = true;
+                });
+                    
+                endpoints.MapHub<DashboardHub>("/dashboardHub", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets;
+                    options.CloseOnAuthenticationExpiration = true;
+                });
             });
-        });
 
         app.UseStaticFiles(new StaticFileOptions
         {
@@ -270,30 +303,13 @@ public class Startup(IConfiguration _)
             FileProvider = new PhysicalFileProvider(AppFiles.TranscodePath),
             RequestPath = new PathString("/transcode")
         });
-
-        MediaContext mediaContext = new();
-        List<Folder> folderLibraries = mediaContext.Folders
-            .ToList();
-
-        foreach (var folder in folderLibraries)
+        
+        var mediaContext = new MediaContext();
+        var folderLibraries = mediaContext.Folders.ToList();
+        
+        foreach (var folder in folderLibraries.Where(folder => Directory.Exists(folder.Path)))
         {
-            if (!Directory.Exists(folder.Path)) continue;
-
-            var path = app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(folder.Path),
-                RequestPath = new PathString($"/{folder.Id}"),
-                ServeUnknownFileTypes = true,
-                HttpsCompression = HttpsCompressionMode.Compress
-            });
-
-            if (!env.IsDevelopment()) continue;
-
-            path.UseDirectoryBrowser(new DirectoryBrowserOptions
-            {
-                FileProvider = new PhysicalFileProvider(folder.Path),
-                RequestPath = new PathString($"/{folder.Id}")
-            });
+            DynamicStaticFilesMiddleware.AddPath(folder.Id, folder.Path);
         }
     }
 }

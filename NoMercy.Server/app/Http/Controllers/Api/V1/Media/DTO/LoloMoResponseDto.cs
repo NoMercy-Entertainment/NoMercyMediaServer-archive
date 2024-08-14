@@ -1,10 +1,10 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
@@ -18,7 +18,7 @@ public record LoloMoRowDto<T>
     [JsonProperty("id")] public string Id { get; set; }
     [JsonProperty("title")] public string Title { get; set; }
     [JsonProperty("moreLink")] public string MoreLink { get; set; }
-    [JsonProperty("items")] public IOrderedEnumerable<T> Items { get; set; }
+    [JsonProperty("items")] public IEnumerable<T> Items { get; set; }
 }
 
 public record LoloMoRowItemDto

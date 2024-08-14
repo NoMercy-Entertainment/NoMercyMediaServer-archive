@@ -14,7 +14,7 @@
 // using Album = NoMercy.Database.Models.Album;
 // using Artist = NoMercy.Database.Models.Artist;
 // using ArtistDetails = NoMercy.Providers.FanArt.Models.ArtistDetails;
-// using LogLevel = NoMercy.Helpers.LogLevel;
+// using Serilog.Events;
 // using Media = NoMercy.Providers.MusicBrainz.Models.Media;
 // using Track = NoMercy.Database.Models.Track;
 // using Album = NoMercy.Database.Models.Album;
@@ -258,7 +258,7 @@
 //         }
 //         catch (Exception e)
 //         {
-//             Logger.App(e, LogLevel.Error);
+//             Logger.App(e, LogEventLevel.Error);
 //             Logger.App(release);
 //         }
 //     }
@@ -324,7 +324,7 @@
 //             // MusicColorPaletteJob musicColorPaletteJob = new(albumInsert.Id.ToString(), "album");
 //             // JobDispatcher.Dispatch(musicColorPaletteJob, "image", 2);
 //
-//             Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+//             Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
 //             {
 //                 QueryKey = ["music", "album", albumInsert.Id.ToString()]
 //             });
@@ -333,7 +333,7 @@
 //         }
 //         catch (Exception e)
 //         {
-//             Logger.App(e, LogLevel.Error);
+//             Logger.App(e, LogEventLevel.Error);
 //             Logger.App(albumInsert);
 //         }
 //     }
@@ -394,14 +394,14 @@
 //
 //             await StoreArtistImages(artist);
 //
-//             Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+//             Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
 //             {
 //                 QueryKey = ["music", "artist", artistInsert.Id.ToString()]
 //             });
 //         }
 //         catch (Exception e)
 //         {
-//             Logger.App(e, LogLevel.Error);
+//             Logger.App(e, LogEventLevel.Error);
 //             Logger.App(artistInsert);
 //         }
 //     }
@@ -493,7 +493,7 @@
 //         }
 //         catch (Exception e)
 //         {
-//             Logger.App(e, LogLevel.Error);
+//             Logger.App(e, LogEventLevel.Error);
 //             Logger.App(trackInsert);
 //         }
 //
@@ -596,7 +596,7 @@
 //             })
 //             .RunAsync();
 //
-//         Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+//         Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
 //         {
 //             QueryKey = ["music", "album", albumTrack.AlbumId.ToString()]
 //         });
@@ -620,7 +620,7 @@
 //             })
 //             .RunAsync();
 //
-//         Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+//         Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
 //         {
 //             QueryKey = ["music", "artist", albumArtist.ArtistId.ToString()]
 //         });
@@ -644,7 +644,7 @@
 //             })
 //             .RunAsync();
 //
-//         Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+//         Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
 //         {
 //             QueryKey = ["music", "artist", artistTrack.ArtistId.ToString()]
 //         });

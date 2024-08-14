@@ -8,6 +8,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Server.app.Helper;
+using Serilog.Events;
 
 namespace NoMercy.Server.Logic;
 
@@ -108,7 +109,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
 
         var fileName = Path.DirectorySeparatorChar + Path.GetFileName(item.Path);
         var hostFolder = item.Path.Replace(fileName, "");
-        var baseFolder = Path.DirectorySeparatorChar + (Movie?.Folder ?? Show?.Folder ?? "")
+        var baseFolder = Path.DirectorySeparatorChar + (Movie?.Folder ?? Show?.Folder ?? "").Replace("/", "")
                                                      + item.Path.Replace(folder.Path, "")
                                                          .Replace(fileName, "");
 
@@ -121,6 +122,8 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
             {
                 var regex = SubtitleFileTagsRegex();
                 var match = regex.Match(subtitleFile);
+                
+                if(match.Groups["type"].Value != "sign" && match.Groups["type"].Value != "song" && match.Groups["type"].Value != "full") continue;
 
                 subtitles.Add(new Subtitle
                 {
@@ -153,7 +156,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
                     , "^00:", ""),
                 // Chapters = JsonConvert.SerializeObject(item.FFprobe?.Chapters ?? []),
                 Chapters = "",
-                Languages = JsonConvert.SerializeObject(item.FFprobe?.AudioStreams.Select(stream => stream.Language)),
+                Languages = JsonConvert.SerializeObject(item.FFprobe?.AudioStreams.Select(stream => stream.Language).Where(stream => stream != null && stream != "und")),
                 Quality = item.FFprobe?.VideoStreams.FirstOrDefault()?.Width.ToString() ?? "",
                 Subtitles = JsonConvert.SerializeObject(subtitles)
             };
@@ -179,7 +182,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.App(e, LogEventLevel.Error);
         }
     }
 
@@ -213,7 +216,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
             _ => 1
         };
 
-        ConcurrentBag<MediaFolder> folders = await mediaScan
+        var folders = await mediaScan
             .EnableFileListing()
             .FilterByMediaType(Library.Type)
             .Process(path, depth);
@@ -227,8 +230,8 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
     {
         var folder = Library.Type switch
         {
-            "movie" => Movie?.Folder,
-            "tv" => Show?.Folder,
+            "movie" => Movie?.Folder?.Replace("/", ""),
+            "tv" => Show?.Folder?.Replace("/", ""),
             _ => ""
         };
 

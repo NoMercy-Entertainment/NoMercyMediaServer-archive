@@ -3,6 +3,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.MusicBrainz.Models;
 
@@ -45,7 +46,6 @@ public class MusicBrainzReleaseAppends : MusicBrainzRelease
     [JsonProperty("artist-credit")] public ReleaseArtistCredit[] ArtistCredit { get; set; }
 
     // [JsonProperty("asin")] public object Asin { get; set; }
-    [JsonProperty("release-group")] public MusicBrainzReleaseGroup MusicBrainzReleaseGroup { get; set; }
     [JsonProperty("collections")] public Collection[] Collections { get; set; }
     [JsonProperty("cover-art-archive")] public CoverArtArchive CoverArtArchive { get; set; }
     [JsonProperty("label-info")] public LabelInfo[] LabelInfo { get; set; }
@@ -136,10 +136,27 @@ public class Disc
 
 public class MusicBrainzTrack
 {
+    private int _number;
     [JsonProperty("artist-credit")] public ReleaseArtistCredit[] ArtistCredit { get; set; }
     [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("length")] public int? Length { get; set; }
-    [JsonProperty("number")] public int Number { get; set; }
+
+    [JsonProperty("number")]
+    public int Number
+    {
+        get  {
+            try
+            {
+                return Convert.ToInt32(_number);
+            }
+            catch (Exception e)
+            {
+                return 0;
+            }
+        }
+        set => _number = value;
+    }
+
     [JsonProperty("position")] public int Position { get; set; }
     [JsonProperty("recording")] public TrackRecording Recording { get; set; }
     [JsonProperty("title")] public string Title { get; set; }

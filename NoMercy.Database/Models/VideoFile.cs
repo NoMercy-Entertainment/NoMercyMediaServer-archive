@@ -10,6 +10,7 @@ namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
 [Index(nameof(Filename), IsUnique = true)]
+[Index(nameof(EpisodeId)), Index(nameof(MovieId))]
 public class VideoFile : Timestamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]

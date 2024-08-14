@@ -1,6 +1,8 @@
 using System.Security;
 using AniDB;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using Serilog.Events;
 
 namespace NoMercy.Providers.AniDb.Clients;
 
@@ -16,7 +18,7 @@ public class AniDbBaseClient
     {
         ClientName = "nomercy",
         ClientVersion = 1,
-        LocalPort = (ushort)(SystemInfo.ServerPort + 1)
+        LocalPort = (ushort)(Config.ExternalServerPort + 1)
     };
 
     private static readonly AniDBClient AniDbClient = new(AniDbClientOptions);
@@ -73,7 +75,7 @@ public class AniDbBaseClient
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Logger.AniDb(e, LogEventLevel.Fatal);
                 throw;
             }
         });
@@ -81,7 +83,7 @@ public class AniDbBaseClient
 
     private static void LoginCallback(AniDBMessageResponse message)
     {
-        Logger.AniDb(message, LogLevel.Debug);
+        Logger.AniDb(message, LogEventLevel.Debug);
     }
 
     private static void LogoutCallback(AniDBMessageResponse message)

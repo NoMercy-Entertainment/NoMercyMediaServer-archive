@@ -1,5 +1,6 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -11,6 +12,7 @@ using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 using Cast = NoMercy.Database.Models.Cast;
 using Crew = NoMercy.Database.Models.Crew;
 using Genre = NoMercy.Database.Models.Genre;
+using TmdbGender = NoMercy.Providers.TMDB.Models.People.TmdbGender;
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
@@ -73,7 +75,7 @@ public record GenreDto
         Name = genreMovie.Name;
     }
 
-    public GenreDto(Providers.TMDB.Models.Shared.TmdbGenre tmdbGenreMovie)
+    public GenreDto(TmdbGenre tmdbGenreMovie)
     {
         Id = tmdbGenreMovie.Id;
         Name = tmdbGenreMovie.Name;
@@ -161,7 +163,7 @@ public record PeopleDto
         Order = cast.Role.Order;
     }
 
-    public PeopleDto(Providers.TMDB.Models.Shared.TmdbCast tmdbCast)
+    public PeopleDto(TmdbCast tmdbCast)
     {
         Id = tmdbCast.Id;
         Character = tmdbCast.Character;
@@ -186,7 +188,7 @@ public record PeopleDto
         Order = crew.Job.Order;
     }
 
-    public PeopleDto(Providers.TMDB.Models.Shared.TmdbCrew tmdbCrew)
+    public PeopleDto(TmdbCrew tmdbCrew)
     {
         Id = tmdbCrew.Id;
         Job = tmdbCrew.Job;
@@ -230,4 +232,11 @@ public record ContentRating
 public record DataResponseDto<T>
 {
     [JsonProperty("data")] public T? Data { get; set; }
+}
+
+public record PaginatedResponse<T>
+{
+    [JsonProperty("data")] public IEnumerable<T> Data { get; set; }
+    [JsonProperty("next_page")] public int? NextPage { get; set; }
+    [JsonProperty("has_more")] public bool HasMore { get; set; }
 }

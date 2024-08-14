@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
@@ -17,21 +19,27 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}")]
-public class HomeController : Controller
+public class HomeController: BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index([FromQuery] PageRequestDto request)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view home");
 
         await using MediaContext mediaContext = new();
         List<GenreRowDto<GenreRowItemDto>> genres = [];
 
         List<int> movieIds = [];
         List<int> tvIds = [];
+        
+        var language = Language();
 
-        await foreach (var genre in HomeResponseDto.GetHome(mediaContext, userId,
-                           HttpContext.Request.Headers.AcceptLanguage.LastOrDefault()))
+        var genreItems = await HomeResponseDto.GetHome(mediaContext, userId,
+            language, request.Take + 1, request.Page);
+
+        foreach (var genre in genreItems.Take(request.Take))
         {
             GenreRowDto<GenreRowItemDto> genreRowDto = new()
             {
@@ -44,7 +52,7 @@ public class HomeController : Controller
                     .Randomize()
                     .Take(36)
             };
-
+            
             tvIds.AddRange(genreRowDto.Source
                 .Where(source => source?.MediaType == "tv")
                 .Select(source => source!.Id));
@@ -55,14 +63,12 @@ public class HomeController : Controller
 
             genres.Add(genreRowDto);
         }
-
+        
         List<Tv> tvData = [];
-        await foreach (var tv in HomeResponseDto.GetHomeTvs(mediaContext, tvIds,
-                           HttpContext.Request.Headers.AcceptLanguage.LastOrDefault())) tvData.Add(tv);
+        await foreach (var tv in HomeResponseDto.GetHomeTvs(mediaContext, tvIds, language)) tvData.Add(tv);
 
         List<Movie> movieData = [];
-        await foreach (var movie in HomeResponseDto.GetHomeMovies(mediaContext, movieIds,
-                           HttpContext.Request.Headers.AcceptLanguage.LastOrDefault())) movieData.Add(movie);
+        await foreach (var movie in HomeResponseDto.GetHomeMovies(mediaContext, movieIds, language)) movieData.Add(movie);
 
         foreach (var genre in genres)
             genre.Items = genre.Source
@@ -73,12 +79,14 @@ public class HomeController : Controller
                         case "tv":
                         {
                             var tv = tvData.FirstOrDefault(tv => tv.Id == source.Id);
-                            return tv?.Id == null ? null : new GenreRowItemDto(tv);
+                            return tv?.Id == null ? null : new GenreRowItemDto(tv,
+                               language);
                         }
                         case "movie":
                         {
                             var movie = movieData.FirstOrDefault(movie => movie.Id == source.Id);
-                            return movie?.Id == null ? null : new GenreRowItemDto(movie);
+                            return movie?.Id == null ? null : new GenreRowItemDto(movie,
+                               language);
                         }
                         default:
                         {
@@ -88,41 +96,36 @@ public class HomeController : Controller
                 })
                 .Where(genreRow => genreRow != null)
                 .ToList()!;
-
-        HomeResponseDto<GenreRowItemDto> result = new()
-        {
-            Data = genres
-        };
-
-        return Ok(result);
+        
+        return GetPaginatedResponse(genres, request);
     }
 
     [HttpGet]
     [AllowAnonymous]
     [Route("/status")]
-    public StatusResponseDto<string> Status()
+    public IActionResult Status()
     {
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "NoMercy is running!",
             Data = "v1"
-        };
+        });
     }
 
     [HttpGet]
     [Route("screensaver")]
-    public async Task<ScreensaverDto> Screensaver()
+    public async Task<IActionResult> Screensaver()
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view screensaver");
 
         await using MediaContext mediaContext = new();
         var data = await mediaContext.Images
             .AsNoTracking()
-            .Where(image => image.Movie.Library.LibraryUsers
-                                .FirstOrDefault(u => u.UserId == userId) != null ||
-                            image.Tv.Library.LibraryUsers
-                                .FirstOrDefault(u => u.UserId == userId) != null
+            .Where(image => image.Movie.Library.LibraryUsers.FirstOrDefault(u => u.UserId == userId) != null ||
+                            image.Tv.Library.LibraryUsers.FirstOrDefault(u => u.UserId == userId) != null
             )
             .Where(image => image.Height > 1080)
             .Where(image => image._colorPalette != "")
@@ -140,31 +143,33 @@ public class HomeController : Controller
             .DistinctBy(image => image.MovieId);
         var logos = data.Where(image => image is { Type: "logo" });
 
-        return new ScreensaverDto
+        return Ok(new ScreensaverDto
         {
             Data = tvCollection
                 .Select(image => new ScreensaverDataDto(image, logos, "tv"))
                 .Concat(movieCollection.Select(image => new ScreensaverDataDto(image, logos, "movie")))
                 .Where(image => image.Meta?.Logo != null)
                 .Randomize()
-        };
+        });
     }
-
-    [HttpGet]
-    [Route("/api/v{Version:apiVersion}/dashboard/permissions")]
-    public async Task<PermissionsResponseDto> UserPermissions()
-    {
-        var userId = HttpContext.User.UserId();
-
-        await using MediaContext mediaContext = new();
-        var user = await mediaContext.Users
-            .AsNoTracking()
-            .Where(user => user.Id == userId)
-            .FirstOrDefaultAsync();
-
-        return new PermissionsResponseDto
-        {
-            Edit = user?.Owner ?? user?.Manage ?? false
-        };
-    }
+    
+    // [HttpGet]
+    // [Route("/api/v{Version:apiVersion}/dashboard/permissions")]
+    // public async Task<IActionResult> UserPermissions()
+    // {
+    //     var userId = HttpContext.User.UserId();
+    //     if (!HttpContext.User.IsAllowed())
+    //         return UnauthorizedResponse();
+    //
+    //     await using MediaContext mediaContext = new();
+    //     var user = await mediaContext.Users
+    //         .AsNoTracking()
+    //         .Where(user => user.Id == userId)
+    //         .FirstOrDefaultAsync();
+    //
+    //     return Ok(new PermissionsResponseDto
+    //     {
+    //         Edit = user?.Owner ?? user?.Manage ?? false
+    //     });
+    // }
 }

@@ -5,8 +5,9 @@ using NoMercy.Providers.CoverArt.Client;
 using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.MusicBrainz.Models;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 
 namespace NoMercy.Server.app.Jobs;
 
@@ -64,7 +65,7 @@ public class CoverArtImageJob : IShouldQueue
         catch (Exception e)
         {
             if(e.Message.Contains("404")) return;
-            Logger.CoverArt(e.Message, LogLevel.Verbose);
+            Logger.CoverArt(e.Message, LogEventLevel.Verbose);
         }
     }
     
@@ -73,6 +74,7 @@ public class CoverArtImageJob : IShouldQueue
         public string? Palette { get; set; }
         public Uri? Url { get; set; }
     }
+    
     private static async Task<CoverPalette?> FetchCover(MusicBrainzReleaseAppends musicBrainzReleaseAppends)
     {
         var hasCover = musicBrainzReleaseAppends.CoverArtArchive.Front;

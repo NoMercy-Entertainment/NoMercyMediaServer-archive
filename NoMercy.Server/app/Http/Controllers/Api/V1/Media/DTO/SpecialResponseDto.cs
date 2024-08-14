@@ -1,12 +1,12 @@
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using Special = NoMercy.Database.Models.Special;
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
@@ -49,10 +49,9 @@ public record SpecialResponseDto
     #region GetSpecialMovies
 
     public static readonly Func<MediaContext, Guid, IEnumerable<int>, string, string, IAsyncEnumerable<Movie>> GetSpecialMovies =
-            (Func<MediaContext, Guid, IEnumerable<int>, string, string, IAsyncEnumerable<Movie>>)EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, IQueryable<int> ids, string language,
-                    string country) =>
-                mediaContext.Movies.AsNoTracking()
-                    .Where(movie => ids.Contains(movie.Id))
+        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, IEnumerable<int> ids, string language, string country) =>
+            mediaContext.Movies.AsNoTracking()
+                .Where(movie => ids.Contains(movie.Id))
                     .Include(movie => movie.Translations
                         .Where(translation => translation.Iso6391 == language)
                     )
@@ -63,25 +62,25 @@ public record SpecialResponseDto
                         .Where(certification => certification.Certification.Iso31661 == country ||
                                                 certification.Certification.Iso31661 == "US")
                     )
-                    .ThenInclude(certificationMovie => certificationMovie.Certification)
+                        .ThenInclude(certificationMovie => certificationMovie.Certification)
                     .Include(movie => movie.VideoFiles)
-                    .ThenInclude(file => file.UserData
-                        .Where(userData => userData.UserId == userId)
-                    )
+                        .ThenInclude(file => file.UserData
+                            .Where(userData => userData.UserId == userId)
+                        )
                     .Include(movie => movie.GenreMovies)
-                    .ThenInclude(genreMovie => genreMovie.Genre)
+                        .ThenInclude(genreMovie => genreMovie.Genre)
                     .Include(movie => movie.Cast
                         .OrderBy(castTv => castTv.Role.Order)
                     )
                     .ThenInclude(castTv => castTv.Person)
-                    .Include(movie => movie.Cast
-                        .OrderBy(castTv => castTv.Role.Order)
-                    )
+                        .Include(movie => movie.Cast
+                            .OrderBy(castTv => castTv.Role.Order)
+                        )
                     .ThenInclude(castTv => castTv.Role)
                     .Include(movie => movie.Crew)
-                    .ThenInclude(crew => crew.Person)
+                        .ThenInclude(crew => crew.Person)
                     .Include(movie => movie.Crew)
-                    .ThenInclude(crew => crew.Job)
+                        .ThenInclude(crew => crew.Job)
                     .Include(movie => movie.Images
                         .Where(image =>
                             (image.Type == "logo" && image.Iso6391 == "en")
@@ -97,47 +96,46 @@ public record SpecialResponseDto
     #region GetSpecialTvs
 
     public static readonly Func<MediaContext, Guid, IEnumerable<int>, string, string, IAsyncEnumerable<Tv>> GetSpecialTvs =
-            (Func<MediaContext, Guid, IEnumerable<int>, string, string, IAsyncEnumerable<Tv>>)EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, IQueryable<int> ids, string language,
-                    string country) =>
-                mediaContext.Tvs.AsNoTracking()
-                    .Where(tv => tv.Episodes.Any(e => ids.Contains(e.Id)))
-                    .Include(tv => tv.Translations
-                        .Where(translation => translation.Iso6391 == language)
-                    )
-                    .Include(tv => tv.TvUser
-                        .Where(tvUser => tvUser.UserId == userId)
-                    )
-                    .Include(tv => tv.GenreTvs)
+        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, IEnumerable<int> ids, string language, string country) =>
+            mediaContext.Tvs.AsNoTracking()
+                .Where(tv => tv.Episodes.Any(e => ids.Contains(e.Id)))
+                .Include(tv => tv.Translations
+                    .Where(translation => translation.Iso6391 == language)
+                )
+                .Include(tv => tv.TvUser
+                    .Where(tvUser => tvUser.UserId == userId)
+                )
+                .Include(tv => tv.GenreTvs)
                     .ThenInclude(genreTv => genreTv.Genre)
-                    .Include(tv => tv.Cast
-                        .OrderBy(castTv => castTv.Role.Order)
-                    )
+                .Include(tv => tv.Cast
+                    .OrderBy(castTv => castTv.Role.Order)
+                )
                     .ThenInclude(castTv => castTv.Person)
-                    .Include(tv => tv.Cast
-                        .OrderBy(castTv => castTv.Role.Order)
-                    )
+                .Include(tv => tv.Cast
+                    .OrderBy(castTv => castTv.Role.Order)
+                )
                     .ThenInclude(castTv => castTv.Role)
-                    .Include(tv => tv.Crew)
+                .Include(tv => tv.Crew)
                     .ThenInclude(crew => crew.Person)
-                    .Include(tv => tv.Crew)
+                .Include(tv => tv.Crew)
                     .ThenInclude(crew => crew.Job)
-                    .Include(tv => tv.CertificationTvs
-                        .Where(certification => certification.Certification.Iso31661 == country ||
-                                                certification.Certification.Iso31661 == "US")
-                    )
+                .Include(tv => tv.CertificationTvs
+                    .Where(certification => certification.Certification.Iso31661 == country ||
+                                            certification.Certification.Iso31661 == "US")
+                )
                     .ThenInclude(certificationTv => certificationTv.Certification)
-                    .Include(tv => tv.Images
-                        .Where(image =>
-                            (image.Type == "logo" && image.Iso6391 == "en")
-                            || ((image.Type == "backdrop" || image.Type == "poster") &&
-                                (image.Iso6391 == "en" || image.Iso6391 == null))
-                        )
-                        .OrderByDescending(image => image.VoteAverage)
+                .Include(tv => tv.Images
+                    .Where(image =>
+                        (image.Type == "logo" && image.Iso6391 == "en")
+                        || ((image.Type == "backdrop" || image.Type == "poster") &&
+                            (image.Iso6391 == "en" || image.Iso6391 == null))
                     )
-                    .Include(tv => tv.Episodes)
+                    .OrderByDescending(image => image.VoteAverage)
+                )
+                .Include(tv => tv.Episodes)
                     .ThenInclude(episode => episode.VideoFiles)
-                    .ThenInclude(file => file.UserData
-                        .Where(userData => userData.UserId == userId))
+                        .ThenInclude(file => file.UserData
+                            .Where(userData => userData.UserId == userId))
             );
 
     #endregion
@@ -207,7 +205,7 @@ public record SpecialResponseDto
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(episode => episode!.Season)
-                .ThenInclude(episode => episode!.Images
+                .ThenInclude(episode => episode.Images
                     .Where(image =>
                         (image.Type == "logo" && image.Iso6391 == "en")
                         || ((image.Type == "backdrop" || image.Type == "poster") &&
@@ -231,18 +229,18 @@ public record SpecialResponseDto
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(episode => episode!.Tv)
-                .ThenInclude(episode => episode!.Translations
+                .ThenInclude(episode => episode.Translations
                     .Where(translation => translation.Iso6391 == language)
                 )
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(episode => episode!.Tv)
-                .ThenInclude(episode => episode!.CertificationTvs)
+                .ThenInclude(episode => episode.CertificationTvs)
                 .ThenInclude(certificationTv => certificationTv.Certification)
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(episode => episode!.Tv)
-                .ThenInclude(episode => episode!.Images
+                .ThenInclude(episode => episode.Images
                     .Where(image =>
                         (image.Type == "logo" && image.Iso6391 == "en")
                         || ((image.Type == "backdrop" || image.Type == "poster") &&
@@ -253,10 +251,20 @@ public record SpecialResponseDto
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(episode => episode!.Tv)
-                .ThenInclude(episode => episode!.TvUser
+                .ThenInclude(episode => episode.TvUser
                     .Where(tvUser => tvUser.UserId == userId)
                 )
                 .FirstOrDefault());
+
+    public SpecialResponseDto(Special special)
+    {
+        
+    }
+
+    public SpecialResponseDto()
+    {
+        //
+    }
 
     #endregion
 }
@@ -284,7 +292,7 @@ public record SpecialResponseItemDto
     [JsonProperty("backdrops")] public IEnumerable<ImageDto> Backdrops { get; set; }
     [JsonProperty("posters")] public IEnumerable<ImageDto> Posters { get; set; }
 
-    [JsonProperty("content_ratings")] public IQueryable<Certification?>? ContentRatings { get; set; }
+    [JsonProperty("content_ratings")] public IEnumerable<Certification?> ContentRatings { get; set; }
 
     public SpecialResponseItemDto(Special special, List<SpecialItemsDto> items)
     {
@@ -308,19 +316,24 @@ public record SpecialResponseItemDto
             }
 
         IEnumerable<PeopleDto> cast = items
-            .SelectMany(tv => tv.Cast);
+            .SelectMany(tv => tv.Cast)
+            .ToList();
 
         IEnumerable<PeopleDto> crew = items
-            .SelectMany(item => item.Crew);
+            .SelectMany(item => item.Crew)
+            .ToList();
 
         IEnumerable<ImageDto> posters = items
-            .SelectMany(item => item.Posters);
+            .SelectMany(item => item.Posters)
+            .ToList();
 
         IEnumerable<ImageDto> backdrops = items
-            .SelectMany(item => item.Backdrops);
+            .SelectMany(item => item.Backdrops)
+            .ToList();
 
         IEnumerable<GenreDto> genres = items
-            .SelectMany(item => item.Genres);
+            .SelectMany(item => item.Genres)
+            .ToList();
 
         foreach (var item in items)
         {
@@ -350,8 +363,8 @@ public record SpecialResponseItemDto
 
         NumberOfItems = special.Items.Count;
 
-        var movies = special.Items.Count(item => item.MovieId is not null && (bool)item.Movie?.VideoFiles.Any());
-        var episodes = special.Items.Count(item => item.EpisodeId is not null && (bool)item.Episode?.VideoFiles.Any());
+        var movies = special.Items.Count(item => item.MovieId is not null && item.Movie?.VideoFiles.Count != 0);
+        var episodes = special.Items.Count(item => item.EpisodeId is not null && item.Episode?.VideoFiles.Count != 0);
 
         HaveItems = movies + episodes;
 
@@ -359,9 +372,37 @@ public record SpecialResponseItemDto
 
         ContentRatings = items
             .Select(specialItem => specialItem.Rating)
-            .DistinctBy(rating => rating?.Iso31661) as IQueryable<Certification?>;
+            .DistinctBy(rating => rating.Iso31661);
 
         Special = specialItems.DistinctBy(si => si.Id);
+    }
+
+    public SpecialResponseItemDto(Special special)
+    {
+        Id = special.Id;
+        Title = special.Title;
+        Overview = special.Description;
+        Backdrop = special.Backdrop?.Replace("https://storage.nomercy.tv/laravel", "");
+        Poster = special.Poster;
+        TitleSort = special.Title.TitleSort();
+        Type = "specials";
+        MediaType = "specials";
+        ColorPalette = special.ColorPalette;
+        Favorite = special.SpecialUser.Count != 0;
+        NumberOfItems = special.Items.Count;
+
+        var movies = special.Items.Count(item => item.MovieId is not null && (bool)item.Movie?.VideoFiles.Any());
+        var episodes = special.Items.Count(item => item.EpisodeId is not null && (bool)item.Episode?.VideoFiles.Any());
+
+        HaveItems = movies + episodes;
+
+        TotalDuration = special.Items.Sum(item => item.Movie?.Runtime ?? 0);
+
+        ContentRatings = special.Items
+            .Select(specialItem => specialItem.Movie?.CertificationMovies
+                .Select(certification => certification.Certification)
+                .FirstOrDefault())
+            .DistinctBy(rating => rating?.Iso31661);
     }
 }
 
@@ -382,13 +423,13 @@ public record SpecialItemsDto
     [JsonProperty("year")] public long Year { get; set; }
 
     [JsonProperty("genres")] public GenreDto[] Genres { get; set; }
-    [JsonProperty("backdrops")] public IEnumerable<ImageDto>? Backdrops { get; set; }
-    [JsonProperty("posters")] public IEnumerable<ImageDto>? Posters { get; set; }
+    [JsonProperty("backdrops")] public IEnumerable<ImageDto> Backdrops { get; set; }
+    [JsonProperty("posters")] public IEnumerable<ImageDto> Posters { get; set; }
 
-    [JsonProperty("cast")] public IEnumerable<PeopleDto>? Cast { get; set; }
-    [JsonProperty("crew")] public IEnumerable<PeopleDto>? Crew { get; set; }
+    [JsonProperty("cast")] public IEnumerable<PeopleDto> Cast { get; set; }
+    [JsonProperty("crew")] public IEnumerable<PeopleDto> Crew { get; set; }
 
-    [JsonProperty("rating")] public Certification? Rating { get; set; }
+    [JsonProperty("rating")] public Certification Rating { get; set; }
 
     [JsonProperty("videoId")] public string? VideoId { get; set; }
 
@@ -444,8 +485,8 @@ public record SpecialItemsDto
             .ToArray();
 
         Rating = movie.CertificationMovies
-            .Select(certificationMovie => certificationMovie?.Certification)
-            .FirstOrDefault();
+            .Select(certificationMovie => certificationMovie.Certification)
+            .FirstOrDefault() ?? new Certification();
 
         NumberOfItems = 1;
         HaveItems = movie.VideoFiles.Count > 0 ? 1 : 0;
@@ -468,7 +509,7 @@ public record SpecialItemsDto
 
         Id = tv.Id;
         EpisodeIds = tv.Episodes?
-            .Select(episode => episode!.Id)
+            .Select(episode => episode.Id)
             .ToArray() ?? [];
 
         Title = !string.IsNullOrEmpty(title)
@@ -507,7 +548,7 @@ public record SpecialItemsDto
 
         Rating = tv.CertificationTvs
             .Select(certificationTv => certificationTv.Certification)
-            .FirstOrDefault();
+            .FirstOrDefault() ?? new Certification();
 
         NumberOfItems = tv.Episodes?.Where(e => e.SeasonNumber > 0).Count() ?? 0;
         var have = tv.Episodes?.Where(e => e.SeasonNumber > 0).Count(episode => episode.VideoFiles.Any()) ?? 0;

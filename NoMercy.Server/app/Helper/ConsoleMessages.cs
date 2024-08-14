@@ -1,5 +1,6 @@
 using System.Text;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using Pastel;
 
 namespace NoMercy.Server.app.Helper;
@@ -17,7 +18,7 @@ public abstract class ConsoleMessages
         Console.WriteLine(("╔" + Repeat("═", 46) + "╗").Pastel("#00a10d"));
         Console.WriteLine($"{_("#00a10d")}".Pastel("#00a10d") + @"     " +
                           "Secure Server running: on port:".Pastel("#5ffa71") +
-                          $" {Networking.InternalServerPort}     ".Pastel("#ffffff") +
+                          $" {Config.InternalServerPort}     ".Pastel("#ffffff") +
                           $"{_("#00a10d")}".Pastel("#00a10d"));
         Console.WriteLine($"{_("#00a10d")}".Pastel("#00a10d") + @"      " + "visit:".Pastel("#cccccc") +
                           "  https://app-dev.nomercy.tv      ".Pastel("#ffffff") + $"{_("#00a10d")}".Pastel("#00a10d"));

@@ -1,7 +1,8 @@
-﻿using System.Net.Http.Headers;
+﻿using Serilog.Events;
 using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 
 namespace NoMercy.Providers.Helpers;
 
@@ -20,7 +21,7 @@ public class BaseClient : IDisposable
 
     protected BaseClient()
     {
-        _instance ??= this;
+        _instance = this;
         Client = new HttpClient()
         {
             BaseAddress = _instance.BaseUrl,
@@ -36,7 +37,7 @@ public class BaseClient : IDisposable
     protected BaseClient(Guid id)
     {
         Id = id;
-        _instance ??= this;
+        _instance = this;
         Client = new HttpClient()
         {
             BaseAddress = _instance.BaseUrl,
@@ -75,7 +76,7 @@ public class BaseClient : IDisposable
 
         if (CacheController.Read(newUrl, out T? result)) return result;
 
-        Logger.Http(newUrl, LogLevel.Verbose);
+        Logger.Http(newUrl, LogEventLevel.Verbose);
 
         var response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
 
@@ -89,5 +90,20 @@ public class BaseClient : IDisposable
     public void Dispose()
     {
         Client.Dispose();
+    }
+}
+
+public static partial class Url
+{
+
+    public static Uri ToHttps(this Uri url)
+    {
+        var uriBuilder = new UriBuilder(url)
+        {
+            Scheme = Uri.UriSchemeHttps,
+            Port = -1 // default port for scheme
+        };
+
+        return uriBuilder.Uri;
     }
 }

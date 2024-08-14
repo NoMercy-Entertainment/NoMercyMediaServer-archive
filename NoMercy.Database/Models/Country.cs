@@ -25,10 +25,10 @@ public class Country
     {
     }
 
-    public Country(Providers.TMDB.Models.Configuration.TmdbCountry tmdbCountry)
-    {
-        Iso31661 = tmdbCountry.Iso31661;
-        EnglishName = tmdbCountry.EnglishName;
-        NativeName = tmdbCountry.NativeName;
-    }
+    // public Country(Providers.TMDB.Models.Configuration.TmdbCountry tmdbCountry)
+    // {
+    //     Iso31661 = tmdbCountry.Iso31661;
+    //     EnglishName = tmdbCountry.EnglishName;
+    //     NativeName = tmdbCountry.NativeName;
+    // }
 }

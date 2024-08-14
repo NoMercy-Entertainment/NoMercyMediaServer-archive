@@ -1,47 +1,46 @@
 ﻿using System.Net.Http.Headers;
 using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Providers.Helpers;
 using NoMercy.Providers.TMDB.Models.Shared;
+using Serilog.Events;
 
 namespace NoMercy.Providers.TMDB.Client;
 
-public class TmdbBaseClient : IDisposable, IAsyncDisposable
+public class TmdbBaseClient : BaseClient
 {
-    private readonly Uri _baseUrl = new("https://api.themoviedb.org/3/");
+    protected override Uri BaseUrl => new("https://api.themoviedb.org/3/");
+    protected override int ConcurrentRequests => 50;
+    protected override int Interval => 1000;
 
-    private readonly HttpClient _client = new();
+    // private readonly HttpClient _client = new();
 
     protected TmdbBaseClient()
     {
-        _client.BaseAddress = _baseUrl;
-        _client.DefaultRequestHeaders.Accept.Clear();
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
-        _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
-        _client.Timeout = TimeSpan.FromMinutes(5);
+        Client.DefaultRequestHeaders.Accept.Clear();
+        Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        Client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
+        Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
+        Client.Timeout = TimeSpan.FromMinutes(5);
     }
 
     protected TmdbBaseClient(int id)
     {
-        _client = new HttpClient
-        {
-            BaseAddress = _baseUrl
-        };
-        _client.DefaultRequestHeaders.Accept.Clear();
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
-        _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
-        _client.Timeout = TimeSpan.FromMinutes(5);
+        Client.DefaultRequestHeaders.Accept.Clear();
+        Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        Client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
+        Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
+        Client.Timeout = TimeSpan.FromMinutes(5);
         Id = id;
     }
 
-    private static Queue? _queue;
-
-    protected static Queue Queue()
-    {
-        return _queue ??= new Queue(new QueueOptions { Concurrent = 50, Interval = 1000, Start = true });
-    }
+    // private static Queue? _queue;
+    //
+    // protected static Queue Queue()
+    // {
+    //     return _queue ??= new Queue(new QueueOptions { Concurrent = 50, Interval = 1000, Start = true });
+    // }
 
     private static int Max(int available, int wanted, int constraint)
     {
@@ -63,13 +62,13 @@ public class TmdbBaseClient : IDisposable, IAsyncDisposable
 
         if (CacheController.Read(newUrl, out T? result)) return result;
 
-        Logger.MovieDb(newUrl, LogLevel.Debug);
+        Logger.MovieDb(newUrl, LogEventLevel.Debug);
 
-        var response = await Queue().Enqueue(() => _client.GetStringAsync(newUrl), newUrl, priority);
+        var response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
 
         await CacheController.Write(newUrl, response);
 
-        var data = JsonHelper.FromJson<T>(response);
+        var data = response.FromJson<T>();
 
         return data;
     }
@@ -96,18 +95,5 @@ public class TmdbBaseClient : IDisposable, IAsyncDisposable
             });
 
         return list;
-    }
-
-    public void Dispose()
-    {
-        _client.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_client is IAsyncDisposable clientAsyncDisposable)
-            await clientAsyncDisposable.DisposeAsync();
-        else
-            _client.Dispose();
     }
 }

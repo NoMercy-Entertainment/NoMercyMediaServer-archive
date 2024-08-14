@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Media.DTO;
 
@@ -93,8 +94,7 @@ public record AlbumResponseItemDto
         Name = album.Name;
         Type = "albums";
 
-        using MediaContext context = new();
-        var artists = context.AlbumTrack
+        var artists = Databases.MediaContext.AlbumTrack
             .AsNoTracking()
             .Where(at => at.TrackId == album.Id)
             .Include(at => at.Track)
@@ -159,15 +159,14 @@ public record AlbumTrackDto
         Id = albumTrack.Track.Id;
         LibraryId = albumTrack.Album.LibraryId;
         Name = albumTrack.Track.Name;
-        Origin = SystemInfo.DeviceId;
+        Origin = NmSystem.Info.DeviceId;
         Path = albumTrack.Track.Folder + "/" + albumTrack.Track.Filename;
         Quality = albumTrack.Track.Quality;
         Track = albumTrack.Track.TrackNumber;
         Lyrics = albumTrack.Track.Lyrics;
         Type = "tracks";
 
-        using MediaContext context = new();
-        var artists = context.ArtistTrack
+        var artists = Databases.MediaContext.ArtistTrack
             .Where(at => at.TrackId == albumTrack.TrackId)
             .Include(at => at.Artist)
             .ToList();
@@ -215,28 +214,16 @@ public record AlbumDto
         Id = albumArtist.Album.Id;
         LibraryId = albumArtist.Album.LibraryId;
         Name = albumArtist.Album.Name;
-        Origin = SystemInfo.DeviceId;
+        Origin = NmSystem.Info.DeviceId;
         Type = "albums";
-        Tracks = albumArtist.Album.Tracks;
+        Tracks = albumArtist.Album.AlbumTrack?.Count ?? 0;
         Year = albumArtist.Album.Year;
         
-        var trackCount = albumArtist.Album.Tracks;
-
-        var artistTrackCount = albumArtist.Album.AlbumTrack?
-            .Select(albumTrack => albumTrack.Track)
-            .SelectMany(track => track.ArtistTrack)
-            .Count();
-        
-        var isAlbumArtist = artistTrackCount >= trackCount * 0.45;
-        
-        AlbumArtist = isAlbumArtist
-                ? albumArtist.ArtistId 
-                : null;
+        AlbumArtist = albumArtist.ArtistId;
     }
 
     public AlbumDto(AlbumTrack albumTrack, string country)
     {
-        
         var description = albumTrack.Album.Translations?
             .FirstOrDefault(translation => translation.Iso31661 == country)?
             .Description;
@@ -252,14 +239,20 @@ public record AlbumDto
         Id = albumTrack.Album.Id;
         LibraryId = albumTrack.Album.LibraryId;
         Name = albumTrack.Album.Name;
-        Tracks = albumTrack.Album.Tracks;
+        // Tracks = albumTrack.Album.AlbumTrack.Count(at => at.Track.Folder != null);
         Year = albumTrack.Album.Year;
-        Origin = SystemInfo.DeviceId;
+        Origin = NmSystem.Info.DeviceId;
         Type = "albums";
         
-        AlbumArtist = albumTrack.Album.AlbumArtist?.Count == 1 
-            ? albumTrack.Album.AlbumArtist?.FirstOrDefault()?.ArtistId 
-            : null;
+        var tracks = Databases.MediaContext.Albums
+            .Include(a => a.AlbumTrack)
+            .ThenInclude(at => at.Track)
+            .FirstOrDefault(a => a.Id == albumTrack.AlbumId)?.AlbumTrack
+            .Count(at => at.Track.Folder != null);
+        Tracks = tracks ?? 0;
+        
+        AlbumArtist = albumTrack.Album.AlbumArtist?.MaxBy(at => at.ArtistId)?.ArtistId;
+
     }
 
     public AlbumDto(Album album, string country)
@@ -280,13 +273,44 @@ public record AlbumDto
         Id = album.Id;
         LibraryId = album.LibraryId;
         Name = album.Name;
-        Tracks = album.Tracks;
+        Tracks = album.AlbumTrack.Count(at => at.Track.Folder != null);
         Year = album.Year;
-        Origin = SystemInfo.DeviceId;
+        Origin = NmSystem.Info.DeviceId;
         Type = "albums";
         
-        AlbumArtist = album.AlbumArtist?.Count == 1 
-            ? album.AlbumArtist?.FirstOrDefault()?.ArtistId 
-            : null;
+        var artists = album.AlbumArtist
+            .GroupBy(albumArtist => albumArtist.ArtistId)
+            .OrderBy(artist => artist.Count())
+            .ToList();
+        
+        var trackCount = album.Tracks;
+        
+        var artistTrackCount = album.AlbumTrack?
+            .Select(albumTrack => albumTrack.Track)
+            .SelectMany(track => track.ArtistTrack)
+            .Count();
+        //
+        // var realTrackCount = album.AlbumTrack?
+        //     .Select(albumTrack => albumTrack.Track)
+        //     .SelectMany(track => track.ArtistTrack)
+        //     .Count(at => at.Track.Folder != null);
+        //
+        // if (artistTrackCount == 1 || artistTrackCount != realTrackCount)
+        // {
+            var tracks = Databases.MediaContext.Albums
+                .Include(a => a.AlbumTrack)
+                    .ThenInclude(albumTrack => albumTrack.Track)
+                .FirstOrDefault(a => a.Id == album.Id)?.AlbumTrack
+                .Count(at => at.Track.Folder != null);
+            
+            Tracks = tracks ?? 0;
+        // }
+        
+        var isAlbumArtist = artistTrackCount >= trackCount * 0.45;
+        
+        AlbumArtist = isAlbumArtist
+                ? artists.FirstOrDefault()?.Key
+                : null;
+
     }
 }

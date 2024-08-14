@@ -4,12 +4,11 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Newtonsoft.Json;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using File = NoMercy.Database.Models.File;
 
 namespace NoMercy.Database;
@@ -29,7 +28,6 @@ public class MediaContext : DbContext
     {
         options.UseSqlite($"Data Source={AppFiles.MediaDatabase}; Pooling=True",
             o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-        // options.LogTo(Console.WriteLine, LogLevel.Information);
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -243,12 +241,12 @@ public class IColorPalettes
 
 public class PaletteColors
 {
-    [JsonProperty("dominant")] public string Dominant { get; set; }
-    [JsonProperty("primary")] public string Primary { get; set; }
-    [JsonProperty("lightVibrant")] public string LightVibrant { get; set; }
-    [JsonProperty("darkVibrant")] public string DarkVibrant { get; set; }
-    [JsonProperty("lightMuted")] public string LightMuted { get; set; }
-    [JsonProperty("darkMuted")] public string DarkMuted { get; set; }
+    [JsonProperty("dominant", NullValueHandling = NullValueHandling.Ignore)] public string Dominant { get; set; }
+    [JsonProperty("primary", NullValueHandling = NullValueHandling.Ignore)] public string Primary { get; set; }
+    [JsonProperty("lightVibrant", NullValueHandling = NullValueHandling.Ignore)] public string LightVibrant { get; set; }
+    [JsonProperty("darkVibrant", NullValueHandling = NullValueHandling.Ignore)] public string DarkVibrant { get; set; }
+    [JsonProperty("lightMuted", NullValueHandling = NullValueHandling.Ignore)] public string LightMuted { get; set; }
+    [JsonProperty("darkMuted", NullValueHandling = NullValueHandling.Ignore)] public string DarkMuted { get; set; }
 }
 
 public class UlidToStringConverter : ValueConverter<Ulid, string>

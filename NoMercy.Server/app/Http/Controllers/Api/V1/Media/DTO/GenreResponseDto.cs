@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -68,39 +68,22 @@ public record GenreResponseDto
 public record GenreResponseItemDto
 {
     [JsonProperty("id")] public long Id { get; set; }
-
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
-
     [JsonProperty("favorite")] public bool Favorite { get; set; }
-
     [JsonProperty("watched")] public bool Watched { get; set; }
-
     [JsonProperty("logo")] public string? Logo { get; set; }
-
     [JsonProperty("media_type")] public string MediaType { get; set; }
-
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
-
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
-
     [JsonProperty("overview")] public string? Overview { get; set; }
-
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
-
     [JsonProperty("poster")] public string? Poster { get; set; }
-
     [JsonProperty("title")] public string? Title { get; set; }
-
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
-
     [JsonProperty("type")] public string Type { get; set; }
-
     [JsonProperty("year")] public int? Year { get; set; }
-
     [JsonProperty("genres")] public GenreDto[]? Genres { get; set; }
-
     [JsonProperty("videoId")] public string? VideoId { get; set; }
-
     [JsonProperty("videos")] public VideoDto[] Videos { get; set; }
 
     public GenreResponseItemDto(GenreMovie movie)
@@ -146,9 +129,9 @@ public record GenreResponseItemDto
         TitleSort = tv.Tv.Title.TitleSort(tv.Tv.FirstAirDate);
         Type = "tv";
 
-        NumberOfItems = tv.Tv.Episodes?.Count;
-        HaveItems = tv.Tv.Episodes?.Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null)) ??
-                    0;
+        NumberOfItems = tv.Tv.Episodes.Count;
+        HaveItems = tv.Tv.Episodes
+                        .Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null));
 
         Genres = tv.Tv.GenreTvs
             .Select(genreTv => new GenreDto(genreTv))
@@ -217,18 +200,17 @@ public record GenreResponseItemDto
         Type = "collection";
 
         NumberOfItems = collection.Parts;
-        HaveItems = collection.CollectionMovies?
-            .Where(collectionMovie => collectionMovie.Movie.VideoFiles.Any(v => v.Folder != null))
-            .Count() ?? 0;
+        HaveItems = collection.CollectionMovies
+            .Count(collectionMovie => collectionMovie.Movie.VideoFiles.Any(v => v.Folder != null));
 
-        Genres = collection.CollectionMovies?
+        Genres = collection.CollectionMovies
             .Select(genreTv => genreTv.Movie)
-            .SelectMany(movie => movie.GenreMovies?
-                .Select(genreMovie => genreMovie.Genre) ?? [])
+            .SelectMany(movie => movie.GenreMovies
+                .Select(genreMovie => genreMovie.Genre))
             .Select(genre => new GenreDto(genre))
-            .ToArray() ?? [];
+            .ToArray();
 
-        VideoId = collection.CollectionMovies?
+        VideoId = collection.CollectionMovies
             .FirstOrDefault()
             ?.Movie.Video;
     }

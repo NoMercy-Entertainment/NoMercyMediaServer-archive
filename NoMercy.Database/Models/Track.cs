@@ -8,8 +8,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models
 {
     [PrimaryKey(nameof(Id))]
-    [Index(nameof(Folder))]
-    [Index(nameof(Filename), nameof(HostFolder), IsUnique = true)]
+    [Index(nameof(Folder)),Index(nameof(Filename))]
+    // [Index(nameof(Filename), nameof(HostFolder), IsUnique = true)]
     public class Track : ColorPaletteTimeStamps
     {
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -41,7 +41,7 @@ namespace NoMercy.Database.Models
                 {
                     return JsonConvert.DeserializeObject<Lyric[]>(_lyrics);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return _lyrics.Split("\\n")
                         .Select(l => new Lyric

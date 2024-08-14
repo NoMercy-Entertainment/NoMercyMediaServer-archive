@@ -2,7 +2,7 @@
 
 using System.Collections.Concurrent;
 using NoMercy.Helpers;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
 
 namespace NoMercy.Providers.Helpers;
 
@@ -30,7 +30,7 @@ public class Queue(QueueOptions options)
 {
     private readonly Dictionary<string, Func<Task>> _tasks = [];
 
-    private int _lastRan;
+    private int _lastRan = Environment.TickCount;
     private int _currentlyHandled;
 
     private State _state = State.Idle;
@@ -151,7 +151,7 @@ public class Queue(QueueOptions options)
                     Reject?.Invoke(this, new QueueEventArgs { Error = ex });
                     tcs.SetException(ex);
                     if(ex.Message.Contains("404")) return;
-                    Logger.App($"Url failed: {url} {ex.Message}", LogLevel.Error);
+                    Logger.App($"Url failed: {url} {ex.Message}", LogEventLevel.Error);
                 }
                 finally
                 {

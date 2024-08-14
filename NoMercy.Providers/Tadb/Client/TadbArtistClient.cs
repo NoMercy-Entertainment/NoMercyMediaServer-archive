@@ -16,7 +16,7 @@ public class TadbArtistClient : TadbBaseClient
             return Get<TadbArtistResponse>("artist-mb.php", queryParams, priority)
                 .Result?.Artists?.FirstOrDefault();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             return null;
         }

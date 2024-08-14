@@ -2,11 +2,11 @@
 
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
-using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(GenreId), nameof(MovieId))]
+[Index(nameof(GenreId)), Index(nameof(MovieId))]
 public class GenreMovie
 {
     [JsonProperty("genre_id")] public int GenreId { get; set; }
@@ -17,11 +17,5 @@ public class GenreMovie
 
     public GenreMovie()
     {
-    }
-
-    public GenreMovie(Providers.TMDB.Models.Shared.TmdbGenre tmdbGenre, TmdbMovieAppends tmdbMovie)
-    {
-        GenreId = tmdbGenre.Id;
-        MovieId = tmdbMovie.Id;
     }
 }

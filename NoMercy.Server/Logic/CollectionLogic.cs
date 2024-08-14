@@ -3,9 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Collections;
-using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Jobs;
 using NoMercy.Server.Logic.ImageLogic;
 using NoMercy.Server.system;
@@ -14,29 +15,12 @@ using Movie = NoMercy.Database.Models.Movie;
 
 namespace NoMercy.Server.Logic;
 
-public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDisposable
+public class CollectionLogic(TmdbCollectionAppends collectionAppends, Library library) : IDisposable, IAsyncDisposable
 {
-    private TmdbCollectionClient TmdbCollectionClient { get; set; } = new(id);
     private MediaContext MediaContext { get; set; } = new();
-
-    public TmdbCollectionAppends? Collection { get; set; }
 
     public async Task Process()
     {
-        // Collection? special = _mediaContext.Collections.FirstOrDefault(e => e.Id == id);
-        // if (special is not null)
-        // {
-        //     Logger.MovieDb($@"Collection {special.Title}: already exists");
-        //     return;
-        // }
-
-        Collection = await TmdbCollectionClient.WithAllAppends();
-        if (Collection is null)
-        {
-            Logger.MovieDb($@"Collection {TmdbCollectionClient.Id}: not found");
-            return;
-        }
-
         await Store();
 
         await StoreTranslations();
@@ -46,15 +30,20 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
 
     private async Task Store()
     {
-        if (Collection == null) return;
-
-        Collection collections = new(Collection, library.Id)
-        {
+        var collections = new Collection{
+            Id = collectionAppends.Id,
+            Title = collectionAppends.Name,
+            TitleSort = collectionAppends.Name.TitleSort(collectionAppends.Parts.MinBy(movie => movie.ReleaseDate)?.ReleaseDate),
+            Backdrop = collectionAppends.BackdropPath,
+            Poster = collectionAppends.PosterPath,
+            Overview = collectionAppends.Overview,
+            Parts = collectionAppends.Parts.Length,
+            LibraryId = library.Id,
             _colorPalette = MovieDbImage
                 .MultiColorPalette(new[]
                 {
-                    new BaseImage.MultiStringType("poster", Collection.PosterPath),
-                    new BaseImage.MultiStringType("backdrop", Collection.BackdropPath)
+                    new BaseImage.MultiStringType("poster", collectionAppends.PosterPath),
+                    new BaseImage.MultiStringType("backdrop", collectionAppends.BackdropPath)
                 }).Result
         };
 
@@ -74,10 +63,29 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
             })
             .RunAsync();
 
-        Logger.MovieDb($@"Collection {Collection?.Name} stored");
+        Logger.MovieDb($"Collection {collectionAppends.Name} stored");
 
-        Movie[] movies = Collection?.Parts.ToList()
-            .ConvertAll<Movie>(x => new Movie(x, library.Id)).ToArray() ?? [];
+        var movies = collectionAppends.Parts.ToList()
+            .ConvertAll<Movie>(movie => new Movie {
+                    Id = movie.Id,
+                    Title = movie.Title,
+                    TitleSort = movie.Title.TitleSort(movie.ReleaseDate),
+                    Adult = movie.Adult,
+                    Backdrop = movie.BackdropPath,
+                    OriginalTitle = movie.OriginalTitle,
+                    OriginalLanguage = movie.OriginalLanguage,
+                    Overview = movie.Overview,
+                    Popularity = movie.Popularity,
+                    Poster = movie.PosterPath,
+                    ReleaseDate = movie.ReleaseDate,
+                    Tagline = movie.Tagline,
+                    Trailer = movie.Video,
+                    Video = movie.Video,
+                    VoteAverage = movie.VoteAverage,
+                    VoteCount = movie.VoteCount,
+                
+                    LibraryId = library.Id,
+                }).ToArray();
 
         await MediaContext.Movies.UpsertRange(movies)
             .On(v => new { v.Id })
@@ -112,10 +120,13 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
         //     JobDispatcher.Dispatch(colorPaletteJob, "image", 2);
         // }
 
-        Logger.MovieDb($@"Collection {Collection?.Name} movies stored");
+        Logger.MovieDb($"Collection {collectionAppends.Name} movies stored");
 
-        CollectionMovie[] collectionMovies = Collection?.Parts.ToList()
-            .ConvertAll<CollectionMovie>(x => new CollectionMovie(x, collections.Id)).ToArray() ?? [];
+        var collectionMovies = collectionAppends.Parts.ToList()
+            .ConvertAll<CollectionMovie>(CollectionMovie => new CollectionMovie {
+                    MovieId = CollectionMovie.Id,
+                    CollectionId = collections.Id,
+                }).ToArray();
 
         await MediaContext.CollectionMovie.UpsertRange(collectionMovies)
             .On(v => new { v.CollectionId, v.MovieId })
@@ -131,36 +142,43 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
 
     private async Task DispatchJobs()
     {
-        if (Collection is null) return;
-
-        Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
-            QueryKey = ["special", Collection.Id]
+            QueryKey = ["special", collectionAppends.Id]
         });
 
-        foreach (var movie in Collection.Parts)
+        foreach (var movie in collectionAppends.Parts)
         {
             TmdbMovieClient tmdbMovieClient = new(movie.Id);
             var movieAppends = await tmdbMovieClient.WithAllAppends();
             if (movieAppends is null) continue;
 
-            Logger.MovieDb($@"Collection {Collection.Name}: Dispatching movie {movieAppends.Title}");
+            Logger.MovieDb($"Collection {collectionAppends.Name}: Dispatching movie {movieAppends.Title}");
 
-            PersonJob personJob = new(movieAppends.Id, "movie");
-            JobDispatcher.Dispatch(personJob, "queue", 3);
+            TmdbPersonJob tmdbPersonJob = new(movieAppends);
+            JobDispatcher.Dispatch(tmdbPersonJob, "queue", 3);
 
-            MovieImagesJob movieImagesJob = new(movieAppends.Id);
+            TmdbImagesJob movieImagesJob = new(movieAppends);
             JobDispatcher.Dispatch(movieImagesJob, "data", 2);
         }
 
-        CollectionImagesJob imagesJob = new(id);
+        TmdbImagesJob imagesJob = new(collectionAppends);
         JobDispatcher.Dispatch(imagesJob, "data", 2);
     }
 
     private async Task StoreTranslations()
     {
-        Translation[] translations = Collection?.Translations.Translations.ToList()
-            .ConvertAll<Translation>(x => new Translation(x, Collection)).ToArray() ?? [];
+        var translations = collectionAppends.Translations.Translations.ToList()
+            .ConvertAll<Translation>(translation => new Translation {
+                    Iso31661 = translation.Iso31661,
+                    Iso6391 = translation.Iso6391,
+                    Name = translation.Name == "" ? null : translation.Name,
+                    Title = translation.Data.Title == "" ? null : translation.Data.Title,
+                    Overview = translation.Data.Overview == "" ? null : translation.Data.Overview,
+                    EnglishName = translation.EnglishName,
+                    Homepage = translation.Data.Homepage?.ToString(),
+                    CollectionId = collectionAppends.Id,
+                }).ToArray();
 
         await using MediaContext mediaContext = new();
         await mediaContext.Translations
@@ -184,30 +202,48 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
             .RunAsync();
     }
 
-    public static async Task StoreImages(int id)
+    public static async Task StoreImages(TmdbCollectionAppends collection)
     {
-        TmdbCollectionClient tmdbCollectionClient = new(id);
-        var collection = await tmdbCollectionClient.WithAllAppends();
-        if (collection is null) return;
+        var posters = collection.Images.Posters.ToList()
+            .ConvertAll<Image>(image => new Image {
+                    AspectRatio = image.AspectRatio,
+                    FilePath = image.FilePath,
+                    Height = image.Height,
+                    Iso6391 = image.Iso6391,
+                    VoteAverage = image.VoteAverage,
+                    VoteCount = image.VoteCount,
+                    Width = image.Width,
+                    CollectionId = collection.Id,
+                    Type = "poster",
+                    Site = "https://image.tmdb.org/t/p/",
+                });
 
-        List<Image> posters = collection.Images.Posters.ToList()
-            .ConvertAll<Image>(image => new Image(image, collection, "poster"));
-
-        List<Image> backdrops = collection.Images.Backdrops.ToList()
-            .ConvertAll<Image>(image => new Image(image, collection, "backdrop"));
+        var backdrops = collection.Images.Backdrops.ToList()
+            .ConvertAll<Image>(image => new Image {
+                AspectRatio = image.AspectRatio,
+                FilePath = image.FilePath,
+                Height = image.Height,
+                Iso6391 = image.Iso6391,
+                VoteAverage = image.VoteAverage,
+                VoteCount = image.VoteCount,
+                Width = image.Width,
+                CollectionId = collection.Id,
+                Type = "backdrop",
+                Site = "https://image.tmdb.org/t/p/",
+            });
 
         // TODO: Future for when they add logos
         // List<Image> logos = special?.Images?.Logos.ToList()
         //     .ConvertAll<Image>(image => new Image(image:image, special:special, type:"logo"));
 
-        List<Image> images = posters
+        var images = posters
             .Concat(backdrops)
             // .Concat(logos)
             .ToList();
 
         await using MediaContext mediaContext = new();
         await mediaContext.Images.UpsertRange(images)
-            .On(v => new { v.FilePath, v.MovieId })
+            .On(v => new { v.FilePath, v.CollectionId })
             .WhenMatched((ts, ti) => new Image
             {
                 AspectRatio = ti.AspectRatio,
@@ -226,7 +262,7 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
         // ColorPaletteJob colorPaletteJob = new(id: id, model: "special");
         // JobDispatcher.Dispatch(colorPaletteJob, "image", 2);
 
-        Logger.MovieDb($@"Collection {collection.Name}: Images stored");
+        Logger.MovieDb($"Collection {collection.Name}: Images stored");
         await Task.CompletedTask;
     }
 
@@ -251,7 +287,7 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
             await mediaContext.SaveChangesAsync();
         }
 
-        Image[] images = await mediaContext.Images
+        var images = await mediaContext.Images
             .Where(e => e.CollectionId == id)
             .Where(e => e._colorPalette == "")
             .Where(e => e.Iso6391 == null || e.Iso6391 == "en" || e.Iso6391 == "" ||
@@ -264,16 +300,14 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
 
             Logger.Queue($"Fetching color palette for Collection Image {image.FilePath}");
 
-            ColorPaletteJob colorPaletteJob = new(image.FilePath, "image", image.Iso6391);
-            JobDispatcher.Dispatch(colorPaletteJob, "image", 2);
+            TmdbColorPaletteJob tmdbColorPaletteJob = new(image.FilePath, "image", image.Iso6391);
+            JobDispatcher.Dispatch(tmdbColorPaletteJob, "image", 2);
         }
     }
 
     public void Dispose()
     {
-        Collection = null;
         MediaContext.Dispose();
-        TmdbCollectionClient.Dispose();
         GC.Collect();
         GC.WaitForFullGCComplete();
         GC.WaitForPendingFinalizers();
@@ -281,9 +315,7 @@ public class CollectionLogic(int id, Library library) : IDisposable, IAsyncDispo
 
     public async ValueTask DisposeAsync()
     {
-        Collection = null;
         await MediaContext.DisposeAsync();
-        await TmdbCollectionClient.DisposeAsync();
         GC.Collect();
         GC.WaitForFullGCComplete();
         GC.WaitForPendingFinalizers();

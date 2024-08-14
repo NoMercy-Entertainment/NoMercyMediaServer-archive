@@ -1,22 +1,26 @@
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Asp.Versioning;
+using FFMpegCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MovieFileLibrary;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Helpers.Monitoring;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
+using NoMercy.Providers.TMDB.Client;
 using NoMercy.Server.app.Helper;
+using NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
-using NoMercy.Server.app.Http.Controllers.Api.V1.Music;
-using NoMercy.Server.app.Http.Middleware;
 using NoMercy.Server.system;
-using LogLevel = NoMercy.Helpers.LogLevel;
+using Serilog.Events;
+using AppFiles = NoMercy.NmSystem.AppFiles;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -27,7 +31,7 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Dashboard;
 [ApiVersion("1")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/dashboard/server", Order = 10)]
-public class ServerController : Controller
+public class ServerController: BaseController
 {
     private IHostApplicationLifetime ApplicationLifetime { get; }
 
@@ -39,30 +43,34 @@ public class ServerController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to access the dashboard");
 
-        return Ok(new PlaceholderResponse
-        {
-            Data = []
-        });
+        return Ok();
     }
 
     [HttpGet]
     [Route("setup")]
-    public async Task<StatusResponseDto<SetupResponseDto>> Setup()
+    public async Task<IActionResult> Setup()
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return Problem(                
+                title: "Unauthorized.",
+                detail: "You do not have permission to access the setup");
 
         await using MediaContext mediaContext = new();
-        List<Library> libraries = await mediaContext.Libraries
+        var libraries = await mediaContext.Libraries
             .Include(library => library.FolderLibraries)
-            .ThenInclude(folderLibrary => folderLibrary.Folder)
-            .ThenInclude(folder => folder.EncoderProfileFolder)
-            .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
+                .ThenInclude(folderLibrary => folderLibrary.Folder)
+                    .ThenInclude(folder => folder.EncoderProfileFolder)
+                        .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
+            
             .Include(library => library.LibraryUsers
                 .Where(x => x.UserId == userId)
             )
-            .ThenInclude(libraryUser => libraryUser.User)
+                .ThenInclude(libraryUser => libraryUser.User)
+            
             .ToListAsync();
 
         var libraryCount = libraries.Count;
@@ -77,7 +85,7 @@ public class ServerController : Controller
             .Select(folderLibrary => folderLibrary.Folder)
             .Count(folder => folder.EncoderProfileFolder.Count > 0);
 
-        return new StatusResponseDto<SetupResponseDto>
+        return Ok(new StatusResponseDto<SetupResponseDto>
         {
             Status = "ok",
             Data = new SetupResponseDto
@@ -86,14 +94,18 @@ public class ServerController : Controller
                                 && folderCount > 0
                                 && encoderProfileCount > 0
             }
-        };
+        });
     }
 
     [HttpPost]
     [Route("start")]
     public IActionResult StartServer()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return Problem(                
+                title: "Unauthorized.",
+                detail: "You do not have permission to start the server");
+        
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -102,7 +114,9 @@ public class ServerController : Controller
     [Route("stop")]
     public IActionResult StopServer()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to stop the server");
+        
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -111,7 +125,9 @@ public class ServerController : Controller
     [Route("restart")]
     public IActionResult RestartServer()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to restart the server");
+        
         // ApplicationLifetime.StopApplication();
         return Content("Done");
     }
@@ -120,77 +136,95 @@ public class ServerController : Controller
     [Route("shutdown")]
     public IActionResult Shutdown()
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator()) 
+            return Problem(
+            "You do not have permission to shutdown the server",
+            type: "/docs/errors/forbidden");
+        
         ApplicationLifetime.StopApplication();
         return Content("Done");
     }
 
     [HttpPost]
     [Route("loglevel")]
-    public IActionResult LogLevel(LogLevel level)
+    public IActionResult LogLevel(LogEventLevel level)
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to set the log level");
+                
         Logger.SetLogLevel(level);
 
         return Content("Log level set to " + level);
     }
 
     [HttpPost]
-    [Route("directorytree")]
-    public StatusResponseDto<List<DirectoryTreeDto>> DirectoryTree([FromBody] PathRequest request)
+    [Route("addfiles")]
+    public IActionResult AddFiles([FromBody] AddFilesRequest request)
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to add files");
 
-        var path = request.Path ?? request.Folder;
+        return Ok(request);
+    }
+    
+    [HttpPost]
+    [Route("directorytree")]
+    public IActionResult DirectoryTree([FromBody] PathRequest request)
+    {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view folders");
+        
+        var folder = request.Folder;
 
         List<DirectoryTreeDto> array = [];
 
-        if (string.IsNullOrEmpty(path) || path == "/")
+        if (string.IsNullOrEmpty(folder) || folder == "/")
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform
                     .Windows))
             {
-                DriveInfo[] driveInfo = DriveInfo.GetDrives();
+                var driveInfo = DriveInfo.GetDrives();
                 array = driveInfo.Select(d => CreateDirectoryTreeDto("", d.RootDirectory.ToString())).ToList();
 
-                return new StatusResponseDto<List<DirectoryTreeDto>>
+                return Ok(new StatusResponseDto<List<DirectoryTreeDto>>
                 {
                     Status = "ok",
                     Data = array
-                };
+                });
             }
 
-            path = "/";
+            folder = "/";
         }
 
-        if (!Directory.Exists(path))
-            return new StatusResponseDto<List<DirectoryTreeDto>>
+        if (!Directory.Exists(folder))
+            return Ok(new StatusResponseDto<List<DirectoryTreeDto>>
             {
                 Status = "ok",
                 Data = array
-            };
+            });
 
         try
         {
-            var directories = Directory.GetDirectories(path);
-            array = directories.Select(d => CreateDirectoryTreeDto(path, d)).ToList();
+            var directories = Directory.GetDirectories(folder);
+            array = directories.Select(d => CreateDirectoryTreeDto(folder, d)).ToList();
         }
         catch (Exception ex)
         {
-            return new StatusResponseDto<List<DirectoryTreeDto>>
+            return UnprocessableEntity(new StatusResponseDto<List<DirectoryTreeDto>>
             {
                 Status = "error",
                 Message = ex.Message
-            };
+            });
         }
 
-        return new StatusResponseDto<List<DirectoryTreeDto>>
+        return Ok(new StatusResponseDto<List<DirectoryTreeDto>>
         {
             Status = "ok",
             Data = array
-        };
+        });
     }
-
+    
+    [NonAction]
     private DirectoryTreeDto CreateDirectoryTreeDto(string parent, string path)
     {
         var fullPath = Path.Combine(parent, path);
@@ -217,54 +251,243 @@ public class ServerController : Controller
             Type = type
         };
     }
-
-    public static string DeviceName()
+    
+    [NonAction]
+    private static string DeviceName()
     {
         MediaContext mediaContext = new();
         var device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "server_name");
         return device?.Value ?? Environment.MachineName;
     }
 
+    [HttpPost]
+    [Route("filelist")]
+    public async Task<IActionResult> FileList([FromBody] FileListRequest request)
+    {
+        if (!HttpContext.User.IsModerator())
+            return Problem(       
+                title: "Unauthorized.",
+                detail: "You do not have permission to view files");
+        
+        var fileList = await GetFilesInDirectory(request.Folder, request.Type);
+
+        return Ok(new DataResponseDto<FileListResponseDto>
+        {
+            Data = new FileListResponseDto()
+            {
+                Status = "ok",
+                Files = fileList,
+            }
+        });
+    }
+    
+    [NonAction]
+    private async Task<List<FileItemDto>> GetFilesInDirectory(string directoryPath, string type)
+    {
+        GlobalFFOptions.Configure(options => options.BinaryFolder = Path.Combine(AppFiles.BinariesPath, "ffmpeg"));
+
+        var directoryInfo = new DirectoryInfo(directoryPath);
+        var files = directoryInfo.GetFiles();
+
+        var fileList = new List<FileItemDto>();
+
+        foreach (var file in files)
+        {
+            var mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName);
+
+            MovieDetector movieDetector = new();
+            var parsed = movieDetector.GetInfo(Regex.Replace(file.Name, @"\[.*?\]", ""));
+            parsed.Year ??= Str.MatchYearRegex().Match(file.FullName)
+                .Value;
+            
+            MovieOrEpisode match = new();
+            
+            var searchClient = new TmdbSearchClient();
+            
+            await using MediaContext mediaContext = new();
+
+            switch (type)
+            {
+                case "anime" or "tv":
+                {
+                    var shows = await searchClient.TvShow(parsed.Title, parsed.Year);
+                    var show = shows?.Results.FirstOrDefault();
+                    if (show == null || !parsed.Season.HasValue || !parsed.Episode.HasValue) continue;
+                
+                    var episode = mediaContext.Episodes
+                        .Where(item => item.TvId == show.Id)
+                        .Where(item => item.SeasonNumber == parsed.Season)
+                        .FirstOrDefault(item => item.EpisodeNumber == parsed.Episode);
+
+                    if (episode == null)
+                    {
+                        var episodeClient = new TmdbEpisodeClient(show.Id, parsed.Season.Value, parsed.Episode.Value);
+                        var details = await episodeClient.Details();
+                        if (details == null) continue;
+                        
+                        episode = new Episode
+                        {
+                            Id = details.Id,
+                            TvId = show.Id,
+                            SeasonNumber = details.SeasonNumber,
+                            EpisodeNumber = details.EpisodeNumber,
+                            Title = details.Name,
+                            Overview = details.Overview,
+                            Still = details.StillPath,
+                        };
+                    }
+                
+                    match = new MovieOrEpisode
+                    {
+                        Id = episode.Id,
+                        Title = episode.Title ?? "",
+                        EpisodeNumber = episode.EpisodeNumber,
+                        SeasonNumber = episode.SeasonNumber,
+                        Still = episode.Still,
+                        Duration = mediaAnalysis.Duration,
+                        Overview = episode.Overview,
+                    };
+                    
+                    parsed.ImdbId = episode.ImdbId;
+                    break;
+                }
+                case "movie":
+                {
+                    var movies = await searchClient.Movie(parsed.Title, parsed.Year);
+                    var movie = movies?.Results.FirstOrDefault();
+                    if (movie == null) continue;
+                
+                    var movieItem = mediaContext.Movies
+                        .FirstOrDefault(item => item.Id == movie.Id);
+
+                    if (movieItem == null)
+                    {
+                        var movieClient = new TmdbMovieClient(movie.Id);
+                        var details = await movieClient.Details();
+                        if (details == null) continue;
+                        
+                        movieItem = new Movie
+                        {
+                            Id = details.Id,
+                            Title = details.Title,
+                            Overview = details.Overview,
+                            Poster = details.PosterPath,
+                        };
+                    }
+                
+                    match = new MovieOrEpisode
+                    {
+                        Id = movieItem.Id,
+                        Title = movieItem.Title,
+                        Still = movieItem.Poster,
+                        Duration = mediaAnalysis.Duration,
+                        Overview = movieItem.Overview,
+                    };
+                    
+                    parsed.ImdbId = movieItem.ImdbId;
+                    break;
+                }
+            }
+            
+            var parentPath = string.IsNullOrEmpty(file.DirectoryName)
+                ? "/"
+                : Path.GetDirectoryName(Path.Combine(file.DirectoryName, ".."));
+            
+            fileList.Add(new FileItemDto
+            {
+                Size = file.Length,
+                Mode = (int)file.Attributes,
+                Name = Path.GetFileNameWithoutExtension(file.Name),
+                Parent = parentPath,
+                Parsed = parsed,
+                Match = match,
+                File = file.FullName,
+                Streams = new Streams
+                {
+                    Video = mediaAnalysis.VideoStreams
+                        .Select(video => new Video
+                        {
+                            Index = video.Index,
+                            Width = video.Height,
+                            Height = video.Width,
+                        }),
+                    Audio = mediaAnalysis.AudioStreams
+                        .Select(stream => new Audio
+                        {
+                            Index = stream.Index,
+                            Lanuage = stream.Language,
+                        }),
+                    Subtitle = mediaAnalysis.SubtitleStreams
+                        .Select(stream => new Subtitle
+                        {
+                            Index = stream.Index,
+                            Language = stream.Language,
+                        }),
+                },
+            });
+        }
+
+        return fileList;
+    }
+    
     [HttpGet]
     [Route("info")]
-    public ServerInfoDto ServerInfo()
+    public IActionResult ServerInfo()
     {
-        var userId = HttpContext.User.UserId();
-
-        return new ServerInfoDto
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view server information");
+        
+        return Ok(new ServerInfoDto
         {
             Server = DeviceName(),
-            Cpu = SystemInfo.Cpu,
-            Os = SystemInfo.Platform.ToTitleCase(),
-            Arch = SystemInfo.Architecture,
-            Version = SystemInfo.Version,
-            BootTime = SystemInfo.StartTime
-        };
+            Cpu = Info.Cpu,
+            Gpu = Info.Gpu,
+            Os = Info.Platform.ToTitleCase(),
+            Arch = Info.Architecture,
+            Version = Info.Version,
+            BootTime = Info.StartTime
+        });
     }
 
     [HttpGet]
     [Route("resources")]
-    public ResourceInfoDto Resources()
+    public IActionResult Resources()
     {
-        var userId = HttpContext.User.UserId();
-
-        var totalCpu = 0.0;
-        var totalMemory = 0.0;
-        foreach (var aProc in Process.GetProcesses()) totalMemory += aProc.WorkingSet64 / 1024.0;
-
-        return new ResourceInfoDto
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view server resources");
+        
+        Resource? resource;
+        try
         {
-            Cpu = totalCpu / Environment.ProcessorCount,
-            Ram = totalMemory / 1024.0 / 1024.0,
-            Storage = StorageMonitor.Main()
-        };
+            resource = ResourceMonitor.Monitor();
+        }
+        catch (Exception e)
+        {
+            return UnprocessableEntityResponse("Resource monitor could not be started: " + e.Message);
+        }
+        
+        var storage = StorageMonitor.Main();
+        
+        if (resource == null)
+            return UnprocessableEntityResponse("Resource monitor could not be started");
+
+        return Ok(new ResourceInfoDto
+        {
+            Cpu = resource.Cpu,
+            Gpu = resource.Gpu,
+            Memory = resource.Memory,
+            Storage = storage
+        });
     }
 
     [HttpPatch]
     [Route("info")]
-    public async Task<StatusResponseDto<string>> Update([FromBody] ServerUpdateRequest request)
+    public async Task<IActionResult> Update([FromBody] ServerUpdateRequest request)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to update server information");
+        
         await using MediaContext mediaContext = new();
         var configuration = await mediaContext.Configuration
             .AsTracking()
@@ -301,7 +524,7 @@ public class ServerController : Controller
             {
                 Content = new FormUrlEncodedContent(new Dictionary<string, string>
                 {
-                    ["id"] = SystemInfo.DeviceId.ToString(),
+                    ["id"] = Info.DeviceId.ToString(),
                     ["server_name"] = request.Name
                 })
             };
@@ -313,36 +536,34 @@ public class ServerController : Controller
             var data = JsonConvert.DeserializeObject<StatusResponseDto<string>>(response);
 
             if (data == null)
-                return new StatusResponseDto<string>()
+                return UnprocessableEntity(new StatusResponseDto<string>()
                 {
                     Status = "error",
                     Message = "Server name could not be updated",
                     Args = []
-                };
+                });
 
-            return new StatusResponseDto<string>
+            return Ok(new StatusResponseDto<string>
             {
                 Status = data.Status,
                 Message = data.Message,
                 Args = []
-            };
+            });
         }
         catch (Exception e)
         {
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Server name could not be updated: {0}",
-                Args = [e.Message]
-            };
+            return UnprocessableEntityResponse("Server name could not be updated: " + e.Message);
         }
     }
 
     [HttpGet]
     [Route("paths")]
-    public ServerPathsDto[] ServerPaths()
+    public IActionResult ServerPaths()
     {
-        return
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view server paths");
+        
+        List<ServerPathsDto> list =
         [
             new ServerPathsDto
             {
@@ -370,83 +591,38 @@ public class ServerController : Controller
                 Value = AppFiles.ConfigPath
             }
         ];
+        
+        return Ok(list);
     }
 
     [HttpGet]
     [Route("/files/${depth:int}/${path:required}")]
-    public async Task<ConcurrentBag<MediaFolder>?> Files(string path, int depth)
+    public async Task<IActionResult> Files(string path, int depth)
     {
+        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view files");
+        
         MediaScan mediaScan = new();
 
-        ConcurrentBag<MediaFolder> folders = await mediaScan
+        var folders = await mediaScan
             .EnableFileListing()
             .Process(path, depth);
 
-        mediaScan.Dispose();
+        await mediaScan.DisposeAsync();
 
-        return folders;
+        return Ok(folders);
     }
 
     [HttpPatch]
     [Route("workers/{worker}/{count:int:min(0)}")]
     public async Task<IActionResult> UpdateWorkers(string worker, int count)
     {
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to update workers");
+        
         if (await QueueRunner.SetWorkerCount(worker, count)) return Ok($"{worker} worker count set to {count}");
 
-        return BadRequest($"{worker} worker count could not be set to {count}");
+        return BadRequestResponse($"{worker} worker count could not be set to {count}");
     }
-}
-
-public class ServerInfoDto
-{
-    [JsonProperty("server")] public string Server { get; set; }
-    [JsonProperty("cpu")] public string? Cpu { get; set; }
-    [JsonProperty("os")] public string Os { get; set; }
-    [JsonProperty("arch")] public string Arch { get; set; }
-    [JsonProperty("version")] public string? Version { get; set; }
-    [JsonProperty("bootTime")] public DateTime BootTime { get; set; }
-}
-
-public class ServerPathsDto
-{
-    [JsonProperty("key")] public string Key { get; set; }
-    [JsonProperty("value")] public string Value { get; set; }
-}
-
-public class DirectoryRequest
-{
-    [JsonProperty("path")] public string Path { get; set; }
-}
-
-public class PathRequest
-{
-    [JsonProperty("path")] public string? Path { get; set; }
-    [JsonProperty("folder")] public string? Folder { get; set; }
-}
-
-public class DirectoryTreeDto
-{
-    [JsonProperty("path")] public string Path { get; set; }
-    [JsonProperty("mode")] public int Mode { get; set; }
-    [JsonProperty("size")] public int? Size { get; set; }
-    [JsonProperty("type")] public string Type { get; set; }
-    [JsonProperty("parent")] public string Parent { get; set; }
-    [JsonProperty("full_path")] public string FullPath { get; set; }
-}
-
-public class SetupResponseDto
-{
-    [JsonProperty("setup_complete")] public bool SetupComplete { get; set; }
-}
-
-public class ServerUpdateRequest
-{
-    [JsonProperty("name")] public string Name { get; set; }
-}
-
-public class ResourceInfoDto
-{
-    [JsonProperty("cpu")] public double Cpu { get; set; }
-    [JsonProperty("ram")] public double Ram { get; set; }
-    [JsonProperty("storage")] public List<ResourceMonitorDto> Storage { get; set; }
 }

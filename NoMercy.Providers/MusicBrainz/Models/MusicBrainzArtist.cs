@@ -1,8 +1,8 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 using NoMercy.Helpers;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.MusicBrainz.Models;
 

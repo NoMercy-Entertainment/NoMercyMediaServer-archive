@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
+using NoMercy.Networking;
 using NoMercy.Server.app.Helper;
 using NoMercy.Server.app.Http.Controllers.Api.V1.DTO;
 using NoMercy.Server.app.Http.Controllers.Api.V1.Music.DTO;
@@ -17,14 +19,16 @@ namespace NoMercy.Server.app.Http.Controllers.Api.V1.Music;
 [Tags("Music Artists")]
 [Authorize]
 [Route("api/v{Version:apiVersion}/music/artists")]
-public class ArtistsController : Controller
+public class ArtistsController: BaseController
 {
     [HttpGet]
-    public async Task<ArtistsResponseDto> Index([FromQuery] FilterRequest request)
+    public async Task<IActionResult> Index([FromQuery] FilterRequest request)
     {
-        List<ArtistsResponseItemDto> artists = [];
-
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view artists");
+
+        List<ArtistsResponseItemDto> artists = [];
 
         await using MediaContext mediaContext = new();
         await foreach (var artist in ArtistsResponseDto.GetArtists(mediaContext, userId, request.Letter ?? "_" ))
@@ -37,35 +41,43 @@ public class ArtistsController : Controller
 
         foreach (var artist in artists) artist.Tracks = tracks.Count(track => track.ArtistId == artist.Id);
 
-        return new ArtistsResponseDto
+        return Ok(new ArtistsResponseDto
         {
             Data = artists
                 .Where(response => response.Tracks > 0)
-        };
+                .OrderBy(artist => artist.Name)
+        });
     }
 
     [HttpGet]
     [Route("{id:guid}")]
-    public async Task<ArtistResponseDto> Show(Guid id)
+    public async Task<IActionResult> Show(Guid id)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view artists");
 
         await using MediaContext mediaContext = new();
         var artist = await ArtistResponseDto.GetArtist(mediaContext, userId, id);
 
-        if (artist is null) return new ArtistResponseDto();
+        var language = Language();
+        
+        if (artist is null) 
+            return NotFoundResponse("Artist not found");
 
-        return new ArtistResponseDto
+        return Ok(new ArtistResponseDto
         {
-            Data = new ArtistResponseItemDto(artist, userId, HttpContext.Request.Headers.AcceptLanguage[1])
-        };
+            Data = new ArtistResponseItemDto(artist, userId,language)
+        });
     }
 
     [HttpPost]
     [Route("{id:guid}/like")]
-    public async Task<StatusResponseDto<string>> Like(Guid id, [FromBody] LikeRequestDto request)
+    public async Task<IActionResult> Like(Guid id, [FromBody] LikeRequestDto request)
     {
         var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to like artists");
 
         await using MediaContext mediaContext = new();
         var artist = await mediaContext.Artists
@@ -74,11 +86,7 @@ public class ArtistsController : Controller
             .FirstOrDefaultAsync();
 
         if (artist is null)
-            return new StatusResponseDto<string>
-            {
-                Status = "error",
-                Message = "Tv not found"
-            };
+            return UnprocessableEntityResponse("Artist not found");
 
         if (request.Value)
         {
@@ -103,12 +111,12 @@ public class ArtistsController : Controller
             await mediaContext.SaveChangesAsync();
         }
 
-        Networking.SendToAll("RefreshLibrary", new RefreshLibraryDto()
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto()
         {
             QueryKey = ["music", "artists", artist.Id]
         });
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "{0} {1}",
@@ -117,22 +125,23 @@ public class ArtistsController : Controller
                 artist.Name,
                 request.Value ? "liked" : "unliked"
             }
-        };
+        });
     }
 
     [HttpPost]
     [Route("{id:guid}/rescan")]
-    public async Task<StatusResponseDto<string>> Like(Guid id)
+    public async Task<IActionResult> Like(Guid id)
     {
-        var userId = HttpContext.User.UserId();
+        if (!HttpContext.User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to rescan artists");
 
         await using MediaContext mediaContext = new();
 
-        return new StatusResponseDto<string>
+        return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "Rescan started",
             Args = []
-        };
+        });
     }
 }
