@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(ArtistId), nameof(MusicGenreId))]
-[Index(nameof(ArtistId)), Index(nameof(MusicGenreId))]
+[Index(nameof(ArtistId))]
+[Index(nameof(MusicGenreId))]
 public class ArtistMusicGenre
 {
     [JsonProperty("artist_id")] public Guid ArtistId { get; set; }

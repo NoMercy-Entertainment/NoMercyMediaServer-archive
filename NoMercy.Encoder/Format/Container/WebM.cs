@@ -5,7 +5,7 @@ namespace NoMercy.Encoder.Format.Container;
 public class WebM : BaseContainer
 {
     public override ContainerDto ContainerDto => AvailableContainers.First(c => c.Name == VideoContainers.Webm);
-    
+
     public WebM() : base()
     {
         SetContainer(VideoContainers.Webm);

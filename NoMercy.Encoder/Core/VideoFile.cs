@@ -1,4 +1,3 @@
-
 namespace NoMercy.Encoder.Core;
 
 public class VideoFile : VideoAudioFile

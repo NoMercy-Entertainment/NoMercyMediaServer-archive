@@ -19,14 +19,14 @@ public static class Images
 {
     public static (byte[] magickImage, string mimeType) ResizeMagickNet(string image, ImageConvertArguments arguments)
     {
-        using var inputStream = ReadFileStream(image);
+        using MagickImage inputStream = ReadFileStream(image);
 
-        var aspectRatio = arguments.AspectRatio ?? inputStream.Height / (float)inputStream.Width;
+        double aspectRatio = arguments.AspectRatio ?? inputStream.Height / (float)inputStream.Width;
 
-        var width = arguments.Width ?? inputStream.Width;
-        var height = (int)(width * aspectRatio);
+        int width = arguments.Width ?? inputStream.Width;
+        int height = (int)(width * aspectRatio);
 
-        var size = new MagickGeometry(width, height)
+        MagickGeometry size = new(width, height)
         {
             IgnoreAspectRatio = true,
             FillArea = true
@@ -37,7 +37,7 @@ public static class Images
         inputStream.Quality = arguments.Quality;
         inputStream.Format = arguments.Type ?? inputStream.Format;
 
-        var mimeType = inputStream.Format.ToString();
+        string mimeType = inputStream.Format.ToString();
 
         return (inputStream.ToByteArray(), mimeType);
     }

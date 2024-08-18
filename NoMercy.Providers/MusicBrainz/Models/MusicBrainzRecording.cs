@@ -1,7 +1,6 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.MusicBrainz.Models;
@@ -18,9 +17,10 @@ public class MusicBrainzRecording
 
 public class MusicBrainzRecordingAppends : MusicBrainzRecording
 {
-    [JsonProperty("first-release-date")]
-    private string? _firstReleaseDate { get; set; }
-    public DateTime? FirstReleaseDate {
+    [JsonProperty("first-release-date")] private string? _firstReleaseDate { get; set; }
+
+    public DateTime? FirstReleaseDate
+    {
         get => DateTimeParser.ParseDateTime(_firstReleaseDate);
         set => _firstReleaseDate = value.ToString();
     }

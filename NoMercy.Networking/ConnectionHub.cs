@@ -2,6 +2,7 @@ using Microsoft.AspNet.SignalR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -24,14 +25,15 @@ public class ConnectionHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var user = Context.User.User();
+        User? user = Context.User.User();
         if (user is null) return;
 
-        var accessToken = _httpContextAccessor.HttpContext?.Request.Query.FirstOrDefault(x => x.Key == "access_token")
+        StringValues? accessToken = _httpContextAccessor.HttpContext?.Request.Query
+            .FirstOrDefault(x => x.Key == "access_token")
             .Value;
-        var result = accessToken.GetValueOrDefault().ToString().Split("&");
+        string[] result = accessToken.GetValueOrDefault().ToString().Split("&");
 
-        var client = new Client
+        Client client = new()
         {
             Sub = user.Id,
             Ip = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "Unknown",
@@ -39,9 +41,9 @@ public class ConnectionHub : Hub
             Endpoint = Endpoint
         };
 
-        foreach (var item in result)
+        foreach (string item in result)
         {
-            var keyValue = item.Split("=");
+            string[] keyValue = item.Split("=");
 
             if (keyValue.Length < 2) continue;
 
@@ -95,8 +97,8 @@ public class ConnectionHub : Hub
             })
             .RunAsync();
 
-        var device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
-        
+        Device? device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
+
         client.CustomName = device?.CustomName;
 
         if (device is not null)
@@ -121,10 +123,10 @@ public class ConnectionHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        if (Networking.SocketClients.TryGetValue(Context.ConnectionId, out var client))
+        if (Networking.SocketClients.TryGetValue(Context.ConnectionId, out Client? client))
         {
             await using MediaContext mediaContext = new();
-            var device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
+            Device? device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
             if (device is not null)
             {
                 await mediaContext.ActivityLogs.AddAsync(new ActivityLog
@@ -148,7 +150,7 @@ public class ConnectionHub : Hub
 
     private List<Device> Devices()
     {
-        var user = Context.User.User();
+        User? user = Context.User.User();
 
         return Networking.SocketClients.Values
             .Where(x => x.Sub.Equals(user?.Id))

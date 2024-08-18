@@ -6,7 +6,9 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Priority), nameof(Country), nameof(ProviderId))]
-[Index(nameof(Priority)), Index(nameof(Country)), Index(nameof(ProviderId))]
+[Index(nameof(Priority))]
+[Index(nameof(Country))]
+[Index(nameof(ProviderId))]
 public class PriorityProvider
 {
     [JsonProperty("priority")] public int Priority { get; set; }

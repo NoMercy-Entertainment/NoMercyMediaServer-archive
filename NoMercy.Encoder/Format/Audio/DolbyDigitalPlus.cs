@@ -8,9 +8,10 @@ public class DolbyDigitalPlus : BaseAudio
     {
         SetAudioCodec(AudioFormats.DolbyDigitalPlus);
     }
-    
-    protected override CodecDto[] AvailableCodecs => [
-        AudioCodecs.Eac3,
+
+    protected override CodecDto[] AvailableCodecs =>
+    [
+        AudioCodecs.Eac3
     ];
 
     protected override string[] AvailableContainers =>

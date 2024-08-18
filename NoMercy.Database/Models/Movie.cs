@@ -64,13 +64,12 @@ public class Movie : ColorPaletteTimeStamps
     [InverseProperty("MovieTo")] public ICollection<Similar> SimilarTo { get; set; }
     [JsonProperty("movie_user")] public ICollection<MovieUser> MovieUser { get; set; }
 
-    [JsonProperty("video_files")]
-    public ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
-    
+    [JsonProperty("video_files")] public ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
+
     public Movie()
     {
     }
-    
+
     // public Movie(Providers.TMDB.Models.Movies.TmdbMovie input, Ulid libraryId)
     // {
     //     Id = input.Id;

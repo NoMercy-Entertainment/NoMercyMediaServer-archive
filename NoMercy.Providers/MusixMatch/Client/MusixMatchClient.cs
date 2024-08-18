@@ -5,9 +5,10 @@ namespace NoMercy.Providers.MusixMatch.Client;
 
 public class MusixmatchClient : MusixMatchBaseClient
 {
-    public Task<MusixMatchSubtitleGet?> SongSearch(MusixMatchTrackSearchParameters musixMatchTrackParameters, bool priority = false)
+    public Task<MusixMatchSubtitleGet?> SongSearch(MusixMatchTrackSearchParameters musixMatchTrackParameters,
+        bool priority = false)
     {
-        var additionalArguments = new Dictionary<string, string?>
+        Dictionary<string, string> additionalArguments = new()
         {
             ["q_artist"] = musixMatchTrackParameters.Artist,
             ["q_artists"] = Join(",", musixMatchTrackParameters.Artists ?? []),

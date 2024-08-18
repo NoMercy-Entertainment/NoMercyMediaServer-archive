@@ -7,40 +7,35 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
+using NoMercy.Api.Constraints;
+using NoMercy.Api.Controllers.Socket;
+using NoMercy.Api.Middleware;
+using NoMercy.Data.Repositories;
 using NoMercy.Database;
+using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.Helpers.system;
 using NoMercy.Networking;
-using NoMercy.Server.app.Constraints;
-using NoMercy.Server.app.Http.Controllers.Socket;
-using NoMercy.Server.app.Http.Middleware;
-using NoMercy.Server.system;
-using AppFiles = NoMercy.NmSystem.AppFiles;
-using Uri = System.Uri;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Server;
 
-public class Startup(IConfiguration _)
+public class Startup
 {
-    
     public void ConfigureServices(IServiceCollection services)
     {
+        // Add Memory Cache
         services.AddMemoryCache();
-        services.AddLogging();
-        // services.AddSingleton<AniDbBaseClient>();
-        services.AddSingleton<JobQueue>();
-        services.AddScoped<Networking.Networking>();
-        
-        // services.AddControllers().AddJsonOptions(jsonOptions =>
-        // {
-        //     jsonOptions.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-        //     jsonOptions.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        //     jsonOptions.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        //     jsonOptions.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals;
-        //     
-        // });
 
+        // Add Singleton Services
+        services.AddSingleton<JobQueue>();
+        services.AddSingleton<Helpers.Monitoring.ResourceMonitor>();
+        services.AddSingleton<Networking.Networking>();
+
+        // Add DbContexts
         services.AddDbContext<QueueContext>(optionsAction =>
         {
             optionsAction.UseSqlite($"Data Source={AppFiles.QueueDatabase}");
@@ -54,35 +49,58 @@ public class Startup(IConfiguration _)
         });
         services.AddTransient<MediaContext>();
 
-        services.AddControllers().AddNewtonsoftJson(options =>
+        // Add Repositories
+        services.AddScoped<IEncoderRepository, EncoderRepository>();
+        services.AddScoped<ILibraryRepository, LibraryRepository>();
+        services.AddScoped<IDeviceRepository, DeviceRepository>();
+        services.AddScoped<IFolderRepository, FolderRepository>();
+        services.AddScoped<ILanguageRepository, LanguageRepository>();
+        services.AddScoped<ICollectionRepository, CollectionRepository>();
+        services.AddScoped<IGenreRepository, GenreRepository>();
+        services.AddScoped<IMovieRepository, MovieRepository>();
+        services.AddScoped<ITvShowRepository, TvShowRepository>();
+
+        // Add Controllers and JSON Options
+        services.AddControllers()
+            .AddNewtonsoftJson(options =>
+            {
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
+        
+        services.Configure<RouteOptions>(options =>
         {
-            options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            options.ConstraintMap.Add("ulid", typeof(UlidRouteConstraint));
         });
 
-        services.ConfigureHttpJsonOptions(options =>
+        // Configure Logging
+        services.AddLogging(builder =>
         {
-            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
         });
 
+        // Configure Authorization
         services.AddAuthorizationBuilder()
             .AddPolicy("api", policy =>
             {
                 policy.RequireAuthenticatedUser();
                 policy.AddAuthenticationSchemes(IdentityConstants.BearerScheme);
                 policy.RequireClaim("scope", "openid", "profile");
-                policy.AddRequirements([
-                    new AssertionRequirement(context =>
-                    {
-                        using MediaContext mediaContext = new();
-                        var user = mediaContext.Users
-                            .FirstOrDefault(user =>
-                                user.Id == Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-                                                      string.Empty));
-                        return user is not null;
-                    })
-                ]);
+                policy.AddRequirements(new AssertionRequirement(context =>
+                {
+                    using MediaContext mediaContext = new();
+                    User? user = mediaContext.Users
+                        .FirstOrDefault(user =>
+                            user.Id == Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+                                                  string.Empty));
+                    return user is not null;
+                }));
             });
 
+        // Configure Authentication
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -94,8 +112,8 @@ public class Startup(IConfiguration _)
                 {
                     OnMessageReceived = context =>
                     {
-                        var accessToken = context.Request.Query["access_token"];
-                        var result = accessToken.ToString().Split('&');
+                        StringValues accessToken = context.Request.Query["access_token"];
+                        string[] result = accessToken.ToString().Split('&');
 
                         if (result.Length > 0 && !string.IsNullOrEmpty(result[0])) context.Token = result[0];
 
@@ -104,20 +122,12 @@ public class Startup(IConfiguration _)
                 };
             });
 
-        services.AddAuthorization();
-
+        // Add Other Services
         services.AddCors();
         services.AddApiVersioning();
         services.AddDirectoryBrowser();
-
-        // services.AddResponseCaching();
+        services.AddResponseCaching();
         services.AddMvc(option => option.EnableEndpointRouting = false);
-
-        services.AddControllers().AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        });
-
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
@@ -152,16 +162,6 @@ public class Startup(IConfiguration _)
                 }
             });
 
-            // options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            // {
-            //     Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            //     Name = "Authorization",
-            //     In = ParameterLocation.Header,
-            //     Type = SecuritySchemeType.Http,
-            //     Scheme = "bearer",
-            //     BearerFormat = "JWT"
-            // });
-
             OpenApiSecurityScheme keycloakSecurityScheme = new()
             {
                 Reference = new OpenApiReference
@@ -187,14 +187,11 @@ public class Startup(IConfiguration _)
 
         services.AddHttpContextAccessor();
         services.AddSignalR(o =>
-        {
-            o.EnableDetailedErrors = true;
-            o.MaximumReceiveMessageSize = 1024 * 1000 * 100;
-        })
-        .AddNewtonsoftJsonProtocol(options =>
-        {
-            options.PayloadSerializerSettings = JsonHelper.Settings;
-        });
+            {
+                o.EnableDetailedErrors = true;
+                o.MaximumReceiveMessageSize = 1024 * 1000 * 100;
+            })
+            .AddNewtonsoftJsonProtocol(options => { options.PayloadSerializerSettings = JsonHelper.Settings; });
 
         services.AddCors(options =>
         {
@@ -213,8 +210,6 @@ public class Startup(IConfiguration _)
                         .WithOrigins("https://cast.nomercy.tv")
                         .WithOrigins("https://vscode.nomercy.tv")
                         .WithOrigins("https://hlsjs.video-dev.org")
-
-                        // .AllowAnyOrigin()
                         .AllowAnyMethod()
                         .AllowCredentials()
                         .SetIsOriginAllowedToAllowWildcardSubdomains()
@@ -224,40 +219,39 @@ public class Startup(IConfiguration _)
         });
 
         services.AddResponseCompression(options => { options.EnableForHttps = true; });
-        
-        services.Configure<RouteOptions>(options =>
-        {
-            options.ConstraintMap.Add("ulid", typeof(UlidRouteConstraint));
-        });
-        
+
         services.AddTransient<DynamicStaticFilesMiddleware>();
     }
 
     public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        
         app.UseRouting();
         app.UseCors("AllowNoMercyOrigins");
 
+        // Security Middleware
         app.UseHsts();
         app.UseHttpsRedirection();
+
+        // Performance Middleware
         app.UseResponseCompression();
         app.UseRequestLocalization();
-        // app.UseResponseCaching();
+        app.UseResponseCaching();
 
+        // Custom Middleware
         app.UseMiddleware<LocalizationMiddleware>();
         app.UseMiddleware<TokenParamAuthMiddleware>();
 
+        // Authentication and Authorization
         app.UseAuthentication();
-
         app.UseAuthorization();
-        
+
+        // Logging Middleware
         app.UseMiddleware<AccessLogMiddleware>();
 
+        // Static Files Middleware
         app.UseMiddleware<DynamicStaticFilesMiddleware>();
 
-        // if (env.IsDevelopment())
-        // {
+        // Development Tools
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
         app.UseSwaggerUI(options =>
@@ -270,10 +264,11 @@ public class Startup(IConfiguration _)
             options.EnablePersistAuthorization();
             options.EnableTryItOutByDefault();
         });
-        // }
 
+        // MVC
         app.UseMvcWithDefaultRoute();
 
+        // WebSockets
         app.UseWebSockets()
             .UseEndpoints(endpoints =>
             {
@@ -282,7 +277,7 @@ public class Startup(IConfiguration _)
                     options.Transports = HttpTransportType.WebSockets;
                     options.CloseOnAuthenticationExpiration = true;
                 });
-                    
+
                 endpoints.MapHub<DashboardHub>("/dashboardHub", options =>
                 {
                     options.Transports = HttpTransportType.WebSockets;
@@ -290,6 +285,7 @@ public class Startup(IConfiguration _)
                 });
             });
 
+        // Static Files
         app.UseStaticFiles(new StaticFileOptions
         {
             FileProvider = new PhysicalFileProvider(AppFiles.TranscodePath),
@@ -303,13 +299,12 @@ public class Startup(IConfiguration _)
             FileProvider = new PhysicalFileProvider(AppFiles.TranscodePath),
             RequestPath = new PathString("/transcode")
         });
-        
-        var mediaContext = new MediaContext();
-        var folderLibraries = mediaContext.Folders.ToList();
-        
-        foreach (var folder in folderLibraries.Where(folder => Directory.Exists(folder.Path)))
-        {
+
+        // Initialize Dynamic Static Files Middleware
+        MediaContext mediaContext = new();
+        List<Folder> folderLibraries = mediaContext.Folders.ToList();
+
+        foreach (Folder folder in folderLibraries.Where(folder => Directory.Exists(folder.Path)))
             DynamicStaticFilesMiddleware.AddPath(folder.Id, folder.Path);
-        }
     }
 }

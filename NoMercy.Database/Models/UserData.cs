@@ -8,7 +8,12 @@ namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
 [Index(nameof(VideoFileId), nameof(UserId), IsUnique = true)]
-[Index(nameof(UserId)), Index(nameof(MovieId)), Index(nameof(TvId)), Index(nameof(CollectionId)), Index(nameof(SpecialId)), Index(nameof(VideoFileId))]
+[Index(nameof(UserId))]
+[Index(nameof(MovieId))]
+[Index(nameof(TvId))]
+[Index(nameof(CollectionId))]
+[Index(nameof(SpecialId))]
+[Index(nameof(VideoFileId))]
 public class UserData : Timestamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]

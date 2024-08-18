@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
+
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Providers.MusixMatch.Models;
@@ -19,7 +20,9 @@ public class MusixMatchSubtitle
     [NotMapped]
     public MusixMatchFormattedLyric[]? SubtitleBody
     {
-        get => _subtitle_body is null ? null : JsonConvert.DeserializeObject<MusixMatchFormattedLyric[]>(_subtitle_body);
+        get => _subtitle_body is null
+            ? null
+            : JsonConvert.DeserializeObject<MusixMatchFormattedLyric[]>(_subtitle_body);
         set => _subtitle_body = JsonConvert.SerializeObject(value);
     }
 

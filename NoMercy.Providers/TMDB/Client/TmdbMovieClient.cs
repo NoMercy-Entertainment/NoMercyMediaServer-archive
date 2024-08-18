@@ -1,5 +1,4 @@
-﻿using NoMercy.Providers.TMDB.Models.Certifications;
-using NoMercy.Providers.TMDB.Models.Genres;
+﻿using NoMercy.Providers.TMDB.Models.Genres;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
 using TmdbMovieCertifications = NoMercy.Providers.TMDB.Models.Certifications.TmdbMovieCertifications;

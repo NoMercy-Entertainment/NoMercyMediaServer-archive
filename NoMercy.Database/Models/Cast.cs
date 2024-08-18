@@ -15,7 +15,6 @@ namespace NoMercy.Database.Models;
 // [Index(nameof(Id),nameof(PersonId), IsUnique = true)]
 public class Cast
 {
-
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [JsonProperty("id")]

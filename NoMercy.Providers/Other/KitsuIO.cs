@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using NoMercy.Helpers;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 using Serilog.Events;
 
 namespace NoMercy.Providers.Other;
@@ -10,20 +11,20 @@ public static class KitsuIo
 {
     public static async Task<bool> IsAnime(string title, int year)
     {
-        var isAnime = false;
+        bool isAnime = false;
 
-        var client = new HttpClient();
+        HttpClient client = new();
         client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
         client.BaseAddress = new Uri("https://kitsu.io/api/edge/");
-        
-        var response = await client.GetAsync($"anime?filter[text]={title}&filter[year]={year}");
-        var content = await response.Content.ReadAsStringAsync();
+
+        HttpResponseMessage response = await client.GetAsync($"anime?filter[text]={title}&filter[year]={year}");
+        string content = await response.Content.ReadAsStringAsync();
 
         try
         {
-            var anime = content.FromJson<KitsuAnime>();
+            KitsuAnime? anime = content.FromJson<KitsuAnime>();
 
-            foreach (var data in anime?.Data ?? [])
+            foreach (Data data in anime?.Data ?? [])
                 if (data.Attributes.Titles.En?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
                     isAnime = true;
                 else if (data.Attributes.Titles.EnJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)

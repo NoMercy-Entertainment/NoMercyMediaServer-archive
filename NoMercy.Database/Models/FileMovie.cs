@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(FileId), nameof(MovieId))]
-[Index(nameof(FileId)), Index(nameof(MovieId))]
+[Index(nameof(FileId))]
+[Index(nameof(MovieId))]
 public class FileMovie
 {
     [JsonProperty("file_id")] public Ulid FileId { get; set; }

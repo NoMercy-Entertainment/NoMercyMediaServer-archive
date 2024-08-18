@@ -1,8 +1,8 @@
 ﻿using Serilog.Events;
 using Microsoft.AspNetCore.WebUtilities;
-using Newtonsoft.Json;
 using NoMercy.Helpers;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.Helpers;
 
@@ -13,7 +13,7 @@ public class BaseClient : IDisposable
     protected readonly HttpClient Client;
 
     protected virtual Uri BaseUrl => new("http://localhost:8080");
-    protected virtual int ConcurrentRequests  => 1;
+    protected virtual int ConcurrentRequests => 1;
     protected virtual int Interval => 1000;
     protected virtual Dictionary<string, string?> QueryParams => new();
     protected virtual string UserAgent => ApiInfo.UserAgent;
@@ -21,33 +21,39 @@ public class BaseClient : IDisposable
 
     protected BaseClient()
     {
-        _instance = this;
+        _instance ??= this;
         Client = new HttpClient()
         {
             BaseAddress = _instance.BaseUrl,
             DefaultRequestHeaders =
             {
-                {"Accept", "application/json"},
-                {"User-Agent", _instance.UserAgent}
+                { "Accept", "application/json" },
+                { "User-Agent", _instance.UserAgent }
             },
             Timeout = TimeSpan.FromMinutes(5)
         };
+
+        foreach (KeyValuePair<string, string> keyValuePair in _instance.QueryParams)
+            Client.DefaultRequestHeaders.Add(keyValuePair.Key, keyValuePair.Value);
     }
 
     protected BaseClient(Guid id)
     {
         Id = id;
-        _instance = this;
+        _instance ??= this;
         Client = new HttpClient()
         {
             BaseAddress = _instance.BaseUrl,
             DefaultRequestHeaders =
             {
-                {"Accept", "application/json"},
-                {"User-Agent", _instance.UserAgent}
+                { "Accept", "application/json" },
+                { "User-Agent", _instance.UserAgent }
             },
             Timeout = TimeSpan.FromMinutes(5)
         };
+
+        foreach (KeyValuePair<string, string> keyValuePair in _instance.QueryParams)
+            Client.DefaultRequestHeaders.Add(keyValuePair.Key, keyValuePair.Value);
     }
 
     private static Queue? _queue;
@@ -56,8 +62,8 @@ public class BaseClient : IDisposable
     {
         return _queue ??= new Queue(new QueueOptions
         {
-            Concurrent = _instance?.ConcurrentRequests ?? 1, 
-            Interval = _instance?.Interval ?? 1000, 
+            Concurrent = _instance?.ConcurrentRequests ?? 1,
+            Interval = _instance?.Interval ?? 1000,
             Start = true
         });
     }
@@ -66,23 +72,20 @@ public class BaseClient : IDisposable
         where T : class
     {
         query ??= new Dictionary<string, string?>();
-        
-        foreach (var queryParam in QueryParams)
-        {
-            query.Add(queryParam.Key, queryParam.Value);
-        }
-        
-        var newUrl = QueryHelpers.AddQueryString(url, query!);
+
+        foreach (KeyValuePair<string, string> queryParam in QueryParams) query.Add(queryParam.Key, queryParam.Value);
+
+        string newUrl = QueryHelpers.AddQueryString(url, query!);
 
         if (CacheController.Read(newUrl, out T? result)) return result;
 
         Logger.Http(newUrl, LogEventLevel.Verbose);
 
-        var response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
+        string response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
 
         await CacheController.Write(newUrl, response);
 
-        var data = JsonConvert.DeserializeObject<T>(response);
+        T? data = response.FromJson<T>();
 
         return data;
     }
@@ -95,10 +98,9 @@ public class BaseClient : IDisposable
 
 public static partial class Url
 {
-
     public static Uri ToHttps(this Uri url)
     {
-        var uriBuilder = new UriBuilder(url)
+        UriBuilder uriBuilder = new(url)
         {
             Scheme = Uri.UriSchemeHttps,
             Port = -1 // default port for scheme

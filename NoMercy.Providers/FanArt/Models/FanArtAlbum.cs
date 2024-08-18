@@ -14,7 +14,7 @@ public class Albums
 {
     private Image[]? _cover = [];
     private Image[]? _cdart = [];
-    
+
     [JsonProperty("albumcover")]
     public Image[] Cover
     {

@@ -2,7 +2,7 @@ using NoMercy.Encoder.Format.Rules;
 
 namespace NoMercy.Encoder.Format.Container;
 
-public class Srt: BaseContainer
+public class Srt : BaseContainer
 {
     public Srt() : base()
     {
@@ -10,7 +10,8 @@ public class Srt: BaseContainer
         AddCustomArgument("-f", SubtitleFormats.Srt);
     }
 
-    protected override CodecDto[] AvailableCodecs => [
-        SubtitleCodecs.Srt,
+    protected override CodecDto[] AvailableCodecs =>
+    [
+        SubtitleCodecs.Srt
     ];
 }

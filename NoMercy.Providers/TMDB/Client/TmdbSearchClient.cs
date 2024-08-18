@@ -12,7 +12,7 @@ public class TmdbSearchClient : TmdbBaseClient
 {
     public Task<TmdbPaginatedResponse<TmdbMovie>?> Movie(string? query, string? year)
     {
-        var queryParams = new Dictionary<string, string?>
+        Dictionary<string, string> queryParams = new()
         {
             ["query"] = query,
             ["primary_release_year"] = year,
@@ -24,7 +24,7 @@ public class TmdbSearchClient : TmdbBaseClient
 
     public Task<TmdbPaginatedResponse<TmdbTvShow>?> TvShow(string? query, string? year)
     {
-        var queryParams = new Dictionary<string, string?>
+        Dictionary<string, string> queryParams = new()
         {
             ["query"] = query,
             ["first_air_date_year"] = year,

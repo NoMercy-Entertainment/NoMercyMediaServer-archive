@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(NotificationId), nameof(UserId))]
-[Index(nameof(NotificationId)), Index(nameof(UserId))]
+[Index(nameof(NotificationId))]
+[Index(nameof(UserId))]
 public class NotificationUser
 {
     [JsonProperty("notification_id")] public Ulid NotificationId { get; set; }

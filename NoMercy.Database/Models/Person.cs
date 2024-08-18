@@ -17,7 +17,7 @@ public class Person : ColorPaletteTimeStamps
     [JsonProperty("also_known_as")] public string? AlsoKnownAs { get; set; }
     [JsonProperty("biography")] public string? Biography { get; set; }
     [JsonProperty("birthday")] public DateTime? BirthDay { get; set; }
-    [JsonProperty("death_day")] public DateTime? DeathDay { get; set; }
+    [JsonProperty("deathday")] public DateTime? DeathDay { get; set; }
 
     [JsonProperty("homepage")] public string? Homepage { get; set; }
     [JsonProperty("imdb_id")] public string? ImdbId { get; set; }
@@ -63,7 +63,6 @@ public class Person : ColorPaletteTimeStamps
     public Person()
     {
     }
-
 }
 
 public enum TmdbGender

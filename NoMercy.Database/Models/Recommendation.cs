@@ -37,5 +37,4 @@ public class Recommendation : ColorPalettes
     public Recommendation()
     {
     }
-    
 }

@@ -10,15 +10,16 @@ public class Jpeg : BaseImage
         AddCustomArgument("-f", ImageCodecs.Jpeg.Value);
     }
 
-    private protected override CodecDto[] AvailableCodecs => [
-        ImageCodecs.Jpeg,
+    private protected override CodecDto[] AvailableCodecs =>
+    [
+        ImageCodecs.Jpeg
     ];
 
     private protected override string[] AvailableContainers =>
     [
         "jpeg"
     ];
-    
+
     private protected override string[] AvailablePresets => [];
 
     private protected override string[] AvailableProfiles => [];

@@ -4,7 +4,7 @@ namespace NoMercy.Encoder.Format.Video;
 
 public class Vp9 : BaseVideo
 {
-    internal protected override bool BFramesSupport => true;
+    protected internal override bool BFramesSupport => true;
     internal int Passes { get; set; } = 2;
 
     public Vp9(string videoCodec = "vp9")
@@ -13,38 +13,38 @@ public class Vp9 : BaseVideo
         SetVideoCodec(videoCodec);
     }
 
-    protected override CodecDto[] AvailableCodecs => 
+    protected override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.Vp9,
         VideoCodecs.Vp9Nvenc
     ];
 
-    internal protected override string[] AvailableContainers =>
+    protected internal override string[] AvailableContainers =>
     [
         VideoContainers.Mkv, VideoContainers.Webm,
         VideoContainers.Flv, VideoContainers.Hls
     ];
-    
-    internal protected override string[] AvailablePresets =>
+
+    protected internal override string[] AvailablePresets =>
     [
         VideoPresets.VeryFast, VideoPresets.Faster, VideoPresets.Fast,
         VideoPresets.Medium,
         VideoPresets.Slow, VideoPresets.Slower, VideoPresets.VerySlow
     ];
 
-    internal protected override string[] AvailableProfiles =>
+    protected internal override string[] AvailableProfiles =>
     [
-        VideoProfiles.Unknown, VideoProfiles.Profile0, VideoProfiles.Profile1, 
+        VideoProfiles.Unknown, VideoProfiles.Profile0, VideoProfiles.Profile1,
         VideoProfiles.Profile2, VideoProfiles.Profile3
     ];
 
-    internal protected override string[] AvailableTune =>
+    protected internal override string[] AvailableTune =>
     [
-        VideoTunes.Hq, VideoTunes.Li, 
+        VideoTunes.Hq, VideoTunes.Li,
         VideoTunes.Ull, VideoTunes.Lossless
     ];
 
-    internal protected override string[] AvailableLevels => [];
+    protected internal override string[] AvailableLevels => [];
 
     public override int GetPasses()
     {

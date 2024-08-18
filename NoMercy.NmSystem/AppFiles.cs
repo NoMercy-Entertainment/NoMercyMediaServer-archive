@@ -33,12 +33,14 @@ public static class AppFiles
 
     public static readonly string PluginConfigPath = Path.Combine(PluginsPath, "configurations");
     public static readonly string UserDataPath = Path.Combine(DataPath, "userData");
-    
+
     public static readonly string BinariesPath = Path.Combine(RootPath, "binaries");
     public static readonly string FfmpegPath = Path.Combine(BinariesPath, "ffmpeg", "ffmpeg" + Info.ExecSuffix);
     public static readonly string FfProbePath = Path.Combine(BinariesPath, "ffmpeg", "ffprobe" + Info.ExecSuffix);
     public static readonly string FpCalcPath = Path.Combine(BinariesPath, "fpcalc", "fpcalc" + Info.ExecSuffix);
-    public static readonly string SubtitleEdit = Path.Combine(BinariesPath, "subtitleedit", "SubtitleEdit" + Info.ExecSuffix);
+
+    public static readonly string SubtitleEdit =
+        Path.Combine(BinariesPath, "subtitleedit", "SubtitleEdit" + Info.ExecSuffix);
 
     public static readonly string CertPath = Path.Combine(RootPath, "certs");
     public static readonly string CertFile = Path.Combine(CertPath, "cert.pem");
@@ -86,11 +88,9 @@ public static class AppFiles
         if (!Directory.Exists(AppPath))
             Directory.CreateDirectory(AppPath);
 
-        foreach (var path in AllPaths().Where(path => !Directory.Exists(path)))
-        {
+        foreach (string path in AllPaths().Where(path => !Directory.Exists(path)))
             // Logger.Setup($"Creating directory: {path}");
             Directory.CreateDirectory(path);
-        }
 
         return Task.CompletedTask;
     }

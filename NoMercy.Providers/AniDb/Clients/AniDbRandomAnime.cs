@@ -1,6 +1,7 @@
+using AniDB;
 using AniDB.RequestEnums;
 using AniDB.ResponseItems;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using NoMercy.Providers.AniDb.Models;
 
 namespace NoMercy.Providers.AniDb.Clients;
@@ -9,7 +10,7 @@ public static class AniDbRandomAnime
 {
     public static Task<AniDBAnimeItem> GetRandomAnime()
     {
-        var client = AniDbBaseClient.Client();
+        AniDBClient client = AniDbBaseClient.Client();
         TaskCompletionSource<AniDBAnimeItem> tcs = new();
 
         client.FetchRandomAnime((response) =>

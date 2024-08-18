@@ -12,13 +12,13 @@ public static class CredentialManager
     {
         public T Deserialize<T>(SecureBuffer serialized)
         {
-            var decoded = Encoding.UTF8.GetString(serialized.Buffer);
+            string decoded = Encoding.UTF8.GetString(serialized.Buffer);
             return JsonConvert.DeserializeObject<T>(decoded) ?? throw new InvalidOperationException();
         }
 
         SecureBuffer ISecretSerializer.Serialize<T>(T input)
         {
-            var serialized = JsonConvert.SerializeObject(input);
+            string serialized = JsonConvert.SerializeObject(input);
             return new SecureBuffer(Encoding.UTF8.GetBytes(serialized));
         }
     }
@@ -27,7 +27,7 @@ public static class CredentialManager
     {
         if (!File.Exists(AppFiles.SecretsStore)) return null;
 
-        using (var secretsManager = SecretsManager.LoadStore(AppFiles.SecretsStore))
+        using (SecretsManager secretsManager = SecretsManager.LoadStore(AppFiles.SecretsStore))
         {
             secretsManager.DefaultSerializer = new SecretSerializer();
             secretsManager.LoadKeyFromFile(AppFiles.SecretsKey);
@@ -40,9 +40,9 @@ public static class CredentialManager
 
     public static void SetCredentials(string target, string username, string password, string apiKey)
     {
-        var exists = File.Exists(AppFiles.SecretsStore);
+        bool exists = File.Exists(AppFiles.SecretsStore);
 
-        using (var secretsManager =
+        using (SecretsManager secretsManager =
                exists ? SecretsManager.LoadStore(AppFiles.SecretsStore) : SecretsManager.CreateStore())
         {
             secretsManager.DefaultSerializer = new SecretSerializer();
@@ -66,7 +66,7 @@ public static class CredentialManager
     {
         if (!File.Exists(AppFiles.SecretsStore)) return false;
 
-        using (var secretsManager = SecretsManager.LoadStore(AppFiles.SecretsStore))
+        using (SecretsManager secretsManager = SecretsManager.LoadStore(AppFiles.SecretsStore))
         {
             secretsManager.LoadKeyFromFile(AppFiles.SecretsKey);
             return secretsManager.Delete(target);
@@ -78,9 +78,9 @@ public static class CredentialManager
     {
         ArgumentNullException.ThrowIfNull(password);
 
-        var securePassword = new SecureString();
+        SecureString securePassword = new();
 
-        foreach (var c in password)
+        foreach (char c in password)
             securePassword.AppendChar(c);
 
         securePassword.MakeReadOnly();

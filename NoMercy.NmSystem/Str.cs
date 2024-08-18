@@ -10,8 +10,8 @@ public static partial class Str
 {
     public static double MatchPercentage(string strA, string strB)
     {
-        var result = 0;
-        for (var i = strA.Length - 1; i >= 0; i--)
+        int result = 0;
+        for (int i = strA.Length - 1; i >= 0; i--)
             if (i >= strB.Length || strA[i] == strB[i])
             {
                 // Do nothing
@@ -35,7 +35,7 @@ public static partial class Str
 
     public static string RemoveAccents(this string s)
     {
-        var destEncoding = Encoding.GetEncoding("iso-8859-8");
+        Encoding destEncoding = Encoding.GetEncoding("iso-8859-8");
 
         return destEncoding.GetString(
             Encoding.Convert(Encoding.UTF8, destEncoding, Encoding.UTF8.GetBytes(s)));
@@ -43,12 +43,12 @@ public static partial class Str
 
     public static string RemoveDiacritics(this string text)
     {
-        var formD = text.Normalize(NormalizationForm.FormD);
+        string formD = text.Normalize(NormalizationForm.FormD);
         StringBuilder sb = new();
 
-        foreach (var ch in formD)
+        foreach (char ch in formD)
         {
-            var uc = CharUnicodeInfo.GetUnicodeCategory(ch);
+            UnicodeCategory uc = CharUnicodeInfo.GetUnicodeCategory(ch);
             if (uc != UnicodeCategory.NonSpacingMark) sb.Append(ch);
         }
 
@@ -62,18 +62,18 @@ public static partial class Str
 
     [GeneratedRegex(@"(1(8|9)|20)\d{2}(?!p|i|(1(8|9)|20)\d{2}|\W(1(8|9)|20)\d{2})")]
     public static partial Regex MatchYearRegex();
-    
+
     public static string PathName(this string path)
     {
         return Regex.Replace(path, @"[\/\\]", Path.DirectorySeparatorChar.ToString());
     }
-    
+
     public static int ToInt(this string path)
     {
         if (string.IsNullOrEmpty(path)) return 0;
         return int.Parse(path);
     }
-    
+
     public static int ToInt(this double value)
     {
         return Convert.ToInt32(value);
@@ -88,10 +88,7 @@ public static partial class Str
     {
         StringBuilder spacing = new();
         spacing.Append(text);
-        for (var i = 0; i < padding - text.Length; i++)
-        {
-            spacing.Append(' ');
-        }
+        for (int i = 0; i < padding - text.Length; i++) spacing.Append(' ');
 
         return spacing.ToString();
     }
@@ -99,23 +96,29 @@ public static partial class Str
     private static string SpacerBegin(string text, int padding)
     {
         StringBuilder spacing = new();
-        for (var i = 0; i < padding - text.Length; i++)
-        {
-            spacing.Append(' ');
-        }
+        for (int i = 0; i < padding - text.Length; i++) spacing.Append(' ');
         spacing.Append(text);
 
         return spacing.ToString();
     }
-    
+
     public static string ToHexString(this Color color)
     {
         return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
     }
-    
+
     public static string ToHexString(this Rgb24 color)
     {
         return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
     }
-    
+
+    public static Guid ToGuid(this string id)
+    {
+        return Guid.Parse(id);
+    }
+
+    public static string ToUtf8(this string value)
+    {
+        return Encoding.UTF8.GetString(Encoding.Default.GetBytes(value));
+    }
 }

@@ -34,5 +34,4 @@ public class Season : ColorPalettes
     public Season()
     {
     }
-
 }

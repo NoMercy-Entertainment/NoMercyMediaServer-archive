@@ -10,8 +10,9 @@ public class Webp : BaseImage
         AddCustomArgument("-f", imageCodec);
     }
 
-    private protected override CodecDto[] AvailableCodecs => [
-        ImageCodecs.Webp,
+    private protected override CodecDto[] AvailableCodecs =>
+    [
+        ImageCodecs.Webp
     ];
 
     private protected override string[] AvailableContainers =>
@@ -23,7 +24,7 @@ public class Webp : BaseImage
     [
         "bgra", "yuv420p", "yuva420p"
     ];
-    
+
     private protected override string[] AvailablePresets => [];
 
     private protected override string[] AvailableProfiles => [];

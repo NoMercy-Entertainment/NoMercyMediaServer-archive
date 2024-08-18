@@ -1,6 +1,5 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
-using NoMercy.Helpers;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using Serilog.Events;
@@ -33,12 +32,12 @@ public static class Binaries
         {
             Logger.Setup("Downloading Binaries");
             // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-            foreach (var program in Downloads)
+            foreach (Download program in Downloads)
             {
-                var destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
-                var creationTime = Directory.GetCreationTimeUtc(destinationDirectoryName);
+                string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
+                DateTime creationTime = Directory.GetCreationTimeUtc(destinationDirectoryName);
 
-                var days = creationTime.Subtract(program.LastUpdated).Days;
+                int days = creationTime.Subtract(program.LastUpdated).Days;
 
                 if (Directory.Exists(destinationDirectoryName) && days > 0) continue;
 
@@ -46,9 +45,8 @@ public static class Binaries
                 await Extract(program);
                 await Cleanup(program);
             }
-            
         }).Wait();
-        
+
         return Task.CompletedTask;
     }
 
@@ -56,40 +54,35 @@ public static class Binaries
     {
         Logger.Setup($"Downloading {program.Name}");
 
-        var result = await Client.GetAsync(program.Url);
-        var content = await result.Content.ReadAsByteArrayAsync();
+        HttpResponseMessage result = await Client.GetAsync(program.Url);
+        byte[] content = await result.Content.ReadAsByteArrayAsync();
 
-        var baseName = Path.GetFileName(program.Url?.ToString() ?? "");
+        string baseName = Path.GetFileName(program.Url?.ToString() ?? "");
 
         await File.WriteAllBytesAsync(Path.Combine(AppFiles.BinariesPath, baseName), content);
     }
 
     private static async Task Extract(Download program)
     {
-        var sourceArchiveFileName = Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
-        var destinationDirectoryName = Path.Combine(AppFiles.BinariesPath,  program.Name);
+        string sourceArchiveFileName =
+            Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
+        string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
 
         Logger.Setup($"Extracting {program.Name} to {destinationDirectoryName}");
 
         if (Directory.Exists(destinationDirectoryName))
             Directory.Delete(destinationDirectoryName, true);
-           
+
         Directory.CreateDirectory(destinationDirectoryName);
-        
+
         try
         {
             if (sourceArchiveFileName.EndsWith(".zip"))
-            {
                 ZipFile.ExtractToDirectory(sourceArchiveFileName, destinationDirectoryName);
-            }
             else if (sourceArchiveFileName.EndsWith(".tar.xz") || sourceArchiveFileName.EndsWith(".tar.gz"))
-            {        
                 await Shell.Exec("tar", $"xf {sourceArchiveFileName} -C {destinationDirectoryName}");
-            }
             else
-            {
                 throw new NotSupportedException("Unsupported archive format");
-            }
 
             File.Delete(sourceArchiveFileName);
         }
@@ -101,7 +94,7 @@ public static class Binaries
 
         await Task.Delay(0);
     }
-    
+
     private static async Task Cleanup(Download program)
     {
         if (program.Filter == "")
@@ -110,11 +103,11 @@ public static class Binaries
             return;
         }
 
-        var workingDir = Path.Combine(AppFiles.BinariesPath, program.Name, program.Filter);
-        foreach (var file in Directory.GetFiles(workingDir))
+        string workingDir = Path.Combine(AppFiles.BinariesPath, program.Name, program.Filter);
+        foreach (string file in Directory.GetFiles(workingDir))
         {
-            var filter = Path.DirectorySeparatorChar + program.Filter;
-            var dirName = file.Replace(filter, "");
+            string filter = Path.DirectorySeparatorChar + program.Filter;
+            string dirName = file.Replace(filter, "");
 
             File.Move(file, dirName);
         }
