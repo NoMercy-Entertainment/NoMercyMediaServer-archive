@@ -7,7 +7,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
-[Index(nameof(TvId)), Index(nameof(SeasonId))]
+[Index(nameof(TvId))]
+[Index(nameof(SeasonId))]
 public class Episode : ColorPalettes
 {
     [DatabaseGenerated(DatabaseGeneratedOption.None)]
@@ -25,7 +26,7 @@ public class Episode : ColorPalettes
     [JsonProperty("tvdb_id")] public int? TvdbId { get; set; }
     [JsonProperty("vote_average")] public float? VoteAverage { get; set; }
     [JsonProperty("vote_count")] public int? VoteCount { get; set; }
-    
+
     [JsonProperty("tv_id")] public int TvId { get; set; }
     public Tv Tv { get; set; }
 
@@ -36,8 +37,7 @@ public class Episode : ColorPalettes
     [JsonProperty("crews")] public ICollection<Crew> Crew { get; set; }
     [JsonProperty("special_items")] public ICollection<SpecialItem> SpecialItems { get; set; }
 
-    [JsonProperty("video_files")]
-    public ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
+    [JsonProperty("video_files")] public ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
 
     [JsonProperty("medias")] public ICollection<Media> Media { get; set; }
     [JsonProperty("images")] public ICollection<Image> Images { get; set; }

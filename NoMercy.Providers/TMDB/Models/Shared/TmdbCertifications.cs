@@ -10,10 +10,10 @@ public class Certification
     {
         List<TmdbCertificationItem> certifications = new();
 
-        var index = 0;
+        int index = 0;
         while (index < TmdbCertifications.Au.Length)
         {
-            var y = TmdbCertifications.Au[index];
+            TmdbCertificationItem y = TmdbCertifications.Au[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -27,7 +27,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Bg.Length)
         {
-            var y = TmdbCertifications.Bg[index];
+            TmdbCertificationItem y = TmdbCertifications.Bg[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -41,7 +41,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Br.Length)
         {
-            var y = TmdbCertifications.Br[index];
+            TmdbCertificationItem y = TmdbCertifications.Br[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -55,7 +55,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Caqc.Length)
         {
-            var y = TmdbCertifications.Caqc[index];
+            TmdbCertificationItem y = TmdbCertifications.Caqc[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -69,7 +69,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Ca.Length)
         {
-            var y = TmdbCertifications.Ca[index];
+            TmdbCertificationItem y = TmdbCertifications.Ca[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -83,7 +83,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.De.Length)
         {
-            var y = TmdbCertifications.De[index];
+            TmdbCertificationItem y = TmdbCertifications.De[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -97,7 +97,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Dk.Length)
         {
-            var y = TmdbCertifications.Dk[index];
+            TmdbCertificationItem y = TmdbCertifications.Dk[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -111,7 +111,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Es.Length)
         {
-            var y = TmdbCertifications.Es[index];
+            TmdbCertificationItem y = TmdbCertifications.Es[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -125,7 +125,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Fi.Length)
         {
-            var y = TmdbCertifications.Fi[index];
+            TmdbCertificationItem y = TmdbCertifications.Fi[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -139,7 +139,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Fr.Length)
         {
-            var y = TmdbCertifications.Fr[index];
+            TmdbCertificationItem y = TmdbCertifications.Fr[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -153,7 +153,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Gb.Length)
         {
-            var y = TmdbCertifications.Gb[index];
+            TmdbCertificationItem y = TmdbCertifications.Gb[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -167,7 +167,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Hu.Length)
         {
-            var y = TmdbCertifications.Hu[index];
+            TmdbCertificationItem y = TmdbCertifications.Hu[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -181,7 +181,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.In.Length)
         {
-            var y = TmdbCertifications.In[index];
+            TmdbCertificationItem y = TmdbCertifications.In[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -195,7 +195,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.It.Length)
         {
-            var y = TmdbCertifications.It[index];
+            TmdbCertificationItem y = TmdbCertifications.It[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -209,7 +209,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Kr.Length)
         {
-            var y = TmdbCertifications.Kr[index];
+            TmdbCertificationItem y = TmdbCertifications.Kr[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -223,7 +223,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Lt.Length)
         {
-            var y = TmdbCertifications.Lt[index];
+            TmdbCertificationItem y = TmdbCertifications.Lt[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -237,7 +237,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.My.Length)
         {
-            var y = TmdbCertifications.My[index];
+            TmdbCertificationItem y = TmdbCertifications.My[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -251,7 +251,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Nl.Length)
         {
-            var y = TmdbCertifications.Nl[index];
+            TmdbCertificationItem y = TmdbCertifications.Nl[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -265,7 +265,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.No.Length)
         {
-            var y = TmdbCertifications.No[index];
+            TmdbCertificationItem y = TmdbCertifications.No[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -279,7 +279,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Nz.Length)
         {
-            var y = TmdbCertifications.Nz[index];
+            TmdbCertificationItem y = TmdbCertifications.Nz[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -293,7 +293,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Ph.Length)
         {
-            var y = TmdbCertifications.Ph[index];
+            TmdbCertificationItem y = TmdbCertifications.Ph[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -307,7 +307,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Pt.Length)
         {
-            var y = TmdbCertifications.Pt[index];
+            TmdbCertificationItem y = TmdbCertifications.Pt[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -321,7 +321,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Ru.Length)
         {
-            var y = TmdbCertifications.Ru[index];
+            TmdbCertificationItem y = TmdbCertifications.Ru[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -335,7 +335,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Se.Length)
         {
-            var y = TmdbCertifications.Se[index];
+            TmdbCertificationItem y = TmdbCertifications.Se[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -349,7 +349,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Sk.Length)
         {
-            var y = TmdbCertifications.Sk[index];
+            TmdbCertificationItem y = TmdbCertifications.Sk[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -363,7 +363,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Th.Length)
         {
-            var y = TmdbCertifications.Th[index];
+            TmdbCertificationItem y = TmdbCertifications.Th[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,
@@ -377,7 +377,7 @@ public class Certification
         index = 0;
         while (index < TmdbCertifications.Us.Length)
         {
-            var y = TmdbCertifications.Us[index];
+            TmdbCertificationItem y = TmdbCertifications.Us[index];
             certifications.Add(new TmdbCertificationItem
             {
                 Certification = y.Certification,

@@ -11,7 +11,13 @@ namespace NoMercy.Database.Models;
 [Index(nameof(CreditId), nameof(TvId), nameof(JobId), IsUnique = true)]
 [Index(nameof(CreditId), nameof(SeasonId), nameof(JobId), IsUnique = true)]
 [Index(nameof(CreditId), nameof(EpisodeId), nameof(JobId), IsUnique = true)]
-[Index(nameof(CreditId)), Index(nameof(MovieId)), Index(nameof(TvId)), Index(nameof(SeasonId)), Index(nameof(EpisodeId)), Index(nameof(PersonId)), Index(nameof(JobId))]
+[Index(nameof(CreditId))]
+[Index(nameof(MovieId))]
+[Index(nameof(TvId))]
+[Index(nameof(SeasonId))]
+[Index(nameof(EpisodeId))]
+[Index(nameof(PersonId))]
+[Index(nameof(JobId))]
 public class Crew
 {
     [Key]
@@ -42,5 +48,4 @@ public class Crew
     public Crew()
     {
     }
-
 }

@@ -8,15 +8,16 @@ public class Flac : BaseAudio
     {
         SetAudioCodec(AudioFormats.Flac);
     }
-    
-    protected override CodecDto[] AvailableCodecs => [
-        AudioCodecs.Flac,
+
+    protected override CodecDto[] AvailableCodecs =>
+    [
+        AudioCodecs.Flac
     ];
 
     protected override string[] AvailableContainers =>
     [
         AudioContainers.Flac,
-        
-        VideoContainers.Mkv,
+
+        VideoContainers.Mkv
     ];
 }

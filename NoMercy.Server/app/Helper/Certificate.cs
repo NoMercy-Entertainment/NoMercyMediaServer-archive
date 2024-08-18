@@ -5,7 +5,6 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 
@@ -22,15 +21,15 @@ public static class Certificate
 
     private static X509Certificate2 CombinePublicAndPrivateCerts()
     {
-        var publicPemBytes = File.ReadAllBytes(Path.Combine(AppFiles.CertFile));
+        byte[] publicPemBytes = File.ReadAllBytes(Path.Combine(AppFiles.CertFile));
 
         using X509Certificate2 publicX509 = new(publicPemBytes);
 
-        var privateKeyText = File.ReadAllText(Path.Combine(AppFiles.KeyFile));
-        var privateKeyBlocks = privateKeyText.Split("-", StringSplitOptions.RemoveEmptyEntries);
-        var privateKeyBytes = Convert.FromBase64String(privateKeyBlocks[1]);
+        string privateKeyText = File.ReadAllText(Path.Combine(AppFiles.KeyFile));
+        string[] privateKeyBlocks = privateKeyText.Split("-", StringSplitOptions.RemoveEmptyEntries);
+        byte[] privateKeyBytes = Convert.FromBase64String(privateKeyBlocks[1]);
 
-        using var rsa = RSA.Create();
+        using RSA rsa = RSA.Create();
         switch (privateKeyBlocks[0])
         {
             case "BEGIN PRIVATE KEY":
@@ -41,7 +40,7 @@ public static class Certificate
                 break;
         }
 
-        var keyPair = publicX509.CopyWithPrivateKey(rsa);
+        X509Certificate2 keyPair = publicX509.CopyWithPrivateKey(rsa);
         return new X509Certificate2(keyPair.Export(X509ContentType.Pfx));
     }
 
@@ -63,7 +62,7 @@ public static class Certificate
         if (!File.Exists(Path.Combine(AppFiles.CertFile)))
             return false;
 
-        var certificate = CombinePublicAndPrivateCerts();
+        X509Certificate2 certificate = CombinePublicAndPrivateCerts();
 
         if (!certificate.Verify())
             return false;
@@ -87,20 +86,18 @@ public static class Certificate
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
 
-        var serverUrl = $"{Networking.Config.ApiServerBaseUrl}certificate?server_id={Info.DeviceId}";
-        
-        if (File.Exists(AppFiles.CertFile))
-        {
-            serverUrl = $"{Networking.Config.ApiServerBaseUrl}renewcertificate?server_id={Info.DeviceId}";
-        }
+        string serverUrl = $"{Config.ApiServerBaseUrl}certificate?server_id={Info.DeviceId}";
 
-        var response = client
+        if (File.Exists(AppFiles.CertFile))
+            serverUrl = $"{Config.ApiServerBaseUrl}renewcertificate?server_id={Info.DeviceId}";
+
+        string response = client
             .GetStringAsync(serverUrl)
             .Result;
         // Logger.Certificate(response);
-        
-        var data = JsonConvert.DeserializeObject<CertificateResponse>(response)
-                       ?? throw new Exception("Failed to deserialize JSON");
+
+        CertificateResponse data = JsonConvert.DeserializeObject<CertificateResponse>(response)
+                                   ?? throw new Exception("Failed to deserialize JSON");
 
         if (File.Exists(AppFiles.KeyFile))
             File.Delete(AppFiles.KeyFile);
@@ -119,13 +116,13 @@ public static class Certificate
 
         await Task.CompletedTask;
     }
-    
+
     public class CertificateResponse
     {
-        [JsonProperty("status")] public string Status { get; set; }
-        [JsonProperty("certificate")] public string Certificate { get; set; }
-        [JsonProperty("private_key")] public string PrivateKey { get; set; }
-        [JsonProperty("issuer_certificate")] public string IssuerCertificate { get; set; }
-        [JsonProperty("certificate_authority")] public string CertificateAuthority { get; set; }
+        [JsonProperty("status")] public string Status { get; set; } = string.Empty;
+        [JsonProperty("certificate")] public string Certificate { get; set; } = string.Empty;
+        [JsonProperty("private_key")] public string PrivateKey { get; set; } = string.Empty;
+        [JsonProperty("issuer_certificate")] public string IssuerCertificate { get; set; } = string.Empty;
+        [JsonProperty("certificate_authority")] public string CertificateAuthority { get; set; } = string.Empty;
     }
 }

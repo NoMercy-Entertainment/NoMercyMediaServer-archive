@@ -5,7 +5,7 @@ namespace NoMercy.Encoder.Format.Container;
 public class Mp4 : BaseContainer
 {
     public override ContainerDto ContainerDto => AvailableContainers.First(c => c.Name == VideoContainers.Mp4);
-    
+
     public Mp4() : base()
     {
         SetContainer(VideoContainers.Mp4);
@@ -18,7 +18,7 @@ public class Mp4 : BaseContainer
         VideoCodecs.H265, VideoCodecs.H265Nvenc,
         VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc
     ];
-    
+
     public override Mp4 ApplyFlags()
     {
         base.ApplyFlags();

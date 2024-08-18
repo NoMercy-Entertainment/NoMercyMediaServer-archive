@@ -2,6 +2,7 @@ using System.Security;
 using AniDB;
 using NoMercy.Helpers;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 using Serilog.Events;
 
 namespace NoMercy.Providers.AniDb.Clients;
@@ -25,7 +26,7 @@ public class AniDbBaseClient
 
     static AniDbBaseClient()
     {
-        var userPass = CredentialManager.Credential("AniDb");
+        UserPass? userPass = CredentialManager.Credential("AniDb");
         if (userPass == null) return;
 
         Username = userPass.Username;

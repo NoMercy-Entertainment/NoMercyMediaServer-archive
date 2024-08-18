@@ -4,8 +4,8 @@ namespace NoMercy.Encoder.Format.Video;
 
 public class X265 : BaseVideo
 {
-    internal protected override bool BFramesSupport => true;
-    internal protected override int Modulus => 2;
+    protected internal override bool BFramesSupport => true;
+    protected internal override int Modulus => 2;
     internal int Passes { get; set; } = 2;
 
     public X265(string videoCodec = "libx265")
@@ -13,20 +13,20 @@ public class X265 : BaseVideo
         SetVideoCodec(videoCodec);
     }
 
-    protected override CodecDto[] AvailableCodecs => 
+    protected override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.H265,
         VideoCodecs.H265Nvenc
     ];
 
-    internal protected override string[] AvailableContainers => 
+    protected internal override string[] AvailableContainers =>
     [
         VideoContainers.Mkv,
         VideoContainers.Mp4,
         VideoContainers.Hls
     ];
 
-    internal protected override string[] AvailablePresets
+    protected internal override string[] AvailablePresets
     {
         get
         {
@@ -34,8 +34,10 @@ public class X265 : BaseVideo
                 return
                 [
                     VideoPresets.Default, VideoPresets.Slow, VideoPresets.Medium, VideoPresets.Fast,
-                    VideoPresets.Hp, VideoPresets.Hq, VideoPresets.Ll, VideoPresets.Llhq, VideoPresets.Llhp, VideoPresets.Lossless,
-                    VideoPresets.P1, VideoPresets.P2, VideoPresets.P3, VideoPresets.P4, VideoPresets.P5, VideoPresets.P6, VideoPresets.P7
+                    VideoPresets.Hp, VideoPresets.Hq, VideoPresets.Ll, VideoPresets.Llhq, VideoPresets.Llhp,
+                    VideoPresets.Lossless,
+                    VideoPresets.P1, VideoPresets.P2, VideoPresets.P3, VideoPresets.P4, VideoPresets.P5,
+                    VideoPresets.P6, VideoPresets.P7
                 ];
 
             return
@@ -43,19 +45,19 @@ public class X265 : BaseVideo
                 VideoPresets.UltraFast, VideoPresets.SuperFast, VideoPresets.VeryFast,
                 VideoPresets.Faster, VideoPresets.Fast, VideoPresets.Medium,
                 VideoPresets.Slow, VideoPresets.Slower, VideoPresets.VerySlow,
-                VideoPresets.Placebo,
+                VideoPresets.Placebo
             ];
         }
     }
 
-    internal protected override string[] AvailableProfiles
+    protected internal override string[] AvailableProfiles
     {
         get
         {
             if (VideoCodecs.H265Nvenc.Value == VideoCodec.Value)
                 return
                 [
-                    VideoProfiles.Baseline, VideoProfiles.Main, VideoProfiles.High, 
+                    VideoProfiles.Baseline, VideoProfiles.Main, VideoProfiles.High,
                     VideoProfiles.High10, VideoProfiles.High422, VideoProfiles.High444
                 ];
 
@@ -67,7 +69,7 @@ public class X265 : BaseVideo
         }
     }
 
-    internal protected override string[] AvailableTune
+    protected internal override string[] AvailableTune
     {
         get
         {
@@ -75,18 +77,18 @@ public class X265 : BaseVideo
                 return
                 [
                     VideoTunes.Hq, VideoTunes.Li,
-                    VideoTunes.Ull, VideoTunes.Lossless,
+                    VideoTunes.Ull, VideoTunes.Lossless
                 ];
 
             return
             [
                 VideoTunes.Fastdecode, VideoTunes.Zerolatency,
-                VideoTunes.Psnr, VideoTunes.Ssim,
+                VideoTunes.Psnr, VideoTunes.Ssim
             ];
         }
     }
 
-    internal protected override string[] AvailableLevels
+    protected internal override string[] AvailableLevels
     {
         get
         {

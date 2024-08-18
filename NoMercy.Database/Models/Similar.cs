@@ -37,5 +37,4 @@ public class Similar : ColorPalettes
     public Similar()
     {
     }
-
 }

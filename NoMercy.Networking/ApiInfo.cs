@@ -25,16 +25,16 @@ public partial class ApiInfo
 
     public static async Task RequestInfo()
     {
-        var client = new HttpClient();
+        HttpClient client = new();
         client.Timeout = TimeSpan.FromSeconds(15);
-        var response = await client.GetAsync("https://api-dev.nomercy.tv/v1/info");
-        var content = await response.Content.ReadAsStringAsync();
+        HttpResponseMessage response = await client.GetAsync("https://api-dev.nomercy.tv/v1/info");
+        string? content = await response.Content.ReadAsStringAsync();
 
         if (content == null) throw new Exception("Failed to get server info");
 
         try
         {
-            var data = JsonConvert.DeserializeObject<ApiInfo>(content);
+            ApiInfo? data = JsonConvert.DeserializeObject<ApiInfo>(content);
             if (data == null) throw new Exception("Failed to deserialize server info");
 
             Quote = data.Data.Quote;
@@ -60,7 +60,6 @@ public partial class ApiInfo
             throw;
         }
     }
-
 }
 
 #region Types

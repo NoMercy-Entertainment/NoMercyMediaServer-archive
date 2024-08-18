@@ -32,12 +32,9 @@ public class AcoustIdFingerprintClient : AcoustIdBaseClient
 
     public ValueTask<AcoustIdFingerprint?> Lookup(string? file, bool? priority = false)
     {
-        if (file == null)
-        {
-            return ValueTask.FromResult<AcoustIdFingerprint?>(null);
-        }
+        if (file == null) return ValueTask.FromResult<AcoustIdFingerprint?>(null);
 
-        var process = new Process();
+        Process process = new();
         process.StartInfo.FileName = AppFiles.FpCalcPath;
         process.StartInfo.Arguments = "-json \"" + file + "\"";
 
@@ -46,11 +43,11 @@ public class AcoustIdFingerprintClient : AcoustIdBaseClient
 
         process.Start();
 
-        var output = process.StandardOutput.ReadToEnd();
+        string output = process.StandardOutput.ReadToEnd();
 
         process.WaitForExit();
 
-        var fingerprintData = JsonHelper.FromJson<FingerPrintData>(output);
+        FingerPrintData? fingerprintData = output.FromJson<FingerPrintData>();
 
         if (fingerprintData == null) throw new Exception("Fingerprint data is null");
 
@@ -68,7 +65,6 @@ public class AcoustIdFingerprintClient : AcoustIdBaseClient
 public class FingerPrintData
 {
     [JsonProperty("duration")] public double _duration { get; set; }
-
     [JsonProperty("fingerprint")] public string Fingerprint { get; set; }
 
     public int Duration

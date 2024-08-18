@@ -69,13 +69,14 @@ public class Networking
 
         socket.Connect("1.1.1.1", 65530);
 
-        var endPoint = socket.LocalEndPoint as IPEndPoint;
+        IPEndPoint? endPoint = socket.LocalEndPoint as IPEndPoint;
 
-        var localIp = endPoint?.Address.ToString().Replace("\"", "");
+        string? localIp = endPoint?.Address.ToString().Replace("\"", "");
 
         if (localIp == null) return "";
 
-        InternalAddress = $"https://{Regex.Replace(localIp, "\\.", "-")}.{NmSystem.Info.DeviceId}.nomercy.tv:{Config.InternalServerPort}";
+        InternalAddress =
+            $"https://{Regex.Replace(localIp, "\\.", "-")}.{NmSystem.Info.DeviceId}.nomercy.tv:{Config.InternalServerPort}";
 
         return localIp;
     }
@@ -84,9 +85,10 @@ public class Networking
     {
         HttpClient client = new();
 
-        var externalIp = client.GetStringAsync($"{Config.ApiBaseUrl}/server/ip").Result.Replace("\"", "");
+        string externalIp = client.GetStringAsync($"{Config.ApiBaseUrl}/server/ip").Result.Replace("\"", "");
 
-        ExternalAddress = $"https://{Regex.Replace(externalIp, "\\.", "-")}.{NmSystem.Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
+        ExternalAddress =
+            $"https://{Regex.Replace(externalIp, "\\.", "-")}.{NmSystem.Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
 
         return externalIp;
     }
@@ -95,15 +97,18 @@ public class Networking
     {
         _device = args.Device;
 
-        _device.CreatePortMap(new Mapping(Protocol.Tcp, Config.InternalServerPort, Config.ExternalServerPort, 9999999, "NoMercy MediaServer (TCP)"));
-        _device.CreatePortMap(new Mapping(Protocol.Udp, Config.InternalServerPort, Config.ExternalServerPort, 9999999, "NoMercy MediaServer (UDP)"));
+        _device.CreatePortMap(new Mapping(Protocol.Tcp, Config.InternalServerPort, Config.ExternalServerPort, 9999999,
+            "NoMercy MediaServer (TCP)"));
+        _device.CreatePortMap(new Mapping(Protocol.Udp, Config.InternalServerPort, Config.ExternalServerPort, 9999999,
+            "NoMercy MediaServer (UDP)"));
 
         ExternalIp = _device.GetExternalIP().ToString();
 
         if (ExternalIp == "")
             ExternalIp = GetExternalIp();
         else
-            ExternalAddress = $"https://{Regex.Replace(ExternalIp, "\\.", "-")}.{NmSystem.Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
+            ExternalAddress =
+                $"https://{Regex.Replace(ExternalIp, "\\.", "-")}.{NmSystem.Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
     }
 
     public static IWebHost TempServer()
@@ -114,7 +119,7 @@ public class Networking
             {
                 app.Run(async context =>
                 {
-                    var code = context.Request.Query["code"].ToString();
+                    string code = context.Request.Query["code"].ToString();
 
                     Auth.TokenByAuthorizationCode(code);
 
@@ -126,8 +131,7 @@ public class Networking
 
     public static bool SendToAll(string name, string endpoint, object? data = null)
     {
-        foreach (var (_, client) in SocketClients.Where(client => client.Value.Endpoint == "/" +endpoint))
-        {
+        foreach ((string _, Client client) in SocketClients.Where(client => client.Value.Endpoint == "/" + endpoint))
             try
             {
                 if (data != null)
@@ -139,14 +143,14 @@ public class Networking
             {
                 return false;
             }
-        }
 
         return true;
     }
 
     private static bool SendTo(string name, string endpoint, Guid userId, object? data = null)
     {
-        foreach (var (_, client) in SocketClients.Where(client => client.Value.Sub == userId && client.Value.Endpoint == "/" +endpoint))
+        foreach ((string _, Client client) in SocketClients.Where(client =>
+                     client.Value.Sub == userId && client.Value.Endpoint == "/" + endpoint))
             try
             {
                 if (data != null)
@@ -158,15 +162,16 @@ public class Networking
             {
                 return false;
             }
-        
+
         return true;
     }
 
     private static bool Reply(string name, string endpoint, HttpContext context, object? data = null)
     {
-        var userId = Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+        Guid userId = Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
-        foreach (var (_, client) in SocketClients.Where(client => client.Value.Sub == userId && client.Value.Endpoint == "/" +endpoint))
+        foreach ((string _, Client client) in SocketClients.Where(client =>
+                     client.Value.Sub == userId && client.Value.Endpoint == "/" + endpoint))
             try
             {
                 if (data != null)
@@ -178,7 +183,7 @@ public class Networking
             {
                 return false;
             }
-        
+
         return true;
     }
 }

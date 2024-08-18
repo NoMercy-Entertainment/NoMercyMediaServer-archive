@@ -1,4 +1,3 @@
-
 using NoMercy.Encoder.Format.Container;
 
 namespace NoMercy.Encoder.Format.Rules;
@@ -6,12 +5,11 @@ namespace NoMercy.Encoder.Format.Rules;
 [Serializable]
 public class Classes
 {
-    
     protected internal string BasePath { get; set; } = "";
     protected internal string Title { get; set; } = "";
     protected internal string FileName { get; set; } = "";
     protected internal string InputFile { get; set; } = "";
-    
+
     internal virtual bool IsVideo { get; set; }
     internal virtual bool IsAudio { get; set; }
     internal virtual bool IsImage { get; set; }
@@ -23,16 +21,16 @@ public class Classes
     internal int HlsListSize { get; set; } = 0;
     internal string HlsPlaylistType { get; set; } = "event";
     protected int HlsTime { get; set; } = 4;
-    
+
     public static bool HasGpu => CheckGpu();
 
     protected string Type
     {
         get
         {
-            if(IsImage) return "image";
-            if(IsAudio) return "audio";
-            if(IsVideo) return "video";
+            if (IsImage) return "image";
+            if (IsAudio) return "audio";
+            if (IsVideo) return "video";
             return IsSubtitle ? "subtitle" : "unknown";
         }
     }
@@ -60,7 +58,7 @@ public class Classes
         public string Type { get; set; }
         public bool IsDefault { get; set; }
     }
-    
+
     public class CropArea
     {
         public double W { get; set; }
@@ -68,7 +66,9 @@ public class Classes
         public double X { get; set; }
         public double Y { get; set; }
 
-        public CropArea() { }
+        public CropArea()
+        {
+        }
 
         public CropArea(int w, int h, int x, int y)
         {
@@ -84,7 +84,7 @@ public class Classes
             return (W, H, X, Y);
         }
     }
-    
+
     public class ScaleArea
     {
         public int W { get; set; }
@@ -119,12 +119,12 @@ public class Classes
     {
         return this;
     }
-    
+
     private static bool CheckGpu()
     {
         try
         {
-            var result = FfMpeg.Exec("-init_hw_device cuda=hw -filter_hw_device hw -hwaccels 2>&1").Result;
+            string result = FfMpeg.Exec("-init_hw_device cuda=hw -filter_hw_device hw -hwaccels 2>&1").Result;
             // Logger.Encoder(result);
             return true;
         }
@@ -134,5 +134,4 @@ public class Classes
             return false;
         }
     }
-    
 }

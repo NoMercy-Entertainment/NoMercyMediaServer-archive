@@ -1,6 +1,5 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using NoMercy.Providers.Helpers;
 
 namespace NoMercy.Providers.CoverArt.Models;
@@ -14,19 +13,21 @@ public class CoverArtCovers
 public class CoverArtImage
 {
     private Uri? __image;
-    
+
     [JsonProperty("approved")] public bool Approved { get; set; }
     [JsonProperty("back")] public bool Back { get; set; }
     [JsonProperty("comment")] public string Comment { get; set; }
     [JsonProperty("edit")] public int Edit { get; set; }
     [JsonProperty("front")] public bool Front { get; set; }
     [JsonProperty("id")] public string Id { get; set; }
-    
-    [JsonProperty("image")] public Uri? Image { 
+
+    [JsonProperty("image")]
+    public Uri? Image
+    {
         get => __image?.ToHttps();
-        init => __image = value; 
+        init => __image = value;
     }
-    
+
     [JsonProperty("thumbnails")] public CoverArtThumbnails CoverArtThumbnails { get; set; }
     [JsonProperty("types")] public string[] Types { get; set; }
 }

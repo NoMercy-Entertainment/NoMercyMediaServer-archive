@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using LibreHardwareMonitor.Hardware;
 using Newtonsoft.Json;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Helpers.Monitoring;
 
@@ -42,12 +43,34 @@ public class Memory
     [JsonProperty("available")] public double Available { get; set; }
     [JsonProperty("use")] public double Use { get; set; }
     [JsonProperty("total")] public double Total { get; set; }
-    [JsonProperty("percentage")] public double Percentage => 
-        (Use / Total) * (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? 0.1 : 100);
+
+    [JsonProperty("percentage")]
+    public double Percentage =>
+        Use / Total * (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? 0.1 : 100);
 }
 
-public static class ResourceMonitor
+public class ResourceMonitor
 {
+    private static Computer? _computer;
+
+    static ResourceMonitor()
+    {
+        Logger.App("Initializing Resource Monitor");
+        if (_computer is not null) return;
+        Logger.App("Creating new computer instance");
+        _computer = new Computer
+        {
+            IsCpuEnabled = true,
+            IsGpuEnabled = true,
+            IsMemoryEnabled = true,
+            IsMotherboardEnabled = false,
+            IsControllerEnabled = false,
+            IsNetworkEnabled = false,
+            IsStorageEnabled = false
+        };
+        _computer?.Open();
+    }
+
     private class UpdateVisitor : IVisitor
     {
         public void VisitComputer(IComputer computer)
@@ -58,7 +81,7 @@ public static class ResourceMonitor
         public void VisitHardware(IHardware hardware)
         {
             hardware.Update();
-            foreach (var subHardware in hardware.SubHardware) subHardware.Accept(this);
+            foreach (IHardware? subHardware in hardware.SubHardware) subHardware.Accept(this);
         }
 
         public void VisitSensor(ISensor sensor)
@@ -74,29 +97,11 @@ public static class ResourceMonitor
     {
         try
         {
-            Computer computer = new Computer
-            {
-                IsCpuEnabled = true,
-                IsGpuEnabled = true,
-                IsMemoryEnabled = true,
-                IsMotherboardEnabled = false,
-                IsControllerEnabled = false,
-                IsNetworkEnabled = false,
-                IsStorageEnabled = false,
-            };
-            
-            try
-            {
-                computer.Open();
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            if (_computer is null) return null;
 
-            computer.Accept(new UpdateVisitor());
-            
-            var resource = new Resource
+            _computer.Accept(new UpdateVisitor());
+
+            Resource resource = new()
             {
                 Cpu = new Cpu
                 {
@@ -106,7 +111,7 @@ public static class ResourceMonitor
                 Memory = new Memory()
             };
 
-            foreach (var hardware in computer.Hardware)
+            foreach (IHardware? hardware in _computer.Hardware)
             {
                 if (hardware.HardwareType is not HardwareType.Cpu and not HardwareType.Memory
                     and not HardwareType.GpuIntel and not HardwareType.GpuNvidia and not HardwareType.GpuAmd
@@ -114,9 +119,10 @@ public static class ResourceMonitor
 
                 try
                 {
-                    foreach (var sensor in hardware.Sensors)
+                    foreach (ISensor? sensor in hardware.Sensors)
                     {
-                        if (sensor.SensorType is not SensorType.Load && sensor.SensorType is not SensorType.Data) continue;
+                        if (sensor.SensorType is not SensorType.Load && sensor.SensorType is not SensorType.Data)
+                            continue;
 
                         // Logger.App($"Type: {sensor.Hardware}, Identifier: {sensor.Hardware.Identifier}, Sensor: {sensor.Name}, value: {sensor.Value}");
                         switch (sensor.Hardware.HardwareType)
@@ -156,90 +162,73 @@ public static class ResourceMonitor
 
                                 break;
                             case HardwareType.GpuNvidia:
-                                var gpu = resource._gpu
+                                KeyValuePair<Identifier, Gpu> gpu = resource._gpu
                                     .FirstOrDefault(g => g.Key == sensor.Hardware.Identifier);
 
                                 switch (sensor.Name)
                                 {
                                     case "GPU Video Engine":
                                         if (gpu.Value is not null)
-                                        {
                                             gpu.Value.Core = sensor.Value ?? 0;
-                                        } else
-                                        {
+                                        else
                                             resource._gpu[sensor.Hardware.Identifier] = new Gpu
                                             {
                                                 Core = sensor.Value ?? 0,
                                                 Identifier = sensor.Hardware.Identifier
                                             };
-                                        }
                                         break;
                                     case "D3D Video Decode":
                                         if (gpu.Value is not null)
-                                        {
                                             gpu.Value.Decode = sensor.Value ?? 0;
-                                        } else
-                                        {
+                                        else
                                             resource._gpu[sensor.Hardware.Identifier] = new Gpu
                                             {
                                                 Decode = sensor.Value ?? 0,
                                                 Identifier = sensor.Hardware.Identifier
                                             };
-                                        }
                                         break;
                                     case "D3D Video Encode":
                                         if (gpu.Value is not null)
-                                        {
                                             gpu.Value.Encode = sensor.Value ?? 0;
-                                        } else
-                                        {
+                                        else
                                             resource._gpu[sensor.Hardware.Identifier] = new Gpu
                                             {
                                                 Encode = sensor.Value ?? 0,
                                                 Identifier = sensor.Hardware.Identifier
                                             };
-                                        }
                                         break;
                                     case "D3D 3D":
                                         if (gpu.Value is not null)
-                                        {
                                             gpu.Value.D3D = sensor.Value ?? 0;
-                                        } else
-                                        {
+                                        else
                                             resource._gpu[sensor.Hardware.Identifier] = new Gpu
                                             {
                                                 D3D = sensor.Value ?? 0,
                                                 Identifier = sensor.Hardware.Identifier
                                             };
-                                        }
                                         break;
                                     case "GPU Memory":
                                         if (gpu.Value is not null)
-                                        {
                                             gpu.Value.Memory = sensor.Value ?? 0;
-                                        } else
-                                        {
+                                        else
                                             resource._gpu[sensor.Hardware.Identifier] = new Gpu
                                             {
                                                 Memory = sensor.Value ?? 0,
                                                 Identifier = sensor.Hardware.Identifier
                                             };
-                                        }
                                         break;
                                     case "GPU Power":
                                         if (gpu.Value is not null)
-                                        {
                                             gpu.Value.Power = sensor.Value ?? 0;
-                                        } else
-                                        {
+                                        else
                                             resource._gpu[sensor.Hardware.Identifier] = new Gpu
                                             {
                                                 Power = sensor.Value ?? 0,
                                                 Identifier = sensor.Hardware.Identifier
                                             };
-                                        }
                                         break;
                                 }
+
                                 break;
                             case HardwareType.GpuIntel:
                                 break;
@@ -264,23 +253,40 @@ public static class ResourceMonitor
                             default:
                                 throw new ArgumentOutOfRangeException();
                         }
-                    };
+                    }
+
+                    ;
                 }
                 catch
                 {
                     throw new Exception("Error while monitoring hardware");
                 }
-            };
-            
-            computer.Close();
-            
+            }
+
+            ;
+
             return resource;
         }
         catch (Exception e)
         {
             //
         }
-        
+
         return null;
+    }
+
+    public static void Start()
+    {
+        _computer?.Open();
+    }
+
+    public static void Stop()
+    {
+        _computer?.Close();
+    }
+
+    ~ResourceMonitor()
+    {
+        _computer?.Close();
     }
 }

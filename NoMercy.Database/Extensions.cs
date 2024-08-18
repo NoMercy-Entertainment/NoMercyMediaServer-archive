@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-
 namespace NoMercy.Database;
 
 public static class Extensions
@@ -8,5 +6,4 @@ public static class Extensions
     // {
     //     return source.GroupBy(keySelector).Select(x => x.FirstOrDefault());
     // }
-
 }

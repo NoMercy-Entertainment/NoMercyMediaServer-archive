@@ -12,7 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DateTimeRoutines" Version="1.0.16" />
+        <PackageReference Include="DateTimeRoutines" Version="1.0.16"/>
         <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="8.0.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="8.0.4"/>
@@ -27,12 +27,12 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="Ulid" Version="1.3.3"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\NoMercy.NmSystem\NoMercy.NmSystem.csproj" />
+        <ProjectReference Include="..\NoMercy.NmSystem\NoMercy.NmSystem.csproj"/>
     </ItemGroup>
 
 </Project>

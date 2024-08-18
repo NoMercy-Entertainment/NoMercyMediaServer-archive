@@ -10,7 +10,9 @@ namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(Id))]
 [Index(nameof(CreditId), nameof(EpisodeId), IsUnique = true)]
-[Index(nameof(CreditId)), Index(nameof(EpisodeId)), Index(nameof(PersonId))]
+[Index(nameof(CreditId))]
+[Index(nameof(EpisodeId))]
+[Index(nameof(PersonId))]
 public class GuestStar
 {
     [Key]
@@ -29,5 +31,4 @@ public class GuestStar
     public GuestStar()
     {
     }
-
 }

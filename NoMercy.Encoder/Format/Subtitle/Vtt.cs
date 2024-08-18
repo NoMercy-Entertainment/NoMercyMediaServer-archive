@@ -2,7 +2,7 @@ using NoMercy.Encoder.Format.Rules;
 
 namespace NoMercy.Encoder.Format.Subtitle;
 
-public class Vtt: BaseSubtitle
+public class Vtt : BaseSubtitle
 {
     public Vtt(string subtitleCodec = "webvtt")
     {
@@ -10,12 +10,13 @@ public class Vtt: BaseSubtitle
         AddCustomArgument("-f", subtitleCodec);
     }
 
-    protected override CodecDto[] AvailableCodecs => [
+    protected override CodecDto[] AvailableCodecs =>
+    [
         SubtitleCodecs.Webvtt
     ];
 
     protected override string[] AvailableContainers =>
     [
-        SubtitleContainers.WebVtt,
+        SubtitleContainers.WebVtt
     ];
 }

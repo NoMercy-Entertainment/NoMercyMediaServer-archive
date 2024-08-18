@@ -2,7 +2,6 @@ using Newtonsoft.Json;
 
 namespace NoMercy.Encoder.Core;
 
-
 public class ProgressMeta
 {
     [JsonProperty("has_gpu")] public bool HasGpu { get; set; }
@@ -16,7 +15,7 @@ public class ProgressMeta
     [JsonProperty("subtitle_streams")] public List<string> SubtitleStreams { get; set; }
 }
 
-public class Progress: ProgressMeta
+public class Progress : ProgressMeta
 {
     [JsonProperty("frame")] public int Frame { get; set; }
     [JsonProperty("fps")] public double Fps { get; set; }

@@ -86,7 +86,7 @@ public static class StringParser
         if (string.IsNullOrEmpty(str))
             return str;
 
-        var textInfo = new CultureInfo(culture, false).TextInfo;
+        TextInfo textInfo = new CultureInfo(culture, false).TextInfo;
         return textInfo.ToTitleCase(str.ToLower());
     }
 
@@ -111,15 +111,14 @@ public static class StringParser
     {
         if (string.IsNullOrEmpty(hms)) return 0;
 
-        var parts = hms.Split(':').Select(int.Parse).ToArray();
+        int[] parts = hms.Split(':').Select(int.Parse).ToArray();
         if (parts.Length < 3) parts = new[] { 0 }.Concat(parts).ToArray();
 
         return parts[0] * 60 * 60 + parts[1] * 60 + parts[2];
     }
-    
+
     public static string TitleSort<T>(this T? self, DateTime? date = null)
     {
         return _parseTitleSort(self?.ToString(), date);
     }
-
 }

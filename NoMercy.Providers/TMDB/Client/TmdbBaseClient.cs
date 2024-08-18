@@ -2,45 +2,47 @@
 using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.Helpers;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.Helpers;
 using NoMercy.Providers.TMDB.Models.Shared;
 using Serilog.Events;
 
 namespace NoMercy.Providers.TMDB.Client;
 
-public class TmdbBaseClient : BaseClient
+public class TmdbBaseClient : IDisposable
 {
-    protected override Uri BaseUrl => new("https://api.themoviedb.org/3/");
-    protected override int ConcurrentRequests => 50;
-    protected override int Interval => 1000;
+    private readonly Uri _baseUrl = new("https://api.themoviedb.org/3/");
 
-    // private readonly HttpClient _client = new();
+    private readonly HttpClient _client = new();
 
     protected TmdbBaseClient()
     {
-        Client.DefaultRequestHeaders.Accept.Clear();
-        Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        Client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
-        Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
-        Client.Timeout = TimeSpan.FromMinutes(5);
+        _client.BaseAddress = _baseUrl;
+        _client.DefaultRequestHeaders.Accept.Clear();
+        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
+        _client.Timeout = TimeSpan.FromMinutes(5);
     }
 
     protected TmdbBaseClient(int id)
     {
-        Client.DefaultRequestHeaders.Accept.Clear();
-        Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        Client.DefaultRequestHeaders.UserAgent.ParseAdd(ApiInfo.UserAgent);
-        Client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
-        Client.Timeout = TimeSpan.FromMinutes(5);
+        _client = new HttpClient
+        {
+            BaseAddress = _baseUrl
+        };
+        _client.DefaultRequestHeaders.Accept.Clear();
+        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _client.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiInfo.TmdbToken}");
+        _client.Timeout = TimeSpan.FromMinutes(5);
         Id = id;
     }
 
-    // private static Queue? _queue;
-    //
-    // protected static Queue Queue()
-    // {
-    //     return _queue ??= new Queue(new QueueOptions { Concurrent = 50, Interval = 1000, Start = true });
-    // }
+    private static Queue? _queue;
+
+    protected static Queue GetQueue()
+    {
+        return _queue ??= new Queue(new QueueOptions { Concurrent = 50, Interval = 1000, Start = true });
+    }
 
     private static int Max(int available, int wanted, int constraint)
     {
@@ -53,41 +55,40 @@ public class TmdbBaseClient : BaseClient
 
     public int Id { get; private set; }
 
-    protected async Task<T?> Get<T>(string url, Dictionary<string, string?>? query = null, bool? priority = false)
+    protected async Task<T?> Get<T>(string url, Dictionary<string, string>? query = null, bool? priority = false)
         where T : class
     {
-        query ??= new Dictionary<string, string?>();
+        query ??= new Dictionary<string, string>();
 
-        var newUrl = QueryHelpers.AddQueryString(url, query!);
+        string newUrl = QueryHelpers.AddQueryString(url, query!);
 
         if (CacheController.Read(newUrl, out T? result)) return result;
 
-        Logger.MovieDb(newUrl, LogEventLevel.Debug);
+        Logger.MovieDb(newUrl, LogEventLevel.Verbose);
 
-        var response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
+        string response = await GetQueue().Enqueue(() => _client.GetStringAsync(newUrl), newUrl, priority);
 
         await CacheController.Write(newUrl, response);
 
-        var data = response.FromJson<T>();
+        T? data = response.FromJson<T>();
 
         return data;
     }
 
     protected async Task<List<T>?> Paginated<T>(string url, int limit) where T : class
     {
-        List<T> list = [];
+        List<T> list = new();
 
-        var firstPage = await Get<TmdbPaginatedResponse<T>>(url);
+        TmdbPaginatedResponse<T>? firstPage = await Get<TmdbPaginatedResponse<T>>(url);
         list.AddRange(firstPage?.Results ?? []);
 
         if (limit > 1)
             await Parallel.ForAsync(2, Max(firstPage?.TotalPages ?? 0, limit, 500), async (i, _) =>
             {
-                var page = await Get<TmdbPaginatedResponse<T>>(url, new Dictionary<string, string?>
+                TmdbPaginatedResponse<T>? page = await Get<TmdbPaginatedResponse<T>>(url, new Dictionary<string, string>
                 {
                     ["page"] = i.ToString()
                 });
-
                 lock (list)
                 {
                     list.AddRange(page?.Results ?? []);
@@ -95,5 +96,10 @@ public class TmdbBaseClient : BaseClient
             });
 
         return list;
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 }

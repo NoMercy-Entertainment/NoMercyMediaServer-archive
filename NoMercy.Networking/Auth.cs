@@ -34,7 +34,7 @@ public static class Auth
         if (!File.Exists(Config.TokenFile)) File.WriteAllText(Config.TokenFile, "{}");
 
         AuthKeys();
-        
+
         AccessToken = GetAccessToken();
         RefreshToken = GetRefreshToken();
         ExpiresIn = TokenExpiration();
@@ -46,12 +46,12 @@ public static class Auth
             return Task.CompletedTask;
         }
 
-        var tokenHandler = new JwtSecurityTokenHandler();
+        JwtSecurityTokenHandler tokenHandler = new();
         _jwtSecurityToken = tokenHandler.ReadJwtToken(AccessToken);
 
-        var expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
+        int expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
 
-        var expired = NotBefore == null && expiresInDays >= 0;
+        bool expired = NotBefore == null && expiresInDays >= 0;
 
         if (!expired)
             TokenByRefreshGrand();
@@ -66,7 +66,7 @@ public static class Auth
 
     private static void TokenByBrowserOrPassword()
     {
-        Logger?.Invoke("Auth","Trying to authenticate by browser or password");
+        Logger?.Invoke("Auth", "Trying to authenticate by browser or password");
         while (true)
         {
             if (IsDesktopEnvironment())
@@ -76,7 +76,7 @@ public static class Auth
             else
             {
                 Console.WriteLine("Enter your email:");
-                var email = Console.ReadLine();
+                string? email = Console.ReadLine();
 
                 if (string.IsNullOrEmpty(email))
                 {
@@ -85,32 +85,32 @@ public static class Auth
                 }
 
                 Console.WriteLine("Enter your password:");
-                var password = ReadPassword();
-                
+                string password = ReadPassword();
+
                 if (string.IsNullOrEmpty(password))
                 {
                     Console.WriteLine("Password cannot be empty");
                     continue;
                 }
-                
+
                 Console.WriteLine("Enter your 2 factor authentication code (if enabled):");
-                var otp =  Console.ReadLine();
-                
+                string? otp = Console.ReadLine();
+
                 TokenByPasswordGrant(email, password, otp);
             }
 
             break;
         }
     }
-    
+
     private static string ReadPassword()
     {
-        var password = new StringBuilder();
+        StringBuilder password = new();
         ConsoleKeyInfo key;
 
         do
         {
-            key = Console.ReadKey(intercept: true);
+            key = Console.ReadKey(true);
 
             if (key.Key == ConsoleKey.Backspace)
             {
@@ -133,10 +133,10 @@ public static class Auth
 
     private static void TokenByBrowser()
     {
-        var baseUrl = new Uri($"{BaseUrl}protocol/openid-connect/auth");
-        var redirectUri = HttpUtility.UrlEncode($"http://localhost:{Config.InternalServerPort}/sso-callback");
+        Uri baseUrl = new($"{BaseUrl}protocol/openid-connect/auth");
+        string redirectUri = HttpUtility.UrlEncode($"http://localhost:{Config.InternalServerPort}/sso-callback");
 
-        var query = new Dictionary<string, string>
+        IEnumerable<string> query = new Dictionary<string, string>
         {
             ["redirect_uri"] = redirectUri,
             ["client_id"] = "nomercy-server",
@@ -144,7 +144,7 @@ public static class Auth
             ["scope"] = "openid offline_access email profile"
         }.Select(x => $"{x.Key}={x.Value}");
 
-        var url = new Uri($"{baseUrl}?{string.Join("&", query)}").ToString();
+        string url = new Uri($"{baseUrl}?{string.Join("&", query)}").ToString();
 
         TempServer = Networking.TempServer();
         TempServer.StartAsync().Wait();
@@ -180,12 +180,12 @@ public static class Auth
             return;
         }
 
-        var tmp = File.OpenWrite(Config.TokenFile);
+        FileStream tmp = File.OpenWrite(Config.TokenFile);
         tmp.SetLength(0);
         tmp.Write(Encoding.ASCII.GetBytes(JsonConvert.SerializeObject(data, Formatting.Indented)));
         tmp.Close();
 
-        Logger?.Invoke("Auth",@"Tokens refreshed");
+        Logger?.Invoke("Auth", @"Tokens refreshed");
 
         AccessToken = data.access_token;
         RefreshToken = data.refresh_token;
@@ -201,37 +201,37 @@ public static class Auth
 
     private static string? GetAccessToken()
     {
-        var data = TokenData();
+        dynamic data = TokenData();
 
         return data.access_token;
     }
 
     private static string? GetRefreshToken()
     {
-        var data = TokenData();
+        dynamic data = TokenData();
         return data.refresh_token;
     }
 
     private static int? TokenExpiration()
     {
-        var data = TokenData();
+        dynamic data = TokenData();
         return data.expires_in;
     }
 
     private static int? TokenNotBefore()
     {
-        var data = TokenData();
+        dynamic data = TokenData();
         return data["not-before-policy"];
     }
 
     private static void AuthKeys()
     {
-        Logger?.Invoke("Auth",@"Getting auth keys");
+        Logger?.Invoke("Auth", @"Getting auth keys");
 
         HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var response = client.GetStringAsync(BaseUrl).Result;
+        string response = client.GetStringAsync(BaseUrl).Result;
 
         dynamic data = JsonConvert.DeserializeObject(response)
                        ?? throw new Exception("Failed to deserialize JSON");
@@ -253,13 +253,13 @@ public static class Auth
             new KeyValuePair<string, string>("client_id", TokenClientId),
             new KeyValuePair<string, string>("client_secret", TokenClientSecret),
             new KeyValuePair<string, string>("username", username),
-            new KeyValuePair<string, string>("password", password),
+            new KeyValuePair<string, string>("password", password)
         ];
-        
+
         if (!string.IsNullOrEmpty(otp))
             body.Add(new KeyValuePair<string, string>("totp", otp));
 
-        var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
+        string response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
             .Result.Content.ReadAsStringAsync().Result;
 
         SetTokens(response);
@@ -270,14 +270,14 @@ public static class Auth
         if (TokenClientId == null || TokenClientSecret == null || RefreshToken == null || _jwtSecurityToken == null)
             throw new Exception("Auth keys not initialized");
 
-        var expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
+        int expiresInDays = _jwtSecurityToken.ValidTo.AddDays(-5).Subtract(DateTime.UtcNow).Days;
         if (expiresInDays >= 0)
         {
-            Logger?.Invoke("Auth",$"Token is still valid for {expiresInDays} day{(expiresInDays == 1 ? "" : "s")}");
+            Logger?.Invoke("Auth", $"Token is still valid for {expiresInDays} day{(expiresInDays == 1 ? "" : "s")}");
             return;
         }
 
-        Logger?.Invoke("Auth",@"Refreshing token");
+        Logger?.Invoke("Auth", @"Refreshing token");
 
         HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -291,7 +291,7 @@ public static class Auth
             new KeyValuePair<string, string>("scope", "openid offline_access email profile")
         ];
 
-        var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
+        string response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
             .Result.Content.ReadAsStringAsync().Result;
 
         SetTokens(response);
@@ -299,24 +299,25 @@ public static class Auth
 
     public static void TokenByAuthorizationCode(string code)
     {
-        Logger?.Invoke("Auth",@"Getting token by authorization code");
+        Logger?.Invoke("Auth", @"Getting token by authorization code");
         if (TokenClientId == null || TokenClientSecret == null)
             throw new Exception("Auth keys not initialized");
 
         HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var body = new List<KeyValuePair<string, string>>()
-        {
-            new("grant_type", "authorization_code"),
-            new("client_id", TokenClientId),
-            new("client_secret", TokenClientSecret),
-            new("scope", "openid offline_access email profile"),
-            new("redirect_uri", $"http://localhost:{Config.InternalServerPort}/sso-callback"),
-            new("code", code)
-        };
+        List<KeyValuePair<string, string>> body =
+        [
+            new KeyValuePair<string, string>("grant_type", "authorization_code"),
+            new KeyValuePair<string, string>("client_id", TokenClientId),
+            new KeyValuePair<string, string>("client_secret", TokenClientSecret),
+            new KeyValuePair<string, string>("scope", "openid offline_access email profile"),
+            new KeyValuePair<string, string>("redirect_uri",
+                $"http://localhost:{Config.InternalServerPort}/sso-callback"),
+            new KeyValuePair<string, string>("code", code)
+        ];
 
-        var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
+        string response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(body))
             .Result.Content.ReadAsStringAsync().Result;
 
         SetTokens(response);
@@ -325,27 +326,24 @@ public static class Auth
     private static void OpenBrowser(string url)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); 
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            Process.Start("xdg-open", url); 
+            Process.Start("xdg-open", url);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             Process.Start("open", url); // Not tested
         else
             throw new Exception("Unsupported OS");
     }
-    
+
     private static bool IsDesktopEnvironment()
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            return true;
-        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ||
+            RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return true;
 
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return false;
-        
-        if (string.IsNullOrEmpty(NmSystem.Info.Gpu?.FirstOrDefault())) return false;
-        
-        return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY"));
 
+        if (string.IsNullOrEmpty(NmSystem.Info.Gpu?.FirstOrDefault())) return false;
+
+        return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY"));
     }
 }

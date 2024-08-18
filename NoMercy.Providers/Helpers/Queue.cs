@@ -1,7 +1,7 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using System.Collections.Concurrent;
-using NoMercy.Helpers;
+using NoMercy.NmSystem;
 using Serilog.Events;
 
 namespace NoMercy.Providers.Helpers;
@@ -88,7 +88,7 @@ public class Queue(QueueOptions options)
     {
         lock (_tasks)
         {
-            var tasks = new ConcurrentDictionary<string, Func<Task>?>(_tasks)
+            List<KeyValuePair<string, Func<Task>>>? tasks = new ConcurrentDictionary<string, Func<Task>?>(_tasks)
                 .Where(_ => _currentlyHandled < Options.Concurrent).ToList();
 
             foreach (KeyValuePair<string, Func<Task>?> task in tasks ?? [])
@@ -98,7 +98,7 @@ public class Queue(QueueOptions options)
 
                 try
                 {
-                    var result = task.Value?.Invoke();
+                    Task? result = task.Value?.Invoke();
                     Resolve?.Invoke(this, new QueueEventArgs { Result = result });
                 }
                 catch (Exception ex)
@@ -117,7 +117,7 @@ public class Queue(QueueOptions options)
 
     private Task Dequeue()
     {
-        var interval = Math.Max(0, Options.Interval - (Environment.TickCount - _lastRan));
+        int interval = Math.Max(0, Options.Interval - (Environment.TickCount - _lastRan));
         return Task.Run(async () =>
         {
             await Task.Delay(interval);
@@ -132,7 +132,7 @@ public class Queue(QueueOptions options)
 
         TaskCompletionSource<T> tcs = new();
 
-        var uniqueId = Ulid.NewUlid().ToString();
+        string? uniqueId = Ulid.NewUlid().ToString();
 
         if (priority is true) uniqueId = _r.Next(0, int.MaxValue).ToString();
 
@@ -142,7 +142,7 @@ public class Queue(QueueOptions options)
             {
                 try
                 {
-                    var result = await task();
+                    T result = await task();
                     Resolve?.Invoke(this, new QueueEventArgs { Result = result });
                     tcs.SetResult(result);
                 }
@@ -150,7 +150,7 @@ public class Queue(QueueOptions options)
                 {
                     Reject?.Invoke(this, new QueueEventArgs { Error = ex });
                     tcs.SetException(ex);
-                    if(ex.Message.Contains("404")) return;
+                    if (ex.Message.Contains("404")) return;
                     Logger.App($"Url failed: {url} {ex.Message}", LogEventLevel.Error);
                 }
                 finally

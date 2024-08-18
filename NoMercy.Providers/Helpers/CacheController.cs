@@ -14,15 +14,15 @@ public static class CacheController
 
     private static string CreateMd5(string input)
     {
-        var inputBytes = Encoding.ASCII.GetBytes(input);
-        var hashBytes = MD5.HashData(inputBytes);
+        byte[] inputBytes = Encoding.ASCII.GetBytes(input);
+        byte[] hashBytes = MD5.HashData(inputBytes);
 
         return Convert.ToHexString(hashBytes);
     }
 
     public static bool Read<T>(string url, out T? value) where T : class?
     {
-        var fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
+        string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
         lock (fullname)
         {
             if (File.Exists(fullname) == false)
@@ -34,7 +34,7 @@ public static class CacheController
             T? data;
             try
             {
-                var d = File.ReadAllTextAsync(fullname).Result;
+                string d = File.ReadAllTextAsync(fullname).Result;
                 data = JsonHelper.FromJson<T>(d);
             }
             catch (Exception)
@@ -60,9 +60,9 @@ public static class CacheController
         }
     }
 
-    public static async Task Write(string url, string data)
+    public static async Task Write(string url, string data, int retry = 0)
     {
-        var fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
+        string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
 
         try
         {
@@ -70,8 +70,13 @@ public static class CacheController
         }
         catch (Exception)
         {
-            Logger.App($"CacheController: Failed to write {fullname}");
-            await Write(url, data);
+            if (retry >= 10)
+            {
+                Logger.App($"CacheController: Failed to write {fullname}");
+                throw;
+            }
+
+            await Write(url, data, retry + 1);
         }
     }
 }

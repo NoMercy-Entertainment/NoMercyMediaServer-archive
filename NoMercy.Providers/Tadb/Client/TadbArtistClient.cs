@@ -1,6 +1,6 @@
-﻿using NoMercy.Providers.TADB.Models;
+﻿using NoMercy.Providers.Tadb.Models;
 
-namespace NoMercy.Providers.TADB.Client;
+namespace NoMercy.Providers.Tadb.Client;
 
 public class TadbArtistClient : TadbBaseClient
 {
@@ -10,7 +10,7 @@ public class TadbArtistClient : TadbBaseClient
         {
             { "i", id.ToString() }
         };
-        
+
         try
         {
             return Get<TadbArtistResponse>("artist-mb.php", queryParams, priority)

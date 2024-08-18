@@ -10,17 +10,18 @@ public class Vorbis : BaseAudio
         AddCustomArgument("-strict", "-2");
     }
 
-    protected override CodecDto[] AvailableCodecs => [
+    protected override CodecDto[] AvailableCodecs =>
+    [
         AudioCodecs.LibVorbis,
         AudioCodecs.Vorbis
     ];
-    
+
     protected override string[] AvailableContainers =>
     [
         AudioContainers.Ogg,
-        
+
         VideoContainers.Mkv,
         VideoContainers.Webm,
-        VideoContainers.Hls,
+        VideoContainers.Hls
     ];
 }

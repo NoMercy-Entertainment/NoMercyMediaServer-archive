@@ -5,7 +5,7 @@ namespace NoMercy.Encoder.Format.Container;
 public class Mkv : BaseContainer
 {
     public override ContainerDto ContainerDto => AvailableContainers.First(c => c.Name == VideoContainers.Mkv);
-    
+
     public Mkv() : base()
     {
         SetContainer(VideoContainers.Mkv);

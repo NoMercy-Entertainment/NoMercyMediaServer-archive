@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(EncoderProfileId), nameof(FolderId))]
-[Index(nameof(EncoderProfileId)), Index(nameof(FolderId))]
+[Index(nameof(EncoderProfileId))]
+[Index(nameof(FolderId))]
 public class EncoderProfileFolder
 {
     [JsonProperty("encoder_profile_id")] public Ulid EncoderProfileId { get; set; }

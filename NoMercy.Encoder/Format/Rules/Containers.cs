@@ -9,6 +9,7 @@ public static class AudioContainers
     public static readonly string M4a = "m4a";
     public static readonly string Wav = "wav";
 }
+
 public static class AudioFormats
 {
     public static readonly string Mp3 = "libmp3lame";
@@ -41,6 +42,7 @@ public static class SubtitleContainers
     public static readonly string Srt = "srt";
     public static readonly string WebVtt = "vtt";
 }
+
 public static class SubtitleFormats
 {
     public static readonly string Ass = "ass";
@@ -56,6 +58,7 @@ public static class VideoContainers
     public static readonly string Webm = "webm";
     public static readonly string Flv = "flv";
 }
+
 public static class VideoFormats
 {
     public static readonly string Mkv = "matroska";

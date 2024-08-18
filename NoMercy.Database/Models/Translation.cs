@@ -16,7 +16,15 @@ namespace NoMercy.Database.Models;
 [Index(nameof(ReleaseGroupId), nameof(Iso31661), IsUnique = true)]
 [Index(nameof(ArtistId), nameof(Iso31661), IsUnique = true)]
 [Index(nameof(AlbumId), nameof(Iso31661), IsUnique = true)]
-[Index(nameof(TvId)), Index(nameof(SeasonId)), Index(nameof(EpisodeId)), Index(nameof(MovieId)), Index(nameof(CollectionId)), Index(nameof(PersonId)), Index(nameof(ReleaseGroupId)), Index(nameof(ArtistId)), Index(nameof(AlbumId))]
+[Index(nameof(TvId))]
+[Index(nameof(SeasonId))]
+[Index(nameof(EpisodeId))]
+[Index(nameof(MovieId))]
+[Index(nameof(CollectionId))]
+[Index(nameof(PersonId))]
+[Index(nameof(ReleaseGroupId))]
+[Index(nameof(ArtistId))]
+[Index(nameof(AlbumId))]
 public class Translation : Timestamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -50,18 +58,17 @@ public class Translation : Timestamps
 
     [JsonProperty("person_id")] public int? PersonId { get; set; }
     public Person People { get; set; }
-    
+
     [JsonProperty("release_group_id")] public Guid? ReleaseGroupId { get; set; }
     public ReleaseGroup ReleaseGroup { get; set; }
-    
+
     [JsonProperty("artist_id")] public Guid? ArtistId { get; set; }
     public Artist Artist { get; set; }
-    
+
     [JsonProperty("release_id")] public Guid? AlbumId { get; set; }
     public Album Album { get; set; }
 
     public Translation()
     {
     }
-
 }
