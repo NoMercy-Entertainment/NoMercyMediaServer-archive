@@ -14,5 +14,4 @@ public static class VideoTunes
     public static string Zerolatency = "zerolatency";
     public static string Psnr = "psnr";
     public static string Ssim = "ssim";
-    
 }

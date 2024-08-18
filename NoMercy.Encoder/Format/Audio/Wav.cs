@@ -9,12 +9,13 @@ public class Wav : BaseAudio
         SetAudioCodec(AudioFormats.Wav);
     }
 
-    protected override CodecDto[] AvailableCodecs => [
-        AudioCodecs.PcmS16Le,
+    protected override CodecDto[] AvailableCodecs =>
+    [
+        AudioCodecs.PcmS16Le
     ];
 
     protected override string[] AvailableContainers =>
     [
-        AudioContainers.Wav,
+        AudioContainers.Wav
     ];
 }

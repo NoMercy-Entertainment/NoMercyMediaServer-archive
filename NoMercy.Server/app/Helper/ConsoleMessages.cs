@@ -1,5 +1,4 @@
 using System.Text;
-using NoMercy.Helpers;
 using NoMercy.Networking;
 using Pastel;
 
@@ -35,7 +34,7 @@ public abstract class ConsoleMessages
     private static string Repeat(string stringToRepeat, int repeat)
     {
         StringBuilder builder = new(repeat * stringToRepeat.Length);
-        for (var i = 0; i < repeat; i++) builder.Append(stringToRepeat);
+        for (int i = 0; i < repeat; i++) builder.Append(stringToRepeat);
 
         return builder.ToString();
     }
@@ -47,27 +46,27 @@ public abstract class ConsoleMessages
         List<string> spacing = [];
 
         // Add spaces to the left of the text
-        for (var i = 102 - rightPadding; i > text.Length; i--) spacing.Add("");
+        for (int i = 102 - rightPadding; i > text.Length; i--) spacing.Add("");
 
         spacing.Add(text);
 
         // Add spaces to the right of the text
-        for (var i = 0; i < rightPadding; i++) spacing.Add("");
+        for (int i = 0; i < rightPadding; i++) spacing.Add("");
 
         return string.Join(" ", spacing);
     }
 
     public static Task Logo(string str = "NoMercy MediaServer")
     {
-        var builder = new StringBuilder();
-        var outputString = "║  " + str + "  ║";
-        var totalWidth = 0;
+        StringBuilder builder = new();
+        string outputString = "║  " + str + "  ║";
+        int totalWidth = 0;
 
-        for (var i = 0; i < ConsoleLetters.Colossal.FirstOrDefault().Value.Count -1; i++)
+        for (int i = 0; i < ConsoleLetters.Colossal.FirstOrDefault().Value.Count - 1; i++)
         {
-            foreach (var letter in outputString)
+            foreach (char letter in outputString)
             {
-                var text = ConsoleLetters.Colossal[letter.ToString()][i];
+                string? text = ConsoleLetters.Colossal[letter.ToString()][i];
 
                 text = letter switch
                 {
@@ -77,22 +76,23 @@ public abstract class ConsoleMessages
                 };
 
                 builder.Append(text);
-                
-                if(i == 5) totalWidth += ConsoleLetters.Colossal[letter.ToString()][i].Length;
+
+                if (i == 5) totalWidth += ConsoleLetters.Colossal[letter.ToString()][i].Length;
             }
 
             if (i == 9) continue;
             builder.AppendLine();
         }
 
-        var magicSpacer = totalWidth - 2;
-        
+        int magicSpacer = totalWidth - 2;
+
         Console.WriteLine($"{("╔" + Repeat("═", magicSpacer) + "╗").Pastel(Colors[0])}");
         Console.WriteLine($"{_()}{Repeat(" ", magicSpacer)}{_()}");
 
         Console.WriteLine(builder.ToString());
 
-        Console.WriteLine($"{_()}{Repeat(" ", 63)}{ConsoleLetters.Colossal["y"][10].Pastel(Colors[2])}" + CreateQuote(Quote, 0,4) + $"{ConsoleLetters.Colossal["║"][0].Pastel(Colors[0])}");        
+        Console.WriteLine($"{_()}{Repeat(" ", 63)}{ConsoleLetters.Colossal["y"][10].Pastel(Colors[2])}" +
+                          CreateQuote(Quote, 0, 4) + $"{ConsoleLetters.Colossal["║"][0].Pastel(Colors[0])}");
         // Console.WriteLine($"{_()}" + CreateQuote(Quote, totalWidth, 4) + $"{ConsoleLetters.Colossal["║"][0].Pastel(Colors[0])}");        
         Console.WriteLine($"{("╚" + Repeat("═", magicSpacer) + "╝").Pastel(Colors[0])}");
 

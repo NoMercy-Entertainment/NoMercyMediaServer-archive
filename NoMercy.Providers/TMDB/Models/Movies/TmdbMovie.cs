@@ -5,7 +5,7 @@ using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Providers.TMDB.Models.Movies;
 
-public class TmdbMovie: TmdbBase
+public class TmdbMovie : TmdbBase
 {
     [JsonProperty("adult")] public bool Adult { get; set; }
     [JsonProperty("genres")] public int[]? GenresIds { get; set; } = [];

@@ -76,21 +76,21 @@ public static class DateTimeParser
             "dd-MM-yyyy HH:mm:ss",
             "yyyy-MM",
             "yyyy-MM-dd",
-            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd HH:mm:ss"
         ];
 
-        var success = DateTime.TryParseExact(value, validFormats,
-            CultureInfo.InvariantCulture, DateTimeStyles.None, out var result);
+        bool success = DateTime.TryParseExact(value, validFormats,
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime result);
 
         if (success && result != DateTime.MinValue) return result;
-        
+
         DateTimeRoutines.ParsedDateTime pdt;
-        var success2 = value.TryParseDate(DateTimeRoutines.DateTimeFormat.USA_DATE, out pdt);
+        bool success2 = value.TryParseDate(DateTimeRoutines.DateTimeFormat.USA_DATE, out pdt);
         if (success2 && pdt.DateTime.Date != DateTime.MinValue) return pdt.DateTime.Date;
-        
+
         return null;
     }
-    
+
     public static int ParseYear(this DateTime? self)
     {
         return string.IsNullOrEmpty(self.ToString())

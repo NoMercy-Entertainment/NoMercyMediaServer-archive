@@ -18,7 +18,7 @@ public class Hls : BaseContainer
         VideoCodecs.H265, VideoCodecs.H265Nvenc,
         VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc
     ];
-    
+
     public Hls SetHlsTime(int value)
     {
         HlsTime = value;
@@ -30,19 +30,19 @@ public class Hls : BaseContainer
         HlsListSize = value;
         return this;
     }
-    
+
     public Hls SetHlsFlags(string value)
     {
         HlsFlags = value;
         return this;
     }
-    
+
     public Hls SetHlsPlaylistType(string value)
     {
         HlsPlaylistType = value;
         return this;
     }
-    
+
     public override Hls ApplyFlags()
     {
         base.ApplyFlags();
@@ -60,7 +60,7 @@ public class Hls : BaseContainer
         AddCustomArgument("-hls_time", HlsTime);
         AddCustomArgument("-hls_flags", HlsFlags);
         AddCustomArgument("-hls_list_size", HlsListSize);
-        
+
         return this;
     }
 }

@@ -1,15 +1,70 @@
-﻿using NoMercy.Providers.Helpers;
+﻿using System.Net.Http.Headers;
+using Microsoft.AspNetCore.WebUtilities;
+using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
+using NoMercy.Providers.Helpers;
+using Serilog.Events;
 
 namespace NoMercy.Providers.CoverArt.Client;
 
-public class CoverArtBaseClient : BaseClient
+public class CoverArtBaseClient : IDisposable
 {
-    protected override Uri BaseUrl => new("https://coverartarchive.org/");
-    protected override int ConcurrentRequests => 3;
-    protected override int Interval => 1000;
-    
-    protected CoverArtBaseClient(Guid id) : base(id)
+    private readonly Uri _baseUrl = new("https://coverartarchive.org/");
+
+    private readonly HttpClient _client = new();
+
+    protected CoverArtBaseClient()
     {
-        //
+        _client.BaseAddress = _baseUrl;
+        _client.DefaultRequestHeaders.Accept.Clear();
+        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+    }
+
+    protected CoverArtBaseClient(Guid id)
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = _baseUrl
+        };
+        _client.DefaultRequestHeaders.Accept.Clear();
+        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+        Id = id;
+    }
+
+    private static Queue? _queue;
+
+    private static Queue GetQueue()
+    {
+        return _queue ??= new Queue(new QueueOptions { Concurrent = 3, Interval = 1000, Start = true });
+    }
+
+    protected Guid Id { get; private set; }
+
+    protected async Task<T?> Get<T>(string url, Dictionary<string, string>? query = null, bool? priority = false)
+        where T : class
+    {
+        query ??= new Dictionary<string, string>();
+
+        string newUrl = QueryHelpers.AddQueryString(url, query!);
+
+        if (CacheController.Read(newUrl, out T? result)) return result;
+
+        Logger.CoverArt(newUrl, LogEventLevel.Verbose);
+
+        string response = await GetQueue().Enqueue(() => _client.GetStringAsync(newUrl), newUrl, priority);
+
+        await CacheController.Write(newUrl, response);
+
+        T? data = response.FromJson<T>();
+
+        return data;
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 }

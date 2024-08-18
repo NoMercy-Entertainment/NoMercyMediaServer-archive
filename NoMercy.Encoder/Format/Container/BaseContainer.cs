@@ -19,7 +19,7 @@ public class BaseContainer : Classes
     public readonly List<BaseSubtitle> SubtitleStreams = [];
     public readonly List<BaseImage> ImageStreams = [];
 
-    public static ContainerDto[] AvailableContainers => 
+    public static ContainerDto[] AvailableContainers =>
     [
         new ContainerDto { Name = AudioContainers.Aac, Type = "audio", IsDefault = false },
         new ContainerDto { Name = AudioContainers.Flac, Type = "audio", IsDefault = false },
@@ -47,7 +47,7 @@ public class BaseContainer : Classes
 
     protected BaseContainer SetContainer(string videoContainer)
     {
-        var availableCodecs = AvailableContainers;
+        ContainerDto[] availableCodecs = AvailableContainers;
         if (availableCodecs.All(container => container.Name != videoContainer))
             throw new Exception(
                 $"Wrong video container value for {videoContainer}, available formats are {string.Join(", ", AvailableContainers.Select(container => container.Name))}");
@@ -62,19 +62,19 @@ public class BaseContainer : Classes
         _extraParameters[key] = value;
         return this;
     }
-    
+
     public BaseContainer AddCustomArgument(string value)
     {
         _extraParameters.Add(value, "");
         return this;
     }
-    
+
     public BaseContainer AddOpts(string key, dynamic value)
     {
         _ops[key] = value;
         return this;
     }
-    
+
     public BaseContainer AddStream(BaseVideo stream)
     {
         stream.IsVideo = true;
@@ -88,26 +88,26 @@ public class BaseContainer : Classes
         Streams.Add(Streams.Count, stream);
         return this;
     }
-    
+
     public BaseContainer AddStream(BaseSubtitle stream)
     {
         stream.IsSubtitle = true;
         Streams.Add(Streams.Count, stream);
         return this;
     }
-    
+
     public BaseContainer AddStream(BaseImage stream)
     {
         stream.IsImage = true;
         Streams.Add(Streams.Count, stream);
         return this;
     }
-    
+
     public override BaseContainer ApplyFlags()
     {
         return this;
     }
-    
+
     #endregion
 
     public void BuildMasterPlaylist()

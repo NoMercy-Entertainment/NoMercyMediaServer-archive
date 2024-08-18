@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(CertificationId), nameof(MovieId))]
-[Index(nameof(CertificationId)), Index(nameof(MovieId))]
+[Index(nameof(CertificationId))]
+[Index(nameof(MovieId))]
 public class CertificationMovie
 {
     [JsonProperty("certification_id")] public int CertificationId { get; set; }
@@ -18,5 +19,4 @@ public class CertificationMovie
     public CertificationMovie()
     {
     }
-
 }

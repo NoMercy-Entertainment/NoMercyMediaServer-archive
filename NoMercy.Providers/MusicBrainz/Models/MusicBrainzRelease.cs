@@ -1,8 +1,6 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.MusicBrainz.Models;
@@ -24,13 +22,16 @@ public class MusicBrainzRelease
     [JsonProperty("release-group")] public MusicBrainzReleaseGroup MusicBrainzReleaseGroup { get; set; }
     [JsonProperty("status")] public string Status { get; set; }
     [JsonProperty("status-id")] public Guid? StatusId { get; set; }
-    [JsonProperty("text-representation")] public MusicBrainzTextRepresentation MusicBrainzTextRepresentation { get; set; }
+
+    [JsonProperty("text-representation")]
+    public MusicBrainzTextRepresentation MusicBrainzTextRepresentation { get; set; }
+
     [JsonProperty("title")] public string Title { get; set; }
-    
+
     [JsonProperty("area")] public MusicBrainzArea MusicBrainzArea { get; set; }
-    
-    [JsonProperty("date")]
-    private string _date { get; set; }
+
+    [JsonProperty("date")] private string _date { get; set; }
+
     [JsonProperty("dateTime")]
     public DateTime? DateTime
     {
@@ -57,10 +58,9 @@ public class MusicBrainzReleaseAppends : MusicBrainzRelease
 public class ReleaseEvent
 {
     [JsonProperty("area")] public MusicBrainzArea MusicBrainzArea { get; set; }
-    
-    [JsonProperty("date")]
-    private string _date { get; set; }
-    
+
+    [JsonProperty("date")] private string _date { get; set; }
+
     [JsonProperty("dateTime")]
     public DateTime? DateTime
     {
@@ -144,17 +144,18 @@ public class MusicBrainzTrack
     [JsonProperty("number")]
     public int Number
     {
-        get  {
+        get => _number;
+        set
+        {
             try
             {
-                return Convert.ToInt32(_number);
+                _number = Convert.ToInt32(value);
             }
             catch (Exception e)
             {
-                return 0;
+                _number = value.ToString().Replace("A", "").Split("-").LastOrDefault()?.ToInt() ?? 0;
             }
         }
-        set => _number = value;
     }
 
     [JsonProperty("position")] public int Position { get; set; }
@@ -169,12 +170,14 @@ public class TrackRecording
     [JsonProperty("artist-credit")] public RecordingArtistCredit[] ArtistCredit { get; set; }
     [JsonProperty("disambiguation")] public string Disambiguation { get; set; }
 
-    [JsonProperty("first-release-date")]
-    private string? _firstReleaseDate { get; set; }
-    public DateTime? FirstReleaseDate {
+    [JsonProperty("first-release-date")] private string? _firstReleaseDate { get; set; }
+
+    public DateTime? FirstReleaseDate
+    {
         get => DateTimeParser.ParseDateTime(_firstReleaseDate);
         set => _firstReleaseDate = value.ToString();
     }
+
     [JsonProperty("genres")] public MusicBrainzGenreDetails[] Genres { get; set; }
     [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("isrcs")] public string[] Isrcs { get; set; }
@@ -235,6 +238,7 @@ public class AttributeCredits
     [JsonProperty("keyboard")] public string Keyboard { get; set; }
     [JsonProperty("drum machine")] public string DrumMachine { get; set; }
     [JsonProperty("foot stomps")] public string FootStomps { get; set; }
+
     [JsonProperty("Wurlitzer electric piano")]
     public string WurlitzerElectricPiano { get; set; }
 }
@@ -248,7 +252,9 @@ public class RelationRecording
 {
     [JsonProperty("artist-credit")] public RecordingArtistCredit[] ArtistCredit { get; set; }
     [JsonProperty("disambiguation")] public string Disambiguation { get; set; }
+
     [JsonProperty("id")] public Guid Id { get; set; }
+
     // [JsonProperty("isrcs")] public object[] Isrcs { get; set; }
     [JsonProperty("length")] public int? Length { get; set; }
     [JsonProperty("title")] public string Title { get; set; }
@@ -280,13 +286,15 @@ public class MusicBrainzUrl
 public class MusicBrainzReleaseGroup
 {
     [JsonProperty("disambiguation")] public string Disambiguation { get; set; }
-    
-    [JsonProperty("first-release-date")]
-    private string? _firstReleaseDate { get; set; }
-    public DateTime? FirstReleaseDate {
+
+    [JsonProperty("first-release-date")] private string? _firstReleaseDate { get; set; }
+
+    public DateTime? FirstReleaseDate
+    {
         get => DateTimeParser.ParseDateTime(_firstReleaseDate);
         set => _firstReleaseDate = value.ToString();
     }
+
     [JsonProperty("genres")] public MusicBrainzGenreDetails[]? Genres { get; set; }
     [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("primary-type")] public string PrimaryType { get; set; }
@@ -295,6 +303,7 @@ public class MusicBrainzReleaseGroup
     [JsonProperty("secondary-types")] public string[] SecondaryTypes { get; set; }
     [JsonProperty("title")] public string Title { get; set; }
 }
+
 public class MusicBrainzReleaseGroupDetails : MusicBrainzReleaseGroup
 {
     [JsonProperty("releases")] public MusicBrainzRelease[] Releases { get; set; }

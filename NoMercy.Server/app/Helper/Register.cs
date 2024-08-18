@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Server.app.Helper;
 
@@ -13,7 +13,7 @@ public static class Register
     private static string DeviceName()
     {
         MediaContext mediaContext = new();
-        var device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "server_name");
+        Configuration? device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "server_name");
         return device?.Value ?? Environment.MachineName;
     }
 
@@ -21,13 +21,13 @@ public static class Register
     {
         Dictionary<string, string> serverData = new()
         {
-            { "server_id", NmSystem.Info.DeviceId.ToString() },
+            { "server_id", Info.DeviceId.ToString() },
             { "server_name", DeviceName() },
             { "internal_ip", Networking.Networking.InternalIp },
             { "internal_port", Config.InternalServerPort.ToString() },
             { "external_port", Config.ExternalServerPort.ToString() },
             { "server_version", ApiInfo.ApplicationVersion },
-            { "platform", NmSystem.Info.Platform }
+            { "platform", Info.Platform }
         };
 
         Logger.Register(@"Registering Server, this takes a moment...");
@@ -35,12 +35,12 @@ public static class Register
         HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        var content = client.PostAsync("https://api-dev.nomercy.tv/v1/server/register",
+        string content = client.PostAsync("https://api-dev.nomercy.tv/v1/server/register",
                 new FormUrlEncodedContent(serverData))
             .Result.Content.ReadAsStringAsync().Result;
 
-        var data = JsonConvert.DeserializeObject(content);
-        
+        object? data = JsonConvert.DeserializeObject(content);
+
         // Logger.Register(data);
 
         if (data == null) throw new Exception("Failed to register Server");
@@ -56,22 +56,22 @@ public static class Register
     {
         Dictionary<string, string> serverData = new()
         {
-            { "server_id", NmSystem.Info.DeviceId.ToString() }
+            { "server_id", Info.DeviceId.ToString() }
         };
 
         HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
 
-        var content = client
+        string content = client
             .PostAsync("https://api-dev.nomercy.tv/v1/server/assign", new FormUrlEncodedContent(serverData))
             .Result.Content.ReadAsStringAsync().Result;
 
-        var data = JsonConvert.DeserializeObject<ServerRegisterResponse>(content);
+        ServerRegisterResponse? data = JsonConvert.DeserializeObject<ServerRegisterResponse>(content);
 
         if (data == null) throw new Exception("Failed to assign Server");
-        
-        var newUser = new User
+
+        User newUser = new()
         {
             Id = data.User.Id,
             Name = data.User.Name,
@@ -83,14 +83,14 @@ public static class Register
             UpdatedAt = DateTime.Now,
             AudioTranscoding = true,
             NoTranscoding = true,
-            VideoTranscoding = true,
+            VideoTranscoding = true
         };
-        
+
         using MediaContext mediaContext = new();
         mediaContext.Users.Upsert(newUser)
             .On(x => x.Id)
             .Run();
-        
+
         ClaimsPrincipleExtensions.AddUser(newUser);
 
         Logger.Register(@"Server assigned successfully");
@@ -103,7 +103,7 @@ public static class Register
 
 public class ServerRegisterResponse
 {
-    [JsonProperty("status")] public string Status { get; set; }
-    [JsonProperty("id")] public string ServerId { get; set; }
-    [JsonProperty("user")] public User User { get; set; }
+    [JsonProperty("status")] public string Status { get; set; } = string.Empty;
+    [JsonProperty("id")] public string ServerId { get; set; } = string.Empty;
+    [JsonProperty("user")] public User User { get; set; } = new();
 }

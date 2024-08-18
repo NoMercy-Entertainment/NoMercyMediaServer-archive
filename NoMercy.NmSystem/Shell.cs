@@ -1,12 +1,12 @@
 using System.Diagnostics;
 
-namespace NoMercy.Helpers;
+namespace NoMercy.NmSystem;
 
 public static class Shell
 {
     public static async Task<string> Exec(string command, string args)
     {
-        var process = new Process()
+        Process process = new()
         {
             StartInfo = new ProcessStartInfo
             {
@@ -14,15 +14,14 @@ public static class Shell
                 Arguments = args,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
-                CreateNoWindow = true,
+                CreateNoWindow = true
             }
         };
 
         process.Start();
-        var result = await process.StandardOutput.ReadToEndAsync();
+        string result = await process.StandardOutput.ReadToEndAsync();
         await process.WaitForExitAsync();
 
         return result;
     }
-
 }

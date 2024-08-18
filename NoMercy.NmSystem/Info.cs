@@ -23,7 +23,7 @@ public class Info
 
     private static Guid GetDeviceId()
     {
-        var generatedId = new DeviceIdBuilder()
+        string? generatedId = new DeviceIdBuilder()
             .AddMachineName()
             .AddOsVersion()
             .OnWindows(windows => windows
@@ -38,7 +38,7 @@ public class Info
                 .AddPlatformSerialNumber())
             .ToString();
 
-        var hash = MD5.HashData(Encoding.UTF8.GetBytes(generatedId));
+        byte[] hash = MD5.HashData(Encoding.UTF8.GetBytes(generatedId));
 
         return new Guid(hash);
     }
@@ -59,36 +59,36 @@ public class Info
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var searcher = new ManagementObjectSearcher("select Name from Win32_VideoController");
-            var gpus = new List<string?>();
-            foreach (var o in searcher.Get())
+            ManagementObjectSearcher searcher = new("select Name from Win32_VideoController");
+            List<string> gpus = new();
+            foreach (ManagementBaseObject? o in searcher.Get())
             {
-                var item = (ManagementObject)o;
+                ManagementObject? item = (ManagementObject)o;
                 gpus.Add(item["Name"]?.ToString()?.Trim());
             }
 
             return gpus.ToArray();
         }
 
-        var output = ExecuteBashCommand("lspci | grep 'VGA'");
-        
+        string output = ExecuteBashCommand("lspci | grep 'VGA'");
+
         return output.Trim().Split(':')?.LastOrDefault()?.Trim()?.Split('\n') ?? [];
     }
-    
+
     private static string? GetCpuFullName()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var searcher = new ManagementObjectSearcher("select Name from Win32_Processor");
-            foreach (var o in searcher.Get())
+            ManagementObjectSearcher searcher = new("select Name from Win32_Processor");
+            foreach (ManagementBaseObject? o in searcher.Get())
             {
-                var item = (ManagementObject)o;
+                ManagementObject? item = (ManagementObject)o;
                 return item["Name"].ToString()?.Trim();
             }
         }
         else
         {
-            var output = ExecuteBashCommand("lscpu | grep 'Model name:'");
+            string output = ExecuteBashCommand("lscpu | grep 'Model name:'");
             return output.Trim().Split(':')[1].Trim();
         }
 
@@ -99,16 +99,16 @@ public class Info
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var searcher = new ManagementObjectSearcher("select Version from Win32_OperatingSystem");
-            foreach (var o in searcher.Get())
+            ManagementObjectSearcher searcher = new("select Version from Win32_OperatingSystem");
+            foreach (ManagementBaseObject? o in searcher.Get())
             {
-                var item = (ManagementObject)o;
+                ManagementObject? item = (ManagementObject)o;
                 return item["Version"].ToString();
             }
         }
         else
         {
-            var output = ExecuteBashCommand("uname -r");
+            string output = ExecuteBashCommand("uname -r");
             return output.Trim();
         }
 
@@ -119,16 +119,16 @@ public class Info
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            var searcher = new ManagementObjectSearcher("select LastBootUpTime from Win32_OperatingSystem");
-            foreach (var o in searcher.Get())
+            ManagementObjectSearcher searcher = new("select LastBootUpTime from Win32_OperatingSystem");
+            foreach (ManagementBaseObject? o in searcher.Get())
             {
-                var item = (ManagementObject)o;
+                ManagementObject? item = (ManagementObject)o;
                 return ManagementDateTimeConverter.ToDateTime(item["LastBootUpTime"].ToString());
             }
         }
         else
         {
-            var output = ExecuteBashCommand("uptime -s");
+            string output = ExecuteBashCommand("uptime -s");
             return DateTime.Parse(output.Trim());
         }
 
@@ -150,7 +150,7 @@ public class Info
             }
         };
         process.Start();
-        var result = process.StandardOutput.ReadToEnd();
+        string result = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
         return result;
     }

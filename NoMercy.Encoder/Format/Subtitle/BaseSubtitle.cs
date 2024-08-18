@@ -13,7 +13,7 @@ public class BaseSubtitle : Classes
         Value = "ass",
         IsDefault = false
     };
-    
+
     protected internal SubtitleStream? SubtitleStream;
     internal List<SubtitleStream> SubtitleStreams { get; set; } = [];
 
@@ -26,8 +26,9 @@ public class BaseSubtitle : Classes
     private readonly Dictionary<string, dynamic> _ops = [];
     protected virtual CodecDto[] AvailableCodecs => [];
     protected virtual string[] AvailableContainers => [];
-    
+
     private string _hlsSegmentFilename = "";
+
     private string HlsSegmentFilename
     {
         get => _hlsSegmentFilename
@@ -38,6 +39,7 @@ public class BaseSubtitle : Classes
     }
 
     private string _hlsPlaylistFilename = "";
+
     internal string HlsPlaylistFilename
     {
         get => _hlsPlaylistFilename
@@ -53,7 +55,7 @@ public class BaseSubtitle : Classes
         Type,
         _extraParameters,
         _ops,
-        _filters,
+        _filters
     };
 
     #endregion
@@ -62,7 +64,7 @@ public class BaseSubtitle : Classes
 
     protected BaseSubtitle SetSubtitleCodec(string subtitleCodec)
     {
-        var availableCodecs = AvailableCodecs;
+        CodecDto[] availableCodecs = AvailableCodecs;
         if (availableCodecs.All(codec => codec.Value != subtitleCodec))
             throw new Exception(
                 $"Wrong subtitle codec value for {subtitleCodec}, available formats are {string.Join(", ", AvailableCodecs.Select(codec => codec.Value))}");
@@ -72,24 +74,24 @@ public class BaseSubtitle : Classes
         return this;
     }
 
-    protected BaseSubtitle  AddCustomArgument(string key, dynamic i)
+    protected BaseSubtitle AddCustomArgument(string key, dynamic i)
     {
         _extraParameters.Add(key, i);
         return this;
     }
-    
+
     public BaseSubtitle AddOpts(string key, dynamic value)
     {
         _ops.Add(key, value);
         return this;
     }
-    
+
     public BaseSubtitle SetHlsSegmentFilename(string value)
     {
         HlsSegmentFilename = value;
         return this;
     }
-    
+
     public BaseSubtitle SetHlsPlaylistFilename(string value)
     {
         HlsPlaylistFilename = value;
@@ -101,7 +103,7 @@ public class BaseSubtitle : Classes
         AllowedLanguages = languages;
         return this;
     }
-    
+
     public override BaseSubtitle ApplyFlags()
     {
         AddCustomArgument("-map_metadata", -1);
@@ -111,27 +113,27 @@ public class BaseSubtitle : Classes
         AddCustomArgument("-flags:s", "+bitexact");
         return this;
     }
-    
+
     public List<BaseSubtitle> Build()
     {
         List<BaseSubtitle> streams = [];
-        
-        foreach (var allowedLanguage in AllowedLanguages)
+
+        foreach (string allowedLanguage in AllowedLanguages)
         {
             if (SubtitleStreams.All(stream => stream.Language != allowedLanguage)) continue;
-            
-            var newStream = (BaseSubtitle) MemberwiseClone();
-            
+
+            BaseSubtitle newStream = (BaseSubtitle)MemberwiseClone();
+
             newStream.IsSubtitle = true;
-            
+
             newStream.SubtitleStream = SubtitleStreams
                 .Find(stream => stream.Language == allowedLanguage)!;
-            
+
             newStream.Index = newStream.SubtitleStream.Index - 1;
-            
+
             streams.Add(newStream);
         }
-        
+
         return streams;
     }
 
@@ -139,21 +141,19 @@ public class BaseSubtitle : Classes
     {
         commandDictionary["-map"] = $"[s{index}_hls_0]";
         commandDictionary["-c:s"] = SubtitleCodec.Value;
-        
+
         commandDictionary[$"-metadata:s:s:{index}"] = $"language=\"{Language}\"";
         commandDictionary[$"-metadata:s:s:{index}"] = $"title=\"{Language} {SubtitleCodec.SimpleValue}\"";
 
-        foreach (var extraParameter in _extraParameters)
-        {
+        foreach (KeyValuePair<string, dynamic> extraParameter in _extraParameters)
             commandDictionary[extraParameter.Key] = extraParameter.Value;
-        }
     }
-    
+
     public void CreateFolder()
     {
-        var path = Path.Combine(BasePath, HlsSegmentFilename.Split("/").First());
+        string path = Path.Combine(BasePath, HlsSegmentFilename.Split("/").First());
         // Logger.Encoder($"Creating folder {path}");
-        
+
         if (!Directory.Exists(path))
             Directory.CreateDirectory(path);
     }

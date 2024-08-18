@@ -16,9 +16,9 @@ public class ParseJwtStringConverter : JsonConverter
         if (reader.TokenType == JsonToken.Null)
             return null;
 
-        var value = serializer.Deserialize<string>(reader);
+        string? value = serializer.Deserialize<string>(reader);
 
-        if (long.TryParse(value, out var l)) return l;
+        if (long.TryParse(value, out long l)) return l;
 
         throw new Exception("Cannot unmarshal type long");
     }
@@ -31,7 +31,7 @@ public class ParseJwtStringConverter : JsonConverter
             return;
         }
 
-        var value = (long)untypedValue;
+        long value = (long)untypedValue;
         serializer.Serialize(writer, value.ToString());
     }
 }
@@ -50,9 +50,9 @@ public class ParseStringConverter : JsonConverter
         if (reader.TokenType == JsonToken.Null)
             return null;
 
-        var value = serializer.Deserialize<string>(reader);
+        string? value = serializer.Deserialize<string>(reader);
 
-        if (CanConvert(t) && long.TryParse(value, out var l)) return l;
+        if (CanConvert(t) && long.TryParse(value, out long l)) return l;
 
         throw new Exception("Cannot unmarshal type long");
     }
@@ -65,7 +65,7 @@ public class ParseStringConverter : JsonConverter
             return;
         }
 
-        var value = (long)untypedValue;
+        long value = (long)untypedValue;
         serializer.Serialize(writer, value.ToString());
     }
 }

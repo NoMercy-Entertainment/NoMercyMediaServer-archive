@@ -14,10 +14,10 @@ public class MusicBrainzGenreClient : MusicBrainzBaseClient
     {
         List<MusicBrainzGenre> genres = [];
 
-        var data = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string?>
+        MusicBrainzAllGenres? data = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string?>
         {
             ["limit"] = 100.ToString(),
-            ["offset"] = ((page - 1) * 100).ToString(),
+            ["offset"] = (page * 100).ToString(),
             ["fmt"] = "json"
         });
 
@@ -27,7 +27,7 @@ public class MusicBrainzGenreClient : MusicBrainzBaseClient
 
         for (int i = 0; i < data.GenreCount / data.Genres.Length; i++)
         {
-            var data2 = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string?>
+            MusicBrainzAllGenres? data2 = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string?>
             {
                 ["limit"] = data.Genres.Length.ToString(),
                 ["offset"] = (i * data.Genres.Length).ToString()

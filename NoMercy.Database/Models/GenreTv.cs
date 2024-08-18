@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(GenreId), nameof(TvId))]
-[Index(nameof(GenreId)), Index(nameof(TvId))]
+[Index(nameof(GenreId))]
+[Index(nameof(TvId))]
 public class GenreTv
 {
     [JsonProperty("genre_id")] public int GenreId { get; set; }
@@ -18,5 +19,4 @@ public class GenreTv
     public GenreTv()
     {
     }
-
 }

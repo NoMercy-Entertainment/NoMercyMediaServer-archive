@@ -1,6 +1,6 @@
-﻿using NoMercy.Providers.TADB.Models;
+﻿using NoMercy.Providers.Tadb.Models;
 
-namespace NoMercy.Providers.TADB.Client;
+namespace NoMercy.Providers.Tadb.Client;
 
 public class TadbReleaseGroupClient : TadbBaseClient
 {

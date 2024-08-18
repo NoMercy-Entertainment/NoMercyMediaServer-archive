@@ -2,14 +2,10 @@ namespace NoMercy.Encoder.Format.Rules;
 
 public static class AudioPresets
 {
-    
-    
 }
 
 public static class ImagePresets
 {
-    
-    
 }
 
 public static class VideoPresets
@@ -25,7 +21,7 @@ public static class VideoPresets
     public static string Slower = "slower";
     public static string VerySlow = "veryslow";
     public static string Placebo = "placebo";
-    
+
     // NVENC presets
     public static string Default = "default";
     public static string Hp = "hp";
@@ -41,8 +37,4 @@ public static class VideoPresets
     public static string P5 = "p5";
     public static string P6 = "p6";
     public static string P7 = "p7";
-    
-    
-    
-    
 }

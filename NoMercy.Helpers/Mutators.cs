@@ -13,7 +13,7 @@ public static class Mutators
     // }
     public static IEnumerable<T> Randomize<T>(this IEnumerable<T> source)
     {
-        var rnd = new Random();
+        Random rnd = new();
         return source.OrderBy(_ => rnd.Next());
     }
 }

@@ -6,7 +6,8 @@ using Newtonsoft.Json;
 namespace NoMercy.Database.Models;
 
 [PrimaryKey(nameof(FolderId), nameof(LibraryId))]
-[Index(nameof(FolderId)), Index(nameof(LibraryId))]
+[Index(nameof(FolderId))]
+[Index(nameof(LibraryId))]
 public class FolderLibrary
 {
     [JsonProperty("folder_id")] public Ulid FolderId { get; set; }

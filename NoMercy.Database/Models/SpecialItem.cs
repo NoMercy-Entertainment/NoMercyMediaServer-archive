@@ -1,6 +1,5 @@
 ﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -11,8 +10,7 @@ namespace NoMercy.Database.Models;
 [Index(nameof(SpecialId), nameof(MovieId), IsUnique = true)]
 public class SpecialItem
 {
-    [JsonProperty("id")]
-    public int Id { get; set; }
+    [JsonProperty("id")] public int Id { get; set; }
 
     [JsonProperty("order")] public int Order { get; set; }
 

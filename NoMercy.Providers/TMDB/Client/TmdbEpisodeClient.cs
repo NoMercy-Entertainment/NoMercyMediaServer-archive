@@ -28,7 +28,8 @@ public class TmdbEpisodeClient : TmdbBaseClient
             ["append_to_response"] = string.Join(",", appendices)
         };
 
-        return Get<TmdbEpisodeAppends>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber, queryParams);
+        return Get<TmdbEpisodeAppends>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber,
+            queryParams);
     }
 
     public Task<TmdbEpisodeAppends?> WithAllAppends()
@@ -51,13 +52,15 @@ public class TmdbEpisodeClient : TmdbBaseClient
             ["end_date"] = endDate
         };
 
-        return Get<TmdbEpisodeChanges>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/changes",
+        return Get<TmdbEpisodeChanges>(
+            "tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/changes",
             queryParams);
     }
 
     public Task<TmdbEpisodeCredits?> Credits()
     {
-        return Get<TmdbEpisodeCredits>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/credits");
+        return Get<TmdbEpisodeCredits>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber +
+                                       "/credits");
     }
 
     public Task<TmdbEpisodeExternalIds?> ExternalIds()
@@ -68,13 +71,14 @@ public class TmdbEpisodeClient : TmdbBaseClient
 
     public Task<TmdbEpisodeImages?> Images()
     {
-        return Get<TmdbEpisodeImages>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/images");
+        return Get<TmdbEpisodeImages>(
+            "tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber + "/images");
     }
 
     public Task<TmdbSharedTranslations?> Translations()
     {
         return Get<TmdbSharedTranslations>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber +
-                                       "/translations");
+                                           "/translations");
     }
 
     public Task<Videos?> Videos()

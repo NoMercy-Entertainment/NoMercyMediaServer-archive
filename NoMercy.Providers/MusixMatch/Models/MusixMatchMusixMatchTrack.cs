@@ -1,8 +1,6 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Providers.MusixMatch.Models;
@@ -68,12 +66,14 @@ public class MusixMatchMusixMatchTrack
 
     [JsonProperty("restricted")] public long Restricted { get; set; }
 
-    [JsonProperty("first-release-date")]
-    private string? _firstReleaseDate { get; set; }
-    public DateTime? FirstReleaseDate {
+    [JsonProperty("first-release-date")] private string? _firstReleaseDate { get; set; }
+
+    public DateTime? FirstReleaseDate
+    {
         get => DateTimeParser.ParseDateTime(_firstReleaseDate);
         set => _firstReleaseDate = value.ToString();
     }
+
     [JsonProperty("updated_time")] public DateTimeOffset UpdatedTime { get; set; }
     [JsonProperty("primary_genres")] public MusixMatchGenres PrimaryMusixMatchGenres { get; set; }
     [JsonProperty("secondary_genres")] public MusixMatchGenres SecondaryMusixMatchGenres { get; set; }

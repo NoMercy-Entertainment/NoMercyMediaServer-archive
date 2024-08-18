@@ -18,7 +18,18 @@ namespace NoMercy.Database.Models;
 [Index(nameof(FilePath), nameof(ArtistId), IsUnique = true)]
 [Index(nameof(FilePath), nameof(AlbumId), IsUnique = true)]
 [Index(nameof(FilePath), nameof(TrackId), IsUnique = true)]
-[Index(nameof(FilePath)), Index(nameof(TvId)), Index(nameof(SeasonId)), Index(nameof(EpisodeId)), Index(nameof(MovieId)), Index(nameof(CollectionId)), Index(nameof(PersonId)), Index(nameof(CastCreditId)), Index(nameof(CrewCreditId)), Index(nameof(ArtistId)), Index(nameof(AlbumId)), Index(nameof(TrackId))]
+[Index(nameof(FilePath))]
+[Index(nameof(TvId))]
+[Index(nameof(SeasonId))]
+[Index(nameof(EpisodeId))]
+[Index(nameof(MovieId))]
+[Index(nameof(CollectionId))]
+[Index(nameof(PersonId))]
+[Index(nameof(CastCreditId))]
+[Index(nameof(CrewCreditId))]
+[Index(nameof(ArtistId))]
+[Index(nameof(AlbumId))]
+[Index(nameof(TrackId))]
 public class Image : ColorPaletteTimeStamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -73,5 +84,4 @@ public class Image : ColorPaletteTimeStamps
     public Image()
     {
     }
-
 }

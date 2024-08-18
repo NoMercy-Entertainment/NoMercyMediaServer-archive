@@ -1,23 +1,55 @@
-﻿using Microsoft.AspNetCore.WebUtilities;
+﻿using System.Net.Http.Headers;
+using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.Helpers;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.AcoustId.Models;
 using NoMercy.Providers.Helpers;
 using Serilog.Events;
 
 namespace NoMercy.Providers.AcoustId.Client;
 
-public class AcoustIdBaseClient : BaseClient
+public class AcoustIdBaseClient : IDisposable
 {
-    protected override Uri BaseUrl => new("https://api.acoustid.org/v2/");
-    protected override int ConcurrentRequests => 2;
-    protected override int Interval => 1000;
+    private readonly Uri _baseUrl = new("https://api.acoustid.org/v2/");
 
-    protected override async Task<T?> Get<T>(string url, Dictionary<string, string?>? query = default, bool? priority = false)
+    private readonly HttpClient _client = new();
+
+    protected AcoustIdBaseClient()
+    {
+        _client.BaseAddress = _baseUrl;
+        _client.DefaultRequestHeaders.Accept.Clear();
+        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+    }
+
+    protected AcoustIdBaseClient(Guid id)
+    {
+        _client = new HttpClient
+        {
+            BaseAddress = _baseUrl
+        };
+        _client.DefaultRequestHeaders.Accept.Clear();
+        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+        Id = id;
+    }
+
+    private static Queue? _queue;
+
+    private static Queue GetQueue()
+    {
+        return _queue ??= new Queue(new QueueOptions { Concurrent = 3, Interval = 1000, Start = true });
+    }
+
+    protected Guid Id { get; private set; }
+
+    protected async Task<T?> Get<T>(string url, Dictionary<string, string?>? query = default, bool? priority = false)
         where T : class
     {
         query ??= new Dictionary<string, string?>();
 
-        var newUrl = QueryHelpers.AddQueryString(url, query);
+        string newUrl = QueryHelpers.AddQueryString(url, query);
 
         if (CacheController.Read(newUrl, out AcoustIdFingerprint? result))
             if (result?.Results.Length > 0 && result.Results
@@ -27,13 +59,13 @@ public class AcoustIdBaseClient : BaseClient
 
         Logger.AcoustId(newUrl, LogEventLevel.Verbose);
 
-        var response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
+        string response = await GetQueue().Enqueue(() => _client.GetStringAsync(newUrl), newUrl, priority);
 
         await CacheController.Write(newUrl, response);
 
-        var data = JsonHelper.FromJson<AcoustIdFingerprint>(response);
+        AcoustIdFingerprint? data = response.FromJson<AcoustIdFingerprint>();
 
-        var iteration = 0;
+        int iteration = 0;
 
         if (data?.Results.Length > 0 && data.Results
                 .Any(fpResult => fpResult.Recordings is not null && fpResult.Recordings
@@ -43,17 +75,22 @@ public class AcoustIdBaseClient : BaseClient
                    .Any(fpResult => fpResult.Recordings is not null && fpResult.Recordings
                        .Any(recording => recording?.Title == null)) && iteration < 10)
         {
-            response = await Queue().Enqueue(() => Client.GetStringAsync(newUrl), newUrl, priority);
+            response = await GetQueue().Enqueue(() => _client.GetStringAsync(newUrl), newUrl, priority);
 
             await CacheController.Write(newUrl, response);
 
             Logger.Request(response, LogEventLevel.Verbose);
 
-            data = JsonHelper.FromJson<AcoustIdFingerprint>(response);
+            data = response.FromJson<AcoustIdFingerprint>();
 
             iteration++;
         }
 
         return data as T;
+    }
+
+    public void Dispose()
+    {
+        _client.Dispose();
     }
 }

@@ -14,7 +14,7 @@ public enum WallpaperStyle
     Stretch,
     Tile,
     Center,
-    Span,
+    Span
 }
 
 [SupportedOSPlatform("windows10.0.18362")]
@@ -28,17 +28,17 @@ public static class Wallpaper
     private const string TileWallpaperRegPath = "TileWallpaper";
 
     private const int HistoryMaxEntries = 5;
-    
-    const int ColorDesktop = 1;
-    const int SpiSetdeskwallpaper = 20;
-    const int SpifUpdateinifile = 0x01;
-    const int SpifSendwininichange = 0x02;
+
+    private const int ColorDesktop = 1;
+    private const int SpiSetdeskwallpaper = 20;
+    private const int SpifUpdateinifile = 0x01;
+    private const int SpifSendwininichange = 0x02;
 
     [DllImport("user32.dll")]
     public static extern bool SetSysColors(int cElements, int[] lpaElements, int[] lpaRgbValues);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    static extern int SystemParametersInfo(int uAction, int uParam, string? lpvParam, int fuWinIni);
+    private static extern int SystemParametersInfo(int uAction, int uParam, string? lpvParam, int fuWinIni);
 
     private static State? _backupState;
     private static bool _historyRestored;
@@ -67,7 +67,7 @@ public static class Wallpaper
     {
         return ((string)key.GetValue(name) ?? (defaultValue ? "1" : "0")) == "1";
     }
-    
+
     private static string GetRegistryValue(RegistryKey key, string name, string value)
     {
         return (string)key.GetValue(name) ?? value;
@@ -82,19 +82,19 @@ public static class Wallpaper
     {
         key.SetValue(name, value ? "1" : "0");
     }
-    
+
     private static void SetRegistryValue(RegistryKey key, string name, string value)
     {
         key.SetValue(name, value);
     }
-    
+
     private static Config GetWallpaperConfig()
     {
-        var key = Registry.CurrentUser.OpenSubKey(DesktopRegPath, true);
+        RegistryKey? key = Registry.CurrentUser.OpenSubKey(DesktopRegPath, true);
         if (key == null)
             throw new Exception("Could not open the registry key.");
 
-        var key2 = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
+        RegistryKey? key2 = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
         if (key2 == null)
             throw new Exception("Could not open the registry key.");
 
@@ -102,20 +102,20 @@ public static class Wallpaper
         {
             Style = GetRegistryValue(key, WallpaperStyleRegPath, 0),
             IsTile = GetRegistryValue(key, TileWallpaperRegPath, false),
-            Color = GetRegistryValue(key2, WallpaperStyleRegColor, "#FF0000"),
+            Color = GetRegistryValue(key2, WallpaperStyleRegColor, "#FF0000")
         };
     }
 
     private static void SetWallpaperConfig(Config value)
     {
-        var key = Registry.CurrentUser.OpenSubKey(DesktopRegPath, true);
+        RegistryKey? key = Registry.CurrentUser.OpenSubKey(DesktopRegPath, true);
         if (key == null)
             throw new Exception("Could not open the registry key.");
-        
-        var key2 = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
+
+        RegistryKey? key2 = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
         if (key2 == null)
             throw new Exception("Could not open the registry key.");
-        
+
         SetRegistryValue(key, WallpaperStyleRegPath, value.Style);
         SetRegistryValue(key, TileWallpaperRegPath, value.IsTile);
         SetRegistryValue(key2, WallpaperStyleRegColor, value.Color);
@@ -128,7 +128,7 @@ public static class Wallpaper
 
         SetSysColors(elements.Length, elements, colors);
 
-        var key = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
+        RegistryKey? key = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
         key?.SetValue(@"Background", color);
     }
 
@@ -171,15 +171,16 @@ public static class Wallpaper
         if (!_backupState.HasValue)
             throw new Exception("You must call BackupState() before.");
 
-        var backupState = _backupState.Value;
+        State backupState = _backupState.Value;
 
-        using (var key = Registry.CurrentUser.OpenSubKey(HistoryRegPath, true))
+        using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(HistoryRegPath, true))
         {
             if (key == null)
                 throw new Exception("Could not open the registry key.");
-            
-            for (var i = 0; i < HistoryMaxEntries; i++)
-                key.SetValue($"BackgroundHistoryPath{i}", backupState.History[i] ?? string.Empty, RegistryValueKind.String);
+
+            for (int i = 0; i < HistoryMaxEntries; i++)
+                key.SetValue($"BackgroundHistoryPath{i}", backupState.History[i] ?? string.Empty,
+                    RegistryValueKind.String);
         }
 
         _historyRestored = true;
@@ -190,13 +191,14 @@ public static class Wallpaper
     /// </summary>
     private static void BackupState()
     {
-        var history = new string?[HistoryMaxEntries];
+        string[] history = new string?[HistoryMaxEntries];
 
-        using (var key = Registry.CurrentUser.OpenSubKey(HistoryRegPath, true)) {
+        using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(HistoryRegPath, true))
+        {
             if (key == null)
                 throw new Exception("Could not open the registry key.");
-            
-            for (var i = 0; i < history.Length; i++)
+
+            for (int i = 0; i < history.Length; i++)
                 history[i] = (string)key.GetValue($"BackgroundHistoryPath{i}");
         }
 
@@ -205,7 +207,7 @@ public static class Wallpaper
             Config = GetWallpaperConfig(),
             History = history,
             Wallpaper = history[0]!,
-            Color = history[1]!,
+            Color = history[1]!
         };
 
         _historyRestored = false;
@@ -265,5 +267,4 @@ public static class Wallpaper
         Set(filename, style, color);
         RestoreHistory();
     }
-    
 }

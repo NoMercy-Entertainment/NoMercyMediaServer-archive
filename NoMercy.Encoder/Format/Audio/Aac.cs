@@ -9,7 +9,8 @@ public class Aac : BaseAudio
         SetAudioCodec(audioCodec);
     }
 
-    protected override CodecDto[] AvailableCodecs => [
+    protected override CodecDto[] AvailableCodecs =>
+    [
         AudioCodecs.Aac,
         AudioCodecs.LibFdkAac
     ];
@@ -18,10 +19,10 @@ public class Aac : BaseAudio
     [
         AudioContainers.Aac,
         AudioContainers.M4a,
-        
+
         VideoContainers.Mkv,
         VideoContainers.Mp4,
         VideoContainers.Flv,
-        VideoContainers.Hls, 
+        VideoContainers.Hls
     ];
 }

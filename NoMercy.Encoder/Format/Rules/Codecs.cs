@@ -4,56 +4,56 @@ public static class VideoCodecs
 {
     public static readonly Classes.CodecDto H264 = new()
     {
-        Name = "H.264", 
+        Name = "H.264",
         Value = "libx264",
         SimpleValue = "h264",
         RequiresGpu = false,
-        IsDefault = true,
+        IsDefault = true
     };
 
     public static readonly Classes.CodecDto H264Nvenc = new()
     {
-        Name = "H.264 (nvenc)", 
+        Name = "H.264 (nvenc)",
         Value = "h264_nvenc",
         SimpleValue = "h264",
         RequiresGpu = true,
-        IsDefault = false,
+        IsDefault = false
     };
 
     public static readonly Classes.CodecDto H265 = new()
     {
-        Name = "H.265", 
+        Name = "H.265",
         Value = "libx265",
         SimpleValue = "hevc",
         RequiresGpu = false,
-        IsDefault = true,
+        IsDefault = true
     };
 
     public static readonly Classes.CodecDto H265Nvenc = new()
     {
-        Name = "H.265 (nvenc)", 
+        Name = "H.265 (nvenc)",
         Value = "h265_nvenc",
         SimpleValue = "hevc",
         RequiresGpu = true,
-        IsDefault = false,
+        IsDefault = false
     };
 
     public static readonly Classes.CodecDto Vp9 = new()
     {
-        Name = "vp9", 
+        Name = "vp9",
         Value = "vp9",
         SimpleValue = "vp9",
         RequiresGpu = false,
-        IsDefault = true,
+        IsDefault = true
     };
 
     public static readonly Classes.CodecDto Vp9Nvenc = new()
     {
-        Name = "VP9 (nvenc)", 
+        Name = "VP9 (nvenc)",
         Value = "libvpx-vp9",
         SimpleValue = "vp9",
         RequiresGpu = true,
-        IsDefault = false,
+        IsDefault = false
     };
 }
 
@@ -167,7 +167,7 @@ public static class SubtitleCodecs
         SimpleValue = "ass",
         IsDefault = false
     };
-    
+
     public static readonly Classes.CodecDto Srt = new()
     {
         Name = "SubRip",
@@ -202,7 +202,7 @@ public static class ImageCodecs
         SimpleValue = "png",
         IsDefault = true
     };
-    
+
     public static readonly Classes.CodecDto Gif = new()
     {
         Name = "Graphics Interchange Format",
@@ -210,7 +210,7 @@ public static class ImageCodecs
         SimpleValue = "gif",
         IsDefault = true
     };
-    
+
     public static readonly Classes.CodecDto Bmp = new()
     {
         Name = "Bitmap",
@@ -218,7 +218,7 @@ public static class ImageCodecs
         SimpleValue = "bmp",
         IsDefault = false
     };
-    
+
     public static readonly Classes.CodecDto Tiff = new()
     {
         Name = "Tagged Image File Format",
@@ -226,7 +226,7 @@ public static class ImageCodecs
         SimpleValue = "tiff",
         IsDefault = false
     };
-    
+
     public static readonly Classes.CodecDto Webp = new()
     {
         Name = "WebP",
@@ -234,7 +234,7 @@ public static class ImageCodecs
         SimpleValue = "webp",
         IsDefault = true
     };
-    
+
     public static readonly Classes.CodecDto Heif = new()
     {
         Name = "High Efficiency Image Format",
@@ -242,7 +242,7 @@ public static class ImageCodecs
         SimpleValue = "heif",
         IsDefault = false
     };
-    
+
     public static readonly Classes.CodecDto Heic = new()
     {
         Name = "High Efficiency Image Container",
@@ -250,5 +250,4 @@ public static class ImageCodecs
         SimpleValue = "heic",
         IsDefault = false
     };
-    
 }

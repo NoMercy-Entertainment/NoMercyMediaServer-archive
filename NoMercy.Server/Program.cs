@@ -1,13 +1,14 @@
 using System.Diagnostics;
 using CommandLine;
 using Microsoft.AspNetCore;
+using NoMercy.Data.Logic;
 using NoMercy.Database;
-using NoMercy.Helpers;
+using NoMercy.Helpers.system;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.AniDb.Clients;
 using NoMercy.Server.app.Helper;
-using NoMercy.Server.Logic;
-using NoMercy.Server.system;
+using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
 
 namespace NoMercy.Server;
@@ -16,9 +17,24 @@ public static class Program
 {
     public static Task Main(string[] args)
     {
+        if (args.Length > 0)
+            if (args[0].StartsWith("-loglevel"))
+            {
+                string[] logLevelArgs = args[0].Split("=");
+                if (Enum.TryParse<LogEventLevel>(logLevelArgs[1], true, out LogEventLevel logLevel))
+                {
+                    Logger.App("Setting log level to " + logLevel);
+                    Logger.SetLogLevel(logLevel);
+                }
+                else
+                {
+                    Logger.App("Invalid log level, using default.");
+                }
+            }
+
         AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
         {
-            var exception = (Exception)eventArgs.ExceptionObject;
+            Exception exception = (Exception)eventArgs.ExceptionObject;
             Logger.App("UnhandledException " + exception);
         };
 
@@ -27,7 +43,7 @@ public static class Program
             Shutdown().Wait();
             Environment.Exit(0);
         };
-        
+
         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) =>
         {
             Logger.App("SIGTERM received, shutting down.");
@@ -50,7 +66,7 @@ public static class Program
         Console.Title = "NoMercy Server";
         Console.WindowWidth = 1666;
         Console.WindowHeight = 1024;
-        
+
         Stopwatch stopWatch = new();
         stopWatch.Start();
 
@@ -59,7 +75,7 @@ public static class Program
 
         await Init();
 
-        var app = CreateWebHostBuilder(new WebHostBuilder()).Build();
+        IWebHost app = CreateWebHostBuilder(new WebHostBuilder()).Build();
 
         app.Services.GetService<IHostApplicationLifetime>()?.ApplicationStarted.Register(() =>
         {
@@ -134,18 +150,18 @@ public static class Program
 
         await RunStartup(startupTasks);
 
-        var t = new Thread(new Task(() => QueueRunner.Initialize().Wait()).Start)
+        Thread t = new(new Task(() => QueueRunner.Initialize().Wait()).Start)
         {
             Name = "Queue workers",
             Priority = ThreadPriority.Lowest,
-            IsBackground = true,
+            IsBackground = true
         };
         t.Start();
     }
 
     private static async Task RunStartup(List<Task> startupTasks)
     {
-        foreach (var task in startupTasks)
+        foreach (Task task in startupTasks)
         {
             if (task.IsCompleted) continue;
             // await task.ConfigureAwait(false);

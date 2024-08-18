@@ -46,7 +46,7 @@ public class StartupOptions
 
     public Dictionary<string, string> ConvertToConfig()
     {
-        var config = new Dictionary<string, string>();
+        Dictionary<string, string> config = new();
 
         // if (NoWebClient)
         // {

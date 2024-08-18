@@ -3,7 +3,7 @@ using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Providers.TMDB.Models.TV;
 
-public class TmdbTvShow: TmdbBase
+public class TmdbTvShow : TmdbBase
 {
     [JsonProperty("first_air_date")] public DateTime? FirstAirDate { get; set; }
     [JsonProperty("genre_ids")] public int?[] GenreIds { get; set; } = [];

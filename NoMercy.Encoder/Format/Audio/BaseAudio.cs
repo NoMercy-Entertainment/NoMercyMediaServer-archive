@@ -8,7 +8,7 @@ public abstract class BaseAudio : Classes
     #region Properties
 
     public virtual CodecDto AudioCodec { get; set; } = AudioCodecs.Aac;
-    
+
     protected internal AudioStream? AudioStream;
     internal List<AudioStream> AudioStreams { get; set; } = [];
 
@@ -16,12 +16,13 @@ public abstract class BaseAudio : Classes
     public int StreamIndex => AudioStream?.Index ?? -1;
 
     private long _bitRate = -1;
-    private long BitRate => _bitRate == -1 
-        ? AudioStream?.BitRate ?? -1 
+
+    private long BitRate => _bitRate == -1
+        ? AudioStream?.BitRate ?? -1
         : _bitRate;
 
     internal int AudioChannels { get; set; }
-    
+
     private int AudioQualityLevel { get; set; } = -1;
     private string[] AllowedLanguages { get; set; } = ["eng"];
 
@@ -30,17 +31,18 @@ public abstract class BaseAudio : Classes
     private readonly Dictionary<string, dynamic> _extraParameters = [];
     private readonly Dictionary<string, dynamic> _filters = [];
     private readonly Dictionary<string, dynamic> _ops = [];
-    
+
     protected virtual string[] AvailableContainers { get; set; } = [];
     protected virtual CodecDto[] AvailableCodecs { get; set; } = [];
-    
+
     private string _hlsSegmentFilename = "";
+
     private string HlsSegmentFilename
     {
         get => _hlsSegmentFilename
-                .Replace(":language:", Language)
-                .Replace(":codec:", AudioCodec.SimpleValue)
-                .Replace(":type:", Type);
+            .Replace(":language:", Language)
+            .Replace(":codec:", AudioCodec.SimpleValue)
+            .Replace(":type:", Type);
         set => _hlsSegmentFilename = value;
     }
 
@@ -54,9 +56,9 @@ public abstract class BaseAudio : Classes
     internal string HlsPlaylistFilename
     {
         get => _hlsPlaylistFilename
-                .Replace(":language:", Language)
-                .Replace(":codec:", AudioCodec.SimpleValue)
-                .Replace(":type:", Type);
+            .Replace(":language:", Language)
+            .Replace(":codec:", AudioCodec.SimpleValue)
+            .Replace(":type:", Type);
         set => _hlsPlaylistFilename = value;
     }
 
@@ -92,7 +94,9 @@ public abstract class BaseAudio : Classes
 
         AudioCodec = AvailableCodecs.First(codec => codec.Value == audioCodec);
 
-        lock (AudioCodec.SimpleValue){}
+        lock (AudioCodec.SimpleValue)
+        {
+        }
 
         return this;
     }
@@ -112,13 +116,13 @@ public abstract class BaseAudio : Classes
         _extraParameters[key] = value;
         return this;
     }
-    
+
     public BaseAudio AddOpts(string key, dynamic value)
     {
         _ops[key] = value;
         return this;
     }
-    
+
     public BaseAudio SetRate(int value)
     {
         AddCustomArgument("-b:a", value);
@@ -130,19 +134,19 @@ public abstract class BaseAudio : Classes
         AddCustomArgument(value, null);
         return this;
     }
-    
+
     public BaseAudio SetHlsSegmentFilename(string value)
     {
         HlsSegmentFilename = value;
         return this;
     }
-    
+
     public BaseAudio SetHlsPlaylistFilename(string value)
     {
         HlsPlaylistFilename = value;
         return this;
     }
-    
+
     #endregion
 
     public BaseAudio SetAllowedLanguages(string[] languages)
@@ -150,7 +154,7 @@ public abstract class BaseAudio : Classes
         AllowedLanguages = languages;
         return this;
     }
-    
+
     public override BaseAudio ApplyFlags()
     {
         AddCustomArgument("-map_metadata", -1);
@@ -160,27 +164,27 @@ public abstract class BaseAudio : Classes
         AddCustomArgument("-flags:s", "+bitexact");
         return this;
     }
-    
+
     public List<BaseAudio> Build()
     {
         List<BaseAudio> streams = [];
-        
-        foreach (var allowedLanguage in AllowedLanguages)
+
+        foreach (string allowedLanguage in AllowedLanguages)
         {
             if (AudioStreams.All(audioStream => audioStream.Language != allowedLanguage)) continue;
-            
-            var newStream = (BaseAudio) MemberwiseClone();
-            
+
+            BaseAudio newStream = (BaseAudio)MemberwiseClone();
+
             newStream.IsAudio = true;
-            
+
             newStream.AudioStream = AudioStreams
                 .Find(audioStream => audioStream.Language == allowedLanguage)!;
-            
+
             newStream.Index = newStream.AudioStream.Index - 1;
-            
+
             streams.Add(newStream);
         }
-        
+
         return streams;
     }
 
@@ -188,24 +192,22 @@ public abstract class BaseAudio : Classes
     {
         commandDictionary["-map"] = $"[a{index}_hls_0]";
         commandDictionary["-c:a"] = AudioCodec.Value;
-        
-        if(AudioChannels != -1)
+
+        if (AudioChannels != -1)
             commandDictionary["-ac"] = AudioChannels;
-        
+
         commandDictionary[$"-metadata:s:a:{index}"] = $"language=\"{Language}\"";
         commandDictionary[$"-metadata:s:a:{index}"] = $"title=\"{Language} {AudioChannels}-{AudioCodec.SimpleValue}\"";
 
-        foreach (var extraParameter in _extraParameters)
-        {
+        foreach (KeyValuePair<string, dynamic> extraParameter in _extraParameters)
             commandDictionary[extraParameter.Key] = extraParameter.Value;
-        }
     }
-    
+
     public void CreateFolder()
     {
-        var path = Path.Combine(BasePath, HlsSegmentFilename.Split("/").First());
+        string path = Path.Combine(BasePath, HlsSegmentFilename.Split("/").First());
         // Logger.Encoder($"Creating folder {path}");
-        
+
         if (!Directory.Exists(path))
             Directory.CreateDirectory(path);
     }

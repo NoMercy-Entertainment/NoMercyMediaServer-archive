@@ -2,7 +2,7 @@ using NoMercy.Encoder.Format.Rules;
 
 namespace NoMercy.Encoder.Format.Container;
 
-public class Ass: BaseContainer
+public class Ass : BaseContainer
 {
     public Ass() : base()
     {
@@ -10,7 +10,8 @@ public class Ass: BaseContainer
         AddCustomArgument("-f", SubtitleFormats.Ass);
     }
 
-    protected override CodecDto[] AvailableCodecs => [
-        SubtitleCodecs.Ass,
+    protected override CodecDto[] AvailableCodecs =>
+    [
+        SubtitleCodecs.Ass
     ];
 }

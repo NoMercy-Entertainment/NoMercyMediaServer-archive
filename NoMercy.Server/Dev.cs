@@ -1,21 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using NoMercy.Database;
-using NoMercy.Database.Models;
-using NoMercy.Encoder;
-using NoMercy.Encoder.Core;
-using NoMercy.Encoder.Format.Audio;
-using NoMercy.Encoder.Format.Container;
-using NoMercy.Encoder.Format.Image;
-using NoMercy.Encoder.Format.Rules;
-using NoMercy.Encoder.Format.Subtitle;
-using NoMercy.Encoder.Format.Video;
-using NoMercy.Helpers;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Processors.Dithering;
-using SixLabors.ImageSharp.Processing.Processors.Quantization;
-using AppFiles = NoMercy.NmSystem.AppFiles;
-
 namespace NoMercy.Server;
 
 public class Dev
@@ -186,12 +168,6 @@ public class Dev
         //
         //     process.Start();
         // });
-
-
-
-
-
-
 
 
         // await using MediaContext mediaContext = new();
