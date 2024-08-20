@@ -53,7 +53,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
         Logger.MovieDb($"Movie {movie.Title}: Linked to Library {library.Title}");
     }
     
-    public Task StoreAlternativeTitles(List<AlternativeTitle> alternativeTitles)
+    public Task StoreAlternativeTitles(IEnumerable<AlternativeTitle> alternativeTitles)
     {
         return context.AlternativeTitles.UpsertRange(alternativeTitles)
             .On(a => new { a.Title, a.MovieId })
@@ -66,7 +66,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .RunAsync();
     }
 
-    public Task StoreTranslations(List<Translation> translations)
+    public Task StoreTranslations(IEnumerable<Translation> translations)
     {
             return context.Translations
                 .UpsertRange(translations.Where(translation => translation.Title != "" || translation.Overview != ""))
@@ -90,7 +90,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 .RunAsync();
     }
 
-    public Task<List<CertificationMovie>> GetCertificationMovies(TmdbMovieAppends movie,  List<CertificationCriteria> certificationCriteria)
+    public Task<CertificationMovie[]> GetCertificationMovies(TmdbMovieAppends movie, IEnumerable<CertificationCriteria> certificationCriteria)
     {
         return context.Certifications
             .Where(c => certificationCriteria
@@ -100,22 +100,21 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 CertificationId = c.Id,
                 MovieId = movie!.Id
             })
-            .ToListAsync(); 
+            .ToArrayAsync(); 
     }
     
-    public Task StoreContentRatings(List<CertificationMovie> certifications)
+    public Task StoreContentRatings(IEnumerable<CertificationMovie> certifications)
     {
-            return context.CertificationMovie.UpsertRange(certifications)
-                .On(v => new { v.CertificationId, v.MovieId })
-                .WhenMatched((ts, ti) => new CertificationMovie
-                {
-                    CertificationId = ti.CertificationId,
-                    MovieId = ti.MovieId
-                })
-                .RunAsync();
+        return context.CertificationMovie.UpsertRange(certifications)
+            .On(v => new { v.CertificationId, v.MovieId })
+            .WhenMatched((ts, ti) => new CertificationMovie {
+                CertificationId = ti.CertificationId,
+                MovieId = ti.MovieId
+            })
+            .RunAsync();
     }
 
-    public Task StoreSimilar(List<Similar> similar)
+    public Task StoreSimilar(IEnumerable<Similar> similar)
     {
         return context.Similar.UpsertRange(similar)
             .On(v => new { v.MediaId, v.MovieFromId })
@@ -133,7 +132,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .RunAsync();
     }
 
-    public Task StoreRecommendations(List<Recommendation> recommendations)
+    public Task StoreRecommendations(IEnumerable<Recommendation> recommendations)
     {
         return context.Recommendations.UpsertRange(recommendations)
             .On(v => new { v.MediaId, v.MovieFromId })
@@ -151,7 +150,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .RunAsync();
     }
 
-    public Task StoreVideos(List<Media> videos)
+    public Task StoreVideos(IEnumerable<Media> videos)
     {
             return context.Medias.UpsertRange(videos)
                 .On(v => new { v.Src, v.MovieId })
@@ -168,7 +167,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 .RunAsync();
     }
 
-    public Task StoreImages(List<Image> images)
+    public Task StoreImages(IEnumerable<Image> images)
     {
         return context.Images.UpsertRange(images)
             .On(v => new { v.FilePath, v.MovieId })
@@ -188,7 +187,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .RunAsync();
     }
 
-    public Task StoreKeywords(List<Keyword> keywords)
+    public Task StoreKeywords(IEnumerable<Keyword> keywords)
     {
         return context.Keywords.UpsertRange(keywords)
             .On(v => new { v.Id })
@@ -200,7 +199,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .RunAsync();
     }
 
-    public Task LinkKeywordsToLibrary(List<KeywordMovie> keywordMovies)
+    public Task LinkKeywordsToLibrary(IEnumerable<KeywordMovie> keywordMovies)
     {
         return context.KeywordMovie.UpsertRange(keywordMovies)
             .On(v => new { v.KeywordId, v.MovieId })
@@ -212,7 +211,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .RunAsync();
     }
 
-    public Task StoreGenres(List<GenreMovie> genreMovies)
+    public Task StoreGenres(IEnumerable<GenreMovie> genreMovies)
     {
         return context.GenreMovie.UpsertRange(genreMovies)
             .On(v => new { v.GenreId, v.MovieId })
