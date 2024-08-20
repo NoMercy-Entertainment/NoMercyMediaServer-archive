@@ -5,11 +5,6 @@ using Serilog.Events;
 
 namespace NoMercy.Queue;
 
-public interface IShouldQueue
-{
-    Task Handle();
-}
-
 public class JobDispatcher
 {
     private static readonly JobQueue Queue = new(new QueueContext());
