@@ -1,34 +1,38 @@
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
+using NoMercy.MediaProcessing.Movies.PaletteJobs;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Queue;
+using System.Collections;
 
 namespace NoMercy.MediaProcessing.Movies;
 
 public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovieManager
 {
+    private static void DispatchJob<TJob, TChild>(int id, IEnumerable<TChild> jobItems)
+        where TJob : AbstractPaletteJob<TChild>, new() {
+        var job = new TJob { Id = id, Storage = jobItems.ToArray() };
+        JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
+    }
+    
     public async Task AddMovieAsync(int id, Library library)
     {
         using TmdbMovieClient movieClient = new(id);
         TmdbMovieAppends? movieAppends = await movieClient.WithAllAppends();
         
-        if (movieAppends == null)
-        {
-            return;
-        }
+        if (movieAppends == null)  return;
         
         var libraryId = library.Id;
         var baseUrl = BaseUrl(movieAppends.Title,  movieAppends.ReleaseDate);
 
         var colorPalette = await MovieDbImage
-            .MultiColorPalette(new[]
-            {
+            .MultiColorPalette([
                 new BaseImage.MultiStringType("poster", movieAppends.PosterPath),
                 new BaseImage.MultiStringType("backdrop", movieAppends.BackdropPath)
-            });
+            ]);
 
         Movie movie = new()
         {
@@ -64,19 +68,21 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
         await movieRepository.AddAsync(movie);
         await movieRepository.LinkToLibrary(library, movie);
         
-        await StoreAlternativeTitles(movieAppends);
-        await StoreWatchProviders(movieAppends);
-        await StoreTranslations(movieAppends);
-        await StoreContentRatings(movieAppends);
-        await StoreSimilar(movieAppends);
-        await StoreRecommendations(movieAppends);
-        await StoreVideos(movieAppends);
-        await StoreImages(movieAppends);
-        await StoreNetworks(movieAppends);
-        await StoreCompanies(movieAppends);
-        await StoreKeywords(movieAppends);
-        await StoreGenres(movieAppends);
-            
+        await Task.WhenAll(
+            StoreAlternativeTitles(movieAppends),
+            StoreWatchProviders(movieAppends),
+            StoreTranslations(movieAppends),
+            StoreContentRatings(movieAppends),
+            StoreSimilar(movieAppends),
+            StoreRecommendations(movieAppends),
+            StoreVideos(movieAppends),
+            StoreImages(movieAppends),
+            StoreNetworks(movieAppends),
+            StoreCompanies(movieAppends),
+            StoreKeywords(movieAppends),
+            StoreGenres(movieAppends)
+        );
+       
         Logger.MovieDb($"Movie {movieAppends.Title}: Added to Library {library.Title}");
     }
 
@@ -92,8 +98,8 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
     
     private async Task StoreAlternativeTitles(TmdbMovieAppends movie)
     {
-        List<AlternativeTitle> alternativeTitles = movie.AlternativeTitles.Results.ToList()
-            .ConvertAll<AlternativeTitle>(tmdbMovieAlternativeTitles => new AlternativeTitle
+        IEnumerable<AlternativeTitle> alternativeTitles = movie.AlternativeTitles.Results.Select(
+            tmdbMovieAlternativeTitles => new AlternativeTitle
             {
                 Iso31661 = tmdbMovieAlternativeTitles.Iso31661,
                 Title = tmdbMovieAlternativeTitles.Title,
@@ -107,43 +113,39 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
 
     private async Task StoreTranslations(TmdbMovieAppends movie)
     {
-            List<Translation> translations = movie.Translations.Translations.ToList()
-                .ConvertAll<Translation>(translation => new Translation
-                {
-                    Iso31661 = translation.Iso31661,
-                    Iso6391 = translation.Iso6391,
-                    Name = translation.Name == "" ? null : translation.Name,
-                    Title = translation.Data.Title == "" ? null : translation.Data.Title,
-                    Overview = translation.Data.Overview == "" ? null : translation.Data.Overview,
-                    EnglishName = translation.EnglishName,
-                    Homepage = translation.Data.Homepage?.ToString(),
-                    MovieId = movie.Id
-                });
-            
-            await movieRepository.StoreTranslations(translations);
+        IEnumerable<Translation> translations = movie.Translations.Translations
+            .Select(translation => new Translation
+            {
+                Iso31661 = translation.Iso31661,
+                Iso6391 = translation.Iso6391,
+                Name = translation.Name == "" ? null : translation.Name,
+                Title = translation.Data.Title == "" ? null : translation.Data.Title,
+                Overview = translation.Data.Overview == "" ? null : translation.Data.Overview,
+                EnglishName = translation.EnglishName,
+                Homepage = translation.Data.Homepage?.ToString(),
+                MovieId = movie.Id
+            });
+        
+        await movieRepository.StoreTranslations(translations);
     }
     
-    private async Task StoreContentRatings(TmdbMovieAppends movie)
-    {
-            var certificationCriteria = movie.ReleaseDates.Results
-                .Select(r => new CertificationCriteria
-                {
-                    Iso31661 = r.Iso31661,
-                    Certification = r.ReleaseDates[0].Certification
-                })
-                .ToList();
+    private async Task StoreContentRatings(TmdbMovieAppends movie) {
+        IEnumerable<CertificationCriteria> certificationCriteria = movie.ReleaseDates.Results
+            .Select(r => new CertificationCriteria {
+                Iso31661 = r.Iso31661,
+                Certification = r.ReleaseDates[0].Certification
+            });
             
-            List<CertificationMovie> certificationMovies = await movieRepository
-                .GetCertificationMovies(movie, certificationCriteria);
-        
-            await movieRepository.StoreContentRatings(certificationMovies);
+        CertificationMovie[] certificationMovies = await movieRepository
+            .GetCertificationMovies(movie, certificationCriteria);
+    
+        await movieRepository.StoreContentRatings(certificationMovies);
     }
 
     private async Task StoreSimilar(TmdbMovieAppends movie)
     {
-        List<Similar> similar = movie.Similar.Results.ToList()
-            .ConvertAll<Similar>(tmdbMovie => new Similar
-            {
+        IEnumerable<Similar> similar = movie.Similar.Results
+            .Select(tmdbMovie => new Similar {
                 Backdrop = tmdbMovie.BackdropPath,
                 Overview = tmdbMovie.Overview,
                 Poster = tmdbMovie.PosterPath,
@@ -151,21 +153,18 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
                 TitleSort = tmdbMovie.Title,
                 MediaId = tmdbMovie.Id,
                 MovieFromId = movie.Id
-            });
+            })
+            .ToArray();
 
         await movieRepository.StoreSimilar(similar);
 
-        IEnumerable<Similar> similarJobItems = similar
-            .Select(x => new Similar { MovieFromId = x.MovieFromId });
-        
-        MovieColorPaletteJob recommendationTmdbColorPaletteJob = new(id: movie.Id, similarJobItems);
-        JobDispatcher.Dispatch(recommendationTmdbColorPaletteJob, "image", 2);
+        IEnumerable<Similar> jobItems = similar.Select(x => new Similar { MovieFromId = x.MovieFromId });
+        DispatchJob<SimilarPaletteJob, Similar>(movie.Id, jobItems);
     }
 
     private async Task StoreRecommendations(TmdbMovieAppends movie)
     {
-        List<Recommendation> recommendations = movie.Recommendations.Results.ToList()
-            .ConvertAll<Recommendation>(tmdbMovie => new Recommendation
+        IEnumerable<Recommendation> recommendations = movie.Recommendations.Results.Select(tmdbMovie => new Recommendation
             {
                 Backdrop = tmdbMovie.BackdropPath,
                 Overview = tmdbMovie.Overview,
@@ -174,21 +173,21 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
                 TitleSort = tmdbMovie.Title.TitleSort(),
                 MediaId = tmdbMovie.Id,
                 MovieFromId = movie.Id
-            });
+            })
+            .ToArray();
 
         await movieRepository.StoreRecommendations(recommendations);
         
-        IEnumerable<Recommendation> recommendationsJobItems = recommendations
+        IEnumerable<Recommendation> jobItems = recommendations
             .Select(x => new Recommendation { MovieFromId = x.MovieFromId });
         
-        MovieColorPaletteJob recommendationTmdbColorPaletteJob = new(id: movie.Id, recommendationsJobItems);
-        JobDispatcher.Dispatch(recommendationTmdbColorPaletteJob, "image", 2);
+        DispatchJob<RecommendationPaletteJob, Recommendation>(movie.Id, jobItems);
     }
 
     private async Task StoreVideos(TmdbMovieAppends movie)
     {
-            List<Media> videos = movie.Videos.Results.ToList()
-                .ConvertAll<Media>(media => new Media
+            IEnumerable<Media> videos = movie.Videos.Results.Select(media =>
+                new Media 
                 {
                     _type = "video",
                     Id = Ulid.NewUlid(),
@@ -206,8 +205,7 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
 
     private async Task StoreImages(TmdbMovieAppends movie)
     {
-        List<Image> posters = movie.Images.Posters.ToList()
-            .ConvertAll<Image>(image => new Image
+        IEnumerable<Image> posters = movie.Images.Posters.Select(image => new Image
             {
                 AspectRatio = image.AspectRatio,
                 FilePath = image.FilePath,
@@ -219,18 +217,15 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
                 MovieId = movie.Id,
                 Type = "poster",
                 Site = "https://image.tmdb.org/t/p/"
-            });
+            }).ToArray();
         
         await movieRepository.StoreImages(posters);
 
-        IEnumerable<Image> posterJobItems = posters
-            .Select(x => new Image { FilePath = x.FilePath });
-        
-        MovieColorPaletteJob postersTmdbColorPaletteJob = new(id: movie.Id, images: posterJobItems);
-        JobDispatcher.Dispatch(postersTmdbColorPaletteJob, "image", 2);
+        IEnumerable<Image> posterJobItems = posters.Select(x => new Image { FilePath = x.FilePath });
+        DispatchJob<ImagePaletteJob, Image>(movie.Id, posterJobItems);
 
-        List<Image> backdrops = movie.Images.Backdrops.ToList()
-            .ConvertAll<Image>(image => new Image
+        IEnumerable<Image> backdrops = movie.Images.Backdrops.Select(
+            image => new Image
             {
                 AspectRatio = image.AspectRatio,
                 FilePath = image.FilePath,
@@ -242,18 +237,15 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
                 MovieId = movie.Id,
                 Type = "backdrop",
                 Site = "https://image.tmdb.org/t/p/"
-            });
+            }).ToArray();
         
         await movieRepository.StoreImages(backdrops);
 
-        IEnumerable<Image> backdropJobItems = backdrops
-            .Select(x => new Image { FilePath = x.FilePath });
-        
-        MovieColorPaletteJob backdropsTmdbColorPaletteJob = new(id: movie.Id, images: backdropJobItems);
-        JobDispatcher.Dispatch(backdropsTmdbColorPaletteJob, "image", 2);
+        IEnumerable<Image> backdropJobItems = backdrops.Select(x => new Image { FilePath = x.FilePath });
+        DispatchJob<ImagePaletteJob, Image>(movie.Id, backdropJobItems);
 
-        List<Image> logos = movie.Images.Logos.ToList()
-            .ConvertAll<Image>(image => new Image
+        IEnumerable<Image> logos = movie.Images.Logos.Select(
+            image => new Image
             {
                 AspectRatio = image.AspectRatio,
                 FilePath = image.FilePath,
@@ -265,22 +257,21 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
                 MovieId = movie.Id,
                 Type = "logo",
                 Site = "https://image.tmdb.org/t/p/"
-            });
+            }).ToArray();
         
         await movieRepository.StoreImages(logos);
         
         IEnumerable<Image> logosJobItems = logos
             .Where(x => x.FilePath != null && !x.FilePath.EndsWith(".svg"))
             .Select(x => new Image { FilePath = x.FilePath });
-
-        MovieColorPaletteJob logosTmdbColorPaletteJob = new(id: movie.Id, images: logosJobItems);
-        JobDispatcher.Dispatch(logosTmdbColorPaletteJob, "image", 2);
+        
+        DispatchJob<ImagePaletteJob, Image>(movie.Id, logosJobItems);
     }
 
     private async Task StoreKeywords(TmdbMovieAppends movie)
     {
-        List<Keyword> keywords = movie.Keywords.Results.ToList()
-            .ConvertAll<Keyword>(keyword => new Keyword
+        IEnumerable<Keyword> keywords = movie.Keywords.Results.Select(
+            keyword => new Keyword
             {
                 Id = keyword.Id,
                 Name = keyword.Name
@@ -288,8 +279,8 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
 
         await movieRepository.StoreKeywords(keywords);
 
-        List<KeywordMovie> keywordMovies = movie.Keywords.Results.ToList()
-            .ConvertAll<KeywordMovie>(keyword => new KeywordMovie
+        IEnumerable<KeywordMovie> keywordMovies = movie.Keywords.Results.Select(
+            keyword => new KeywordMovie
             {
                 KeywordId = keyword.Id,
                 MovieId = movie.Id
@@ -303,8 +294,8 @@ public class MovieManager(IMovieRepository movieRepository) : BaseManager, IMovi
 
     private async Task StoreGenres(TmdbMovieAppends movie)
     {
-        List<GenreMovie> genreMovies = movie.Genres.ToList()
-            .ConvertAll<GenreMovie>(genre => new GenreMovie
+        IEnumerable<GenreMovie> genreMovies = movie.Genres.Select(
+            genre => new GenreMovie
             {
                 GenreId = genre.Id,
                 MovieId = movie.Id
