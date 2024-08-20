@@ -8,20 +8,20 @@ public interface IMovieRepository
 {
     public Task AddAsync(Movie movie);
     public Task LinkToLibrary(Library library, Movie movie);
-    public Task StoreAlternativeTitles(List<AlternativeTitle> alternativeTitles);
-    public Task StoreTranslations(List<Translation> translations);
-    public Task StoreContentRatings(List<CertificationMovie> certifications);
-    public Task StoreSimilar(List<Similar> similar);
-    public Task StoreRecommendations(List<Recommendation> recommendations);
-    public Task StoreVideos(List<Media> videos);
-    public Task StoreImages(List<Image> images);
-    public Task StoreKeywords(List<Keyword> keywords);
-    public Task LinkKeywordsToLibrary(List<KeywordMovie> keywordMovies);
-    public Task StoreGenres(List<GenreMovie> genreMovies);
+    public Task StoreAlternativeTitles(IEnumerable<AlternativeTitle> alternativeTitles);
+    public Task StoreTranslations(IEnumerable<Translation> translations);
+    public Task StoreContentRatings(IEnumerable<CertificationMovie> certifications);
+    public Task StoreSimilar(IEnumerable<Similar> similar);
+    public Task StoreRecommendations(IEnumerable<Recommendation> recommendations);
+    public Task StoreVideos(IEnumerable<Media> videos);
+    public Task StoreImages(IEnumerable<Image> images);
+    public Task StoreKeywords(IEnumerable<Keyword> keywords);
+    public Task LinkKeywordsToLibrary(IEnumerable<KeywordMovie> keywordMovies);
+    public Task StoreGenres(IEnumerable<GenreMovie> genreMovies);
     
     public Task StoreWatchProviders();
     public Task StoreNetworks();
     public Task StoreCompanies();
 
-    Task<List<CertificationMovie>> GetCertificationMovies(TmdbMovieAppends movie, List<CertificationCriteria> certificationCriteria);
+    Task<CertificationMovie[]> GetCertificationMovies(TmdbMovieAppends movie, IEnumerable<CertificationCriteria> certificationCriteria);
 }
