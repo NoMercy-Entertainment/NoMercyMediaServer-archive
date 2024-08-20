@@ -1,0 +1,267 @@
+using Microsoft.EntityFrameworkCore;
+using NoMercy.Database;
+using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Common;
+using NoMercy.NmSystem;
+using NoMercy.Providers.TMDB.Models.Movies;
+
+namespace NoMercy.MediaProcessing.Movies;
+
+public class MovieRepository(MediaContext context) : IMovieRepository
+{
+    public Task AddAsync(Movie movie)
+    {
+        return context.Movies.Upsert(movie)
+            .On(v => new { v.Id })
+            .WhenMatched((ts, ti) => new Movie
+            {
+                Id = ti.Id,
+                Backdrop = ti.Backdrop,
+                Duration = ti.Duration,
+                ReleaseDate = ti.ReleaseDate,
+                Homepage = ti.Homepage,
+                ImdbId = ti.ImdbId,
+                OriginalLanguage = ti.OriginalLanguage,
+                Overview = ti.Overview,
+                Popularity = ti.Popularity,
+                Poster = ti.Poster,
+                Status = ti.Status,
+                Tagline = ti.Tagline,
+                Title = ti.Title,
+                TitleSort = ti.TitleSort,
+                Trailer = ti.Trailer,
+                VoteAverage = ti.VoteAverage,
+                VoteCount = ti.VoteCount,
+                Folder = ti.Folder,
+                LibraryId = ti.LibraryId,
+                UpdatedAt = ti.UpdatedAt
+            })
+            .RunAsync();
+    }
+    
+    public Task LinkToLibrary(Library library, Movie movie)
+    {
+        return context.LibraryMovie.Upsert(new LibraryMovie(library.Id, movie.Id))
+            .On(v => new { v.LibraryId, v.MovieId })
+            .WhenMatched((lts, lti) => new LibraryMovie
+            {
+                LibraryId = lti.LibraryId,
+                MovieId = lti.MovieId
+            })
+            .RunAsync();
+        
+        Logger.MovieDb($"Movie {movie.Title}: Linked to Library {library.Title}");
+    }
+    
+    public Task StoreAlternativeTitles(List<AlternativeTitle> alternativeTitles)
+    {
+        return context.AlternativeTitles.UpsertRange(alternativeTitles)
+            .On(a => new { a.Title, a.MovieId })
+            .WhenMatched((ats, ati) => new AlternativeTitle
+            {
+                Title = ati.Title,
+                Iso31661 = ati.Iso31661,
+                MovieId = ati.MovieId
+            })
+            .RunAsync();
+    }
+
+    public Task StoreTranslations(List<Translation> translations)
+    {
+            return context.Translations
+                .UpsertRange(translations.Where(translation => translation.Title != "" || translation.Overview != ""))
+                .On(t => new { t.Iso31661, t.Iso6391, t.MovieId })
+                .WhenMatched((ts, ti) => new Translation
+                {
+                    Iso31661 = ti.Iso31661,
+                    Iso6391 = ti.Iso6391,
+                    Title = ti.Title,
+                    EnglishName = ti.EnglishName,
+                    Name = ti.Name,
+                    Overview = ti.Overview,
+                    Homepage = ti.Homepage,
+                    Biography = ti.Biography,
+                    MovieId = ti.MovieId,
+                    SeasonId = ti.SeasonId,
+                    EpisodeId = ti.EpisodeId,
+                    CollectionId = ti.CollectionId,
+                    PersonId = ti.PersonId
+                })
+                .RunAsync();
+    }
+
+    public Task<List<CertificationMovie>> GetCertificationMovies(TmdbMovieAppends movie,  List<CertificationCriteria> certificationCriteria)
+    {
+        return context.Certifications
+            .Where(c => certificationCriteria
+                .Any(cc => cc.Iso31661 == c.Iso31661 && cc.Certification == c.Rating))
+            .Select(c => new CertificationMovie
+            {
+                CertificationId = c.Id,
+                MovieId = movie!.Id
+            })
+            .ToListAsync(); 
+    }
+    
+    public Task StoreContentRatings(List<CertificationMovie> certifications)
+    {
+            return context.CertificationMovie.UpsertRange(certifications)
+                .On(v => new { v.CertificationId, v.MovieId })
+                .WhenMatched((ts, ti) => new CertificationMovie
+                {
+                    CertificationId = ti.CertificationId,
+                    MovieId = ti.MovieId
+                })
+                .RunAsync();
+    }
+
+    public Task StoreSimilar(List<Similar> similar)
+    {
+        return context.Similar.UpsertRange(similar)
+            .On(v => new { v.MediaId, v.MovieFromId })
+            .WhenMatched((ts, ti) => new Similar
+            {
+                MovieToId = ti.MovieToId,
+                MovieFromId = ti.MovieFromId,
+                Overview = ti.Overview,
+                Title = ti.Title,
+                TitleSort = ti.TitleSort,
+                Backdrop = ti.Backdrop,
+                Poster = ti.Poster,
+                MediaId = ti.MediaId
+            })
+            .RunAsync();
+    }
+
+    public Task StoreRecommendations(List<Recommendation> recommendations)
+    {
+        return context.Recommendations.UpsertRange(recommendations)
+            .On(v => new { v.MediaId, v.MovieFromId })
+            .WhenMatched((ts, ti) => new Recommendation
+            {
+                MovieToId = ti.MovieToId,
+                MovieFromId = ti.MovieFromId,
+                Overview = ti.Overview,
+                Title = ti.Title,
+                TitleSort = ti.TitleSort,
+                Backdrop = ti.Backdrop,
+                Poster = ti.Poster,
+                MediaId = ti.MediaId
+            })
+            .RunAsync();
+    }
+
+    public Task StoreVideos(List<Media> videos)
+    {
+            return context.Medias.UpsertRange(videos)
+                .On(v => new { v.Src, v.MovieId })
+                .WhenMatched((ts, ti) => new Media
+                {
+                    Src = ti.Src,
+                    Iso6391 = ti.Iso6391,
+                    Type = ti.Type,
+                    MovieId = ti.MovieId,
+                    Name = ti.Name,
+                    Site = ti.Site,
+                    Size = ti.Size
+                })
+                .RunAsync();
+    }
+
+    public Task StoreImages(List<Image> images)
+    {
+        return context.Images.UpsertRange(images)
+            .On(v => new { v.FilePath, v.MovieId })
+            .WhenMatched((ts, ti) => new Image
+            {
+                AspectRatio = ti.AspectRatio,
+                FilePath = ti.FilePath,
+                Height = ti.Height,
+                Iso6391 = ti.Iso6391,
+                Site = ti.Site,
+                VoteAverage = ti.VoteAverage,
+                VoteCount = ti.VoteCount,
+                Width = ti.Width,
+                Type = ti.Type,
+                MovieId = ti.MovieId
+            })
+            .RunAsync();
+    }
+
+    public Task StoreKeywords(List<Keyword> keywords)
+    {
+        return context.Keywords.UpsertRange(keywords)
+            .On(v => new { v.Id })
+            .WhenMatched((ts, ti) => new Keyword
+            {
+                Id = ti.Id,
+                Name = ti.Name
+            })
+            .RunAsync();
+    }
+
+    public Task LinkKeywordsToLibrary(List<KeywordMovie> keywordMovies)
+    {
+        return context.KeywordMovie.UpsertRange(keywordMovies)
+            .On(v => new { v.KeywordId, v.MovieId })
+            .WhenMatched((ts, ti) => new KeywordMovie()
+            {
+                KeywordId = ti.KeywordId,
+                MovieId = ti.MovieId
+            })
+            .RunAsync();
+    }
+
+    public Task StoreGenres(List<GenreMovie> genreMovies)
+    {
+        return context.GenreMovie.UpsertRange(genreMovies)
+            .On(v => new { v.GenreId, v.MovieId })
+            .WhenMatched((ts, ti) => new GenreMovie
+            {
+                GenreId = ti.GenreId,
+                MovieId = ti.MovieId
+            })
+            .RunAsync();
+    }
+
+    public Task StoreWatchProviders()
+    {
+        return Task.CompletedTask;
+    }
+
+    public Task StoreNetworks()
+    {
+        // List<Keyword> keywords = Movie?.Networks.Results.ToList()
+        //     .ConvertAll<Network>(x => new Network(x)).ToArray() ?? [];
+        //
+        // return context.Networks.UpsertRange(keywords)
+        //     .On(v => new { v.Id })
+        //     .WhenMatched((ts, ti) => new Network
+        //     {
+        //         Id = ti.Id,
+        //         Title = ti.Title,
+        //     })
+        //     .RunAsync();
+
+        return Task.CompletedTask;
+    }
+
+    public Task StoreCompanies()
+    {
+        // List<Company> companies = Movie?.ProductionCompanies.Results.ToList()
+        //     .ConvertAll<ProductionCompany>(x => new ProductionCompany(x)).ToArray() ?? [];
+        //
+        // return context.Companies.UpsertRange(companies)
+        //     .On(v => new { v.Id })
+        //     .WhenMatched((ts, ti) => new ProductionCompany
+        //     {
+        //         Id = ti.Id,
+        //         Title = ti.Title,
+        //     })
+        //     .RunAsync();
+
+        return Task.CompletedTask;
+    }
+    
+    
+}
