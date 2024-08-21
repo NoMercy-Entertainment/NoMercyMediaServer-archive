@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using Pastel;
 using Serilog;
 using Serilog.Core;
@@ -198,6 +197,7 @@ public static class Logger
         new LogType("auth", "Auth", Color.CornflowerBlue, "System"),
         new LogType("register", "Register", Color.CornflowerBlue, "System"),
         new LogType("setup", "Setup", Color.CornflowerBlue, "System"),
+        new LogType("system", "System", Color.CornflowerBlue, "System"),
         new LogType("certificate", "Certificate", Color.CornflowerBlue, "System"),
 
         new LogType("_", "Workers", Color.DimGray, "spacer"),
@@ -263,6 +263,7 @@ public static class Logger
         { "auth", Color.CornflowerBlue },
         { "register", Color.CornflowerBlue },
         { "setup", Color.CornflowerBlue },
+        { "system", Color.CornflowerBlue },
         { "certificate", Color.CornflowerBlue },
 
         { "queue", Color.Chocolate },
@@ -339,6 +340,7 @@ public static class Logger
         { "auth", "Auth" },
         { "register", "Register" },
         { "setup", "Setup" },
+        { "system", "System" },
         { "certificate", "Certificate" },
 
         { "__", "Workers" },

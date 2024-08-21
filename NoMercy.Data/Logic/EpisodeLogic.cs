@@ -5,12 +5,12 @@ using NoMercy.Data.Jobs;
 using NoMercy.Data.Logic.ImageLogic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers.system;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.TV;
+using NoMercy.Queue;
 using Serilog.Events;
 using Episode = NoMercy.Database.Models.Episode;
 

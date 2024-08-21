@@ -3,10 +3,10 @@ using CommandLine;
 using Microsoft.AspNetCore;
 using NoMercy.Data.Logic;
 using NoMercy.Database;
-using NoMercy.Helpers.system;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.AniDb.Clients;
+using NoMercy.Queue;
 using NoMercy.Server.app.Helper;
 using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
@@ -21,7 +21,7 @@ public static class Program
             if (args[0].StartsWith("-loglevel"))
             {
                 string[] logLevelArgs = args[0].Split("=");
-                if (Enum.TryParse<LogEventLevel>(logLevelArgs[1], true, out LogEventLevel logLevel))
+                if (Enum.TryParse(logLevelArgs[1], true, out LogEventLevel logLevel))
                 {
                     Logger.App("Setting log level to " + logLevel);
                     Logger.SetLogLevel(logLevel);
@@ -38,13 +38,13 @@ public static class Program
             Logger.App("UnhandledException " + exception);
         };
 
-        Console.CancelKeyPress += (sender, eventArgs) =>
+        Console.CancelKeyPress += (_, _) =>
         {
             Shutdown().Wait();
             Environment.Exit(0);
         };
 
-        AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) =>
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             Logger.App("SIGTERM received, shutting down.");
             Shutdown().Wait();
@@ -62,7 +62,7 @@ public static class Program
 
     private static async Task Start(StartupOptions options)
     {
-        Console.Clear();
+        // Console.Clear();
         Console.Title = "NoMercy Server";
         Console.WindowWidth = 1666;
         Console.WindowHeight = 1024;

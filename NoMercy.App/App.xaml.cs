@@ -4,7 +4,7 @@ using H.NotifyIcon.Core;
 namespace NoMercy.App;
 
 public partial class App : Application
-{    
+{
     private readonly TrayIcon? _trayIcon;
 
     public App()
@@ -13,10 +13,7 @@ public partial class App : Application
 
         MainPage = new AppShell();
         string iconPath = Path.Combine(AppContext.BaseDirectory, "appicon.ico");
-        if (!File.Exists(iconPath))
-        {
-            throw new FileNotFoundException("Tray icon file not found", iconPath);
-        }
+        if (!File.Exists(iconPath)) throw new FileNotFoundException("Tray icon file not found", iconPath);
 
 #pragma warning disable CA1416
         _trayIcon = new TrayIconWithContextMenu
@@ -41,9 +38,8 @@ public partial class App : Application
         _trayIcon?.Create();
         _trayIcon?.Show();
 #pragma warning restore CA1416
-
     }
-	
+
     private static void PauseQueue(object? sender, EventArgs eventArgs)
     {
         // Implement the logic to pause the queue in NoMercy.Server

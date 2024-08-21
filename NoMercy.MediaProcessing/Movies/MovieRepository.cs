@@ -2,18 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
-using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.MediaProcessing.Movies;
 
 public class MovieRepository(MediaContext context) : IMovieRepository
 {
-    public Task AddAsync(Movie movie)
+    public Task AddAsync(Database.Models.Movie movie)
     {
         return context.Movies.Upsert(movie)
             .On(v => new { v.Id })
-            .WhenMatched((ts, ti) => new Movie
+            .WhenMatched((ts, ti) => new Database.Models.Movie
             {
                 Id = ti.Id,
                 Backdrop = ti.Backdrop,
@@ -34,12 +33,13 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 VoteCount = ti.VoteCount,
                 Folder = ti.Folder,
                 LibraryId = ti.LibraryId,
-                UpdatedAt = ti.UpdatedAt
+                UpdatedAt = ti.UpdatedAt,
+                _colorPalette = ti._colorPalette
             })
             .RunAsync();
     }
     
-    public Task LinkToLibrary(Library library, Movie movie)
+    public Task LinkToLibrary(Library library, Database.Models.Movie movie)
     {
         return context.LibraryMovie.Upsert(new LibraryMovie(library.Id, movie.Id))
             .On(v => new { v.LibraryId, v.MovieId })
@@ -49,8 +49,6 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 MovieId = lti.MovieId
             })
             .RunAsync();
-        
-        Logger.MovieDb($"Movie {movie.Title}: Linked to Library {library.Title}");
     }
     
     public Task StoreAlternativeTitles(IEnumerable<AlternativeTitle> alternativeTitles)
@@ -90,17 +88,18 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 .RunAsync();
     }
 
-    public Task<CertificationMovie[]> GetCertificationMovies(TmdbMovieAppends movie, IEnumerable<CertificationCriteria> certificationCriteria)
+    public IEnumerable<CertificationMovie> GetCertificationMovies(TmdbMovieAppends movie,
+        IEnumerable<CertificationCriteria> certificationCriteria)
     {
         return context.Certifications
+            .AsEnumerable()
             .Where(c => certificationCriteria
                 .Any(cc => cc.Iso31661 == c.Iso31661 && cc.Certification == c.Rating))
             .Select(c => new CertificationMovie
             {
                 CertificationId = c.Id,
                 MovieId = movie!.Id
-            })
-            .ToArrayAsync(); 
+            });
     }
     
     public Task StoreContentRatings(IEnumerable<CertificationMovie> certifications)
@@ -167,11 +166,11 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 .RunAsync();
     }
 
-    public Task StoreImages(IEnumerable<Image> images)
+    public Task StoreImages(IEnumerable<Database.Models.Image> images)
     {
         return context.Images.UpsertRange(images)
             .On(v => new { v.FilePath, v.MovieId })
-            .WhenMatched((ts, ti) => new Image
+            .WhenMatched((ts, ti) => new Database.Models.Image
             {
                 AspectRatio = ti.AspectRatio,
                 FilePath = ti.FilePath,
@@ -199,7 +198,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .RunAsync();
     }
 
-    public Task LinkKeywordsToLibrary(IEnumerable<KeywordMovie> keywordMovies)
+    public Task LinkKeywordsToMovie(IEnumerable<KeywordMovie> keywordMovies)
     {
         return context.KeywordMovie.UpsertRange(keywordMovies)
             .On(v => new { v.KeywordId, v.MovieId })

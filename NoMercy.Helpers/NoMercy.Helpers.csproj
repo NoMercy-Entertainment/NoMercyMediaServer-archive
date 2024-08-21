@@ -23,6 +23,7 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4"/>
         <PackageReference Include="Microsoft.Extensions.Diagnostics.ResourceMonitoring" Version="8.4.0"/>
         <PackageReference Include="Mono.Nat" Version="3.0.4"/>
+        <PackageReference Include="Moq" Version="4.20.70" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="Pastel" Version="5.0.0"/>
         <PackageReference Include="SecureStore" Version="1.2.2"/>
@@ -33,6 +34,7 @@
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5"/>
         <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0"/>
         <PackageReference Include="Ulid" Version="1.3.3"/>
+        <PackageReference Include="xunit" Version="2.9.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -44,6 +46,10 @@
     <ItemGroup>
         <ProjectReference Include="..\NoMercy.Networking\NoMercy.Networking.csproj"/>
         <ProjectReference Include="..\NoMercy.NmSystem\NoMercy.NmSystem.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="system\" />
     </ItemGroup>
 
 </Project>

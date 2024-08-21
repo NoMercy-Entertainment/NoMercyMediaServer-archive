@@ -1,8 +1,8 @@
 using NoMercy.Data.Logic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers.system;
 using NoMercy.NmSystem;
+using NoMercy.Queue;
 
 namespace NoMercy.Data.Jobs;
 
@@ -58,7 +58,7 @@ public class MusicJob : IShouldQueue, IDisposable, IAsyncDisposable
         {
             Logger.App($"Music {list.Path}: Processing");
 
-            MusicLogic3 music = new(Library, list);
+            MusicLogic music = new(Library, list);
             await music.Process();
         }
     }
