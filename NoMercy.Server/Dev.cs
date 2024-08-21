@@ -1,11 +1,16 @@
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Episodes;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Movies;
+using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.NmSystem;
 using NoMercy.Providers.File;
+using NoMercy.Providers.TMDB.Models.Season;
+using NoMercy.Providers.TMDB.Models.TV;
 using Serilog.Events;
 
 namespace NoMercy.Server;
@@ -34,22 +39,34 @@ public class Dev
         //     await movieManager.AddMovieAsync(id, movieLibrary);
         // }
         
+        IShowRepository showRepository = new ShowRepository(mediaContext); 
+        ShowManager showManager = new(showRepository, jobDispatcher);
         
-        // IShowRepository showRepository = new ShowRepository(mediaContext); 
-        // ShowManager showManager = new(showRepository, jobDispatcher);
-        //
-        // Library tvLibrary = await mediaContext.Libraries
-        //     .Where(predicate: f => f.Type == "tv")
-        //     .FirstAsync();
-        //
-        // List<int> tvs = await mediaContext.Tvs
-        //     .Select(selector: f => f.Id)
-        //     .ToListAsync();
-        //
-        // foreach (int id in tvs)
-        // {
-        //     await showManager.AddShowAsync(id, tvLibrary);
-        // }
+        ISeasonRepository seasonRepository = new SeasonRepository(mediaContext);
+        SeasonManager seasonManager = new(seasonRepository, jobDispatcher);
+        
+        IEpisodeRepository episodeRepository = new EpisodeRepository(mediaContext);
+        EpisodeManager episodeManager = new(episodeRepository, jobDispatcher);
+        
+        Library tvLibrary = await mediaContext.Libraries
+            .Where(predicate: f => f.Type == "tv")
+            .FirstAsync();
+        
+        List<int> tvs = await mediaContext.Tvs
+            .Select(selector: f => f.Id)
+            .ToListAsync();
+        
+        foreach (int id in tvs)
+        {
+            TmdbTvShowAppends? show = await showManager.AddShowAsync(id, tvLibrary);
+            if (show == null) continue;
+            
+            ConcurrentStack<TmdbSeasonAppends> seasons = await seasonManager.StoreSeasonsAsync(show);
+            foreach (TmdbSeasonAppends season in seasons)
+            {
+                await episodeManager.StoreEpisodes(show, season);
+            }
+        }
         
         // Logger.System("Starting FileSystem Watcher", LogEventLevel.Debug);
         //

@@ -17,7 +17,7 @@ public class SeasonManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, ISeasonManager
 {
-    public async Task StoreSeasonsAsync(TmdbTvShowAppends show)
+    public async Task<ConcurrentStack<TmdbSeasonAppends>> StoreSeasonsAsync(TmdbTvShowAppends show)
     {
         ConcurrentStack<TmdbSeasonAppends> seasonAppends = [];
         
@@ -55,13 +55,30 @@ public class SeasonManager(
          List<Task> promises = [];
          foreach (TmdbSeasonAppends season in seasonAppends)
         {
-            promises.Add(StoreImages(show.Name, season));
-            promises.Add(StoreTranslations(show.Name, season));
+            promises.Add(StoreImagesAsync(show.Name, season));
+            promises.Add(StoreTranslationsAsync(show.Name, season));
         }
         
         await Task.WhenAll(promises);
         
         Logger.MovieDb($"TvShow {show.Name}: Seasons stored");
+
+        return seasonAppends;
+    }
+    
+    public async Task UpdateSeasonAsync(string showName, TmdbSeasonAppends season)
+    {
+        await StoreImagesAsync(showName, season);
+        await StoreTranslationsAsync(showName, season);
+        
+        Logger.MovieDb($"TvShow {showName}, Season {season.SeasonNumber}: Updated");
+    }
+    
+    public async Task RemoveSeasonAsync(string showName, TmdbSeasonAppends season)
+    {
+        await seasonRepository.RemoveSeasonAsync(season.Id);
+        
+        Logger.MovieDb($"TvShow {showName}, Season {season.SeasonNumber}: Removed");
     }
     
     internal async Task StoreTranslationsAsync(string showName, TmdbSeasonAppends season)
