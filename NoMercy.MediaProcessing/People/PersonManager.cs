@@ -6,17 +6,17 @@ namespace NoMercy.MediaProcessing.People;
 
 public class PersonManager: IPersonManager
 {
-    public Task<ConcurrentStack<TmdbPersonAppends>> StorePEoplesAsync(TmdbTvShowAppends show)
+    public Task<ConcurrentStack<TmdbPersonAppends>> StorePeoplesAsync(TmdbTvShowAppends show)
     {
         throw new NotImplementedException();
     }
 
-    public Task UpdatePEopleAsync(string showName, TmdbPersonAppends season)
+    public Task UpdatePeopleAsync(string showName, TmdbPersonAppends season)
     {
         throw new NotImplementedException();
     }
 
-    public Task RemovePEopleAsync(string showName, TmdbPersonAppends season)
+    public Task RemovePeopleAsync(string showName, TmdbPersonAppends season)
     {
         throw new NotImplementedException();
     }
