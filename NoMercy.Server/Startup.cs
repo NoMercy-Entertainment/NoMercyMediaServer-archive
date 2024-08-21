@@ -17,9 +17,14 @@ using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Helpers.system;
+using NoMercy.MediaProcessing.Movies;
+using NoMercy.MediaProcessing.Shows;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.Providers.File;
+using NoMercy.Queue;
+using IMovieRepository = NoMercy.Data.Repositories.IMovieRepository;
+using MovieRepository = NoMercy.Data.Repositories.MovieRepository;
 
 namespace NoMercy.Server;
 
@@ -34,6 +39,7 @@ public class Startup
         services.AddSingleton<JobQueue>();
         services.AddSingleton<Helpers.Monitoring.ResourceMonitor>();
         services.AddSingleton<Networking.Networking>();
+        services.AddSingleton(LibraryFileWatcher.Instance);
 
         // Add DbContexts
         services.AddDbContext<QueueContext>(optionsAction =>
@@ -60,6 +66,10 @@ public class Startup
         services.AddScoped<IMovieRepository, MovieRepository>();
         services.AddScoped<ITvShowRepository, TvShowRepository>();
 
+        // Add Managers
+        services.AddScoped<IMovieManager, MovieManager>();
+        services.AddScoped<IShowManager, ShowManager>();
+
         // Add Controllers and JSON Options
         services.AddControllers()
             .AddNewtonsoftJson(options =>
@@ -70,7 +80,7 @@ public class Startup
             {
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
-        
+
         services.Configure<RouteOptions>(options =>
         {
             options.ConstraintMap.Add("ulid", typeof(UlidRouteConstraint));

@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using JsonConverter = Newtonsoft.Json.JsonConverter;
 
-namespace NoMercy.Helpers;
+namespace NoMercy.NmSystem;
 
 public static class JsonHelper
 {

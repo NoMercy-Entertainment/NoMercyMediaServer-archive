@@ -208,7 +208,7 @@ public abstract class BaseImage : IDisposable
 
         image.Mutate(x => x.Resize(new ResizeOptions()
         {
-            Size = new SixLabors.ImageSharp.Size(1, 1),
+            Size = new Size(1, 1),
             Mode = ResizeMode.Max
         }));
 

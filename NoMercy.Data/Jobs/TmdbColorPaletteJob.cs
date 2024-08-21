@@ -1,7 +1,6 @@
 using System.Globalization;
 using NoMercy.Data.Logic;
 using NoMercy.Data.Logic.ImageLogic;
-using NoMercy.Helpers.system;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Collections;
 using NoMercy.Providers.TMDB.Models.Episode;
@@ -9,6 +8,7 @@ using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.People;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.TV;
+using NoMercy.Queue;
 using Serilog.Events;
 
 namespace NoMercy.Data.Jobs;
@@ -94,37 +94,37 @@ public class TmdbColorPaletteJob : IShouldQueue, IDisposable, IAsyncDisposable
     {
         if (MovieAppends is not null)
         {
-            await MovieLogic.StoreImages(MovieAppends);
+            await MovieLogic.Palette(MovieAppends.Id);
             return;
         }
 
         if (CollectionAppends is not null)
         {
-            await CollectionLogic.StoreImages(CollectionAppends);
+            await CollectionLogic.Palette(CollectionAppends.Id);
             return;
         }
 
         if (TvShowAppends is not null)
         {
-            await TvShowLogic.StoreImages(TvShowAppends);
+            await TvShowLogic.Palette(TvShowAppends.Id);
             return;
         }
 
         if (SeasonAppends is not null && ShowId.HasValue)
         {
-            await SeasonLogic.StoreImages(ShowId.Value, SeasonAppends);
+            await SeasonLogic.Palette(SeasonAppends.Id);
             return;
         }
 
         if (EpisodeAppends is not null && ShowId.HasValue && SeasonId.HasValue)
         {
-            await EpisodeLogic.StoreImages(ShowId.Value, SeasonId.Value, EpisodeAppends);
+            await EpisodeLogic.Palette(EpisodeAppends.Id);
             return;
         }
 
         if (PersonAppends is not null)
         {
-            await PersonLogic.StoreImages(PersonAppends);
+            await PersonLogic.Palette(PersonAppends.Id);
             return;
         }
 
@@ -182,7 +182,7 @@ public class TmdbColorPaletteJob : IShouldQueue, IDisposable, IAsyncDisposable
 
                 break;
             default:
-                Logger.Queue(@"Invalid model Type: " + Model + @" id: " + Id + @" type: " + Type, LogEventLevel.Error);
+                Logger.Queue("Invalid model Type: " + Model + " id: " + Id + " type: " + Type, LogEventLevel.Error);
                 break;
         }
     }

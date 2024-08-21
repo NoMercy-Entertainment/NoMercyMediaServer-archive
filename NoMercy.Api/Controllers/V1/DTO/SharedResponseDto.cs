@@ -1,4 +1,3 @@
-
 using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Database;
@@ -96,9 +95,9 @@ public record RatingDto
 
 public record ColorPalettesDto
 {
-    [JsonProperty("logo")] public IColorPalettes Logo { get; set; } = new IColorPalettes();
-    [JsonProperty("poster")] public IColorPalettes Poster { get; set; }  = new IColorPalettes();
-    [JsonProperty("backdrop")] public IColorPalettes Backdrop { get; set; } = new IColorPalettes();
+    [JsonProperty("logo")] public IColorPalettes Logo { get; set; } = new();
+    [JsonProperty("poster")] public IColorPalettes Poster { get; set; } = new();
+    [JsonProperty("backdrop")] public IColorPalettes Backdrop { get; set; } = new();
 }
 
 public record StatusResponseDto<T>

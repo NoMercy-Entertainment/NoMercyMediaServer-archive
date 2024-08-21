@@ -3,12 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Data.Jobs;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers.system;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
+using NoMercy.Queue;
 using Serilog.Events;
 
 namespace NoMercy.Data.Logic;

@@ -1,9 +1,9 @@
 using NoMercy.Data.Logic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers.system;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.Queue;
 
 namespace NoMercy.Data.Jobs;
 

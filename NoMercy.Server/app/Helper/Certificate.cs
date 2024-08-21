@@ -123,6 +123,8 @@ public static class Certificate
         [JsonProperty("certificate")] public string Certificate { get; set; } = string.Empty;
         [JsonProperty("private_key")] public string PrivateKey { get; set; } = string.Empty;
         [JsonProperty("issuer_certificate")] public string IssuerCertificate { get; set; } = string.Empty;
-        [JsonProperty("certificate_authority")] public string CertificateAuthority { get; set; } = string.Empty;
+
+        [JsonProperty("certificate_authority")]
+        public string CertificateAuthority { get; set; } = string.Empty;
     }
 }

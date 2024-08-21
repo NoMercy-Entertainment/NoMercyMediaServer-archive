@@ -1,902 +1,882 @@
-// using System.Text.RegularExpressions;
-// using FFMpegCore;
-// using Microsoft.EntityFrameworkCore;
-// using NoMercy.Database;
-// using NoMercy.Database.Models;
-// using NoMercy.Helpers;
-// using NoMercy.Providers.CoverArt.Client;
-// using NoMercy.Providers.CoverArt.Models;
-// using NoMercy.Providers.FanArt.Client;
-// using NoMercy.Providers.MusicBrainz.Client;
-// using NoMercy.Providers.MusicBrainz.Models;
-// using NoMercy.Server.app.Helper;
-// using NoMercy.Server.app.Jobs;
-// using Album = NoMercy.Database.Models.Album;
-// using Artist = NoMercy.Database.Models.Artist;
-// using ArtistDetails = NoMercy.Providers.FanArt.Models.ArtistDetails;
-// using Serilog.Events;
-// using Media = NoMercy.Providers.MusicBrainz.Models.Media;
-// using Track = NoMercy.Database.Models.Track;
-// using Album = NoMercy.Database.Models.Album;
-// using MusicBrainzTrack = NoMercy.Providers.MusicBrainz.Models.Track;
-// using MusicBrainzArtist = NoMercy.Providers.MusicBrainz.Models.Artist;
-// using MusicBrainzRelease = NoMercy.Providers.MusicBrainz.Models.Album;
-//
-// namespace NoMercy.Server.Logic;
-//
-// public partial class MusicLogic(Guid recordingId, Library library, string file, IMediaAnalysis mediaAnalysis)
-//     : IDisposable, IAsyncDisposable
-// {
-//     private readonly RecordingClient _recordingClient = new(recordingId);
-//
-//     private RecordingAppends Music { get; set; } = new();
-//
-//     private string File { get; set; } = file;
-//     private string Path { get; set; } = "";
-//     private string Folder { get; set; } = "";
-//     private string HostFolder { get; set; } = "";
-//
-//     private string ArtistFolder { get; set; } = "";
-//     private string SanitizedArtistFolderName { get; set; } = "";
-//
-//     private string AlbumFolder { get; set; } = "";
-//     private string SanitizedAlbumFolderName { get; set; } = "";
-//
-//     private string FileName { get; set; } = "";
-//     private string SanitizedFileName { get; set; } = "";
-//
-//     private string SanitizedFile { get; set; } = "";
-//     private Ulid FolderId { get; set; }
-//
-//     private int? DiscNumber { get; set; }
-//     private int? TrackNumber { get; set; }
-//
-//     private IMediaAnalysis MediaAnalysis { get; set; } = mediaAnalysis;
-//
-//     public async Task Process()
-//     {
-//         Logger.App($"Processing {File}");
-//
-//         var music = await _recordingClient.WithAllAppends();
-//
-//         if (music is null) return;
-//         Music = music;
-//
-//         await using MediaContext mediaContext = new();
-//         FolderId = mediaContext.Folders
-//             .First(e => File.Contains(e.Path)).Id;
-//
-//         Path = File.Replace(library.FolderLibraries
-//             .FirstOrDefault()?.Folder.Path ?? "", "");
-//
-//         var reg = Regex.Match(Path, "(([\\\\\\/].+)([\\\\\\/].+))([\\\\\\/].+)");
-//         Folder = reg.Groups[1].Value.Replace("\\", "/");
-//         ArtistFolder = reg.Groups[2].Value.Replace("\\", "/");
-//         AlbumFolder = reg.Groups[3].Value.Replace("\\", "/");
-//
-//         FileName = reg.Groups[4].Value.Replace("\\", "/");
-//
-//         HostFolder = (library.FolderLibraries
-//             .FirstOrDefault()?.Folder.Path + Folder).Replace("/", "\\");
-//
-//         SanitizedFile = MyRegex()
-//             .Replace(File.ToLower(), "")
-//             .RemoveDiacritics();
-//
-//         SanitizedAlbumFolderName = MyRegex()
-//             .Replace(AlbumFolder.ToLower(), "")
-//             .RemoveDiacritics();
-//
-//         SanitizedArtistFolderName = MyRegex()
-//             .Replace(ArtistFolder.ToLower(), "")
-//             .Replace("/", "")
-//             .RemoveDiacritics();
-//
-//         SanitizedFileName = MyRegex()
-//             .Replace(FileName.ToLower(), "")
-//             .RemoveDiacritics();
-//
-//         if (MediaAnalysis?.Format.Tags?.ContainsKey("disc") != null)
-//             DiscNumber = int.Parse(MediaAnalysis.Format.Tags["disc"].Split("/")[0]);
-//
-//         if (MediaAnalysis?.Format.Tags?.ContainsKey("track") != null)
-//             TrackNumber = int.Parse(MediaAnalysis.Format.Tags["track"].Split("/")[0]);
-//
-//         await Store();
-//
-//         await DispatchJobs();
-//     }
-//
-//     private string MakeArtistFolder()
-//     {
-//         var artistName = Music.ArtistCredit.FirstOrDefault()?.Name
-//             .Replace("/", "_")
-//             .Replace("“", "")
-//             .Replace("^\\.+", "")
-//             .Replace("[\"*?<>|]", "") ?? "";
-//
-//         var artistFolder = char.IsNumber(artistName[0])
-//             ? "#"
-//             : artistName[0].ToString().ToUpper();
-//
-//         return $"{artistFolder}/{artistName}/";
-//     }
-//
-//     public async Task StoreImages(int id)
-//     {
-//         await Task.CompletedTask;
-//     }
-//
-//     [GeneratedRegex("([^\\s\\\\\\/\\.a-zA-Z0-9-])")]
-//     private static partial Regex MyRegex();
-//
-//     [GeneratedRegex("^00:")]
-//     private static partial Regex HmsRegex();
-//
-//     private async Task Store()
-//     {
-//         if (Music.Releases.Length == 0) return;
-//
-//         // Album releases = Music.Releases
-//         //     .Where(r =>
-//         //     {
-//         //         MusicBrainzRelease title = r.Title.ToLower();
-//         //         string san = MyRegex()
-//         //             .Replace(title, "")
-//         //             .RemoveDiacritics();
-//         //         return SanitizedFile.Contains(san);
-//         //     })
-//         //     .ToList();
-//
-//         foreach (var release in Music.Releases)
-//             // foreach (MusicBrainzRelease release in Music.Releases.Where(r => r.Title != ""))
-//         {
-//             if (release.Id == Guid.Empty) continue;
-//
-//             AlbumClient releaseClient = new(release.Id);
-//             var releaseAppends = await releaseClient.WithAllAppends();
-//
-//             if (releaseAppends is null) return;
-//             // if(DiscNumber is not null && TrackNumber is not null)
-//             // {
-//             //     if(releaseAppends.Media.All(m => m.Position != DiscNumber)) return;
-//             //     if(releaseAppends.Media.All(m => m.Tracks.All(t => t.Position != TrackNumber))) return;
-//             //     
-//             //     releaseAppends.Media = releaseAppends.Media
-//             //         .Where(m => 
-//             //             m.Position == DiscNumber && 
-//             //             m.Tracks.Any(t => t.Position == TrackNumber)
-//             //         ).ToArray();
-//             // }
-//
-//             var cover = "";
-//
-//             var hasCover = releaseAppends.CoverArtArchive.Front;
-//             if (hasCover)
-//             {
-//                 CoverArtClient coverArtClient = new(releaseAppends.Id);
-//                 var covers = await coverArtClient.Cover();
-//                 if (covers is null) return;
-//
-//                 List<CoverImage> coverList = covers.Images
-//                     .Where(image => image.Types.Contains("Front"))
-//                     .ToList();
-//
-//                 foreach (var coverItem in coverList)
-//                 {
-//                     var url = coverItem.Thumbnails.Large
-//                         .Replace("http://", "https://");
-//
-//                     HttpClient httpClient = new();
-//                     httpClient.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
-//                     httpClient.DefaultRequestHeaders.Add("Accept", "image/*");
-//
-//                     var res = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-//
-//                     if (!res.IsSuccessStatusCode) continue;
-//
-//                     cover = url;
-//                     break;
-//                 }
-//             }
-//
-//             await StoreReleaseGroups(releaseAppends, cover);
-//
-//             await StoreAlbum(releaseAppends, cover);
-//             await LinkAlbumToLibrary(releaseAppends);
-//
-//             foreach (var media in releaseAppends.Media)
-//             foreach (var track in media.Tracks)
-//             {
-//                 if (await StoreTrack(releaseAppends, track, media, cover) is null) continue;
-//
-//                 await LinkTrackToAlbum(track, release);
-//
-//                 foreach (var artist in track.ArtistCredit)
-//                 {
-//                     await StoreArtist(artist.Artist);
-//                     await LinkArtistToTrack(artist.Artist, track);
-//
-//                     await LinkArtistToAlbum(artist.Artist, releaseAppends);
-//                     await LinkArtistToLibrary(artist.Artist);
-//
-//                     await LinkArtistToReleaseGroup(releaseAppends, artist.Artist.Id);
-//                 }
-//             }
-//         }
-//     }
-//
-//     private async Task StoreReleaseGroups(MusicBrainzRelease release, string? cover)
-//     {
-//         Album releaseInsert = new()
-//         {
-//             Id = release.ReleaseGroup.Id,
-//             Title = release.ReleaseGroup.Title,
-//             Description = release.ReleaseGroup.Disambiguation,
-//             Year = release.ReleaseGroup.FirstReleaseDate.ParseYear(),
-//             LibraryId = library.Id,
-//             Cover = cover
-//         };
-//
-//         try
-//         {
-//             await using MediaContext mediaContext = new();
-//             await mediaContext.Releases.Upsert(releaseInsert)
-//                 .On(e => e.Id)
-//                 .WhenMatched((s, i) => new Album
-//                 {
-//                     Id = i.Id,
-//                     Title = i.Title,
-//                     Description = i.Description,
-//                     Year = i.Year,
-//                     Cover = s.Cover ?? i.Cover,
-//                     LibraryId = i.LibraryId
-//                 })
-//                 .RunAsync();
-//
-//             await StoreReleaseImages(release);
-//         }
-//         catch (Exception e)
-//         {
-//             Logger.App(e, LogEventLevel.Error);
-//             Logger.App(release);
-//         }
-//     }
-//
-//     private async Task StoreAlbum(MusicBrainzRelease release, string? cover)
-//     {
-//         var media = release.Media.FirstOrDefault(m => m.Tracks.Length > 0);
-//         if (media is null) return;
-//
-//         var sanitizedAlbumName = MyRegex()
-//             .Replace(release.Title.ToLower(), "")
-//             .RemoveDiacritics();
-//
-//         var shouldInsert = SanitizedAlbumFolderName.Contains(sanitizedAlbumName);
-//
-//         await using MediaContext mediaContext = new();
-//         if (!shouldInsert && mediaContext.Albums.Any(a => a.Id == release.Id)) return;
-//
-//         Album albumInsert = new()
-//         {
-//             Id = release.Id,
-//             Name = release.Title,
-//             Country = release.Country,
-//             Description = release.Disambiguation,
-//             Year = release.Date.ParseYear(),
-//             Tracks = media.Tracks.Length,
-//             LibraryId = library.Id
-//         };
-//
-//         if (shouldInsert)
-//         {
-//             albumInsert.Cover = cover is not null ? $"/{release.Id}.jpg" : null;
-//             albumInsert.LibraryId = library.Id;
-//             albumInsert.FolderId = FolderId;
-//             albumInsert.Folder = Folder;
-//             albumInsert.HostFolder = HostFolder;
-//             albumInsert._colorPalette = await ImageLogic2.GenerateColorPalette(coverPath: cover);
-//
-//             await DownloadImage(cover, release.Id);
-//         }
-//
-//         try
-//         {
-//             await mediaContext.Albums.Upsert(albumInsert)
-//                 .On(e => e.Id)
-//                 .WhenMatched((s, i) => new Album
-//                 {
-//                     Id = i.Id,
-//                     Cover = i.Cover,
-//                     Name = i.Name,
-//                     Description = i.Description,
-//                     Year = i.Year,
-//                     Country = i.Country,
-//                     Tracks = i.Tracks,
-//
-//                     LibraryId = shouldInsert ? i.LibraryId : s.LibraryId,
-//                     Folder = shouldInsert ? i.Folder : s.Folder,
-//                     FolderId = shouldInsert ? i.FolderId : s.FolderId,
-//                     HostFolder = shouldInsert ? i.HostFolder : s.HostFolder
-//                 })
-//                 .RunAsync();
-//
-//             // MusicColorPaletteJob musicColorPaletteJob = new(albumInsert.Id.ToString(), "album");
-//             // JobDispatcher.Dispatch(musicColorPaletteJob, "image", 2);
-//
-//             Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
-//             {
-//                 QueryKey = ["music", "album", albumInsert.Id.ToString()]
-//             });
-//
-//             await LinkAlbumToReleaseGroup(release);
-//         }
-//         catch (Exception e)
-//         {
-//             Logger.App(e, LogEventLevel.Error);
-//             Logger.App(albumInsert);
-//         }
-//     }
-//
-//     private async Task StoreArtist(MusicBrainzArtist? artist)
-//     {
-//         if (artist == null) return;
-//
-//         var sanitizedArtistName = MyRegex()
-//             .Replace(artist.Name.ToLower(), "")
-//             .RemoveDiacritics();
-//
-//         var shouldInsert = SanitizedArtistFolderName == sanitizedArtistName;
-//
-//         await using MediaContext mediaContext = new();
-//         if (!shouldInsert && mediaContext.Artists.Any(a => a.Id == artist.Id)) return;
-//
-//         Artist artistInsert = new()
-//         {
-//             Id = artist.Id,
-//             Name = artist.Name,
-//             Description = artist.Disambiguation,
-//             LibraryId = library.Id
-//         };
-//
-//         if (shouldInsert)
-//         {
-//             var artistFolder = MakeArtistFolder();
-//
-//             artistInsert.Folder = artistFolder;
-//             artistInsert.HostFolder = (library.FolderLibraries
-//                     .FirstOrDefault()?.Folder.Path + "\\" + artistFolder)
-//                 .Replace("/", "\\");
-//             artistInsert.LibraryId = library.Id;
-//             artistInsert.FolderId = FolderId;
-//         }
-//
-//         try
-//         {
-//             await mediaContext.Artists.Upsert(artistInsert)
-//                 .On(e => e.Id)
-//                 .WhenMatched((s, i) => new Artist
-//                 {
-//                     Id = i.Id,
-//                     Name = i.Name,
-//                     Description = i.Description,
-//                     // Cover = i.Cover,
-//                     Folder = i.Folder,
-//                     HostFolder = i.HostFolder,
-//
-//                     LibraryId = shouldInsert ? i.LibraryId : s.LibraryId,
-//                     FolderId = shouldInsert ? i.FolderId : s.FolderId
-//                 })
-//                 .RunAsync();
-//
-//             // MusicColorPaletteJob musicColorPaletteJob = new(artistInsert.Id.ToString(), "artist");
-//             // JobDispatcher.Dispatch(musicColorPaletteJob, "image", 2);
-//
-//             await StoreArtistImages(artist);
-//
-//             Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
-//             {
-//                 QueryKey = ["music", "artist", artistInsert.Id.ToString()]
-//             });
-//         }
-//         catch (Exception e)
-//         {
-//             Logger.App(e, LogEventLevel.Error);
-//             Logger.App(artistInsert);
-//         }
-//     }
-//
-//     private async Task<MusicBrainzTrack?> StoreTrack(MusicBrainzRelease release, MusicBrainzTrack track, Media media,
-//         string? cover)
-//     {
-//         var sanitizedAlbumName = MyRegex()
-//             .Replace(release.Title.ToLower(), "")
-//             .RemoveDiacritics();
-//         var albumNameMatches = SanitizedAlbumFolderName.Contains(sanitizedAlbumName);
-//
-//         var sanitizedTrackName = MyRegex()
-//             .Replace(track.Title.ToLower(), "")
-//             .RemoveDiacritics();
-//         var trackNameMatches = SanitizedFileName.Contains(sanitizedTrackName);
-//
-//         var namesMatches = albumNameMatches && trackNameMatches;
-//
-//         var canUsePosition = DiscNumber is not null && TrackNumber is not null;
-//
-//         var albumPosition = media.Position == DiscNumber;
-//         var trackPositionNumber = track.Position == TrackNumber;
-//         var trackNumbersMatches = albumPosition && trackPositionNumber;
-//
-//         // if(canUsePosition && !trackNumbersMatches) return null;
-//
-//         var shouldInsert = (canUsePosition && trackNumbersMatches && namesMatches) || (!canUsePosition && namesMatches);
-//
-//         await using MediaContext mediaContext = new();
-//         if (!shouldInsert && mediaContext.Tracks.Any(t => t.Id == track.Id)) return null;
-//
-//         Track trackInsert = new()
-//         {
-//             Id = track.Id,
-//             Name = track.Title,
-//             Date = Music.FirstReleaseDate,
-//             DiscNumber = media.Position,
-//             TrackNumber = track.Position
-//         };
-//
-//         if (shouldInsert)
-//         {
-//             trackInsert.Quality = (int)Math.Floor((MediaAnalysis?.Format.BitRate ?? 0.0) / 1000.0);
-//             trackInsert.Duration =
-//                 HmsRegex().Replace((MediaAnalysis?.Duration ?? new TimeSpan()).ToString("hh\\:mm\\:ss"), "");
-//
-//             trackInsert.Cover = cover is not null ? $"/{release.Id}.jpg" : null;
-//
-//             trackInsert.Filename = FileName;
-//             trackInsert.FolderId = FolderId;
-//             trackInsert.Folder = Folder;
-//             trackInsert.HostFolder = HostFolder;
-//             trackInsert._colorPalette = await ImageLogic2.GenerateColorPalette(coverPath: cover);
-//
-//
-//             Logger.Http(
-//                 $"{release.Title}: {media.Position}-{track.Number} / {track.ArtistCredit.FirstOrDefault()?.Name} - {track.Title}");
-//         }
-//
-//         try
-//         {
-//             await mediaContext.Tracks.Upsert(trackInsert)
-//                 .On(e => e.Id)
-//                 .WhenMatched((ts, ti) => new Track
-//                 {
-//                     Id = ti.Id,
-//                     Name = ti.Name,
-//                     DiscNumber = ti.DiscNumber,
-//                     TrackNumber = ti.TrackNumber,
-//                     Cover = ti.Cover,
-//                     Date = ti.Date,
-//
-//                     Duration = shouldInsert ? ti.Duration : ts.Duration,
-//                     Filename = shouldInsert ? ti.Filename : ts.Filename,
-//                     Folder = shouldInsert ? ti.Folder : ts.Folder,
-//                     FolderId = shouldInsert ? ti.FolderId : ts.FolderId,
-//                     HostFolder = shouldInsert ? ti.HostFolder : ts.HostFolder,
-//                     Quality = shouldInsert ? ti.Quality : ts.Quality
-//                 })
-//                 .RunAsync();
-//
-//             if (!shouldInsert) return track;
-//
-//             // MusicColorPaletteJob musicColorPaletteJob = new(trackInsert.Id.ToString(), "track");
-//             // JobDispatcher.Dispatch(musicColorPaletteJob, "image", 2);
-//
-//             return track;
-//         }
-//         catch (Exception e)
-//         {
-//             Logger.App(e, LogEventLevel.Error);
-//             Logger.App(trackInsert);
-//         }
-//
-//         return null;
-//     }
-//
-//     private static async Task LinkAlbumToReleaseGroup(MusicBrainzRelease release)
-//     {
-//         AlbumRelease albumRelease = new()
-//         {
-//             AlbumId = release.Id,
-//             ReleaseId = release.ReleaseGroup.Id
-//         };
-//
-//         await using MediaContext mediaContext = new();
-//         await mediaContext.AlbumRelease.Upsert(albumRelease)
-//             .On(e => new { e.AlbumId, e.ReleaseId })
-//             .WhenMatched((s, i) => new AlbumRelease
-//             {
-//                 AlbumId = i.AlbumId,
-//                 ReleaseId = i.ReleaseId
-//             })
-//             .RunAsync();
-//     }
-//
-//     private static async Task LinkArtistToReleaseGroup(MusicBrainzRelease release, Guid artistId)
-//     {
-//         ArtistRelease artistRelease = new()
-//         {
-//             ArtistId = artistId,
-//             ReleaseId = release.ReleaseGroup.Id
-//         };
-//
-//         await using MediaContext mediaContext = new();
-//         await mediaContext.ArtistRelease.Upsert(artistRelease)
-//             .On(e => new { e.ArtistId, e.ReleaseId })
-//             .WhenMatched((s, i) => new ArtistRelease
-//             {
-//                 ArtistId = i.ArtistId,
-//                 ReleaseId = i.ReleaseId
-//             })
-//             .RunAsync();
-//     }
-//
-//     private async Task LinkAlbumToLibrary(MusicBrainzRelease release)
-//     {
-//         AlbumLibrary albumLibrary = new()
-//         {
-//             AlbumId = release.Id,
-//             LibraryId = library.Id
-//         };
-//
-//         await using MediaContext mediaContext = new();
-//         await mediaContext.AlbumLibrary.Upsert(albumLibrary)
-//             .On(e => new { e.AlbumId, e.LibraryId })
-//             .WhenMatched((s, i) => new AlbumLibrary
-//             {
-//                 AlbumId = i.AlbumId,
-//                 LibraryId = i.LibraryId
-//             })
-//             .RunAsync();
-//     }
-//
-//     private async Task LinkArtistToLibrary(MusicBrainzArtist artistArtist)
-//     {
-//         ArtistLibrary artistLibrary = new()
-//         {
-//             ArtistId = artistArtist.Id,
-//             LibraryId = library.Id
-//         };
-//
-//         await using MediaContext mediaContext = new();
-//         await mediaContext.ArtistLibrary.Upsert(artistLibrary)
-//             .On(e => new { e.ArtistId, e.LibraryId })
-//             .WhenMatched((s, i) => new ArtistLibrary
-//             {
-//                 ArtistId = i.ArtistId,
-//                 LibraryId = i.LibraryId
-//             })
-//             .RunAsync();
-//     }
-//
-//     private static async Task LinkTrackToAlbum(MusicBrainzTrack? track, MusicBrainzRelease? release)
-//     {
-//         if (track == null || release == null) return;
-//
-//         AlbumTrack albumTrack = new()
-//         {
-//             AlbumId = release.Id,
-//             TrackId = track.Id
-//         };
-//
-//         await using MediaContext mediaContext = new();
-//         await mediaContext.AlbumTrack.Upsert(albumTrack)
-//             .On(e => new { e.AlbumId, e.TrackId })
-//             .WhenMatched((s, i) => new AlbumTrack
-//             {
-//                 AlbumId = i.AlbumId,
-//                 TrackId = i.TrackId
-//             })
-//             .RunAsync();
-//
-//         Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
-//         {
-//             QueryKey = ["music", "album", albumTrack.AlbumId.ToString()]
-//         });
-//     }
-//
-//     private static async Task LinkArtistToAlbum(MusicBrainzArtist artistArtist, MusicBrainzRelease release)
-//     {
-//         AlbumArtist albumArtist = new()
-//         {
-//             AlbumId = release.Id,
-//             ArtistId = artistArtist.Id
-//         };
-//
-//         await using MediaContext mediaContext = new();
-//         await mediaContext.AlbumArtist.Upsert(albumArtist)
-//             .On(e => new { e.AlbumId, e.ArtistId })
-//             .WhenMatched((s, i) => new AlbumArtist
-//             {
-//                 AlbumId = i.AlbumId,
-//                 ArtistId = i.ArtistId
-//             })
-//             .RunAsync();
-//
-//         Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
-//         {
-//             QueryKey = ["music", "artist", albumArtist.ArtistId.ToString()]
-//         });
-//     }
-//
-//     private static async Task LinkArtistToTrack(MusicBrainzArtist artistArtist, MusicBrainzTrack track)
-//     {
-//         ArtistTrack artistTrack = new()
-//         {
-//             ArtistId = artistArtist.Id,
-//             TrackId = track.Id
-//         };
-//
-//         await using MediaContext mediaContext = new();
-//         await mediaContext.ArtistTrack.Upsert(artistTrack)
-//             .On(e => new { e.ArtistId, e.TrackId })
-//             .WhenMatched((s, i) => new ArtistTrack
-//             {
-//                 ArtistId = i.ArtistId,
-//                 TrackId = i.TrackId
-//             })
-//             .RunAsync();
-//
-//         Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
-//         {
-//             QueryKey = ["music", "artist", artistTrack.ArtistId.ToString()]
-//         });
-//     }
-//
-//     private static async Task StoreArtistImages(MusicBrainzArtist artistArtist)
-//     {
-//         try
-//         {
-//             ArtistClient musicClient = new();
-//             var fanArt = await musicClient.Artist(artistArtist.Id);
-//
-//             if (fanArt is null) return;
-//
-//             List<Image> thumbs = fanArt.Thumbs.ToList()
-//                 .ConvertAll<Image>(image => new Image(image, artistArtist, "thumb"));
-//             List<Image> logos = fanArt.Logos.ToList()
-//                 .ConvertAll<Image>(image => new Image(image, artistArtist, "logo"));
-//             List<Image> banners = fanArt.Banners.ToList()
-//                 .ConvertAll<Image>(image => new Image(image, artistArtist, "banner"));
-//             List<Image> hdLogos = fanArt.HdLogos.ToList()
-//                 .ConvertAll<Image>(image => new Image(image, artistArtist, "hdLogo"));
-//             List<Image> artistBackgrounds = fanArt.Backgrounds.ToList()
-//                 .ConvertAll<Image>(image => new Image(image, artistArtist, "background"));
-//
-//             List<Image> images = thumbs
-//                 .Concat(logos)
-//                 .Concat(banners)
-//                 .Concat(hdLogos)
-//                 .Concat(artistBackgrounds)
-//                 .ToList();
-//
-//             await using MediaContext mediaContext = new();
-//             await mediaContext.Images.UpsertRange(images)
-//                 .On(v => new { v.FilePath, v.ArtistId })
-//                 .WhenMatched((s, i) => new Image
-//                 {
-//                     Id = i.Id,
-//                     AspectRatio = i.AspectRatio,
-//                     Height = i.Height,
-//                     Iso6391 = i.Iso6391,
-//                     FilePath = i.FilePath,
-//                     Width = i.Width,
-//                     VoteAverage = i.VoteAverage,
-//                     VoteCount = i.VoteCount,
-//                     ArtistId = i.ArtistId,
-//                     Type = i.Type,
-//                     Site = i.Site
-//                 })
-//                 .RunAsync();
-//
-//             var url = await DownloadArtistImage(artistArtist, fanArt);
-//
-//             if (url is not null)
-//             {
-//                 var palette = await ImageLogic2.GenerateColorPalette(coverPath: url);
-//
-//                 var artist = await mediaContext.Artists
-//                     .FirstAsync(a => a.Id == artistArtist.Id);
-//
-//                 artist.Cover = $"/{artistArtist.Id}.jpg";
-//                 artist._colorPalette = palette;
-//
-//                 await mediaContext.SaveChangesAsync();
-//             }
-//
-//             // MusicColorPaletteJob musicColorPaletteJob = new(artistArtist.Id.ToString(), "artist");
-//             // JobDispatcher.Dispatch(musicColorPaletteJob, "data", 3);
-//         }
-//         catch (Exception)
-//         {
-//             //
-//
-//             //TODO: var cover = crawl lastFM for artist image
-//             // await DownloadImage(cover, artist.Id);
-//         }
-//     }
-//
-//     private static async Task StoreReleaseImages(MusicBrainzRelease release)
-//     {
-//         try
-//         {
-//             ArtistClient musicClient = new();
-//             var fanArt = await musicClient.Album(release.ReleaseGroup.Id);
-//
-//             if (fanArt is null) return;
-//
-//             List<Image> cdArts = fanArt.Albums.SelectMany(a => a.Value.CdArt).ToList()
-//                 .ConvertAll<Image>(image => new Image(image, release.ReleaseGroup, "cd"));
-//             List<Image> covers = fanArt.Albums.SelectMany(a => a.Value.Cover).ToList()
-//                 .ConvertAll<Image>(image => new Image(image, release.ReleaseGroup, "cover"));
-//
-//             List<Image> images = cdArts
-//                 .Concat(covers)
-//                 .ToList();
-//
-//             await using MediaContext mediaContext = new();
-//             await mediaContext.Images.UpsertRange(images)
-//                 .On(v => new { v.FilePath, v.ArtistId })
-//                 .WhenMatched((s, i) => new Image
-//                 {
-//                     Id = i.Id,
-//                     AspectRatio = i.AspectRatio,
-//                     Height = i.Height,
-//                     Iso6391 = i.Iso6391,
-//                     FilePath = i.FilePath,
-//                     Width = i.Width,
-//                     VoteAverage = i.VoteAverage,
-//                     VoteCount = i.VoteCount,
-//                     ArtistId = i.ArtistId,
-//                     Type = i.Type,
-//                     Site = i.Site
-//                 })
-//                 .RunAsync();
-//
-//             var url = await DownloadAlbumImage(release, fanArt);
-//
-//             if (url is not null)
-//             {
-//                 var palette = await ImageLogic2.GenerateColorPalette(coverPath: url);
-//
-//                 var artist = await mediaContext.Albums
-//                     .FirstAsync(a => a.Id == release.Id);
-//
-//                 artist.Cover = $"/{release.Id}.jpg";
-//                 artist._colorPalette = palette;
-//
-//                 await mediaContext.SaveChangesAsync();
-//             }
-//
-//             // MusicColorPaletteJob musicColorPaletteJob = new(release.Id.ToString(), "album");
-//             // JobDispatcher.Dispatch(musicColorPaletteJob, "data", 3);
-//         }
-//         catch (Exception)
-//         {
-//             //
-//         }
-//     }
-//
-//     private static async Task<string?> DownloadArtistImage(MusicBrainzArtist artistArtist,
-//         ArtistDetails fanArt)
-//     {
-//         var url = fanArt.Thumbs.FirstOrDefault()?.Url.ToString()
-//             .Replace("http://", "https://");
-//
-//         await DownloadImage(url, artistArtist.Id);
-//
-//         return url;
-//     }
-//
-//     private static async Task<string?> DownloadAlbumImage(MusicBrainzRelease release,
-//         Providers.FanArt.Models.Album fanArt)
-//     {
-//         var url = fanArt.Albums.SelectMany(a => a.Value.Cover)
-//             .FirstOrDefault()?.Url.ToString()
-//             .Replace("http://", "https://");
-//
-//         await DownloadImage(url, release.Id);
-//
-//         return url;
-//     }
-//
-//     private static async Task DownloadImage(string? url, Guid imagePath)
-//     {
-//         if (url is null) return;
-//
-//         var fullPath = $"{AppFiles.MusicImagesPath}\\{imagePath}.jpg";
-//
-//         if (System.IO.File.Exists(fullPath)) return;
-//
-//         HttpClient httpClient = new();
-//         httpClient.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
-//         httpClient.DefaultRequestHeaders.Add("Accept", "image/*");
-//
-//         var response = await httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-//
-//         if (response.IsSuccessStatusCode)
-//             await httpClient.GetByteArrayAsync(url)
-//                 .ContinueWith(async task => { await System.IO.File.WriteAllBytesAsync(fullPath, await task); });
-//     }
-//
-//     private Task DispatchJobs()
-//     {
-//         return Task.CompletedTask;
-//     }
-//
-//     public static async Task Palette(string id, string type)
-//     {
-//         await using MediaContext mediaContext = new();
-//
-//         switch (type)
-//         {
-//             case "artist":
-//                 var artist = await mediaContext.Artists
-//                     .Where(e => e.Id == Guid.Parse(id))
-//                     .FirstOrDefaultAsync();
-//
-//                 if (artist is not { _colorPalette: "" }) return;
-//
-//                 var artistPalette = await ImageLogic2.GenerateColorPalette(coverPath: artist.Cover);
-//                 artist._colorPalette = artistPalette;
-//
-//                 break;
-//             case "album":
-//                 var album = await mediaContext.Albums
-//                     .Where(e => e.Id == Guid.Parse(id))
-//                     .FirstOrDefaultAsync();
-//
-//                 if (album is not { _colorPalette: "" }) return;
-//
-//                 var albumPalette = await ImageLogic2.GenerateColorPalette(coverPath: album.Cover);
-//                 album._colorPalette = albumPalette;
-//
-//                 break;
-//             case "track":
-//                 var track = await mediaContext.Tracks
-//                     .Where(e => e.Id == Guid.Parse(id))
-//                     .FirstOrDefaultAsync();
-//
-//                 // if (track is not { _colorPalette: "" }) return;
-//                 if (track is null) return;
-//
-//                 var trackPalette = await ImageLogic2.GenerateColorPalette(coverPath: track.Cover);
-//                 track._colorPalette = trackPalette;
-//
-//                 break;
-//         }
-//
-//         await mediaContext.SaveChangesAsync();
-//     }
-//
-//     public void Dispose()
-//     {
-//         Music = null;
-//         MediaAnalysis = null;
-//         _recordingClient.Dispose();
-//         GC.Collect();
-//         GC.WaitForFullGCComplete();
-//         GC.WaitForPendingFinalizers();
-//     }
-//
-//     public async ValueTask DisposeAsync()
-//     {
-//         Music = null;
-//         MediaAnalysis = null;
-//         if (_recordingClient is IAsyncDisposable recordingClientAsyncDisposable)
-//             await recordingClientAsyncDisposable.DisposeAsync();
-//         else
-//             _recordingClient.Dispose();
-//         GC.Collect();
-//         GC.WaitForFullGCComplete();
-//         GC.WaitForPendingFinalizers();
-//     }
-// }
+using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
+using FFMpegCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using NoMercy.Data.Jobs;
+using NoMercy.Database;
+using NoMercy.Database.Models;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
+using NoMercy.Providers.AcoustId.Client;
+using NoMercy.Providers.AcoustId.Models;
+using NoMercy.Providers.MusicBrainz.Client;
+using NoMercy.Providers.MusicBrainz.Models;
+using NoMercy.Queue;
+using Serilog.Events;
 
+namespace NoMercy.Data.Logic;
+
+public partial class MusicLogic : IAsyncDisposable
+{
+    private AcoustIdFingerprint? FingerPrint { get; set; }
+    private ConcurrentBag<MediaFile>? Files { get; set; }
+    private MediaFolder ListPath { get; set; }
+
+    private int Year { get; set; }
+    private string AlbumName { get; set; }
+    private string ArtistName { get; set; }
+    private Library Library { get; set; }
+    private Folder? Folder { get; set; }
+
+    public MusicLogic(Library library, MediaFolder listPath)
+    {
+        GlobalFFOptions.Configure(options => options.BinaryFolder = Path.Combine(AppFiles.BinariesPath, "ffmpeg"));
+
+        Library = library;
+        ListPath = listPath;
+
+        Files = listPath.Files;
+
+        Match match = PathRegex().Match(listPath.Path);
+        ArtistName = match.Groups["artist"].Success ? match.Groups["artist"].Value : string.Empty;
+        AlbumName = match.Groups["album"].Success ? match.Groups["album"].Value : string.Empty;
+        Year = match.Groups["year"].Success ? Convert.ToInt32(match.Groups["year"].Value) : 1970;
+
+        string libraryFolder = (match.Groups["library_folder"].Success ? match.Groups["library_folder"].Value : null) ??
+                               string.Empty;
+
+        Folder = Library.FolderLibraries
+            .Select(folderLibrary => folderLibrary.Folder)
+            .FirstOrDefault(folder => folder.Path == libraryFolder);
+
+        Logger.App("Files", LogEventLevel.Verbose);
+        Logger.App(Files, LogEventLevel.Verbose);
+
+        Logger.App("ArtistName: " + ArtistName, LogEventLevel.Verbose);
+        Logger.App("AlbumName " + AlbumName, LogEventLevel.Verbose);
+        Logger.App("Year: " + Year, LogEventLevel.Verbose);
+
+        Logger.App("Folder: " + Folder?.Path, LogEventLevel.Verbose);
+    }
+
+    public async Task Process()
+    {
+        Logger.App($"Processing Folder: {Folder?.Path}", LogEventLevel.Verbose);
+        await Parallel.ForEachAsync(Files ?? [], async (file, ct) =>
+        {
+            try
+            {
+                Logger.App($"Analyzing File: {file.Name}", LogEventLevel.Debug);
+                IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.Path, cancellationToken: ct);
+
+                AcoustIdFingerprintRecording? fingerPrintRecording = await MatchTrack(file, mediaAnalysis);
+                if (fingerPrintRecording is not null)
+                {
+                    foreach (AcoustIdFingerprintReleaseGroups release in fingerPrintRecording.Releases ?? [])
+                    {
+                        if (release.TrackCount == null || release.TrackCount != Files?.Count)
+                        {
+                            Logger.App($"Track Count Mismatch: {release.Title}", LogEventLevel.Verbose);
+                            return;
+                        }
+
+                        try
+                        {
+                            await ProcessRelease(release, file);
+                        }
+                        catch (Exception e)
+                        {
+                            if (e.Message.Contains("404")) return;
+                            Logger.App(e.Message, LogEventLevel.Error);
+                        }
+                    }
+
+                    ;
+                    return;
+                }
+
+                AcoustIdFingerprintReleaseGroups? fallbackParsedResult = FallbackParser(file, mediaAnalysis);
+                if (fallbackParsedResult is null) return;
+
+                await ProcessRelease(fallbackParsedResult, file);
+            }
+            catch (Exception e)
+            {
+                if (e.Message.Contains("404")) return;
+                Logger.App(e.Message, LogEventLevel.Error);
+            }
+        });
+    }
+
+    private async Task ProcessRelease(AcoustIdFingerprintReleaseGroups release, MediaFile mediaFile)
+    {
+        Logger.App($"Processing release: {release.Title} with id: {release.Id}", LogEventLevel.Verbose);
+
+        using MusicBrainzReleaseClient musicBrainzReleaseClient = new(release.Id);
+
+        MusicBrainzReleaseAppends? releaseAppends = await musicBrainzReleaseClient.WithAllAppends();
+
+        if (releaseAppends is null || releaseAppends.Title.IsNullOrEmpty())
+        {
+            Logger.App($"Release not found: {release.Title}", LogEventLevel.Warning);
+            await Task.CompletedTask;
+            return;
+        }
+
+        if (await StoreReleaseGroups(releaseAppends) is null)
+            Logger.App($"Release Group already exists: {releaseAppends.MusicBrainzReleaseGroup.Title}",
+                LogEventLevel.Verbose);
+        // await Task.CompletedTask;
+        // return;
+        else
+            Logger.App($"Processing release: {release.Title} with id: {release.Id}", LogEventLevel.Debug);
+
+        if (await StoreRelease(releaseAppends, mediaFile) is null)
+            Logger.App($"Release already exists: {releaseAppends.Title}", LogEventLevel.Verbose);
+        // await Task.CompletedTask;
+        // return;
+        await LinkReleaseToReleaseGroup(releaseAppends);
+        await LinkReleaseToLibrary(releaseAppends);
+
+        foreach (MusicBrainzMedia media in releaseAppends.Media)
+        foreach (MusicBrainzTrack track in media.Tracks)
+        {
+            if (await StoreTrack(releaseAppends, track, media, mediaFile) is null) continue;
+
+            await LinkTrackToRelease(track, releaseAppends);
+
+            foreach (ReleaseArtistCredit artist in track.ArtistCredit)
+            {
+                await StoreArtist(artist.MusicBrainzArtist);
+                await LinkArtistToTrack(artist.MusicBrainzArtist, track);
+
+                await LinkArtistToAlbum(artist.MusicBrainzArtist, releaseAppends);
+                await LinkArtistToLibrary(artist.MusicBrainzArtist);
+
+                await LinkArtistToReleaseGroup(releaseAppends, artist.MusicBrainzArtist.Id);
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private async Task<AcoustIdFingerprintRecording?> MatchTrack(MediaFile file, IMediaAnalysis mediaAnalysis)
+    {
+        Logger.App($"Matching Track: {file.Name}", LogEventLevel.Verbose);
+
+        try
+        {
+            AcoustIdFingerprintClient acoustIdFingerprintClient = new();
+            FingerPrint = await acoustIdFingerprintClient.Lookup(file.Path);
+            acoustIdFingerprintClient.Dispose();
+            if (FingerPrint is null) return null;
+        }
+        catch (Exception e)
+        {
+            Logger.App(e.Message, LogEventLevel.Error);
+            throw;
+        }
+
+        AcoustIdFingerprintRecording? fingerPrintRecording = null;
+
+        foreach (AcoustIdFingerprintResult fingerPrint in FingerPrint?.Results ?? [])
+        {
+            Logger.App($"Matching Recording: {fingerPrint.Id}", LogEventLevel.Verbose);
+            foreach (AcoustIdFingerprintRecording? recording in fingerPrint.Recordings ?? [])
+            {
+                if (recording?.Releases is null) continue;
+
+                fingerPrintRecording = MatchRelease(file, recording, mediaAnalysis);
+
+                if (fingerPrintRecording is not null) break;
+
+                fingerPrintRecording = MatchRelease(file, recording, mediaAnalysis, false);
+            }
+        }
+
+        return fingerPrintRecording;
+    }
+
+    private AcoustIdFingerprintReleaseGroups? FallbackParser(MediaFile file, IMediaAnalysis mediaAnalysis)
+    {
+        Logger.App($"Fallback Parser: {file.Name}", LogEventLevel.Verbose);
+        string? albumId = mediaAnalysis.Format.Tags?.FirstOrDefault(t => t.Key == "MusicBrainz Album Id").Value;
+
+        Logger.App($"AlbumId: {albumId}", LogEventLevel.Verbose);
+
+        if (albumId is null) return null;
+
+        return new AcoustIdFingerprintReleaseGroups()
+        {
+            Id = albumId.ToGuid()
+        };
+    }
+
+    private AcoustIdFingerprintRecording? MatchRelease(MediaFile file, AcoustIdFingerprintRecording? recording,
+        IMediaAnalysis mediaAnalysis, bool strictMatch = true)
+    {
+        Logger.App($"Matching Release: {recording?.Title}", LogEventLevel.Verbose);
+        if (recording is null) return null;
+
+        AcoustIdFingerprintRecording? fingerPrintRecording = null;
+
+        foreach (AcoustIdFingerprintReleaseGroups release in recording.Releases ?? [])
+        {
+            bool matchesTrackCount = release.TrackCount != null && release.TrackCount == Files?.Count;
+            if (!matchesTrackCount) continue;
+
+            string fileNameSanitized = file.Parsed?.Title?.RemoveDiacritics().RemoveNonAlphaNumericCharacters() ??
+                                       string.Empty;
+            string recordNameSanitized =
+                recording.Title?.RemoveDiacritics().RemoveNonAlphaNumericCharacters() ?? string.Empty;
+            bool matchesName = !fileNameSanitized.Equals(string.Empty)
+                               && !recordNameSanitized.Equals(string.Empty)
+                               && fileNameSanitized.Contains(recordNameSanitized);
+
+            // var mediaAnalysis = FFProbe.AnalyseAsync(file.Path).Result;
+            double fileDuration = mediaAnalysis.Format.Duration.TotalSeconds;
+            int recordDuration = recording.Duration;
+            bool matchesDuration = fileDuration > 0
+                                   && recordDuration > 0
+                                   && Math.Abs(recordDuration - fileDuration) < 10;
+
+            if (strictMatch && matchesName && matchesDuration)
+            {
+                fingerPrintRecording = recording;
+                break;
+            }
+
+            if (!matchesName && !matchesDuration) continue;
+            fingerPrintRecording = recording;
+            break;
+        }
+
+        return fingerPrintRecording;
+    }
+
+    private static string MakeArtistFolder(string artist)
+    {
+        string artistName = artist.RemoveDiacritics();
+
+        string artistFolder = char.IsNumber(artistName[0])
+            ? "#"
+            : artistName[0].ToString().ToUpper();
+
+        return $"/{artistFolder}/{artistName}";
+    }
+
+
+    private async Task<MusicBrainzReleaseAppends?> StoreReleaseGroups(MusicBrainzReleaseAppends musicBrainzRelease)
+    {
+        Logger.App($"Storing Release Group: {musicBrainzRelease.MusicBrainzReleaseGroup.Title}", LogEventLevel.Verbose);
+        MediaContext mediaContext = new();
+        bool hasReleaseGroup = mediaContext.ReleaseGroups
+            .AsNoTracking()
+            .Any(r => r.Id == musicBrainzRelease.MusicBrainzReleaseGroup.Id);
+
+        if (hasReleaseGroup) return null;
+
+        ReleaseGroup insert = new()
+        {
+            Id = musicBrainzRelease.MusicBrainzReleaseGroup.Id,
+            Title = musicBrainzRelease.MusicBrainzReleaseGroup.Title,
+            Description = musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation.IsNullOrEmpty()
+                ? null
+                : musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation,
+            Year = musicBrainzRelease.MusicBrainzReleaseGroup.FirstReleaseDate.ParseYear(),
+            LibraryId = Library.Id
+        };
+
+        try
+        {
+            await mediaContext.ReleaseGroups.Upsert(insert)
+                .On(e => new { e.Id })
+                .WhenMatched((s, i) => new ReleaseGroup
+                {
+                    UpdatedAt = DateTime.UtcNow,
+                    Id = i.Id,
+                    Title = i.Title,
+                    Description = i.Description,
+                    Year = i.Year,
+                    LibraryId = i.LibraryId
+                })
+                .RunAsync();
+
+            foreach (MusicBrainzGenreDetails genre in musicBrainzRelease.MusicBrainzReleaseGroup.Genres ?? [])
+                await LinkGenreToReleaseGroup(musicBrainzRelease.MusicBrainzReleaseGroup, genre);
+
+            MusicDescriptionJob musicDescriptionJob = new(musicBrainzRelease.MusicBrainzReleaseGroup);
+            JobDispatcher.Dispatch(musicDescriptionJob, "data", 2);
+        }
+        catch (Exception e)
+        {
+            Logger.App(e.Message, LogEventLevel.Error);
+            return null;
+        }
+
+        Logger.App($"Release Group stored: {musicBrainzRelease.MusicBrainzReleaseGroup.Title}", LogEventLevel.Verbose);
+        return musicBrainzRelease;
+    }
+
+    private async Task<MusicBrainzReleaseAppends?> StoreRelease(MusicBrainzReleaseAppends musicBrainzRelease,
+        MediaFile mediaFile)
+    {
+        Logger.App($"Storing Release: {musicBrainzRelease.Title}", LogEventLevel.Verbose);
+        MusicBrainzMedia? media = musicBrainzRelease.Media.FirstOrDefault(m => m.Tracks.Length > 0);
+        if (media is null) return null;
+
+        MediaContext mediaContext = new();
+        bool hasAlbum = mediaContext.Albums
+            .AsNoTracking()
+            .Any(a => a.Id == musicBrainzRelease.Id && a.Cover != null);
+
+        if (hasAlbum) return musicBrainzRelease;
+
+        string folder = mediaFile.Parsed?.FilePath.Replace(Path.DirectorySeparatorChar + mediaFile.Name, "") ??
+                        string.Empty;
+
+        Album insert = new()
+        {
+            Id = musicBrainzRelease.Id,
+            Name = musicBrainzRelease.Title,
+            Country = musicBrainzRelease.Country,
+            Disambiguation = musicBrainzRelease.Disambiguation.IsNullOrEmpty()
+                ? null
+                : musicBrainzRelease.Disambiguation,
+            Year = musicBrainzRelease.DateTime?.ParseYear() ??
+                   musicBrainzRelease.ReleaseEvents?.FirstOrDefault()?.DateTime?.ParseYear() ?? 0,
+            Tracks = media.Tracks.Length,
+
+            LibraryId = Library.Id,
+            FolderId = Folder!.Id,
+            Folder = folder.Replace(Folder.Path, "")
+                .Replace("\\", "/"),
+            HostFolder = folder.PathName()
+        };
+
+        try
+        {
+            await mediaContext.Albums.Upsert(insert)
+                .On(e => new { e.Id })
+                .WhenMatched((s, i) => new Album
+                {
+                    UpdatedAt = DateTime.UtcNow,
+                    Id = i.Id,
+                    Name = i.Name,
+                    Disambiguation = i.Disambiguation,
+                    Description = i.Description,
+                    Year = i.Year,
+                    Country = i.Country,
+                    Tracks = i.Tracks,
+
+                    LibraryId = i.LibraryId,
+                    Folder = i.Folder,
+                    FolderId = i.FolderId,
+                    HostFolder = i.HostFolder
+                })
+                .RunAsync();
+
+            foreach (MusicBrainzGenreDetails genre in musicBrainzRelease.Genres)
+                await LinkGenreToRelease(musicBrainzRelease, genre);
+
+            CoverArtImageJob coverArtImageJob = new(musicBrainzRelease);
+            JobDispatcher.Dispatch(coverArtImageJob, "image", 3);
+
+            FanArtImagesJob fanartImagesJob = new(musicBrainzRelease);
+            JobDispatcher.Dispatch(fanartImagesJob, "image", 2);
+
+            Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
+            {
+                QueryKey = ["music", "albums", musicBrainzRelease.Id.ToString()]
+            });
+        }
+        catch (Exception e)
+        {
+            Logger.App(e.Message, LogEventLevel.Error);
+            return null;
+        }
+
+        Logger.App($"Release stored: {musicBrainzRelease.Title}", LogEventLevel.Verbose);
+
+        return musicBrainzRelease;
+    }
+
+    private async Task StoreArtist(MusicBrainzArtistDetails musicBrainzArtist)
+    {
+        Logger.App($"Processing Artist: {musicBrainzArtist.Name}", LogEventLevel.Verbose);
+        MediaContext mediaContext = new();
+        bool hasArtist = mediaContext.Artists
+            .AsNoTracking()
+            .Any(a => a.Id == musicBrainzArtist.Id);
+
+        if (hasArtist) return;
+
+        string artistFolder = MakeArtistFolder(musicBrainzArtist.Name);
+        Artist insert = new()
+        {
+            Id = musicBrainzArtist.Id,
+            Name = musicBrainzArtist.Name,
+            Disambiguation = musicBrainzArtist.Disambiguation.IsNullOrEmpty() ? null : musicBrainzArtist.Disambiguation,
+            Country = musicBrainzArtist.Country,
+            TitleSort = musicBrainzArtist.SortName,
+
+            Folder = artistFolder,
+            HostFolder = Path.Join(Library.FolderLibraries.FirstOrDefault()?.Folder.Path, artistFolder).PathName(),
+            LibraryId = Library.Id,
+            FolderId = Folder!.Id
+        };
+
+        try
+        {
+            await mediaContext.Artists.Upsert(insert)
+                .On(e => new { e.Id })
+                .WhenMatched((s, i) => new Artist
+                {
+                    UpdatedAt = DateTime.UtcNow,
+                    Id = i.Id,
+                    Name = i.Name,
+                    Disambiguation = i.Disambiguation,
+                    Description = i.Description,
+
+                    Folder = i.Folder,
+                    HostFolder = i.HostFolder,
+                    LibraryId = i.LibraryId,
+                    FolderId = i.FolderId
+                })
+                .RunAsync();
+        }
+        catch (Exception e)
+        {
+            Logger.App(e.Message, LogEventLevel.Error);
+            return;
+        }
+
+        try
+        {
+            foreach (MusicBrainzGenreDetails genre in musicBrainzArtist.Genres ?? [])
+                await LinkGenreToArtist(musicBrainzArtist, genre);
+        }
+        catch (Exception e)
+        {
+            Logger.App(e.Message, LogEventLevel.Error);
+        }
+
+        MusicDescriptionJob musicDescriptionJob = new(musicBrainzArtist);
+        JobDispatcher.Dispatch(musicDescriptionJob, "data", 2);
+
+        FanArtImagesJob fanartImagesJob = new(musicBrainzArtist);
+        JobDispatcher.Dispatch(fanartImagesJob, "image", 2);
+
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
+        {
+            QueryKey = ["music", "artists", musicBrainzArtist.Id.ToString()]
+        });
+    }
+
+    private async Task<MusicBrainzTrack?> StoreTrack(MusicBrainzReleaseAppends musicBrainzRelease,
+        MusicBrainzTrack musicBrainzTrack, MusicBrainzMedia musicBrainzMedia, MediaFile mediaFile)
+    {
+        Logger.App($"Processing Track: {musicBrainzTrack.Title}", LogEventLevel.Verbose);
+        MediaContext mediaContext = new();
+        bool hasTrack = mediaContext.Tracks
+            .AsNoTracking()
+            .Any(t => t.Id == musicBrainzTrack.Id && t.Filename != null && t.Duration != null);
+
+        if (hasTrack) return null;
+
+        Track insert = new()
+        {
+            Id = musicBrainzTrack.Id,
+            Name = musicBrainzTrack.Title,
+            Date = musicBrainzRelease.DateTime ?? musicBrainzRelease.ReleaseEvents?.FirstOrDefault()?.DateTime,
+            DiscNumber = musicBrainzMedia.Position,
+            TrackNumber = musicBrainzTrack.Position
+        };
+
+        string? file = FileMatch(musicBrainzRelease, musicBrainzMedia, insert);
+
+        if (file is not null)
+        {
+            Logger.App($"File Match: {file}", LogEventLevel.Verbose);
+            IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file);
+            string folder = mediaFile.Parsed?.FilePath.Replace(Path.DirectorySeparatorChar + mediaFile.Name, "") ??
+                            string.Empty;
+
+            insert.Filename = "/" + Path.GetFileName(file);
+            insert.Quality = (int)Math.Floor(mediaAnalysis.Format.BitRate / 1000.0);
+            insert.Duration =
+                HmsRegex().Replace(mediaAnalysis.Duration.ToString("hh\\:mm\\:ss"), "");
+
+            insert.FolderId = Folder!.Id;
+            insert.Folder = folder.Replace(Folder.Path, "").Replace("\\", "/");
+            insert.HostFolder = folder.PathName();
+        }
+
+        try
+        {
+            await mediaContext.Tracks.Upsert(insert)
+                .On(e => new { e.Id })
+                .WhenMatched((ts, ti) => new Track
+                {
+                    UpdatedAt = DateTime.UtcNow,
+                    Id = ti.Id,
+                    Name = ti.Name,
+                    DiscNumber = ti.DiscNumber,
+                    TrackNumber = ti.TrackNumber,
+                    Date = ti.Date,
+
+                    Folder = file == "" ? ts.Folder : ti.Folder,
+                    FolderId = file == "" ? ts.FolderId : ti.FolderId,
+                    HostFolder = file == "" ? ts.HostFolder : ti.HostFolder,
+                    Duration = file == "" ? ts.Duration : ti.Duration,
+                    Filename = file == "" ? ts.Filename : ti.Filename,
+                    Quality = file == "" ? ts.Quality : ti.Quality
+                })
+                .RunAsync();
+        }
+        catch (Exception e)
+        {
+            Logger.App(e.Message, LogEventLevel.Error);
+            return null;
+        }
+
+        try
+        {
+            foreach (MusicBrainzGenreDetails genre in musicBrainzTrack.Genres ?? [])
+                await LinkGenreToTrack(musicBrainzTrack, genre);
+        }
+        catch (Exception e)
+        {
+            Logger.App(e.Message, LogEventLevel.Error);
+            return null;
+        }
+
+        Logger.App($"Track stored: {musicBrainzTrack.Title}", LogEventLevel.Verbose);
+        return musicBrainzTrack;
+    }
+
+    private string? FileMatch(MusicBrainzReleaseAppends musicBrainzRelease, MusicBrainzMedia musicBrainzMedia,
+        Track track)
+    {
+        string? file = FindTrackWithAlbumNumberByNumberPadded(musicBrainzMedia, null, musicBrainzRelease.Media.Length,
+            track.TrackNumber, 4);
+        file = FindTrackWithAlbumNumberByNumberPadded(musicBrainzMedia, file, musicBrainzRelease.Media.Length,
+            track.TrackNumber, 3);
+        file = FindTrackWithAlbumNumberByNumberPadded(musicBrainzMedia, file, musicBrainzRelease.Media.Length,
+            track.TrackNumber);
+
+        file = FindTrackWithoutAlbumNumberByNumberPadded(musicBrainzMedia, file, musicBrainzRelease.Media.Length,
+            track.TrackNumber, 4);
+        file = FindTrackWithoutAlbumNumberByNumberPadded(musicBrainzMedia, file, musicBrainzRelease.Media.Length,
+            track.TrackNumber, 3);
+        file = FindTrackWithoutAlbumNumberByNumberPadded(musicBrainzMedia, file, musicBrainzRelease.Media.Length,
+            track.TrackNumber);
+
+        return file;
+    }
+
+    private async Task LinkReleaseToReleaseGroup(MusicBrainzReleaseAppends musicBrainzRelease)
+    {
+        Logger.App($"Linking Release to Release Group: {musicBrainzRelease.MusicBrainzReleaseGroup.Title}",
+            LogEventLevel.Verbose);
+        AlbumReleaseGroup insert = new()
+        {
+            AlbumId = musicBrainzRelease.Id,
+            ReleaseGroupId = musicBrainzRelease.MusicBrainzReleaseGroup.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.AlbumReleaseGroup.Upsert(insert)
+            .On(e => new { e.AlbumId, e.ReleaseGroupId })
+            .WhenMatched((s, i) => new AlbumReleaseGroup
+            {
+                AlbumId = i.AlbumId,
+                ReleaseGroupId = i.ReleaseGroupId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkArtistToReleaseGroup(MusicBrainzReleaseAppends musicBrainzRelease, Guid artistId)
+    {
+        Logger.App($"Linking Artist to Release Group: {musicBrainzRelease.MusicBrainzReleaseGroup.Title}",
+            LogEventLevel.Verbose);
+        ArtistReleaseGroup insert = new()
+        {
+            ArtistId = artistId,
+            ReleaseGroupId = musicBrainzRelease.MusicBrainzReleaseGroup.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.ArtistReleaseGroup.Upsert(insert)
+            .On(e => new { e.ArtistId, e.ReleaseGroupId })
+            .WhenMatched((s, i) => new ArtistReleaseGroup
+            {
+                ArtistId = i.ArtistId,
+                ReleaseGroupId = i.ReleaseGroupId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkReleaseToLibrary(MusicBrainzReleaseAppends musicBrainzRelease)
+    {
+        Logger.App($"Linking Release to Library: {musicBrainzRelease.Title}", LogEventLevel.Verbose);
+        AlbumLibrary insert = new()
+        {
+            AlbumId = musicBrainzRelease.Id,
+            LibraryId = Library.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.AlbumLibrary.Upsert(insert)
+            .On(e => new { e.AlbumId, e.LibraryId })
+            .WhenMatched((s, i) => new AlbumLibrary
+            {
+                AlbumId = i.AlbumId,
+                LibraryId = i.LibraryId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkArtistToLibrary(MusicBrainzArtist musicBrainzArtistMusicBrainzArtist)
+    {
+        Logger.App($"Linking Artist to Library: {musicBrainzArtistMusicBrainzArtist.Name}", LogEventLevel.Verbose);
+        ArtistLibrary insert = new()
+        {
+            ArtistId = musicBrainzArtistMusicBrainzArtist.Id,
+            LibraryId = Library.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.ArtistLibrary.Upsert(insert)
+            .On(e => new { e.ArtistId, e.LibraryId })
+            .WhenMatched((s, i) => new ArtistLibrary
+            {
+                ArtistId = i.ArtistId,
+                LibraryId = i.LibraryId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkTrackToRelease(MusicBrainzTrack? track, MusicBrainzReleaseAppends? release)
+    {
+        Logger.App($"Linking Track to Release: {track?.Title}", LogEventLevel.Verbose);
+        if (track == null || release == null) return;
+
+        AlbumTrack insert = new()
+        {
+            AlbumId = release.Id,
+            TrackId = track.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.AlbumTrack.Upsert(insert)
+            .On(e => new { e.AlbumId, e.TrackId })
+            .WhenMatched((s, i) => new AlbumTrack
+            {
+                AlbumId = i.AlbumId,
+                TrackId = i.TrackId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkArtistToAlbum(MusicBrainzArtist musicBrainzArtistMusicBrainzArtist,
+        MusicBrainzReleaseAppends musicBrainzRelease)
+    {
+        Logger.App($"Linking Artist to Album: {musicBrainzRelease.Title}", LogEventLevel.Verbose);
+        AlbumArtist insert = new()
+        {
+            AlbumId = musicBrainzRelease.Id,
+            ArtistId = musicBrainzArtistMusicBrainzArtist.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.AlbumArtist.Upsert(insert)
+            .On(e => new { e.AlbumId, e.ArtistId })
+            .WhenMatched((s, i) => new AlbumArtist
+            {
+                AlbumId = i.AlbumId,
+                ArtistId = i.ArtistId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkArtistToTrack(MusicBrainzArtist musicBrainzArtistMusicBrainzArtist,
+        MusicBrainzTrack musicBrainzTrack)
+    {
+        Logger.App($"Linking Artist to Track: {musicBrainzTrack.Title}", LogEventLevel.Verbose);
+        ArtistTrack insert = new()
+        {
+            ArtistId = musicBrainzArtistMusicBrainzArtist.Id,
+            TrackId = musicBrainzTrack.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.ArtistTrack.Upsert(insert)
+            .On(e => new { e.ArtistId, e.TrackId })
+            .WhenMatched((s, i) => new ArtistTrack
+            {
+                ArtistId = i.ArtistId,
+                TrackId = i.TrackId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkGenreToReleaseGroup(MusicBrainzReleaseGroup musicBrainzReleaseGroup,
+        MusicBrainzGenreDetails musicBrainzGenre)
+    {
+        Logger.App($"Linking Genre to Release Group: {musicBrainzReleaseGroup.Title}", LogEventLevel.Verbose);
+        MusicGenreReleaseGroup insert = new()
+        {
+            GenreId = musicBrainzGenre.Id,
+            ReleaseGroupId = musicBrainzReleaseGroup.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.MusicGenreReleaseGroup.Upsert(insert)
+            .On(e => new { e.GenreId, e.ReleaseGroupId })
+            .WhenMatched((s, i) => new MusicGenreReleaseGroup
+            {
+                GenreId = i.GenreId,
+                ReleaseGroupId = i.ReleaseGroupId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkGenreToArtist(MusicBrainzArtistDetails musicBrainzArtist,
+        MusicBrainzGenreDetails musicBrainzGenre)
+    {
+        Logger.App($"Linking Genre to Artist: {musicBrainzArtist.Name}", LogEventLevel.Verbose);
+
+        bool genreExists = new MediaContext().MusicGenres
+            .AsNoTracking()
+            .Any(g => g.Id == musicBrainzGenre.Id);
+
+        if (!genreExists)
+        {
+            Logger.App($"Genre does not exist: {musicBrainzGenre.Name}, creating it", LogEventLevel.Verbose);
+            MusicGenre genreInsert = new()
+            {
+                Id = musicBrainzGenre.Id,
+                Name = musicBrainzGenre.Name
+            };
+
+            await new MediaContext().MusicGenres.Upsert(genreInsert)
+                .On(e => new { e.Id })
+                .WhenMatched((s, i) => new MusicGenre
+                {
+                    Id = i.Id,
+                    Name = i.Name
+                })
+                .RunAsync();
+        }
+
+        ArtistMusicGenre insert = new()
+        {
+            MusicGenreId = musicBrainzGenre.Id,
+            ArtistId = musicBrainzArtist.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.ArtistMusicGenre.Upsert(insert)
+            .On(e => new { e.MusicGenreId, e.ArtistId })
+            .WhenMatched((s, i) => new ArtistMusicGenre
+            {
+                MusicGenreId = i.MusicGenreId,
+                ArtistId = i.ArtistId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkGenreToRelease(MusicBrainzReleaseAppends artist, MusicBrainzGenreDetails musicBrainzGenre)
+    {
+        Logger.App($"Linking Genre to Album: {artist.Title}", LogEventLevel.Verbose);
+        AlbumMusicGenre insert = new()
+        {
+            MusicGenreId = musicBrainzGenre.Id,
+            AlbumId = artist.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.AlbumMusicGenre.Upsert(insert)
+            .On(e => new { e.MusicGenreId, e.AlbumId })
+            .WhenMatched((s, i) => new AlbumMusicGenre
+            {
+                MusicGenreId = i.MusicGenreId,
+                AlbumId = i.AlbumId
+            })
+            .RunAsync();
+    }
+
+    private async Task LinkGenreToTrack(MusicBrainzTrack musicBrainzTrack, MusicBrainzGenreDetails musicBrainzGenre)
+    {
+        Logger.App($"Linking Genre to Track: {musicBrainzTrack.Title}", LogEventLevel.Verbose);
+        MusicGenreTrack insert = new()
+        {
+            GenreId = musicBrainzGenre.Id,
+            TrackId = musicBrainzTrack.Id
+        };
+
+        MediaContext mediaContext = new();
+        await mediaContext.MusicGenreTrack.Upsert(insert)
+            .On(e => new { e.GenreId, e.TrackId })
+            .WhenMatched((s, i) => new MusicGenreTrack
+            {
+                GenreId = i.GenreId,
+                TrackId = i.TrackId
+            })
+            .RunAsync();
+    }
+
+    private string? FindTrackWithoutAlbumNumberByNumberPadded(MusicBrainzMedia musicBrainzMedia, string? file,
+        int numberOfAlbums, int trackNumber, int padding = 2)
+    {
+        if (file is not null) return file;
+        if (numberOfAlbums > 1) return file;
+
+        return Files?.FirstOrDefault(f =>
+        {
+            string fileName = Path.GetFileName(f.Parsed!.FilePath).RemoveDiacritics().RemoveNonAlphaNumericCharacters()
+                .ToLower();
+
+            string matchNumber = $"{trackNumber.ToString().PadLeft(padding, '0')} ";
+            string matchString = musicBrainzMedia.Tracks[trackNumber - 1].Title
+                .RemoveDiacritics().RemoveNonAlphaNumericCharacters().ToLower().Replace(".mp3", "");
+
+            return fileName.StartsWith(matchNumber)
+                   && fileName.Contains(matchString);
+        })?.Parsed!.FilePath;
+    }
+
+    private string? FindTrackWithAlbumNumberByNumberPadded(MusicBrainzMedia musicBrainzMedia, string? file,
+        int numberOfAlbums, int trackNumber, int padding = 2)
+    {
+        if (file is not null) return file;
+        if (numberOfAlbums == 1) return file;
+
+        return Files?.FirstOrDefault(f =>
+        {
+            string fileName = Path.GetFileName(f.Parsed!.FilePath).RemoveDiacritics().RemoveNonAlphaNumericCharacters()
+                .ToLower();
+
+            string matchNumber = $"{musicBrainzMedia.Position}-{trackNumber.ToString().PadLeft(padding, '0')} ";
+            string matchString = musicBrainzMedia.Tracks[trackNumber - 1].Title
+                .RemoveDiacritics().RemoveNonAlphaNumericCharacters().ToLower().Replace(".mp3", "");
+
+            return fileName.StartsWith(matchNumber)
+                   && fileName.Contains(matchString);
+        })?.Parsed!.FilePath;
+    }
+
+    [GeneratedRegex("^00:")]
+    private static partial Regex HmsRegex();
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    [GeneratedRegex(
+        @"(?<library_folder>.+?)[\\\/]((?<letter>.{1})?|\[(?<type>.+?)\])[\\\/](?<artist>.+?)?[\\\/]?(\[(?<year>\d{4})\]?\s?(?<album>.*)?)")]
+    private static partial Regex PathRegex();
+}

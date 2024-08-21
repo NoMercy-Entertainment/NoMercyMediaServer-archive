@@ -1,4 +1,5 @@
-﻿using NoMercy.Providers.TMDB.Models.Genres;
+﻿using NoMercy.Providers.TMDB.Client.Mocks;
+using NoMercy.Providers.TMDB.Models.Genres;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
 using TmdbMovieCertifications = NoMercy.Providers.TMDB.Models.Certifications.TmdbMovieCertifications;
@@ -7,12 +8,15 @@ using TmdbMovieCertifications = NoMercy.Providers.TMDB.Models.Certifications.Tmd
 
 namespace NoMercy.Providers.TMDB.Client;
 
-public class TmdbMovieClient : TmdbBaseClient
+public class TmdbMovieClient : TmdbBaseClient,  ITmdbMovieClient
 {
-    public TmdbMovieClient(int? id = 0, string[]? appendices = null) : base((int)id!)
+    private readonly MovieResponseMocks? _mockDataProvider;
+    
+    public TmdbMovieClient(int? id = 0, string[]? appendices = null, MovieResponseMocks? mockDataProvider = null) : base((int)id!)
     {
+        _mockDataProvider = mockDataProvider;
     }
-
+    
     public Task<TmdbMovieDetails?> Details()
     {
         return Get<TmdbMovieDetails>("movie/" + Id);
@@ -30,6 +34,11 @@ public class TmdbMovieClient : TmdbBaseClient
 
     public Task<TmdbMovieAppends?> WithAllAppends(bool? priority = false)
     {
+        if (_mockDataProvider != null)
+        {
+            return Task.FromResult(_mockDataProvider.MockMovieAppendsResponse());
+        }
+        
         return WithAppends([
             "alternative_titles",
             "release_dates",

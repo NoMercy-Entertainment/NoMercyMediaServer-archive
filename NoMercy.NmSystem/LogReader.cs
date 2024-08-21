@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using Serilog.Events;
 
 namespace NoMercy.NmSystem;

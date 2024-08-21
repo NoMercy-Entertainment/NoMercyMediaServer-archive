@@ -2,11 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Data.Logic.ImageLogic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers.system;
 using NoMercy.NmSystem;
 using NoMercy.Providers.FanArt.Client;
 using NoMercy.Providers.FanArt.Models;
 using NoMercy.Providers.MusicBrainz.Models;
+using NoMercy.Queue;
 using Serilog.Events;
 using Image = NoMercy.Database.Models.Image;
 

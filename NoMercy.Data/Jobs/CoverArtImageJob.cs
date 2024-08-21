@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers.system;
 using NoMercy.NmSystem;
 using NoMercy.Providers.CoverArt.Client;
 using NoMercy.Providers.CoverArt.Models;
 using NoMercy.Providers.MusicBrainz.Models;
+using NoMercy.Queue;
 using Serilog.Events;
 
 namespace NoMercy.Data.Jobs;

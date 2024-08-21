@@ -1,4 +1,3 @@
-
 using System.Collections.Concurrent;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
@@ -14,8 +13,8 @@ namespace NoMercy.Api.Controllers.Socket;
 
 public class Song
 {
-    [JsonProperty("color_palette")] public ColorPalette ColorPalette { get; set; }  = new();
-    [JsonProperty("cover")] public string Cover { get; set; }   = string.Empty;
+    [JsonProperty("color_palette")] public ColorPalette ColorPalette { get; set; } = new();
+    [JsonProperty("cover")] public string Cover { get; set; } = string.Empty;
     [JsonProperty("date")] public DateTime Date { get; set; }
     [JsonProperty("disc")] public int Disc { get; set; }
     [JsonProperty("duration")] public string Duration { get; set; } = string.Empty;
@@ -336,7 +335,7 @@ public class VideoHub : ConnectionHub
     {
         PlayerState state = MusicPlayerState();
         state.PlayState = "play";
-        
+
         await Clients.Others.SendAsync("Play");
     }
 

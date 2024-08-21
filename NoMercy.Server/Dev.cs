@@ -1,9 +1,86 @@
+using Microsoft.EntityFrameworkCore;
+using NoMercy.Database;
+using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.Movies;
+using NoMercy.MediaProcessing.Shows;
+using NoMercy.NmSystem;
+using NoMercy.Providers.File;
+using Serilog.Events;
+
 namespace NoMercy.Server;
 
 public class Dev
 {
     public static async void Run()
     {
+        
+        MediaContext mediaContext = new();
+        JobDispatcher jobDispatcher = new(); 
+        
+        // IMovieRepository movieRepository = new MovieRepository(mediaContext); 
+        // MovieManager movieManager = new(movieRepository, jobDispatcher);
+        //
+        // Library movieLibrary = await mediaContext.Libraries
+        //     .Where(predicate: f => f.Type == "movie")
+        //     .FirstAsync();
+        //
+        // List<int> movies = await mediaContext.Movies
+        //     .Select(selector: f => f.Id)
+        //     .ToListAsync();
+        //
+        // foreach (int id in movies)
+        // {
+        //     await movieManager.AddMovieAsync(id, movieLibrary);
+        // }
+        
+        
+        // IShowRepository showRepository = new ShowRepository(mediaContext); 
+        // ShowManager showManager = new(showRepository, jobDispatcher);
+        //
+        // Library tvLibrary = await mediaContext.Libraries
+        //     .Where(predicate: f => f.Type == "tv")
+        //     .FirstAsync();
+        //
+        // List<int> tvs = await mediaContext.Tvs
+        //     .Select(selector: f => f.Id)
+        //     .ToListAsync();
+        //
+        // foreach (int id in tvs)
+        // {
+        //     await showManager.AddShowAsync(id, tvLibrary);
+        // }
+        
+        // Logger.System("Starting FileSystem Watcher", LogEventLevel.Debug);
+        //
+        // MediaContext mediaContext = new();
+        // List<Library> libraries = await mediaContext.Libraries
+        //     .Include(library => library.FolderLibraries)
+        //     .ThenInclude(folderLibrary => folderLibrary.Folder)
+        //     .ToListAsync();
+
+        // foreach (Library library in libraries)
+        // {
+        //     List<string> paths = library.FolderLibraries.Select(folderLibrary => folderLibrary.Folder.Path).ToList();
+        //     await Task.Run(() =>
+        //     {
+        //         var watch = fs.Watch(paths);
+        //         Logger.System($"Watching {paths.Count} paths", LogEventLevel.Debug);
+        //         
+        //         new Task(() =>
+        //         {
+        //             Task.Delay(20000).Wait();
+        //             
+        //             foreach (var dispose in watch)
+        //             {
+        //                 dispose();
+        //             }
+        //         }).Start();
+        //     });
+        // }
+
+        // Parallel.ForEach(tasks, task => task.Start());
+
         // await using MediaContext mediaContext = new();
         //
         // var stream0 = new X264(VideoCodecs.H264Nvenc.Value)
