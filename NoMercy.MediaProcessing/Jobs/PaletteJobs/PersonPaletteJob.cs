@@ -1,37 +1,35 @@
 // ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
 
-namespace NoMercy.MediaProcessing.Movies.PaletteJobs;
+namespace NoMercy.MediaProcessing.Jobs.PaletteJobs;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [Serializable]
-public class RecommendationPaletteJob : AbstractPaletteJob<Recommendation> {
+public class PersonPaletteJob : AbstractPaletteJob<Person> {
     public override string QueueName => "image";
     public override int Priority => 2;
-    
+
     public override async Task Handle() {
         await using var context = new MediaContext();
 
-        List<Recommendation> recommendations = await context.Recommendations
+        IEnumerable<Person> people = context.People
+            .Where(x => string.IsNullOrEmpty(x._colorPalette))
+            .AsEnumerable()
             .Where(x => Storage
-                .Any(y => y.MovieFromId == x.MovieFromId))
-            .ToListAsync();
+                .Any(y => y.Profile == x.Profile));
 
-        foreach (Recommendation recommendation in recommendations)
-        {
-            if (recommendation is not { _colorPalette: "" }) continue;
-
-            recommendation._colorPalette = await MovieDbImage
-                .MultiColorPalette([
-                    new BaseImage.MultiStringType("poster", recommendation.Poster),
-                    new BaseImage.MultiStringType("backdrop", recommendation.Backdrop)
-                ]);
+        foreach (var person in people) {
+            person._colorPalette = await MovieDbImage
+                .ColorPalette("person", person.Profile);
         }
+
+        await context.SaveChangesAsync();
     }
 }

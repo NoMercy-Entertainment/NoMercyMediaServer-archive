@@ -4,12 +4,12 @@ using NoMercy.Data.Jobs;
 using NoMercy.Data.Logic.ImageLogic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers.system;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Collections;
 using NoMercy.Providers.TMDB.Models.Movies;
+using NoMercy.Queue;
 using Collection = NoMercy.Database.Models.Collection;
 using Movie = NoMercy.Database.Models.Movie;
 

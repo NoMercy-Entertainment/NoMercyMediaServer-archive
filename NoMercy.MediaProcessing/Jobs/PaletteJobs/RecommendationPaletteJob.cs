@@ -1,37 +1,39 @@
 // ---------------------------------------------------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
+
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
 
-namespace NoMercy.MediaProcessing.Movies.PaletteJobs;
+namespace NoMercy.MediaProcessing.Jobs.PaletteJobs;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [Serializable]
-public class SimilarPaletteJob : AbstractPaletteJob<Similar> {
+public class RecommendationPaletteJob : AbstractPaletteJob<Recommendation> {
     public override string QueueName => "image";
     public override int Priority => 2;
     
     public override async Task Handle() {
         await using var context = new MediaContext();
 
-        List<Similar> similars = await context.Similar
+        IEnumerable<Recommendation> recommendations = context.Recommendations
+            .Where(x => string.IsNullOrEmpty(x._colorPalette))
+            .AsEnumerable()
             .Where(x => Storage
-                .Any(y => y.MovieFromId == x.MovieFromId))
-            .ToListAsync();
+                .Any(y => y.MovieFromId == x.MovieFromId));
 
-        foreach (Similar similar in similars)
+        foreach (Recommendation recommendation in recommendations)
         {
-            if (similar is not { _colorPalette: "" }) continue;
-
-            similar._colorPalette = await MovieDbImage
+            recommendation._colorPalette = await MovieDbImage
                 .MultiColorPalette([
-                    new BaseImage.MultiStringType("poster", similar.Poster),
-                    new BaseImage.MultiStringType("backdrop", similar.Backdrop)
+                    new BaseImage.MultiStringType("poster", recommendation.Poster),
+                    new BaseImage.MultiStringType("backdrop", recommendation.Backdrop)
                 ]);
         }
+        
+        await context.SaveChangesAsync();
     }
 }

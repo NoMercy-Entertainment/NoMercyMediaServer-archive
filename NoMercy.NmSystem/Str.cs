@@ -121,4 +121,10 @@ public static partial class Str
     {
         return Encoding.UTF8.GetString(Encoding.Default.GetBytes(value));
     }
+
+    public static string SplitPascalCase(this string str)
+    {
+        str = Regex.Replace(str, @"(\P{Ll})(\P{Ll}\p{Ll})", "$1 $2");
+        return Regex.Replace(str, @"(\p{Ll})(\P{Ll})", "$1 $2");
+    }
 }
