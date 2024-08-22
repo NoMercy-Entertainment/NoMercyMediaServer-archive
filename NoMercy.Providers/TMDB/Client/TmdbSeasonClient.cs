@@ -97,5 +97,6 @@ public class TmdbSeasonClient : TmdbBaseClient, IDisposable
     {
         GC.Collect();
         GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
     }
 }

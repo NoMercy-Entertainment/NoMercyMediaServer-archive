@@ -5,10 +5,12 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Episodes;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Movies;
+using NoMercy.MediaProcessing.People;
 using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.NmSystem;
 using NoMercy.Providers.File;
+using NoMercy.Providers.TMDB.Models.People;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.TV;
 using Serilog.Events;
@@ -48,6 +50,9 @@ public class Dev
         IEpisodeRepository episodeRepository = new EpisodeRepository(mediaContext);
         EpisodeManager episodeManager = new(episodeRepository, jobDispatcher);
         
+        IPersonRepository personRepository = new PersonRepository(mediaContext);
+        PersonManager personManager = new(personRepository, jobDispatcher);
+        
         Library tvLibrary = await mediaContext.Libraries
             .Where(predicate: f => f.Type == "tv")
             .FirstAsync();
@@ -61,11 +66,17 @@ public class Dev
             TmdbTvShowAppends? show = await showManager.AddShowAsync(id, tvLibrary);
             if (show == null) continue;
             
-            ConcurrentStack<TmdbSeasonAppends> seasons = await seasonManager.StoreSeasonsAsync(show);
+            await personManager.StorePeoplesAsync(show);
+            
+            // List<Task> promises = [];
+            List<TmdbSeasonAppends> seasons = await seasonManager.StoreSeasonsAsync(show);
             foreach (TmdbSeasonAppends season in seasons)
             {
+                // promises.Add(episodeManager.StoreEpisodes(show, season));
                 await episodeManager.StoreEpisodes(show, season);
             }
+            
+            // await Task.WhenAll(promises);
         }
         
         // Logger.System("Starting FileSystem Watcher", LogEventLevel.Debug);
