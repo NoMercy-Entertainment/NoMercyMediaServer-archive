@@ -21,6 +21,24 @@ public class EpisodeManager(
     
     public async Task StoreEpisodes(TmdbTvShow show, TmdbSeasonAppends season)
     {
+        (ConcurrentStack<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes) = await CollectEpisodes(show, season);
+
+        await episodeRepository.StoreEpisodes(episodes);
+        
+        Logger.MovieDb($"Show {show.Name}, Season {season.SeasonNumber} Episodes stored");
+
+         List<Task> promises = [];
+         foreach (TmdbEpisodeAppends episode in episodeAppends)
+        {
+            promises.Add(StoreImages(show.Name, episode));
+            promises.Add(StoreTranslations(show.Name, episode));
+        }
+        
+        await Task.WhenAll(promises);
+    }
+
+    private static async Task<(ConcurrentStack<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes)> CollectEpisodes(TmdbTvShow show, TmdbSeasonAppends season)
+    {
         ConcurrentStack<TmdbEpisodeAppends> episodeAppends = [];
         
         await Parallel.ForEachAsync(season.Episodes, async (episode, _) =>
@@ -30,6 +48,7 @@ public class EpisodeManager(
                 using TmdbEpisodeClient tmdbEpisodeClient = new(show.Id, episode.SeasonNumber, episode.EpisodeNumber);
                 TmdbEpisodeAppends? seasonTask = await tmdbEpisodeClient.WithAllAppends();
                 if (seasonTask is null) return;
+                
                 episodeAppends.Push(seasonTask);
             }
             catch (Exception e)
@@ -41,6 +60,9 @@ public class EpisodeManager(
         IEnumerable<Episode> episodes = episodeAppends
             .Select(episode => new Episode
             {
+                TvId = show.Id,
+                SeasonId = season.Id,
+                    
                 Id = episode.Id,
                 Title = episode.Name,
                 AirDate = episode.AirDate,
@@ -54,22 +76,12 @@ public class EpisodeManager(
                 VoteAverage = episode.VoteAverage,
                 VoteCount = episode.VoteCount,
                 _colorPalette = MovieDbImage.ColorPalette("still", episode.StillPath).Result
-            });
+            })
+            .OrderBy(keySelector: f => f.EpisodeNumber);
         
-        await episodeRepository.StoreEpisodes(episodes);
-
-         List<Task> promises = [];
-         foreach (TmdbEpisodeAppends episode in episodeAppends)
-        {
-            promises.Add(StoreImages(season.Name, episode));
-            promises.Add(StoreTranslations(season.Name, episode));
-        }
-        
-        await Task.WhenAll(promises);
-        
-        Logger.MovieDb($"TvShow {show.Name}: Episodes stored");
+        return (episodeAppends, episodes);
     }
-    
+
     internal async Task StoreTranslations(string showName, TmdbEpisodeAppends episode)
     {
         IEnumerable<Translation> translations = episode.Translations.Translations
@@ -88,7 +100,7 @@ public class EpisodeManager(
         
         await episodeRepository.StoreEpisodeTranslations(translations);
 
-        Logger.MovieDb($"TvShow {showName}, Episode {episode.EpisodeNumber}: Translations stored");
+        Logger.MovieDb($"Show {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Translations stored");
     }
 
     internal async Task StoreImages(string showName, TmdbEpisodeAppends episode)
@@ -115,6 +127,6 @@ public class EpisodeManager(
              .Select(x => new Image { FilePath = x.FilePath });
          jobDispatcher.DispatchJob<ImagePaletteJob, Image>(episode.Id, posterJobItems);
          
-         Logger.MovieDb($"TvShow {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Images stored");
+         Logger.MovieDb($"Show {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Images stored");
     }
 }

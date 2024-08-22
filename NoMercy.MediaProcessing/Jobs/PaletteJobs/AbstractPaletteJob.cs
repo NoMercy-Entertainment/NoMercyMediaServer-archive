@@ -26,25 +26,18 @@ public abstract class AbstractPaletteJob<T> : IShouldQueue {
     //     get => _storage ??= [];
     //     set => _storage = value.ToArray();
     // }
-    // #region IDisposable Support
-    // private void ReleaseUnmanagedResources()
-    // {
-    //     _storage = null;
-    //     
-    //     GC.Collect();
-    //     GC.WaitForFullGCComplete();
-    //     GC.WaitForPendingFinalizers();
-    // }
-    //
-    // public void Dispose()
-    // {
-    //     ReleaseUnmanagedResources();
-    //     GC.SuppressFinalize(this);
-    // }
-    //
-    // ~AbstractPaletteJob()
-    // {
-    //     ReleaseUnmanagedResources();
-    // }
-    // #endregion
+    
+    #region IDisposable Support
+    private void ReleaseUnmanagedResources()
+    {
+        GC.Collect();
+        GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
+    }
+    
+    public void Dispose()
+    {
+        ReleaseUnmanagedResources();
+    }
+    #endregion
 }
