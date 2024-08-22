@@ -673,6 +673,7 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         TmdbMovieClient.Dispose();
         GC.Collect();
         GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
     }
 
     public async ValueTask DisposeAsync()
@@ -681,5 +682,6 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
         await _mediaContext.DisposeAsync();
         GC.Collect();
         GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
     }
 }

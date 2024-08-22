@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
@@ -17,9 +18,9 @@ public class SeasonManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, ISeasonManager
 {
-    public async Task<ConcurrentStack<TmdbSeasonAppends>> StoreSeasonsAsync(TmdbTvShowAppends show)
+    public async Task<List<TmdbSeasonAppends>> StoreSeasonsAsync(TmdbTvShowAppends show)
     {
-        ConcurrentStack<TmdbSeasonAppends> seasonAppends = [];
+        List<TmdbSeasonAppends> seasonAppends = [];
         
         await Parallel.ForEachAsync(show.Seasons, async (season, _) =>
         {
@@ -28,13 +29,18 @@ public class SeasonManager(
                 using TmdbSeasonClient tmdbSeasonClient = new(show.Id, season.SeasonNumber);
                 TmdbSeasonAppends? seasonTask = await tmdbSeasonClient.WithAllAppends();
                 if (seasonTask is null) return;
-                seasonAppends.Push(seasonTask);
+                
+                seasonAppends.Add(seasonTask);
             }
             catch (Exception e)
             {
                 Logger.MovieDb(e, LogEventLevel.Error);
             }
         });
+        
+        seasonAppends = seasonAppends
+            .OrderBy(keySelector: f => f.SeasonNumber)
+            .ToList();
 
         IEnumerable<Season> seasons = seasonAppends
             .Select(s => new Season
@@ -49,36 +55,33 @@ public class SeasonManager(
                 TvId = show.Id,
                 _colorPalette = MovieDbImage.ColorPalette("poster", s.PosterPath).Result
             });
-        
-        await seasonRepository.StoreSeasonsAsync(seasons);
+
+        await seasonRepository.StoreAsync(seasons);
+            
+        Logger.MovieDb($"Show {show.Name}: Seasons stored");
 
          List<Task> promises = [];
          foreach (TmdbSeasonAppends season in seasonAppends)
-        {
+         {
             promises.Add(StoreImagesAsync(show.Name, season));
             promises.Add(StoreTranslationsAsync(show.Name, season));
         }
         
         await Task.WhenAll(promises);
-        
-        Logger.MovieDb($"TvShow {show.Name}: Seasons stored");
 
         return seasonAppends;
     }
     
-    public async Task UpdateSeasonAsync(string showName, TmdbSeasonAppends season)
+    public Task UpdateSeasonAsync(string showName, TmdbSeasonAppends season)
     {
-        await StoreImagesAsync(showName, season);
-        await StoreTranslationsAsync(showName, season);
-        
-        Logger.MovieDb($"TvShow {showName}, Season {season.SeasonNumber}: Updated");
+        throw new NotImplementedException();
     }
     
     public async Task RemoveSeasonAsync(string showName, TmdbSeasonAppends season)
     {
         await seasonRepository.RemoveSeasonAsync(season.Id);
         
-        Logger.MovieDb($"TvShow {showName}, Season {season.SeasonNumber}: Removed");
+        Logger.MovieDb($"Show {showName}, Season {season.SeasonNumber}: Removed");
     }
     
     internal async Task StoreTranslationsAsync(string showName, TmdbSeasonAppends season)
@@ -97,9 +100,9 @@ public class SeasonManager(
                 SeasonId = season.Id
             });
         
-        await seasonRepository.StoreSeasonTranslationsAsync(translations);
+        await seasonRepository.StoreTranslationsAsync(translations);
 
-        Logger.MovieDb($"TvShow {showName}, Season {season.SeasonNumber}: Translations stored");
+        Logger.MovieDb($"Show {showName}, Season {season.SeasonNumber}: Translations stored");
     }
 
     internal async Task StoreImagesAsync(string showName, TmdbSeasonAppends season)
@@ -120,12 +123,12 @@ public class SeasonManager(
             })
             .ToList();
 
-         await seasonRepository.StoreSeasonImagesAsync(posters);
+         await seasonRepository.StoreImagesAsync(posters);
          
          IEnumerable<Image> posterJobItems = posters
              .Select(x => new Image { FilePath = x.FilePath });
          jobDispatcher.DispatchJob<ImagePaletteJob, Image>(season.Id, posterJobItems);
          
-         Logger.MovieDb($"TvShow {showName}, Season {season.SeasonNumber}: Images stored");
+         Logger.MovieDb($"Show {showName}, Season {season.SeasonNumber}: Images stored");
     }
 }

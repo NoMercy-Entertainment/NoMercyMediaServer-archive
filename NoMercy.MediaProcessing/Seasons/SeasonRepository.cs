@@ -6,7 +6,7 @@ namespace NoMercy.MediaProcessing.Seasons;
 
 public class SeasonRepository(MediaContext context): ISeasonRepository
 {
-    public Task StoreSeasonsAsync(IEnumerable<Season> seasons)
+    public Task StoreAsync(IEnumerable<Season> seasons)
     {
         return context.Seasons.UpsertRange(seasons)
             .On(s => new { s.Id })
@@ -25,7 +25,7 @@ public class SeasonRepository(MediaContext context): ISeasonRepository
             .RunAsync();
     }
 
-    public Task StoreSeasonTranslationsAsync(IEnumerable<Translation> translations)
+    public Task StoreTranslationsAsync(IEnumerable<Translation> translations)
     {
         return  context.Translations.UpsertRange(translations)
                 .On(t => new { t.Iso31661, t.Iso6391, t.SeasonId })
@@ -49,7 +49,7 @@ public class SeasonRepository(MediaContext context): ISeasonRepository
                 .RunAsync();
     }
 
-    public Task StoreSeasonImagesAsync(IEnumerable<Image> images)
+    public Task StoreImagesAsync(IEnumerable<Image> images)
     {
         return  context.Images.UpsertRange(images)
             .On(v => new { v.FilePath, v.SeasonId })

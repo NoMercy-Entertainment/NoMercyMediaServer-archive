@@ -197,16 +197,9 @@ public class TmdbColorPaletteJob : IShouldQueue, IDisposable, IAsyncDisposable
     public void Dispose()
     {
         ReleaseUnmanagedResources();
-        GC.SuppressFinalize(this);
     }
 
     public async ValueTask DisposeAsync()
-    {
-        ReleaseUnmanagedResources();
-        GC.SuppressFinalize(this);
-    }
-
-    ~TmdbColorPaletteJob()
     {
         ReleaseUnmanagedResources();
     }

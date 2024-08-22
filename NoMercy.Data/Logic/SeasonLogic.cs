@@ -241,6 +241,7 @@ public class SeasonLogic(TmdbTvShowDetails show) : IDisposable, IAsyncDisposable
         _seasonAppends.Clear();
         GC.Collect();
         GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
     }
 
     public ValueTask DisposeAsync()
@@ -248,6 +249,7 @@ public class SeasonLogic(TmdbTvShowDetails show) : IDisposable, IAsyncDisposable
         _seasonAppends.Clear();
         GC.Collect();
         GC.WaitForFullGCComplete();
+        GC.WaitForPendingFinalizers();
         return ValueTask.CompletedTask;
     }
 }
