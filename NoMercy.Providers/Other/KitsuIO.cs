@@ -1,6 +1,4 @@
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 using Newtonsoft.Json;
-using NoMercy.Helpers;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using Serilog.Events;
@@ -33,9 +31,9 @@ public static class KitsuIo
                     isAnime = true;
                 else if (data.Attributes.Titles.ThTh?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
                     isAnime = true;
-                else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle =>
-                             abbreviatedTitle.Equals(title, StringComparison.CurrentCultureIgnoreCase)))
-                    isAnime = true;
+                // else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle =>
+                //              abbreviatedTitle.Equals(title, StringComparison.CurrentCultureIgnoreCase)))
+                //     isAnime = true;
         }
         catch (Exception e)
         {
@@ -48,33 +46,33 @@ public static class KitsuIo
 
 public class KitsuAnime
 {
-    [JsonProperty("data")] public Data[] Data { get; set; }
-    [JsonProperty("meta")] public KitsuIoMeta Meta { get; set; }
-    [JsonProperty("links")] public KitsuIoLinks Links { get; set; }
+    [JsonProperty("data")] public Data[] Data { get; set; } = [];
+    [JsonProperty("meta")] public KitsuIoMeta Meta { get; set; } = new();
+    [JsonProperty("links")] public KitsuIoLinks Links { get; set; } = new();
 }
 
 public class Data
 {
     [JsonProperty("id")] public int Id { get; set; }
-    [JsonProperty("type")] public string Type { get; set; }
-    [JsonProperty("links")] public Links Links { get; set; }
-    [JsonProperty("attributes")] public Attributes Attributes { get; set; }
-    [JsonProperty("relationships")] public Dictionary<string, Relationship> Relationships { get; set; }
+    [JsonProperty("type")] public string Type { get; set; } = string.Empty;
+    [JsonProperty("links")] public Links Links { get; set; } = new();
+    [JsonProperty("attributes")] public Attributes Attributes { get; set; } = new();
+    [JsonProperty("relationships")] public Dictionary<string, Relationship> Relationships { get; set; } = new();
 }
 
 public class Attributes
 {
     [JsonProperty("createdAt")] public DateTime CreatedAt { get; set; }
     [JsonProperty("updatedAt")] public DateTime UpdatedAt { get; set; }
-    [JsonProperty("slug")] public string Slug { get; set; }
-    [JsonProperty("synopsis")] public string Synopsis { get; set; }
-    [JsonProperty("description")] public string Description { get; set; }
+    [JsonProperty("slug")] public string Slug { get; set; } = string.Empty;
+    [JsonProperty("synopsis")] public string Synopsis { get; set; } = string.Empty;
+    [JsonProperty("description")] public string Description { get; set; }  = string.Empty;
     [JsonProperty("coverImageTopOffset")] public int CoverImageTopOffset { get; set; }
-    [JsonProperty("titles")] public Titles Titles { get; set; }
-    [JsonProperty("canonicalTitle")] public string CanonicalTitle { get; set; }
-    [JsonProperty("abbreviatedTitles")] public string[] AbbreviatedTitles { get; set; }
+    [JsonProperty("titles")] public Titles Titles { get; set; } = new();
+    [JsonProperty("canonicalTitle")] public string CanonicalTitle { get; set; } = string.Empty;
+    [JsonProperty("abbreviatedTitles")] public string[] AbbreviatedTitles { get; set; } = [];
     [JsonProperty("averageRating")] public string? AverageRating { get; set; }
-    [JsonProperty("ratingFrequencies")] public Dictionary<string, int> RatingFrequencies { get; set; }
+    [JsonProperty("ratingFrequencies")] public Dictionary<string, int> RatingFrequencies { get; set; } = new();
     [JsonProperty("userCount")] public int UserCount { get; set; }
     [JsonProperty("favoritesCount")] public int? FavoritesCount { get; set; }
     [JsonProperty("startDate")] public DateTime? StartDate { get; set; }
@@ -83,9 +81,9 @@ public class Attributes
     [JsonProperty("popularityRank")] public int? PopularityRank { get; set; }
     [JsonProperty("ratingRank")] public int? RatingRank { get; set; }
     [JsonProperty("ageRating")] public string? AgeRating { get; set; }
-    [JsonProperty("ageRatingGuide")] public string AgeRatingGuide { get; set; }
-    [JsonProperty("subtype")] public string Subtype { get; set; }
-    [JsonProperty("status")] public string Status { get; set; }
+    [JsonProperty("ageRatingGuide")] public string AgeRatingGuide { get; set; } = string.Empty;
+    [JsonProperty("subtype")] public string Subtype { get; set; } = string.Empty;
+    [JsonProperty("status")] public string Status { get; set; } = string.Empty;
     [JsonProperty("tba")] public string? Tba { get; set; }
     [JsonProperty("posterImage")] public PosterImage? PosterImage { get; set; }
     [JsonProperty("coverImage")] public CoverImage? CoverImage { get; set; }
@@ -146,24 +144,24 @@ public class Titles
 
 public class Links
 {
-    [JsonProperty("self")] public Uri Self { get; set; }
+    [JsonProperty("self")] public Uri Self { get; set; } = default!;
 }
 
 public class Relationship
 {
-    [JsonProperty("links")] public RelationshipLinks Links { get; set; }
+    [JsonProperty("links")] public RelationshipLinks Links { get; set; } = new();
 }
 
 public class RelationshipLinks
 {
-    [JsonProperty("self")] public Uri Self { get; set; }
-    [JsonProperty("related")] public Uri Related { get; set; }
+    [JsonProperty("self")] public Uri Self { get; set; } = default!;
+    [JsonProperty("related")] public Uri Related { get; set; } = default!;
 }
 
 public class KitsuIoLinks
 {
-    [JsonProperty("first")] public Uri First { get; set; }
-    [JsonProperty("last")] public Uri Last { get; set; }
+    [JsonProperty("first")] public Uri First { get; set; } = default!;
+    [JsonProperty("last")] public Uri Last { get; set; } = default!;
 }
 
 public class KitsuIoMeta

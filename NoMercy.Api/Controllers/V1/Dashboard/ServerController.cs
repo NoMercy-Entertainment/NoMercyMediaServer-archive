@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -22,6 +23,7 @@ using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
+using NoMercy.Queue;
 using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
 
@@ -604,13 +606,13 @@ public class ServerController : BaseController
         if (!HttpContext.User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view files");
 
-        // MediaScan mediaScan = new();
-        //
-        // ConcurrentBag<MediaFolder> folders = await mediaScan
-        //     .EnableFileListing()
-        //     .Process(path, depth);
-        //
-        // await mediaScan.DisposeAsync();
+        MediaScan mediaScan = new();
+
+        ConcurrentBag<MediaFolder> folders = await mediaScan
+            .EnableFileListing()
+            .Process(path, depth);
+
+        await mediaScan.DisposeAsync();
 
         return Ok();
     }
@@ -622,7 +624,8 @@ public class ServerController : BaseController
         if (!HttpContext.User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update workers");
 
-        // if (await QueueRunner.SetWorkerCount(worker, count)) return Ok($"{worker} worker count set to {count}");
+        if (await QueueRunner.SetWorkerCount(worker, count))
+            return Ok($"{worker} worker count set to {count}");
 
         return BadRequestResponse($"{worker} worker count could not be set to {count}");
     }
