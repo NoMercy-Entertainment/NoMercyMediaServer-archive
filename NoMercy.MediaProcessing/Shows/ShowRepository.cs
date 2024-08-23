@@ -49,7 +49,7 @@ public class ShowRepository(MediaContext context) : IShowRepository
             })
             .RunAsync();
     }
-    
+
     public Task LinkToLibrary(Library library, Tv tv)
     {
         return context.LibraryTv.Upsert(new LibraryTv(library.Id, tv.Id))
@@ -61,10 +61,10 @@ public class ShowRepository(MediaContext context) : IShowRepository
             })
             .RunAsync();
     }
-    
+
     public Task StoreAlternativeTitles(IEnumerable<AlternativeTitle> alternativeTitles)
     {
-        return context.AlternativeTitles.UpsertRange(alternativeTitles)
+        return context.AlternativeTitles.UpsertRange(alternativeTitles.ToArray())
             .On(a => new { a.Title, a.TvId })
             .WhenMatched((ats, ati) => new AlternativeTitle
             {
@@ -77,27 +77,26 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
     public Task StoreTranslations(IEnumerable<Translation> translations)
     {
-            return context.Translations
-                .UpsertRange(translations.Where(translation => translation.Title != "" || translation.Overview != ""))
-                .On(t => new { t.Iso31661, t.Iso6391, t.TvId })
-                .WhenMatched((ts, ti) => new Translation
-                {
-                    Iso31661 = ti.Iso31661,
-                    Iso6391 = ti.Iso6391,
-                    Name = ti.Name,
-                    EnglishName = ti.EnglishName,
-                    Title = ti.Title,
-                    Overview = ti.Overview,
-                    Homepage = ti.Homepage,
-                    Biography = ti.Biography,
-                    TvId = ti.TvId,
-                    SeasonId = ti.SeasonId,
-                    EpisodeId = ti.EpisodeId,
-                    MovieId = ti.MovieId,
-                    CollectionId = ti.CollectionId,
-                    PersonId = ti.PersonId
-                })
-                .RunAsync();
+        return context.Translations.UpsertRange(translations.ToArray())
+            .On(t => new { t.Iso31661, t.Iso6391, t.TvId })
+            .WhenMatched((ts, ti) => new Translation
+            {
+                Iso31661 = ti.Iso31661,
+                Iso6391 = ti.Iso6391,
+                Name = ti.Name,
+                EnglishName = ti.EnglishName,
+                Title = ti.Title,
+                Overview = ti.Overview,
+                Homepage = ti.Homepage,
+                Biography = ti.Biography,
+                TvId = ti.TvId,
+                SeasonId = ti.SeasonId,
+                EpisodeId = ti.EpisodeId,
+                MovieId = ti.MovieId,
+                CollectionId = ti.CollectionId,
+                PersonId = ti.PersonId
+            })
+            .RunAsync();
     }
 
     public IEnumerable<CertificationTv> GetCertificationTvs(TmdbTvShowAppends tv,
@@ -110,15 +109,16 @@ public class ShowRepository(MediaContext context) : IShowRepository
             .Select(c => new CertificationTv
             {
                 CertificationId = c.Id,
-                TvId = tv!.Id
+                TvId = tv.Id
             });
     }
-    
+
     public Task StoreContentRatings(IEnumerable<CertificationTv> certifications)
     {
-        return context.CertificationTv.UpsertRange(certifications)
+        return context.CertificationTv.UpsertRange(certifications.ToArray())
             .On(v => new { v.CertificationId, v.TvId })
-            .WhenMatched((ts, ti) => new CertificationTv {
+            .WhenMatched((ts, ti) => new CertificationTv
+            {
                 CertificationId = ti.CertificationId,
                 TvId = ti.TvId
             })
@@ -127,7 +127,7 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
     public Task StoreSimilar(IEnumerable<Similar> similar)
     {
-        return context.Similar.UpsertRange(similar)
+        return context.Similar.UpsertRange(similar.ToArray())
             .On(v => new { v.MediaId, v.TvFromId })
             .WhenMatched((ts, ti) => new Similar
             {
@@ -145,7 +145,7 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
     public Task StoreRecommendations(IEnumerable<Recommendation> recommendations)
     {
-        return context.Recommendations.UpsertRange(recommendations)
+        return context.Recommendations.UpsertRange(recommendations.ToArray())
             .On(v => new { v.MediaId, v.TvFromId })
             .WhenMatched((ts, ti) => new Recommendation
             {
@@ -163,24 +163,24 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
     public Task StoreVideos(IEnumerable<Media> videos)
     {
-            return context.Medias.UpsertRange(videos)
-                .On(v => new { v.Src, v.TvId })
-                .WhenMatched((ts, ti) => new Media
-                {
-                    Src = ti.Src,
-                    Iso6391 = ti.Iso6391,
-                    Type = ti.Type,
-                    TvId = ti.TvId,
-                    Name = ti.Name,
-                    Site = ti.Site,
-                    Size = ti.Size
-                })
-                .RunAsync();
+        return context.Medias.UpsertRange(videos.ToArray())
+            .On(v => new { v.Src, v.TvId })
+            .WhenMatched((ts, ti) => new Media
+            {
+                Src = ti.Src,
+                Iso6391 = ti.Iso6391,
+                Type = ti.Type,
+                TvId = ti.TvId,
+                Name = ti.Name,
+                Site = ti.Site,
+                Size = ti.Size
+            })
+            .RunAsync();
     }
 
     public Task StoreImages(IEnumerable<Image> images)
     {
-        return context.Images.UpsertRange(images)
+        return context.Images.UpsertRange(images.ToArray())
             .On(v => new { v.FilePath, v.TvId })
             .WhenMatched((ts, ti) => new Image
             {
@@ -200,7 +200,7 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
     public Task StoreKeywords(IEnumerable<Keyword> keywords)
     {
-        return context.Keywords.UpsertRange(keywords)
+        return context.Keywords.UpsertRange(keywords.ToArray())
             .On(v => new { v.Id })
             .WhenMatched((ts, ti) => new Keyword
             {
@@ -212,7 +212,7 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
     public Task LinkKeywordsToTv(IEnumerable<KeywordTv> keywordTvs)
     {
-        return context.KeywordTv.UpsertRange(keywordTvs)
+        return context.KeywordTv.UpsertRange(keywordTvs.ToArray())
             .On(v => new { v.KeywordId, v.TvId })
             .WhenMatched((ts, ti) => new KeywordTv()
             {
@@ -224,7 +224,7 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
     public Task StoreGenres(IEnumerable<GenreTv> genreTvs)
     {
-        return context.GenreTv.UpsertRange(genreTvs)
+        return context.GenreTv.UpsertRange(genreTvs.ToArray())
             .On(v => new { v.GenreId, v.TvId })
             .WhenMatched((ts, ti) => new GenreTv
             {
@@ -272,7 +272,7 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
         return Task.CompletedTask;
     }
-    
+
     public string GetMediaType(TmdbTvShowAppends show)
     {
         string searchName = string.IsNullOrEmpty(show.OriginalName)
@@ -283,5 +283,4 @@ public class ShowRepository(MediaContext context) : IShowRepository
 
         return isAnime ? "anime" : "tv";
     }
-    
 }

@@ -4,11 +4,11 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.MediaProcessing.Seasons;
 
-public class SeasonRepository(MediaContext context): ISeasonRepository
+public class SeasonRepository(MediaContext context) : ISeasonRepository
 {
     public Task StoreAsync(IEnumerable<Season> seasons)
     {
-        return context.Seasons.UpsertRange(seasons)
+        return context.Seasons.UpsertRange(seasons.ToArray())
             .On(s => new { s.Id })
             .WhenMatched((ss, si) => new Season
             {
@@ -27,31 +27,31 @@ public class SeasonRepository(MediaContext context): ISeasonRepository
 
     public Task StoreTranslationsAsync(IEnumerable<Translation> translations)
     {
-        return  context.Translations.UpsertRange(translations)
-                .On(t => new { t.Iso31661, t.Iso6391, t.SeasonId })
-                .WhenMatched((ts, ti) => new Translation
-                {
-                    Iso31661 = ti.Iso31661,
-                    Iso6391 = ti.Iso6391,
-                    Name = ti.Name,
-                    EnglishName = ti.EnglishName,
-                    Title = ti.Title,
-                    Overview = ti.Overview,
-                    Homepage = ti.Homepage,
-                    Biography = ti.Biography,
-                    TvId = ti.TvId,
-                    SeasonId = ti.SeasonId,
-                    EpisodeId = ti.EpisodeId,
-                    MovieId = ti.MovieId,
-                    CollectionId = ti.CollectionId,
-                    PersonId = ti.PersonId
-                })
-                .RunAsync();
+        return context.Translations.UpsertRange(translations.ToArray())
+            .On(t => new { t.Iso31661, t.Iso6391, t.SeasonId })
+            .WhenMatched((ts, ti) => new Translation
+            {
+                Iso31661 = ti.Iso31661,
+                Iso6391 = ti.Iso6391,
+                Name = ti.Name,
+                EnglishName = ti.EnglishName,
+                Title = ti.Title,
+                Overview = ti.Overview,
+                Homepage = ti.Homepage,
+                Biography = ti.Biography,
+                TvId = ti.TvId,
+                SeasonId = ti.SeasonId,
+                EpisodeId = ti.EpisodeId,
+                MovieId = ti.MovieId,
+                CollectionId = ti.CollectionId,
+                PersonId = ti.PersonId
+            })
+            .RunAsync();
     }
 
     public Task StoreImagesAsync(IEnumerable<Image> images)
     {
-        return  context.Images.UpsertRange(images)
+        return context.Images.UpsertRange(images.ToArray())
             .On(v => new { v.FilePath, v.SeasonId })
             .WhenMatched((ts, ti) => new Image
             {
@@ -75,10 +75,10 @@ public class SeasonRepository(MediaContext context): ISeasonRepository
             .FirstOrDefaultAsync(s => s.Id == seasonId);
 
         if (season is null) return false;
-        
+
         context.Seasons.Remove(season);
         await context.SaveChangesAsync();
-        
+
         return true;
     }
 }

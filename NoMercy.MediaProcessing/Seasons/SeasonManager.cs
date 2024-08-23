@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
@@ -18,10 +16,10 @@ public class SeasonManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, ISeasonManager
 {
-    public async Task<List<TmdbSeasonAppends>> StoreSeasonsAsync(TmdbTvShowAppends show)
+    public async Task<IEnumerable<TmdbSeasonAppends>> StoreSeasonsAsync(TmdbTvShowAppends show)
     {
         List<TmdbSeasonAppends> seasonAppends = [];
-        
+
         await Parallel.ForEachAsync(show.Seasons, async (season, _) =>
         {
             try
@@ -29,7 +27,7 @@ public class SeasonManager(
                 using TmdbSeasonClient tmdbSeasonClient = new(show.Id, season.SeasonNumber);
                 TmdbSeasonAppends? seasonTask = await tmdbSeasonClient.WithAllAppends();
                 if (seasonTask is null) return;
-                
+
                 seasonAppends.Add(seasonTask);
             }
             catch (Exception e)
@@ -37,10 +35,6 @@ public class SeasonManager(
                 Logger.MovieDb(e, LogEventLevel.Error);
             }
         });
-        
-        seasonAppends = seasonAppends
-            .OrderBy(keySelector: f => f.SeasonNumber)
-            .ToList();
 
         IEnumerable<Season> seasons = seasonAppends
             .Select(s => new Season
@@ -57,33 +51,24 @@ public class SeasonManager(
             });
 
         await seasonRepository.StoreAsync(seasons);
-            
-        Logger.MovieDb($"Show {show.Name}: Seasons stored");
+        Logger.MovieDb($"Show: {show.Name}: Seasons stored", LogEventLevel.Debug);
 
-         List<Task> promises = [];
-         foreach (TmdbSeasonAppends season in seasonAppends)
-         {
-            promises.Add(StoreImagesAsync(show.Name, season));
-            promises.Add(StoreTranslationsAsync(show.Name, season));
-        }
-        
-        await Task.WhenAll(promises);
+        // jobDispatcher.DispatchJob<AddSeasonExtraDataJob, TmdbSeasonAppends>(seasonAppends, show.Name);
 
         return seasonAppends;
     }
-    
+
     public Task UpdateSeasonAsync(string showName, TmdbSeasonAppends season)
     {
         throw new NotImplementedException();
     }
-    
+
     public async Task RemoveSeasonAsync(string showName, TmdbSeasonAppends season)
     {
         await seasonRepository.RemoveSeasonAsync(season.Id);
-        
-        Logger.MovieDb($"Show {showName}, Season {season.SeasonNumber}: Removed");
+        Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Removed", LogEventLevel.Debug);
     }
-    
+
     internal async Task StoreTranslationsAsync(string showName, TmdbSeasonAppends season)
     {
         IEnumerable<Translation> translations = season.Translations.Translations
@@ -99,10 +84,9 @@ public class SeasonManager(
                 Homepage = translation.Data.Homepage?.ToString(),
                 SeasonId = season.Id
             });
-        
-        await seasonRepository.StoreTranslationsAsync(translations);
 
-        Logger.MovieDb($"Show {showName}, Season {season.SeasonNumber}: Translations stored");
+        await seasonRepository.StoreTranslationsAsync(translations);
+        Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Translations stored", LogEventLevel.Debug);
     }
 
     internal async Task StoreImagesAsync(string showName, TmdbSeasonAppends season)
@@ -123,12 +107,13 @@ public class SeasonManager(
             })
             .ToList();
 
-         await seasonRepository.StoreImagesAsync(posters);
-         
-         IEnumerable<Image> posterJobItems = posters
-             .Select(x => new Image { FilePath = x.FilePath });
-         jobDispatcher.DispatchJob<ImagePaletteJob, Image>(season.Id, posterJobItems);
-         
-         Logger.MovieDb($"Show {showName}, Season {season.SeasonNumber}: Images stored");
+        await seasonRepository.StoreImagesAsync(posters);
+        Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Images stored", LogEventLevel.Debug);
+
+        IEnumerable<Image> posterJobItems = posters
+            .Select(x => new Image { FilePath = x.FilePath })
+            .ToArray();
+        if (posterJobItems.Any())
+            jobDispatcher.DispatchJob<ImagePaletteJob, Image>(season.Id, posterJobItems);
     }
 }

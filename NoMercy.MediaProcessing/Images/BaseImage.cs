@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using SixLabors.ImageSharp;
@@ -36,8 +37,13 @@ public abstract class BaseImage : IDisposable
 
         foreach (ColorPaletteArgument item in items) palette.Add(item.Key, ColorPaletteFromImage(item.Bitmap));
 
-        return JsonConvert.SerializeObject(palette.Where(x => x.Value != null)
-            .ToDictionary(x => x.Key, x => x.Value));
+        IEnumerable<KeyValuePair<string, PaletteColors?>> palettes = palette
+            .Where(x => x.Value != null);
+
+        Dictionary<string, PaletteColors?> dict = palettes
+            .ToDictionary(x => x.Key, x => x.Value);
+
+        return JsonConvert.SerializeObject(dict);
     }
 
     private static PaletteColors ColorPaletteFromImage(Image<Rgba32>? image)
@@ -138,7 +144,7 @@ public abstract class BaseImage : IDisposable
         Rgba32? lightVibrant = null;
         Rgba32? darkVibrant = null;
 
-        Dictionary<Rgba32, int> colorCounts = new();
+        ConcurrentDictionary<Rgba32, int> colorCounts = new();
 
         const double minLightVibrancy = 0.01;
         double maxLightVibrancy = 0.0;
@@ -146,67 +152,133 @@ public abstract class BaseImage : IDisposable
         const double minDarkVibrancy = 0.01;
         double maxDarkVibrancy = 0.0;
 
-        for (int y = 0; y < image.Height; y++)
-        for (int x = 0; x < image.Width; x++)
+        Parallel.For(0, image.Height, y =>
         {
-            Rgba32 pixel = image[x, y];
-
-            double luminance = 0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B;
-
-            double saturation = GetSaturation(pixel);
-
-            if (luminance > luminanceThreshold)
+            Parallel.For(0, image.Width, x =>
             {
-                if (saturation > maxLightVibrancy)
+                Rgba32 pixel = image[x, y];
+
+                double luminance = 0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B;
+
+                double saturation = GetSaturation(pixel);
+
+                if (luminance > luminanceThreshold)
                 {
-                    maxLightVibrancy = saturation;
-                    lightVibrant = pixel;
+                    if (saturation > maxLightVibrancy)
+                    {
+                        maxLightVibrancy = saturation;
+                        lightVibrant = pixel;
+                    }
                 }
-            }
-            else
-            {
-                if (saturation > maxDarkVibrancy)
+                else
                 {
-                    maxDarkVibrancy = saturation;
-                    darkVibrant = pixel;
+                    if (saturation > maxDarkVibrancy)
+                    {
+                        maxDarkVibrancy = saturation;
+                        darkVibrant = pixel;
+                    }
                 }
-            }
 
-            Rgba32 reducedColor = new(
-                (byte)(pixel.R & 0xF0),
-                (byte)(pixel.G & 0xF0),
-                (byte)(pixel.B & 0xF0),
-                pixel.A);
+                Rgba32 reducedColor = new(
+                    (byte)(pixel.R & 0xF0),
+                    (byte)(pixel.G & 0xF0),
+                    (byte)(pixel.B & 0xF0),
+                    pixel.A);
 
-            if (!colorCounts.TryAdd(reducedColor, 1)) colorCounts[reducedColor]++;
-        }
+                if (!colorCounts.TryAdd(reducedColor, 1)) colorCounts[reducedColor]++;
+            });
+        });
 
-        for (int y = 0; y < image.Height; y++)
-        for (int x = 0; x < image.Width; x++)
+        // for (int y = 0; y < image.Height; y++)
+        // for (int x = 0; x < image.Width; x++)
+        // {
+        //     Rgba32 pixel = image[x, y];
+        //
+        //     double luminance = 0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B;
+        //
+        //     double saturation = GetSaturation(pixel);
+        //
+        //     if (luminance > luminanceThreshold)
+        //     {
+        //         if (saturation > maxLightVibrancy)
+        //         {
+        //             maxLightVibrancy = saturation;
+        //             lightVibrant = pixel;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if (saturation > maxDarkVibrancy)
+        //         {
+        //             maxDarkVibrancy = saturation;
+        //             darkVibrant = pixel;
+        //         }
+        //     }
+        //
+        //     Rgba32 reducedColor = new(
+        //         (byte)(pixel.R & 0xF0),
+        //         (byte)(pixel.G & 0xF0),
+        //         (byte)(pixel.B & 0xF0),
+        //         pixel.A);
+        //
+        //     if (!colorCounts.TryAdd(reducedColor, 1)) colorCounts[reducedColor]++;
+        // }
+
+        Parallel.For(0, image.Height, y =>
         {
-            Rgba32 pixel = image[x, y];
-
-            double luminance = 0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B;
-
-            double saturation = GetSaturation(pixel);
-
-            if (luminance > luminanceThreshold)
+            Parallel.For(0, image.Width, x =>
             {
-                if (saturation > minLightVibrancy && saturation < maxLightVibrancy)
+                Rgba32 pixel = image[x, y];
+
+                double luminance = 0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B;
+
+                double saturation = GetSaturation(pixel);
+
+                if (luminance > luminanceThreshold)
                 {
-                    maxLightVibrancy = saturation;
-                    lightMuted = pixel;
+                    if (saturation > minLightVibrancy && saturation < maxLightVibrancy)
+                    {
+                        maxLightVibrancy = saturation;
+                        lightMuted = pixel;
+                    }
                 }
-            }
-            else
-            {
-                if (saturation > minDarkVibrancy && saturation < maxDarkVibrancy)
+                else
                 {
-                    maxDarkVibrancy = saturation;
-                    darkMuted = pixel;
+                    if (saturation > minDarkVibrancy && saturation < maxDarkVibrancy)
+                    {
+                        maxDarkVibrancy = saturation;
+                        darkMuted = pixel;
+                    }
                 }
-            }
-        }
+            });
+        });
+
+        // for (int y = 0; y < image.Height; y++)
+        // for (int x = 0; x < image.Width; x++)
+        // {
+        //     Rgba32 pixel = image[x, y];
+        //
+        //     double luminance = 0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B;
+        //
+        //     double saturation = GetSaturation(pixel);
+        //
+        //     if (luminance > luminanceThreshold)
+        //     {
+        //         if (saturation > minLightVibrancy && saturation < maxLightVibrancy)
+        //         {
+        //             maxLightVibrancy = saturation;
+        //             lightMuted = pixel;
+        //         }
+        //     }
+        //     else
+        //     {
+        //         if (saturation > minDarkVibrancy && saturation < maxDarkVibrancy)
+        //         {
+        //             maxDarkVibrancy = saturation;
+        //             darkMuted = pixel;
+        //         }
+        //     }
+        // }
 
         image.Mutate(x => x.Resize(new ResizeOptions()
         {
@@ -266,7 +338,7 @@ public abstract class BaseImage : IDisposable
             hue = (b - r) / delta + 2;
         else
             hue = (r - g) / delta + 4;
-        
+
         return (hue, saturation, value);
     }
 }

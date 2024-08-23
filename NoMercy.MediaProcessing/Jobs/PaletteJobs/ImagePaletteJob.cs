@@ -5,28 +5,37 @@
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
+using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Jobs.PaletteJobs;
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [Serializable]
-public class ImagePaletteJob : AbstractPaletteJob<Image> {
+public class ImagePaletteJob : AbstractPaletteJob<Image>
+{
     public override string QueueName => "image";
     public override int Priority => 2;
 
-    public override async Task Handle() {
-        await using var context = new MediaContext();
+    public override async Task Handle()
+    {
+        await using MediaContext context = new MediaContext();
 
-        IEnumerable<Image> images = context.Images
+        List<Image> images = context.Images
             .Where(x => string.IsNullOrEmpty(x._colorPalette))
-            .AsEnumerable()
-            .Where(x => Storage.Any(y => y.FilePath == x.FilePath));
+            .Where(x => Storage.Select(y => y.FilePath).Contains(x.FilePath))
+            .ToList();
 
-        foreach (Image image in images) {
+        foreach (Image image in images)
+        {
             image._colorPalette = await MovieDbImage.ColorPalette("image", image.FilePath);
+            image.UpdatedAt = DateTime.Now;
         }
-        
+
         await context.SaveChangesAsync();
+        
+        Logger.App($"Image palettes updated: {images.Count}", LogEventLevel.Verbose);
     }
 }

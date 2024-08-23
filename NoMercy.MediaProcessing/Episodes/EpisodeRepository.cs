@@ -4,11 +4,11 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.MediaProcessing.Episodes;
 
-public class EpisodeRepository(MediaContext context): IEpisodeRepository
+public class EpisodeRepository(MediaContext context) : IEpisodeRepository
 {
     public Task StoreEpisodes(IEnumerable<Episode> episodes)
     {
-        return context.Episodes.UpsertRange(episodes)
+        return context.Episodes.UpsertRange(episodes.ToArray())
             .On(e => new { e.Id })
             .WhenMatched((es, ei) => new Episode
             {
@@ -29,7 +29,7 @@ public class EpisodeRepository(MediaContext context): IEpisodeRepository
 
     public Task StoreEpisodeTranslations(IEnumerable<Translation> translations)
     {
-        return context.Translations.UpsertRange(translations)
+        return context.Translations.UpsertRange(translations.ToArray())
             .On(t => new { t.Iso31661, t.Iso6391, t.EpisodeId })
             .WhenMatched((ts, ti) => new Translation
             {
@@ -53,7 +53,7 @@ public class EpisodeRepository(MediaContext context): IEpisodeRepository
 
     public Task StoreEpisodeImages(IEnumerable<Image> images)
     {
-        return context.Images.UpsertRange(images)
+        return context.Images.UpsertRange(images.ToArray())
             .On(v => new { v.FilePath, v.EpisodeId })
             .WhenMatched((ts, ti) => new Image
             {
