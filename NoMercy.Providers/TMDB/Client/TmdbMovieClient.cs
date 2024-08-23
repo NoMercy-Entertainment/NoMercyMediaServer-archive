@@ -8,15 +8,16 @@ using TmdbMovieCertifications = NoMercy.Providers.TMDB.Models.Certifications.Tmd
 
 namespace NoMercy.Providers.TMDB.Client;
 
-public class TmdbMovieClient : TmdbBaseClient,  ITmdbMovieClient
+public class TmdbMovieClient : TmdbBaseClient, ITmdbMovieClient
 {
     private readonly MovieResponseMocks? _mockDataProvider;
-    
-    public TmdbMovieClient(int? id = 0, string[]? appendices = null, MovieResponseMocks? mockDataProvider = null) : base((int)id!)
+
+    public TmdbMovieClient(int? id = 0, string[]? appendices = null, MovieResponseMocks? mockDataProvider = null) :
+        base((int)id!)
     {
         _mockDataProvider = mockDataProvider;
     }
-    
+
     public Task<TmdbMovieDetails?> Details()
     {
         return Get<TmdbMovieDetails>("movie/" + Id);
@@ -38,7 +39,7 @@ public class TmdbMovieClient : TmdbBaseClient,  ITmdbMovieClient
         {
             return Task.FromResult(_mockDataProvider.MockMovieAppendsResponse());
         }
-        
+
         return WithAppends([
             "alternative_titles",
             "release_dates",

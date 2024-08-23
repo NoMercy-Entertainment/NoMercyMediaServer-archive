@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace NoMercy.App;
+﻿namespace NoMercy.App;
 
 public static class MauiProgram
 {

@@ -9,5 +9,4 @@ public class MovieResponseMocks
     {
         return MovieAppendsResponse.Value().FromJson<TmdbMovieAppends>();
     }
-    
 }

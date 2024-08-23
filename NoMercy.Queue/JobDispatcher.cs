@@ -28,5 +28,4 @@ public class JobDispatcher
             Logger.Queue(e, LogEventLevel.Error);
         }
     }
-    
 }

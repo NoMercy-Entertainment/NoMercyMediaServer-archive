@@ -5,5 +5,4 @@ namespace NoMercy.Providers.TMDB.Client;
 public interface ITmdbMovieClient
 {
     Task<TmdbMovieAppends?> WithAllAppends(bool? append);
-
 }
