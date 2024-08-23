@@ -13,18 +13,18 @@ public class MovieManagerTests
     private readonly Mock<IMovieRepository> _movieRepositoryMock;
     private readonly Mock<ITmdbMovieClient> _movieClientMock;
     private readonly MovieManager _movieManager;
-    private readonly TmdbMovieAppends _movieAppends = null!;
-    private readonly  Library _library;
+    private readonly TmdbMovieAppends _movieAppends;
+    private readonly Library _library;
     private readonly int _movieId;
 
     public MovieManagerTests()
     {
         Mock<JobDispatcher> jobDispatcherMock = new();
         MovieResponseMocks mockDataProvider = new();
-        
+
         _movieRepositoryMock = new Mock<IMovieRepository>();
         _movieClientMock = new Mock<ITmdbMovieClient>();
-        
+
         _movieManager = new MovieManager(_movieRepositoryMock.Object, jobDispatcherMock.Object);
         _movieAppends = mockDataProvider.MockMovieAppendsResponse()!;
         _library = new Library { Id = new Ulid(), Title = "Test Library" };
@@ -36,22 +36,21 @@ public class MovieManagerTests
     {
         // Arrange
         _movieClientMock.Setup(client => client.WithAllAppends(false)).ReturnsAsync(_movieAppends);
-        
-        Database.Models.Movie capturedMovie = null!;
-        
-        _movieRepositoryMock.Setup(repo => repo.AddAsync(It.IsAny<Database.Models.Movie>()))
-            .Callback<Database.Models.Movie>(movie => capturedMovie = movie);
+
+        Movie capturedMovie = null!;
+
+        _movieRepositoryMock.Setup(repo => repo.AddAsync(It.IsAny<Movie>()))
+            .Callback<Movie>(movie => capturedMovie = movie);
 
         // Act
         await _movieManager.AddMovieAsync(_movieId, _library);
 
         // Assert
-        _movieRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<Database.Models.Movie>()), Times.Once);
-        _movieRepositoryMock.Verify(repo => repo.LinkToLibrary(_library, It.IsAny<Database.Models.Movie>()), Times.Once);
+        _movieRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<Movie>()), Times.Once);
+        _movieRepositoryMock.Verify(repo => repo.LinkToLibrary(_library, It.IsAny<Movie>()), Times.Once);
         Assert.NotNull(capturedMovie);
         Assert.Equal(_movieId, capturedMovie.Id);
         Assert.Equal(_movieAppends.Title, capturedMovie.Title);
-        
     }
 
     [Fact]
@@ -63,7 +62,7 @@ public class MovieManagerTests
     [Fact]
     public async Task RemoveMovieAsync_ShouldThrowNotImplementedException()
     {
-        await Assert.ThrowsAsync<NotImplementedException>(() => _movieManager.RemoveMovieAsync(_movieId));
+        await Assert.ThrowsAsync<NotImplementedException>(() => _movieManager.RemoveMovieAsync(_movieId, _library));
     }
 
     [Fact]
@@ -71,7 +70,8 @@ public class MovieManagerTests
     {
         await _movieManager.StoreAlternativeTitles(_movieAppends);
 
-        _movieRepositoryMock.Verify(m => m.StoreAlternativeTitles(It.IsAny<IEnumerable<AlternativeTitle>>()), Times.Once);
+        _movieRepositoryMock.Verify(m => m.StoreAlternativeTitles(It.IsAny<IEnumerable<AlternativeTitle>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -87,7 +87,8 @@ public class MovieManagerTests
     {
         await _movieManager.StoreContentRatings(_movieAppends);
 
-        _movieRepositoryMock.Verify(m => m.StoreContentRatings(It.IsAny<IEnumerable<CertificationMovie>>()), Times.Once);
+        _movieRepositoryMock.Verify(m => m.StoreContentRatings(It.IsAny<IEnumerable<CertificationMovie>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -119,7 +120,7 @@ public class MovieManagerTests
     {
         await _movieManager.StoreImages(_movieAppends);
 
-        _movieRepositoryMock.Verify(m => m.StoreImages(It.IsAny<IEnumerable<Database.Models.Image>>()), Times.Exactly(3));
+        _movieRepositoryMock.Verify(m => m.StoreImages(It.IsAny<IEnumerable<Image>>()), Times.Exactly(3));
     }
 
     [Fact]

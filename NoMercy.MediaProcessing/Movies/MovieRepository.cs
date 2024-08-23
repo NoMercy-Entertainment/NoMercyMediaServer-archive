@@ -6,13 +6,13 @@ using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.MediaProcessing.Movies;
 
-public class MovieRepository(MediaContext context) : IMovieRepository
+public class MovieRepository(MediaContext context): IMovieRepository
 {
-    public Task AddAsync(Database.Models.Movie movie)
+    public Task AddAsync(Movie movie)
     {
         return context.Movies.Upsert(movie)
             .On(v => new { v.Id })
-            .WhenMatched((ts, ti) => new Database.Models.Movie
+            .WhenMatched((ts, ti) => new Movie
             {
                 Id = ti.Id,
                 Backdrop = ti.Backdrop,
@@ -38,8 +38,8 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             })
             .RunAsync();
     }
-    
-    public Task LinkToLibrary(Library library, Database.Models.Movie movie)
+
+    public Task LinkToLibrary(Library library, Movie movie)
     {
         return context.LibraryMovie.Upsert(new LibraryMovie(library.Id, movie.Id))
             .On(v => new { v.LibraryId, v.MovieId })
@@ -50,7 +50,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             })
             .RunAsync();
     }
-    
+
     public Task StoreAlternativeTitles(IEnumerable<AlternativeTitle> alternativeTitles)
     {
         return context.AlternativeTitles.UpsertRange(alternativeTitles)
@@ -66,26 +66,26 @@ public class MovieRepository(MediaContext context) : IMovieRepository
 
     public Task StoreTranslations(IEnumerable<Translation> translations)
     {
-            return context.Translations
-                .UpsertRange(translations.Where(translation => translation.Title != "" || translation.Overview != ""))
-                .On(t => new { t.Iso31661, t.Iso6391, t.MovieId })
-                .WhenMatched((ts, ti) => new Translation
-                {
-                    Iso31661 = ti.Iso31661,
-                    Iso6391 = ti.Iso6391,
-                    Title = ti.Title,
-                    EnglishName = ti.EnglishName,
-                    Name = ti.Name,
-                    Overview = ti.Overview,
-                    Homepage = ti.Homepage,
-                    Biography = ti.Biography,
-                    MovieId = ti.MovieId,
-                    SeasonId = ti.SeasonId,
-                    EpisodeId = ti.EpisodeId,
-                    CollectionId = ti.CollectionId,
-                    PersonId = ti.PersonId
-                })
-                .RunAsync();
+        return context.Translations
+            .UpsertRange(translations.Where(translation => translation.Title != "" || translation.Overview != ""))
+            .On(t => new { t.Iso31661, t.Iso6391, t.MovieId })
+            .WhenMatched((ts, ti) => new Translation
+            {
+                Iso31661 = ti.Iso31661,
+                Iso6391 = ti.Iso6391,
+                Title = ti.Title,
+                EnglishName = ti.EnglishName,
+                Name = ti.Name,
+                Overview = ti.Overview,
+                Homepage = ti.Homepage,
+                Biography = ti.Biography,
+                MovieId = ti.MovieId,
+                SeasonId = ti.SeasonId,
+                EpisodeId = ti.EpisodeId,
+                CollectionId = ti.CollectionId,
+                PersonId = ti.PersonId
+            })
+            .RunAsync();
     }
 
     public IEnumerable<CertificationMovie> GetCertificationMovies(TmdbMovieAppends movie,
@@ -98,15 +98,16 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .Select(c => new CertificationMovie
             {
                 CertificationId = c.Id,
-                MovieId = movie!.Id
+                MovieId = movie.Id
             });
     }
-    
+
     public Task StoreContentRatings(IEnumerable<CertificationMovie> certifications)
     {
         return context.CertificationMovie.UpsertRange(certifications)
             .On(v => new { v.CertificationId, v.MovieId })
-            .WhenMatched((ts, ti) => new CertificationMovie {
+            .WhenMatched((ts, ti) => new CertificationMovie
+            {
                 CertificationId = ti.CertificationId,
                 MovieId = ti.MovieId
             })
@@ -151,26 +152,26 @@ public class MovieRepository(MediaContext context) : IMovieRepository
 
     public Task StoreVideos(IEnumerable<Media> videos)
     {
-            return context.Medias.UpsertRange(videos)
-                .On(v => new { v.Src, v.MovieId })
-                .WhenMatched((ts, ti) => new Media
-                {
-                    Src = ti.Src,
-                    Iso6391 = ti.Iso6391,
-                    Type = ti.Type,
-                    MovieId = ti.MovieId,
-                    Name = ti.Name,
-                    Site = ti.Site,
-                    Size = ti.Size
-                })
-                .RunAsync();
+        return context.Medias.UpsertRange(videos)
+            .On(v => new { v.Src, v.MovieId })
+            .WhenMatched((ts, ti) => new Media
+            {
+                Src = ti.Src,
+                Iso6391 = ti.Iso6391,
+                Type = ti.Type,
+                MovieId = ti.MovieId,
+                Name = ti.Name,
+                Site = ti.Site,
+                Size = ti.Size
+            })
+            .RunAsync();
     }
 
-    public Task StoreImages(IEnumerable<Database.Models.Image> images)
+    public Task StoreImages(IEnumerable<Image> images)
     {
         return context.Images.UpsertRange(images)
             .On(v => new { v.FilePath, v.MovieId })
-            .WhenMatched((ts, ti) => new Database.Models.Image
+            .WhenMatched((ts, ti) => new Image
             {
                 AspectRatio = ti.AspectRatio,
                 FilePath = ti.FilePath,
@@ -260,6 +261,4 @@ public class MovieRepository(MediaContext context) : IMovieRepository
 
         return Task.CompletedTask;
     }
-    
-    
 }

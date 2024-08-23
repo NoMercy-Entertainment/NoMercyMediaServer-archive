@@ -3,30 +3,29 @@ using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.PaletteJobs;
-using NoMercy.MediaProcessing.Seasons;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.TV;
+using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Shows;
 
 public class ShowManager(
     IShowRepository showRepository,
     JobDispatcher jobDispatcher
-    ) : BaseManager, IShowManager
+) : BaseManager, IShowManager
 {
     public async Task<TmdbTvShowAppends?> AddShowAsync(int id, Library library)
     {
         using TmdbTvClient showClient = new(id);
         TmdbTvShowAppends? showAppends = await showClient.WithAllAppends();
-        
-        if (showAppends == null)  return null;
-        
-        var libraryId = library.Id;
-        var baseUrl = BaseUrl(showAppends.Name,  showAppends.FirstAirDate);
-        var mediaType = showRepository.GetMediaType(showAppends);
 
-        var colorPalette = await MovieDbImage
+        if (showAppends == null) return null;
+
+        string baseUrl = BaseUrl(showAppends.Name, showAppends.FirstAirDate);
+        string mediaType = showRepository.GetMediaType(showAppends);
+
+        string colorPalette = await MovieDbImage
             .MultiColorPalette([
                 new BaseImage.MultiStringType("poster", showAppends.PosterPath),
                 new BaseImage.MultiStringType("backdrop", showAppends.BackdropPath)
@@ -34,16 +33,13 @@ public class ShowManager(
 
         Tv show = new()
         {
+            LibraryId = library.Id,
             Folder = baseUrl,
-            LibraryId = libraryId,
-            _colorPalette = colorPalette,
             MediaType = mediaType,
-            
+            _colorPalette = colorPalette,
+
             Id = showAppends.Id,
             Backdrop = showAppends.BackdropPath,
-            Duration = showAppends.EpisodeRunTime?.Length > 0
-                ? (int?)showAppends.EpisodeRunTime?.Average()
-                : 0,
             FirstAirDate = showAppends.FirstAirDate,
             HaveEpisodes = 0,
             Homepage = showAppends.Homepage?.ToString(),
@@ -53,45 +49,48 @@ public class ShowManager(
             NextEpisodeToAir = showAppends.NextEpisodeToAir?.Id,
             NumberOfEpisodes = showAppends.NumberOfEpisodes,
             NumberOfSeasons = showAppends.NumberOfSeasons,
-            OriginCountry = showAppends.OriginCountry.Length > 0 ? showAppends.OriginCountry[0] : null,
             OriginalLanguage = showAppends.OriginalLanguage,
             Overview = showAppends.Overview,
             Popularity = showAppends.Popularity,
             Poster = showAppends.PosterPath,
-            SpokenLanguages = showAppends.SpokenLanguages.Length > 0 ? showAppends.SpokenLanguages[0].Name : null,
             Status = showAppends.Status,
             Tagline = showAppends.Tagline,
             Title = showAppends.Name,
             TitleSort = showAppends.Name.TitleSort(showAppends.FirstAirDate),
-            Trailer = showAppends.Videos.Results.Length > 0 ? showAppends.Videos.Results[0].Key : null,
             TvdbId = showAppends.ExternalIds.TvdbId,
             Type = showAppends.Type,
             VoteAverage = showAppends.VoteAverage,
             VoteCount = showAppends.VoteCount,
+
+            Duration = showAppends.EpisodeRunTime?.Length > 0
+                ? (int?)showAppends.EpisodeRunTime?.Average()
+                : 0,
+            OriginCountry = showAppends.OriginCountry.Length > 0
+                ? showAppends.OriginCountry[0]
+                : null,
+            SpokenLanguages = showAppends.SpokenLanguages.Length > 0
+                ? showAppends.SpokenLanguages[0].Name
+                : null,
+            Trailer = showAppends.Videos.Results.Length > 0
+                ? showAppends.Videos.Results[0].Key
+                : null
         };
-        
+
         await showRepository.AddAsync(show);
-        Logger.MovieDb($"Show {show.Title}: Added to Database");
-        
+        Logger.MovieDb($"Show {show.Title}: Added to Database", LogEventLevel.Debug);
+
         await showRepository.LinkToLibrary(library, show);
-        Logger.MovieDb($"Show {show.Title}: Linked to Library {library.Title}");
-        
+        Logger.MovieDb($"Show {show.Title}: Linked to Library {library.Title}", LogEventLevel.Debug);
+
         await Task.WhenAll(
-            StoreAlternativeTitles(showAppends),
-            StoreWatchProviders(showAppends),
             StoreTranslations(showAppends),
-            StoreContentRatings(showAppends),
-            StoreSimilar(showAppends),
-            StoreRecommendations(showAppends),
-            StoreVideos(showAppends),
-            StoreImages(showAppends),
-            StoreNetworks(showAppends),
-            StoreCompanies(showAppends),
-            StoreKeywords(showAppends),
-            StoreGenres(showAppends)
+            StoreGenres(showAppends),
+            StoreContentRatings(showAppends)
         );
-       
-        Logger.MovieDb($"Show {showAppends.Name}: Added to Library {library.Title}");
+
+        Logger.MovieDb($"Show {showAppends.Name}: Added to Library {library.Title}", LogEventLevel.Debug);
+        
+        // jobDispatcher.DispatchJob<AddShowExtraDataJob, TmdbTvShowAppends>(showAppends);
 
         return showAppends;
     }
@@ -118,7 +117,7 @@ public class ShowManager(
 
         await showRepository.StoreAlternativeTitles(alternativeTitles);
 
-        Logger.MovieDb($"Show {show.Name}: AlternativeTitles stored");
+        Logger.MovieDb($"Show {show.Name}: AlternativeTitles stored", LogEventLevel.Debug);
     }
 
     internal async Task StoreTranslations(TmdbTvShowAppends show)
@@ -136,31 +135,34 @@ public class ShowManager(
                 Biography = translation.Data.Biography,
                 TvId = show.Id
             });
-        
+
         await showRepository.StoreTranslations(translations);
-        
-        Logger.MovieDb($"Show {show.Name}: Translations stored");
+
+        Logger.MovieDb($"Show {show.Name}: Translations stored", LogEventLevel.Debug);
     }
-    
-    internal async Task StoreContentRatings(TmdbTvShowAppends show) {
+
+    internal async Task StoreContentRatings(TmdbTvShowAppends show)
+    {
         List<CertificationCriteria> certificationCriteria = show.ContentRatings.Results
-            .Select(r => new CertificationCriteria {
+            .Select(r => new CertificationCriteria
+            {
                 Iso31661 = r.Iso31661,
                 Certification = r.Rating
             }).ToList();
-            
-        IEnumerable<CertificationTv> certificationTvs =  showRepository
+
+        IEnumerable<CertificationTv> certificationTvs = showRepository
             .GetCertificationTvs(show, certificationCriteria);
-        
+
         await showRepository.StoreContentRatings(certificationTvs);
-        
-        Logger.MovieDb($"Show {show.Name}: Content Ratings stored");
+
+        Logger.MovieDb($"Show {show.Name}: Content Ratings stored", LogEventLevel.Debug);
     }
 
     internal async Task StoreSimilar(TmdbTvShowAppends show)
     {
         IEnumerable<Similar> similar = show.Similar.Results
-            .Select(similar => new Similar {
+            .Select(similar => new Similar
+            {
                 Backdrop = similar.BackdropPath,
                 Overview = similar.Overview,
                 Poster = similar.PosterPath,
@@ -175,8 +177,8 @@ public class ShowManager(
 
         IEnumerable<Similar> jobItems = similar.Select(x => new Similar { TvFromId = x.TvFromId });
         jobDispatcher.DispatchJob<SimilarPaletteJob, Similar>(show.Id, jobItems);
-        
-        Logger.MovieDb($"Show {show.Name}: Similar stored");
+
+        Logger.MovieDb($"Show {show.Name}: Similar stored", LogEventLevel.Debug);
     }
 
     internal async Task StoreRecommendations(TmdbTvShowAppends show)
@@ -195,34 +197,34 @@ public class ShowManager(
             .ToArray();
 
         await showRepository.StoreRecommendations(recommendations);
-        
+
         IEnumerable<Recommendation> jobItems = recommendations
             .Select(x => new Recommendation { TvFromId = x.TvFromId });
-        
+
         jobDispatcher.DispatchJob<RecommendationPaletteJob, Recommendation>(show.Id, jobItems);
-        
-        Logger.MovieDb($"Show {show.Name}: Recommendations stored");
+
+        Logger.MovieDb($"Show {show.Name}: Recommendations stored", LogEventLevel.Debug);
     }
 
     internal async Task StoreVideos(TmdbTvShowAppends show)
     {
-            IEnumerable<Media> videos = show.Videos.Results
-                .Select(media => new Media 
-                {
-                    _type = "video",
-                    Id = Ulid.NewUlid(),
-                    Iso6391 = media.Iso6391,
-                    Name = media.Name,
-                    Site = media.Site,
-                    Size = media.Size,
-                    Src = media.Key,
-                    Type = media.Type,
-                    TvId = show.Id
-                });
+        IEnumerable<Media> videos = show.Videos.Results
+            .Select(media => new Media
+            {
+                _type = "video",
+                Id = Ulid.NewUlid(),
+                Iso6391 = media.Iso6391,
+                Name = media.Name,
+                Site = media.Site,
+                Size = media.Size,
+                Src = media.Key,
+                Type = media.Type,
+                TvId = show.Id
+            });
 
-            await showRepository.StoreVideos(videos);
-            
-            Logger.MovieDb($"Show {show.Name}: Videos stored");
+        await showRepository.StoreVideos(videos);
+
+        Logger.MovieDb($"Show {show.Name}: Videos stored", LogEventLevel.Debug);
     }
 
     internal async Task StoreImages(TmdbTvShowAppends show)
@@ -242,12 +244,14 @@ public class ShowManager(
                 Site = "https://image.tmdb.org/t/p/"
             })
             .ToArray();
-        
+
         await showRepository.StoreImages(posters);
 
         IEnumerable<Image> posterJobItems = posters
-            .Select(x => new Image { FilePath = x.FilePath });
-        jobDispatcher.DispatchJob<ImagePaletteJob, Image>(show.Id, posterJobItems);
+            .Select(x => new Image { FilePath = x.FilePath })
+            .ToArray();
+        if (posterJobItems.Any())
+            jobDispatcher.DispatchJob<ImagePaletteJob, Image>(show.Id, posterJobItems);
 
         IEnumerable<Image> backdrops = show.Images.Backdrops
             .Select(image => new Image
@@ -264,38 +268,41 @@ public class ShowManager(
                 Site = "https://image.tmdb.org/t/p/"
             })
             .ToArray();
-        
+
         await showRepository.StoreImages(backdrops);
-        Logger.MovieDb($"Show {show.Name}: backdrops stored");
+        Logger.MovieDb($"Show {show.Name}: backdrops stored", LogEventLevel.Debug);
 
         IEnumerable<Image> backdropJobItems = backdrops
-            .Select(x => new Image { FilePath = x.FilePath });
-        jobDispatcher.DispatchJob<ImagePaletteJob, Image>(show.Id, backdropJobItems);
+            .Select(x => new Image { FilePath = x.FilePath })
+            .ToArray();
+        if (backdropJobItems.Any())
+            jobDispatcher.DispatchJob<ImagePaletteJob, Image>(show.Id, backdropJobItems);
 
         IEnumerable<Image> logos = show.Images.Logos.Select(
-            image => new Image
-            {
-                AspectRatio = image.AspectRatio,
-                Height = image.Height,
-                Iso6391 = image.Iso6391,
-                FilePath = image.FilePath,
-                Width = image.Width,
-                VoteAverage = image.VoteAverage,
-                VoteCount = image.VoteCount,
-                TvId = show.Id,
-                Type = "logo",
-                Site = "https://image.tmdb.org/t/p/"
-            })
+                image => new Image
+                {
+                    AspectRatio = image.AspectRatio,
+                    Height = image.Height,
+                    Iso6391 = image.Iso6391,
+                    FilePath = image.FilePath,
+                    Width = image.Width,
+                    VoteAverage = image.VoteAverage,
+                    VoteCount = image.VoteCount,
+                    TvId = show.Id,
+                    Type = "logo",
+                    Site = "https://image.tmdb.org/t/p/"
+                })
             .ToArray();
-        
+
         await showRepository.StoreImages(logos);
-        Logger.MovieDb($"Show {show.Name}: Logos stored");
-        
+        Logger.MovieDb($"Show {show.Name}: Logos stored", LogEventLevel.Debug);
+
         IEnumerable<Image> logosJobItems = logos
             .Where(x => x.FilePath != null && !x.FilePath.EndsWith(".svg"))
-            .Select(x => new Image { FilePath = x.FilePath });
-        
-        jobDispatcher.DispatchJob<ImagePaletteJob, Image>(show.Id, logosJobItems);
+            .Select(x => new Image { FilePath = x.FilePath })
+            .ToArray();
+        if (backdropJobItems.Any())
+            jobDispatcher.DispatchJob<ImagePaletteJob, Image>(show.Id, logosJobItems);
     }
 
     internal async Task StoreKeywords(TmdbTvShowAppends show)
@@ -308,7 +315,7 @@ public class ShowManager(
             });
 
         await showRepository.StoreKeywords(keywords);
-        Logger.MovieDb($"Show {show.Name}: Keywords stored");
+        Logger.MovieDb($"Show {show.Name}: Keywords stored", LogEventLevel.Debug);
 
         IEnumerable<KeywordTv> keywordTvs = show.Keywords.Results.Select(
             keyword => new KeywordTv
@@ -318,7 +325,7 @@ public class ShowManager(
             });
 
         await showRepository.LinkKeywordsToTv(keywordTvs);
-        Logger.MovieDb($"Show {show.Name}: Keywords linked to Show");
+        Logger.MovieDb($"Show {show.Name}: Keywords linked to Show", LogEventLevel.Debug);
     }
 
     internal async Task StoreGenres(TmdbTvShowAppends show)
@@ -331,15 +338,15 @@ public class ShowManager(
             });
 
         await showRepository.StoreGenres(genreShows);
-        Logger.MovieDb($"Show {show.Name}: Genres stored");
+        Logger.MovieDb($"Show {show.Name}: Genres stored", LogEventLevel.Debug);
     }
-    
+
     internal async Task StoreWatchProviders(TmdbTvShowAppends show)
     {
-        Logger.MovieDb($"Show {show.Name}: WatchProviders stored");
+        Logger.MovieDb($"Show {show.Name}: WatchProviders stored", LogEventLevel.Debug);
         await Task.CompletedTask;
     }
-    
+
     internal async Task StoreNetworks(TmdbTvShowAppends show)
     {
         // List<Network> networks = show.Networks.Results.ToList()
@@ -347,7 +354,7 @@ public class ShowManager(
         //
         // await showRepository.StoreNetworks(networks)
 
-        Logger.MovieDb($"Show {show.Name}: Networks stored");
+        Logger.MovieDb($"Show {show.Name}: Networks stored", LogEventLevel.Debug);
         await Task.CompletedTask;
     }
 
@@ -358,8 +365,8 @@ public class ShowManager(
         //
         // await showRepository.StoreCompanies(companies)
 
-        Logger.MovieDb($"Show {show.Name}: Companies stored");
+        Logger.MovieDb($"Show {show.Name}: Companies stored", LogEventLevel.Debug);
         await Task.CompletedTask;
     }
-
+    
 }

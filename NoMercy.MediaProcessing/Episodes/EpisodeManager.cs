@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using System.Globalization;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
@@ -18,29 +18,21 @@ public class EpisodeManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, IEpisodeManager
 {
-    
     public async Task StoreEpisodes(TmdbTvShow show, TmdbSeasonAppends season)
     {
-        (ConcurrentStack<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes) = await CollectEpisodes(show, season);
+        (List<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes) = await CollectEpisodes(show, season);
 
         await episodeRepository.StoreEpisodes(episodes);
-        
-        Logger.MovieDb($"Show {show.Name}, Season {season.SeasonNumber} Episodes stored");
+        Logger.MovieDb($"Show: {show.Name}, Season {season.SeasonNumber} Episodes stored", LogEventLevel.Debug);
 
-         List<Task> promises = [];
-         foreach (TmdbEpisodeAppends episode in episodeAppends)
-        {
-            promises.Add(StoreImages(show.Name, episode));
-            promises.Add(StoreTranslations(show.Name, episode));
-        }
-        
-        await Task.WhenAll(promises);
+        // jobDispatcher.DispatchJob<AddEpisodeExtraDataJob, TmdbEpisodeAppends>(episodeAppends, show.Name);
     }
 
-    private static async Task<(ConcurrentStack<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes)> CollectEpisodes(TmdbTvShow show, TmdbSeasonAppends season)
+    private static async Task<(List<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes)> CollectEpisodes(
+        TmdbTvShow show, TmdbSeasonAppends season)
     {
-        ConcurrentStack<TmdbEpisodeAppends> episodeAppends = [];
-        
+        List<TmdbEpisodeAppends> episodeAppends = [];
+
         await Parallel.ForEachAsync(season.Episodes, async (episode, _) =>
         {
             try
@@ -48,8 +40,8 @@ public class EpisodeManager(
                 using TmdbEpisodeClient tmdbEpisodeClient = new(show.Id, episode.SeasonNumber, episode.EpisodeNumber);
                 TmdbEpisodeAppends? seasonTask = await tmdbEpisodeClient.WithAllAppends();
                 if (seasonTask is null) return;
-                
-                episodeAppends.Push(seasonTask);
+
+                episodeAppends.Add(seasonTask);
             }
             catch (Exception e)
             {
@@ -62,7 +54,7 @@ public class EpisodeManager(
             {
                 TvId = show.Id,
                 SeasonId = season.Id,
-                    
+
                 Id = episode.Id,
                 Title = episode.Name,
                 AirDate = episode.AirDate,
@@ -76,9 +68,8 @@ public class EpisodeManager(
                 VoteAverage = episode.VoteAverage,
                 VoteCount = episode.VoteCount,
                 _colorPalette = MovieDbImage.ColorPalette("still", episode.StillPath).Result
-            })
-            .OrderBy(keySelector: f => f.EpisodeNumber);
-        
+            });
+
         return (episodeAppends, episodes);
     }
 
@@ -97,10 +88,11 @@ public class EpisodeManager(
                 Homepage = translation.Data.Homepage?.ToString(),
                 EpisodeId = episode.Id
             });
-        
+
         await episodeRepository.StoreEpisodeTranslations(translations);
 
-        Logger.MovieDb($"Show {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Translations stored");
+        Logger.MovieDb(
+            $"Show: {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Translations stored");
     }
 
     internal async Task StoreImages(string showName, TmdbEpisodeAppends episode)
@@ -121,12 +113,18 @@ public class EpisodeManager(
             })
             .ToList();
 
-         await episodeRepository.StoreEpisodeImages(stills);
-         
-         IEnumerable<Image> posterJobItems = stills
-             .Select(x => new Image { FilePath = x.FilePath });
-         jobDispatcher.DispatchJob<ImagePaletteJob, Image>(episode.Id, posterJobItems);
-         
-         Logger.MovieDb($"Show {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Images stored");
+        await episodeRepository.StoreEpisodeImages(stills);
+        Logger.MovieDb(
+            $"Show: {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Images stored",
+            LogEventLevel.Debug);
+
+        IEnumerable<Image> posterJobItems = stills
+            .Select(x => new Image { FilePath = x.FilePath })
+            .Where(e => e.Iso6391 == null || e.Iso6391 == "en" || e.Iso6391 == "" ||
+                        e.Iso6391 == CultureInfo.CurrentCulture.TwoLetterISOLanguageName)
+            .ToArray();
+        ;
+        if (posterJobItems.Any())
+            jobDispatcher.DispatchJob<ImagePaletteJob, Image>(episode.Id, posterJobItems);
     }
 }
