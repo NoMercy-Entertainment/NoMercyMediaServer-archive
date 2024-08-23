@@ -16,12 +16,18 @@ using NoMercy.Api.Middleware;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Collections;
+using NoMercy.MediaProcessing.Episodes;
 using NoMercy.MediaProcessing.Movies;
+using NoMercy.MediaProcessing.People;
+using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.File;
 using NoMercy.Queue;
+using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
+using ICollectionRepository = NoMercy.Data.Repositories.ICollectionRepository;
 using IMovieRepository = NoMercy.Data.Repositories.IMovieRepository;
 using MovieRepository = NoMercy.Data.Repositories.MovieRepository;
 
@@ -67,7 +73,12 @@ public class Startup
 
         // Add Managers
         services.AddScoped<IMovieManager, MovieManager>();
+        services.AddScoped<ICollectionManager, CollectionManager>();
         services.AddScoped<IShowManager, ShowManager>();
+        services.AddScoped<ISeasonManager, SeasonManager>();
+        services.AddScoped<IEpisodeManager, EpisodeManager>();
+        services.AddScoped<IPersonManager, PersonManager>();
+        
 
         // Add Controllers and JSON Options
         services.AddControllers()

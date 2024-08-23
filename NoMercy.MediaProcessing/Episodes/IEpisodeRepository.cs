@@ -6,6 +6,5 @@ public interface IEpisodeRepository
 {
     public Task StoreEpisodes(IEnumerable<Episode> episodes);
     public Task StoreEpisodeTranslations(IEnumerable<Translation> translations);
-    public Task StoreEpisodeImages(IEnumerable<Database.Models.Image> images);
-    
+    public Task StoreEpisodeImages(IEnumerable<Image> images);
 }

@@ -2,34 +2,40 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 
-using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
+using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Jobs.PaletteJobs;
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [Serializable]
-public class PersonPaletteJob : AbstractPaletteJob<Person> {
+public class PersonPaletteJob : AbstractPaletteJob<Person>
+{
     public override string QueueName => "image";
     public override int Priority => 2;
 
-    public override async Task Handle() {
-        await using var context = new MediaContext();
+    public override async Task Handle()
+    {
+        await using MediaContext? context = new();
 
-        IEnumerable<Person> people = context.People
+        List<Person> people = context.People
             .Where(x => string.IsNullOrEmpty(x._colorPalette))
-            .AsEnumerable()
             .Where(x => Storage
-                .Any(y => y.Profile == x.Profile));
+                .Select(y => y.Profile)
+                .Contains(x.Profile))
+            .ToList();
 
-        foreach (var person in people) {
+        foreach (Person? person in people)
             person._colorPalette = await MovieDbImage
                 .ColorPalette("person", person.Profile);
-        }
 
         await context.SaveChangesAsync();
+        
+        Logger.App($"Person palettes updated: {people.Count}", LogEventLevel.Verbose);
     }
 }

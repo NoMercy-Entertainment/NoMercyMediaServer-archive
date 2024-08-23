@@ -5,7 +5,7 @@ namespace NoMercy.MediaProcessing.Seasons;
 
 public interface ISeasonManager
 {
-    Task<List<TmdbSeasonAppends>> StoreSeasonsAsync(TmdbTvShowAppends show);
+    Task<IEnumerable<TmdbSeasonAppends>> StoreSeasonsAsync(TmdbTvShowAppends show);
     Task UpdateSeasonAsync(string showName, TmdbSeasonAppends season);
     Task RemoveSeasonAsync(string showName, TmdbSeasonAppends season);
 }
