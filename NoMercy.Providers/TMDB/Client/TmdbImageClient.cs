@@ -31,33 +31,33 @@ public abstract class TmdbImageClient : TmdbBaseClient
             try
             {
                 if (path is null) return null;
-                
+
                 bool isSvg = path.EndsWith(".svg");
                 string folder = Path.Join(AppFiles.ImagesPath, "original");
-                
+
                 if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-                
+
                 string filePath = Path.Join(folder, path.Replace("/", ""));
-                if (System.IO.File.Exists(filePath)) 
+                if (System.IO.File.Exists(filePath))
                     return isSvg ? null : await Image.LoadAsync<Rgba32>(filePath);
-                
+
                 using HttpClient httpClient = new();
                 httpClient.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
                 httpClient.BaseAddress = new Uri("https://image.tmdb.org/t/p/");
                 httpClient.DefaultRequestHeaders.Add("Accept", "image/*");
                 httpClient.Timeout = TimeSpan.FromMinutes(5);
-                
+
                 string url = path.StartsWith("http") ? path : $"original{path}";
                 HttpResponseMessage response = await httpClient.GetAsync(url);
-                
+
                 if (!response.IsSuccessStatusCode) return null;
-                
+
                 if (download is false)
                     return isSvg ? null : Image.Load<Rgba32>(await response.Content.ReadAsStreamAsync());
-                
+
                 if (!System.IO.File.Exists(filePath))
                     await System.IO.File.WriteAllBytesAsync(filePath, await response.Content.ReadAsByteArrayAsync());
-                
+
                 return isSvg ? null : Image.Load<Rgba32>(filePath);
             }
             catch (InvalidImageContentException e)

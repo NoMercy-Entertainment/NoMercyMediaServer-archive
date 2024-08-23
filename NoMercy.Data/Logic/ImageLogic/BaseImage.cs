@@ -124,7 +124,6 @@ public abstract class BaseImage : IDisposable
     public void Dispose()
     {
         GC.WaitForFullGCComplete();
-        
     }
 
     private static PaletteColors GetColorPaletteColors(Image<Rgba32> image)

@@ -1,6 +1,5 @@
 ﻿using Serilog.Events;
 using Microsoft.AspNetCore.WebUtilities;
-using NoMercy.Helpers;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 

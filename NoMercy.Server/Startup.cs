@@ -16,7 +16,6 @@ using NoMercy.Api.Middleware;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Movies;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.Networking;

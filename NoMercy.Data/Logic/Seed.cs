@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using NoMercy.Helpers;
 using Newtonsoft.Json;
 using NoMercy.Data.Logic.ImageLogic;
 using NoMercy.Database;
