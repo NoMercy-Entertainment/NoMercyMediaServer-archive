@@ -10,6 +10,7 @@ using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.TV;
 
@@ -57,7 +58,8 @@ public class AddShowJob : AbstractMediaJob
         }
         
         await fileManager.FindFiles(Id, tvLibrary);
-
+        
+        Logger.App($"Show {show.Name} added to the library, extra data will be added in the background");
 
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto()
         {

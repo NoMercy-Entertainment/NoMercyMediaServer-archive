@@ -1,5 +1,3 @@
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -89,9 +87,9 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
 
     public class Subtitle
     {
-        [JsonProperty("language")] public string Language { get; set; }
-        [JsonProperty("type")] public string Type { get; set; }
-        [JsonProperty("ext")] public string Ext { get; set; }
+        [JsonProperty("language")] public string Language { get; set; } = string.Empty;
+        [JsonProperty("type")] public string Type { get; set; } = string.Empty;
+        [JsonProperty("ext")] public string Ext { get; set; } = string.Empty;
     }
 
     private async Task StoreAudioItem(MediaFile? item)

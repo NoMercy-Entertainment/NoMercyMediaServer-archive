@@ -3,6 +3,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.MediaProcessing.Jobs.PaletteJobs;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
@@ -25,7 +26,7 @@ public class EpisodeManager(
         await episodeRepository.StoreEpisodes(episodes);
         Logger.MovieDb($"Show: {show.Name}, Season {season.SeasonNumber} Episodes stored", LogEventLevel.Debug);
 
-        // jobDispatcher.DispatchJob<AddEpisodeExtraDataJob, TmdbEpisodeAppends>(episodeAppends, show.Name);
+        jobDispatcher.DispatchJob<AddEpisodeExtraDataJob, TmdbEpisodeAppends>(episodeAppends, show.Name);
     }
 
     private static async Task<(List<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes)> CollectEpisodes(

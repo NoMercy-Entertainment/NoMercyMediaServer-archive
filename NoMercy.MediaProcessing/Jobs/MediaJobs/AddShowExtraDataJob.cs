@@ -6,6 +6,7 @@ using NoMercy.Database;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.People;
 using NoMercy.MediaProcessing.Shows;
+using NoMercy.Networking;
 using NoMercy.Providers.TMDB.Models.TV;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
@@ -42,5 +43,10 @@ public class AddShowExtraDataJob : AbstractMediaExraDataJob<TmdbTvShowAppends>
         await showManager.StoreNetworks(Storage);
         await showManager.StoreCompanies(Storage);
         await showManager.StoreKeywords(Storage);
+        
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
+        {
+            QueryKey = ["tv", Storage.Id.ToString()]
+        });
     }
 }

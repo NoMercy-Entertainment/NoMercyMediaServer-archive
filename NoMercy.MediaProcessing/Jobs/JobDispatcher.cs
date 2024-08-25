@@ -13,11 +13,18 @@ public class JobDispatcher
         Queue.JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
     }
 
-    public void DispatchJob<TJob>(int id, Library library)
+    // public void DispatchJob<TJob>(int id, Library library)
+    //     where TJob : AbstractMediaJob, new()
+    // {
+    //     TJob? job = new TJob { Id = id, LibraryId = library.Id };
+    //     Queue.JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
+    // }
+    
+    public void DispatchJob<TJob>(int id, Library library, int? priority = null)
         where TJob : AbstractMediaJob, new()
     {
-        TJob? job = new TJob { Id = id, LibraryId = library.Id };
-        Queue.JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
+        TJob? job = new TJob { Id = id, LibraryId = library.Id};
+        Queue.JobDispatcher.Dispatch(job, job.QueueName, priority ?? job.Priority);
     }
 
     internal void DispatchJob<TJob, TChild>(int id, IEnumerable<TChild> jobItems)

@@ -62,12 +62,19 @@ public partial class FileManager(
 
     private async Task StoreMusic()
     {
-        MediaFile? item = Files.FirstOrDefault(file => file.Parsed is not null)
-            ?.Files?.FirstOrDefault(file => file.Parsed is not null);
+        List<MediaFile> items = Files
+            .SelectMany(file => file.Files ?? [])
+            .Where(mediaFolder => mediaFolder.Parsed is not null)
+            .ToList();
 
-        if (item == null) return;
+        if (items.Count == 0) return;
 
-        await StoreAudioItem(item);
+        foreach (MediaFile item in items)
+        {
+            await StoreAudioItem(item);
+        }
+
+        Logger.App($"Found {items.Count} music files");
     }
 
     private async Task StoreMovie()
@@ -79,6 +86,8 @@ public partial class FileManager(
         if (item == null) return;
         
         await StoreVideoItem(item);
+        
+        Logger.App($"Found {item.Path} for {Movie?.Title}");
     }
 
     private async Task StoreTvShow()
@@ -94,6 +103,8 @@ public partial class FileManager(
         {
             await StoreVideoItem(item);
         }
+        
+        Logger.App($"Found {items.Count} files for {Show?.Title}");
     }
 
     private async Task StoreAudioItem(MediaFile? item)
@@ -141,7 +152,6 @@ public partial class FileManager(
         }
         
         Episode? episode = await fileRepository.GetEpisode(Show?.Id, item);
-
         
         try
         {

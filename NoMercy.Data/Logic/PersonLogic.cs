@@ -55,7 +55,7 @@ public class PersonLogic : IDisposable, IAsyncDisposable
     public PersonLogic(TmdbTvShowAppends show)
     {
         _show = show;
-        _logPrefix = $"TvShow {show.Name}:";
+        _logPrefix = $"TvShow: {show.Name}:";
         _currentType = Type.TvShow;
         _name = show.Name;
 
@@ -68,7 +68,7 @@ public class PersonLogic : IDisposable, IAsyncDisposable
     {
         _show = show;
         _season = season;
-        _logPrefix = $"TvShow {show.Name}, Season {season.SeasonNumber}:";
+        _logPrefix = $"TvShow: {show.Name}, Season {season.SeasonNumber}:";
         _currentType = Type.Season;
         _name = _season.Name;
 
@@ -81,7 +81,7 @@ public class PersonLogic : IDisposable, IAsyncDisposable
         _show = show;
         _season = season;
         _episode = episode;
-        _logPrefix = $"TvShow {show.Name}, Season {season.SeasonNumber}, Episode {episode.EpisodeNumber}:";
+        _logPrefix = $"TvShow: {show.Name}, Season {season.SeasonNumber}, Episode {episode.EpisodeNumber}:";
         _currentType = Type.Episode;
         _name = _episode.Name;
 

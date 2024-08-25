@@ -42,7 +42,7 @@ public class TmdbShowJob : IShouldQueue, IDisposable, IAsyncDisposable
 
         if (Library is null)
         {
-            Logger.MovieDb($"TvShow {Id}: Library not found", LogEventLevel.Error);
+            Logger.MovieDb($"TvShow: {Id}: Library not found", LogEventLevel.Error);
             return;
         }
 
@@ -51,7 +51,7 @@ public class TmdbShowJob : IShouldQueue, IDisposable, IAsyncDisposable
 
         if (tvShow.Show != null)
         {
-            Logger.MovieDb($"TvShow {tvShow.Show.Name}: Processed");
+            Logger.MovieDb($"TvShow: {tvShow.Show.Name}: Processed");
 
             Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
             {

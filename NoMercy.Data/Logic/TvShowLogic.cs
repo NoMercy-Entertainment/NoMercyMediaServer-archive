@@ -28,16 +28,16 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         Show = await TmdbTvClient.WithAllAppends();
         if (Show is null)
         {
-            Logger.MovieDb($"TvShow {id}: not found");
+            Logger.MovieDb($"TvShow: {id}: not found");
             return;
         }
 
-        Logger.MovieDb($"TvShow {Show.Name}: found");
+        Logger.MovieDb($"TvShow: {Show.Name}: found");
 
         Folder = FindFolder();
         MediaType = GetMediaType();
 
-        Logger.MovieDb($"TvShow {Show.Name}: Folder: {Folder} MediaType: {MediaType}");
+        Logger.MovieDb($"TvShow: {Show.Name}: Folder: {Folder} MediaType: {MediaType}");
 
         await Store();
 
@@ -79,18 +79,18 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($"TvShow {Show?.Name}: AlternativeTitles stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: AlternativeTitles stored");
     }
 
     private async Task StoreAggregateCredits()
     {
-        Logger.MovieDb($"TvShow {Show?.Name}: AggregateCredits stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: AggregateCredits stored");
         await Task.CompletedTask;
     }
 
     private async Task StoreWatchProviders()
     {
-        Logger.MovieDb($"TvShow {Show?.Name}: WatchProviders stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: WatchProviders stored");
         await Task.CompletedTask;
     }
 
@@ -166,7 +166,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($"TvShow {Show?.Name}: ContentRatings stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: ContentRatings stored");
         await Task.CompletedTask;
     }
 
@@ -202,7 +202,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         TmdbColorPaletteJob similarColorPaletteJob = new(id, model: "similar", type: "tv");
         JobDispatcher.Dispatch(similarColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($"TvShow {Show?.Name}: Similar stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: Similar stored");
         await Task.CompletedTask;
     }
 
@@ -238,7 +238,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         TmdbColorPaletteJob recommendationColorPaletteJob = new(id, model: "recommendation", type: "tv");
         JobDispatcher.Dispatch(recommendationColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($"TvShow {Show?.Name}: Recommendations stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: Recommendations stored");
         await Task.CompletedTask;
     }
 
@@ -280,7 +280,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             Logger.MovieDb(e, LogEventLevel.Error);
         }
 
-        Logger.MovieDb($"TvShow {Show?.Name}: Videos stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: Videos stored");
         await Task.CompletedTask;
     }
 
@@ -357,7 +357,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         TmdbColorPaletteJob tvColorPaletteJob = new(tvShowAppends);
         JobDispatcher.Dispatch(tvColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($"TvShow {tvShowAppends.Name}: Images stored");
+        Logger.MovieDb($"TvShow: {tvShowAppends.Name}: Images stored");
         await Task.CompletedTask;
     }
 
@@ -375,7 +375,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         //     })
         //     .RunAsync();
 
-        Logger.MovieDb($"TvShow {Show?.Name}: Networks stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: Networks stored");
         await Task.CompletedTask;
     }
 
@@ -393,7 +393,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
         //     })
         //     .RunAsync();
 
-        Logger.MovieDb($"TvShow {Show?.Name}: Companies stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: Companies stored");
         await Task.CompletedTask;
     }
 
@@ -431,7 +431,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($"TvShow {Show?.Name}: Keywords stored");
+        Logger.MovieDb($"TvShow: {Show?.Name}: Keywords stored");
         await Task.CompletedTask;
     }
 
@@ -455,7 +455,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
                 })
                 .RunAsync();
 
-            Logger.MovieDb($"TvShow {Show?.Name}: Genres stored");
+            Logger.MovieDb($"TvShow: {Show?.Name}: Genres stored");
         }
         catch (Exception e)
         {
@@ -575,7 +575,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
             })
             .RunAsync();
 
-        Logger.MovieDb($"TvShow {Show.Name}: TvShow stored");
+        Logger.MovieDb($"TvShow: {Show.Name}: TvShow: stored");
     }
 
     private Task DispatchJobs()
@@ -604,7 +604,7 @@ public class TvShowLogic(int id, Library library) : IDisposable, IAsyncDisposabl
 
     public static async Task Palette(int id, bool download = true)
     {
-        Logger.Queue($"Fetching color palette for TvShow {id}");
+        Logger.Queue($"Fetching color palette for TvShow: {id}");
 
         await using MediaContext mediaContext = new();
         Tv? tv = await mediaContext.Tvs

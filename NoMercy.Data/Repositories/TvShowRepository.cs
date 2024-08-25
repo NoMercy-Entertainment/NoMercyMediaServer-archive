@@ -1,21 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.Jobs.MediaJobs;
 
 namespace NoMercy.Data.Repositories;
 
-public class TvShowRepository : ITvShowRepository
+public class TvShowRepository(MediaContext context) : ITvShowRepository
 {
-    private readonly MediaContext _context;
-
-    public TvShowRepository(MediaContext context)
-    {
-        _context = context;
-    }
-
     public Task<Tv?> GetTvAsync(Guid userId, int id, string language)
     {
-        return _context.Tvs.AsNoTracking()
+        return context.Tvs.AsNoTracking()
             .Where(tv => tv.Id == id)
             .Where(tv => tv.Library.LibraryUsers
                 .FirstOrDefault(u => u.UserId == userId) != null)
@@ -90,7 +85,7 @@ public class TvShowRepository : ITvShowRepository
 
     public Task<bool> GetTvAvailableAsync(Guid userId, int id)
     {
-        return _context.Tvs.AsNoTracking()
+        return context.Tvs.AsNoTracking()
             .Where(tv => tv.Library.LibraryUsers
                 .FirstOrDefault(u => u.UserId == userId) != null)
             .Where(tv => tv.Id == id)
@@ -102,7 +97,7 @@ public class TvShowRepository : ITvShowRepository
 
     public async Task<Tv?> GetTvPlaylistAsync(Guid userId, int id, string language)
     {
-        return await _context.Tvs.AsNoTracking()
+        return await context.Tvs.AsNoTracking()
             .Where(tv => tv.Id == id)
             .Where(tv => tv.Library.LibraryUsers
                 .FirstOrDefault(u => u.UserId == userId) != null)
@@ -143,14 +138,14 @@ public class TvShowRepository : ITvShowRepository
 
     public async Task<bool> LikeTvAsync(int id, Guid userId, bool like)
     {
-        TvUser? tvUser = await _context.TvUser
+        TvUser? tvUser = await context.TvUser
             .FirstOrDefaultAsync(tu => tu.TvId == id && tu.UserId == userId);
 
         if (tvUser == null) return false;
 
         if (like)
         {
-            await _context.TvUser.Upsert(new TvUser(id, userId))
+            await context.TvUser.Upsert(new TvUser(id, userId))
                 .On(m => new { m.TvId, m.UserId })
                 .WhenMatched(m => new TvUser
                 {
@@ -161,11 +156,23 @@ public class TvShowRepository : ITvShowRepository
         }
         else
         {
-            _context.TvUser.Remove(tvUser);
+            context.TvUser.Remove(tvUser);
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
         return true;
+    }
+
+    public async Task AddTvShowAsync(int id)
+    {
+        Library? tvLibrary = await context.Libraries
+            .Where(f => f.Type == "tv")
+            .FirstOrDefaultAsync();
+        
+        if (tvLibrary == null) return;
+        
+        JobDispatcher jobDispatcher = new();
+        jobDispatcher.DispatchJob<AddShowJob>(id, tvLibrary);
     }
 }

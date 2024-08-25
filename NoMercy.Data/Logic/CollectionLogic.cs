@@ -267,7 +267,7 @@ public class CollectionLogic(TmdbCollectionAppends collectionAppends, Library li
             .RunAsync();
 
         // ColorPaletteJob colorPaletteJob = new(id: id, model: "special");
-        // JobDispatcher.Dispatch(colorPaletteJob, "image", 2);
+        // jobDispatcher.Dispatch(colorPaletteJob, "image", 2);
 
         Logger.MovieDb($"Collection {collection.Name}: Images stored");
         await Task.CompletedTask;
