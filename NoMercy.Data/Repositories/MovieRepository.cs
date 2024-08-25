@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.Jobs.MediaJobs;
 
 namespace NoMercy.Data.Repositories;
 
@@ -80,28 +82,47 @@ public class MovieRepository(MediaContext context) : IMovieRepository
 
     public async Task<bool> LikeMovieAsync(int id, Guid userId, bool like)
     {
-        MovieUser? movieUser = await context.MovieUser
-            .FirstOrDefaultAsync(mu => mu.MovieId == id && mu.UserId == userId);
-
-        if (movieUser is null) return false;
-
-        if (like)
+        try
         {
-            await context.MovieUser.Upsert(new MovieUser(id, userId))
-                .On(m => new { m.MovieId, m.UserId })
-                .WhenMatched(m => new MovieUser
-                {
-                    MovieId = m.MovieId,
-                    UserId = m.UserId
-                })
-                .RunAsync();
-        }
-        else
-        {
-            context.MovieUser.Remove(movieUser);
-            await context.SaveChangesAsync();
-        }
+            MovieUser? movieUser = await context.MovieUser
+                .FirstOrDefaultAsync(mu => mu.MovieId == id && mu.UserId == userId);
+        
+            if (like)
+            {
+                await context.MovieUser.Upsert(new MovieUser(id, userId))
+                    .On(m => new { m.MovieId, m.UserId })
+                    .WhenMatched(m => new MovieUser
+                    {
+                        MovieId = m.MovieId,
+                        UserId = m.UserId
+                    })
+                    .RunAsync();
+            }
+            else if (movieUser != null)
+            {
+                context.MovieUser.Remove(movieUser);
+                await context.SaveChangesAsync();
+            }
 
-        return true;
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            return false;
+        }
+        
+    }
+
+    public async Task AddMovieAsync(int id)
+    {
+        Library? tvLibrary = await context.Libraries
+            .Where(f => f.Type == "movie")
+            .FirstOrDefaultAsync();
+        
+        if (tvLibrary == null) return;
+        
+        JobDispatcher jobDispatcher = new();
+        jobDispatcher.DispatchJob<AddMovieJob>(id, tvLibrary);
     }
 }

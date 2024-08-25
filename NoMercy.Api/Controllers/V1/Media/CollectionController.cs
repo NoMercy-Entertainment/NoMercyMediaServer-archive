@@ -103,7 +103,7 @@ public class CollectionsController : BaseController
         //     .FirstOrDefaultAsync();
 
         // TmdbCollectionJob tmdbJob = new(collectionAppends.Id, library);
-        // JobDispatcher.Dispatch(tmdbJob, "queue", 10);
+        // jobDispatcher.Dispatch(tmdbJob, "queue", 10);
 
         return Ok(new CollectionResponseDto
         {

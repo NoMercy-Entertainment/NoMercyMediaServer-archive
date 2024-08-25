@@ -8,6 +8,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Movies;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
@@ -47,6 +48,8 @@ public class AddMovieJob : AbstractMediaJob
         }
         
         await fileManager.FindFiles(Id, movieLibrary);
+        
+        Logger.App($"Movie {Id} added to library, extra data will be added in the background");
 
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {

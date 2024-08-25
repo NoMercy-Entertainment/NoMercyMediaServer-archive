@@ -53,8 +53,7 @@ public class TvShowsController : BaseController
         if (tvShowAppends is null)
             return NotFoundResponse("Tv show not found");
 
-        // TmdbShowJob tmdbShowJob = new(id);
-        // JobDispatcher.Dispatch(tmdbShowJob, "queue", 10);
+        await _tvShowRepository.AddTvShowAsync(id);
 
         return Ok(new InfoResponseDto
         {
@@ -158,7 +157,7 @@ public class TvShowsController : BaseController
         try
         {
             // FindMediaFilesJob findMediaFilesJob = new(tv.Id, tv.Library);
-            // JobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
+            // jobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
         }
         catch (Exception e)
         {
@@ -195,7 +194,7 @@ public class TvShowsController : BaseController
             return UnprocessableEntityResponse("Tv show not found");
 
         // TmdbShowJob tmdbShowJob = new(id);
-        // JobDispatcher.Dispatch(tmdbShowJob, "queue", 10);
+        // jobDispatcher.Dispatch(tmdbShowJob, "queue", 10);
 
         return Ok(new StatusResponseDto<string>
         {

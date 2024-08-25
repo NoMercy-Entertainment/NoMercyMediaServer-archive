@@ -6,6 +6,7 @@ using NoMercy.Database;
 using NoMercy.MediaProcessing.Collections;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Movies;
+using NoMercy.Networking;
 using NoMercy.Providers.TMDB.Models.Collections;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
@@ -32,5 +33,10 @@ public class AddCollectionExtraDataJob : AbstractMediaExraDataJob<TmdbCollection
         CollectionManager collectionManager = new(collectionRepository, movieManager, jobDispatcher);
         
         await collectionManager.StoreImages(Storage);
+        
+        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
+        {
+            QueryKey = ["collection", Storage.Id.ToString()]
+        });
     }
 }

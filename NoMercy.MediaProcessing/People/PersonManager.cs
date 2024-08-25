@@ -55,7 +55,7 @@ public class PersonManager(
         await personRepository.StoreJobsAsync(jobs);
         Logger.MovieDb($"Show: {show.Name}: Jobs stored", LogEventLevel.Debug);
         
-        // jobDispatcher.DispatchJob<AddPersonExtraDataJob, TmdbPersonAppends>(peopleAppends, show.Name);
+        jobDispatcher.DispatchJob<AddPersonExtraDataJob, TmdbPersonAppends>(peopleAppends, show.Name);
     }
 
     public async Task StorePeoplesAsync(TmdbMovieAppends movie)
@@ -94,7 +94,7 @@ public class PersonManager(
         await personRepository.StoreJobsAsync(jobs);
         Logger.MovieDb($"Movie: {movie.Title}: Jobs stored", LogEventLevel.Debug);
         
-        // jobDispatcher.DispatchJob<AddPersonExtraDataJob, TmdbPersonAppends>(peopleAppends, movie.Title);
+        jobDispatcher.DispatchJob<AddPersonExtraDataJob, TmdbPersonAppends>(peopleAppends, movie.Title);
     }
 
     public Task UpdatePeopleAsync(string showName, TmdbTvShowAppends show)

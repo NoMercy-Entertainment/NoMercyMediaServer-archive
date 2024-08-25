@@ -23,17 +23,17 @@ public static class KitsuIo
             KitsuAnime? anime = content.FromJson<KitsuAnime>();
 
             foreach (Data data in anime?.Data ?? [])
-                if (data.Attributes.Titles.En?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                if (data.Attributes.Titles.En?.Equals(title, StringComparison.CurrentCultureIgnoreCase) == true)
                     isAnime = true;
-                else if (data.Attributes.Titles.EnJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                else if (data.Attributes.Titles.EnJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) == true)
                     isAnime = true;
-                else if (data.Attributes.Titles.JaJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                else if (data.Attributes.Titles.JaJp?.Equals(title, StringComparison.CurrentCultureIgnoreCase) == true)
                     isAnime = true;
-                else if (data.Attributes.Titles.ThTh?.Equals(title, StringComparison.CurrentCultureIgnoreCase) != null)
+                else if (data.Attributes.Titles.ThTh?.Equals(title, StringComparison.CurrentCultureIgnoreCase) == true)
                     isAnime = true;
-                // else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle =>
-                //              abbreviatedTitle.Equals(title, StringComparison.CurrentCultureIgnoreCase)))
-                //     isAnime = true;
+                else if (data.Attributes.AbbreviatedTitles.Any(abbreviatedTitle =>
+                             abbreviatedTitle.Equals(title, StringComparison.CurrentCultureIgnoreCase)))
+                    isAnime = true;
         }
         catch (Exception e)
         {

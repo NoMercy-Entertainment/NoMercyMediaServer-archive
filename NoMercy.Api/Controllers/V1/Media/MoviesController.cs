@@ -53,10 +53,9 @@ public class MoviesController : BaseController
 
         if (movieAppends is null)
             return NotFoundResponse("Movie not found");
-
-        // TmdbMovieJob tmdbMovieJob = new(id);
-        // JobDispatcher.Dispatch(tmdbMovieJob, "queue", 10);
-
+        
+        await _movieRepository.AddMovieAsync(id);
+        
         return Ok(new InfoResponseDto
         {
             Data = new InfoResponseItemDto(movieAppends, country)
@@ -149,7 +148,7 @@ public class MoviesController : BaseController
             try
             {
                 // FindMediaFilesJob findMediaFilesJob = new(movie.Id, movie.Library);
-                // JobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
+                // jobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
             }
             catch (Exception e)
             {
@@ -187,7 +186,7 @@ public class MoviesController : BaseController
         try
         {
             // TmdbMovieJob tmdbMovieJob = new(id);
-            // JobDispatcher.Dispatch(tmdbMovieJob, "queue", 10);
+            // jobDispatcher.Dispatch(tmdbMovieJob, "queue", 10);
         }
         catch (Exception e)
         {

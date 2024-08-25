@@ -21,6 +21,10 @@ public class Dev
             .Where(f => f.Type == "tv")
             .FirstAsync();
 
+        Library animeLibrary = await mediaContext.Libraries
+            .Where(f => f.Type == "anime")
+            .FirstAsync();
+
         int[] tvIds =
         [
             44310, 39340, 1973, 75219, 30980, 90546, 30977, 122587, 75123, 74092, 77778, 64537, 75777, 912, 130237,
