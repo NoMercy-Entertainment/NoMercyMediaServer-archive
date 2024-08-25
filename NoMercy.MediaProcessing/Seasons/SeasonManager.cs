@@ -2,6 +2,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.MediaProcessing.Jobs.PaletteJobs;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
@@ -53,7 +54,7 @@ public class SeasonManager(
         await seasonRepository.StoreAsync(seasons);
         Logger.MovieDb($"Show: {show.Name}: Seasons stored", LogEventLevel.Debug);
 
-        // jobDispatcher.DispatchJob<AddSeasonExtraDataJob, TmdbSeasonAppends>(seasonAppends, show.Name);
+        jobDispatcher.DispatchJob<AddSeasonExtraDataJob, TmdbSeasonAppends>(seasonAppends, show.Name);
 
         return seasonAppends;
     }

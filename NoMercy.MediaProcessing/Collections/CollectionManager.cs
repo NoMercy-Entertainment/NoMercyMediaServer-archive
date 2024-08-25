@@ -52,12 +52,9 @@ public class CollectionManager(
         await collectionRepository.AddAsync(collection);
         Logger.MovieDb($"Movie: {collection.Title}: Added to Database", LogEventLevel.Debug);
 
-        await collectionRepository.LinkToLibrary(library, collection);
-        Logger.MovieDb($"Movie: {collection.Title}: Linked to Library {library.Title}", LogEventLevel.Debug);
-
         await StoreTranslations(collectionAppends);
 
-        // jobDispatcher.DispatchJob<AddCollectionExtraDataJob, TmdbCollectionAppends>(collectionAppends);
+        jobDispatcher.DispatchJob<AddCollectionExtraDataJob, TmdbCollectionAppends>(collectionAppends);
 
         Logger.MovieDb($"Movie: {collectionAppends.Name}: Added to Library {library.Title}", LogEventLevel.Debug);
 

@@ -89,7 +89,7 @@ public class SeasonLogic(TmdbTvShowDetails show) : IDisposable, IAsyncDisposable
             Logger.MovieDb(e, LogEventLevel.Error);
         }
 
-        Logger.MovieDb($"TvShow {show.Name}: Seasons stored");
+        Logger.MovieDb($"TvShow: {show.Name}: Seasons stored");
 
         return Task.CompletedTask;
     }
@@ -186,7 +186,7 @@ public class SeasonLogic(TmdbTvShowDetails show) : IDisposable, IAsyncDisposable
         TmdbColorPaletteJob tmdbColorPaletteJob = new(season.Id, "season");
         JobDispatcher.Dispatch(tmdbColorPaletteJob, "image", 2);
 
-        Logger.MovieDb($"TvShow {tvShow?.Title}, Season {season.SeasonNumber}: Images stored");
+        Logger.MovieDb($"TvShow: {tvShow?.Title}, Season {season.SeasonNumber}: Images stored");
     }
 
     private Task StoreTranslations()
@@ -230,7 +230,7 @@ public class SeasonLogic(TmdbTvShowDetails show) : IDisposable, IAsyncDisposable
                 })
                 .Run();
 
-            Logger.MovieDb($"TvShow {show?.Name}, Season {season.SeasonNumber}: Translations stored");
+            Logger.MovieDb($"TvShow: {show?.Name}, Season {season.SeasonNumber}: Translations stored");
         }
 
         return Task.CompletedTask;
