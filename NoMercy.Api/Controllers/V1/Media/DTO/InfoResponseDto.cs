@@ -804,8 +804,8 @@ public record DirectorDto
 
 public record ExternalIds
 {
-    [JsonProperty("imdbId")] public string? ImdbId { get; set; }
-    [JsonProperty("tvdbId")] public int? TvdbId { get; set; }
+    [JsonProperty("imdb_id")] public string? ImdbId { get; set; }
+    [JsonProperty("tvdb_id")] public int? TvdbId { get; set; }
 }
 
 public record RelatedDto
@@ -902,7 +902,7 @@ public record SeasonDto
     [JsonProperty("id")] public long Id { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
     [JsonProperty("poster")] public string? Poster { get; set; }
-    [JsonProperty("seasonNumber")] public long SeasonNumber { get; set; }
+    [JsonProperty("season_number")] public long SeasonNumber { get; set; }
     [JsonProperty("title")] public string? Title { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("episodes")] public IEnumerable<EpisodeDto> Episodes { get; set; }
