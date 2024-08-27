@@ -28,7 +28,7 @@ public record PersonResponseItemDto
     [JsonProperty("deathday")] public DateTime? DeathDay { get; set; }
     [JsonProperty("gender")] public string Gender { get; set; }
     [JsonProperty("homepage")] public string? Homepage { get; set; }
-    [JsonProperty("imdbId")] public string? ImdbId { get; set; }
+    [JsonProperty("imdb_id")] public string? ImdbId { get; set; }
     [JsonProperty("known_for_department")] public string? KnownForDepartment { get; set; }
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("place_of_birth")] public string? PlaceOfBirth { get; set; }
@@ -43,7 +43,7 @@ public record PersonResponseItemDto
 
     [JsonProperty("external_ids")] public Database.Models.TmdbPersonExternalIds? ExternalIds { get; set; }
     [JsonProperty("translations")] public TranslationsDto TranslationsDto { get; set; }
-    [JsonProperty("knownFor")] public KnownFor[] KnownFor { get; set; }
+    [JsonProperty("known_for")] public KnownFor[] KnownFor { get; set; }
     [JsonProperty("images")] public Images Images { get; set; }
 
     public PersonResponseItemDto(Person person)
