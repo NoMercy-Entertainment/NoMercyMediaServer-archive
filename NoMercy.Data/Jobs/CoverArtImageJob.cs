@@ -92,8 +92,8 @@ public class CoverArtImageJob : IShouldQueue
 
             return new CoverPalette
             {
-                Palette =
-                    await Logic.ImageLogic.CoverArtImage.ColorPalette("cover", coverItem.CoverArtThumbnails.Large),
+                // Palette =
+                //     await ImageLogic.CoverArtImage.ColorPalette("cover", coverItem.CoverArtThumbnails.Large),
                 Url = coverItem.CoverArtThumbnails.Large
             };
         }
