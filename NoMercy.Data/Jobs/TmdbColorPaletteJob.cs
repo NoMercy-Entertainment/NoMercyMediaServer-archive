@@ -1,6 +1,6 @@
 using System.Globalization;
 using NoMercy.Data.Logic;
-using NoMercy.Data.Logic.ImageLogic;
+using NoMercy.MediaProcessing.Images;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Collections;
 using NoMercy.Providers.TMDB.Models.Episode;

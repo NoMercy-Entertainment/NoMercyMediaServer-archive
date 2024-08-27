@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using FlexLabs.EntityFrameworkCore.Upsert;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Data.Jobs;
-using NoMercy.Data.Logic.ImageLogic;
+using NoMercy.MediaProcessing.Images;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Networking;

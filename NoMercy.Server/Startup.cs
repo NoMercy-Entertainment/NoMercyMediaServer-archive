@@ -18,6 +18,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Collections;
 using NoMercy.MediaProcessing.Episodes;
+using NoMercy.MediaProcessing.Libraries;
 using NoMercy.MediaProcessing.Movies;
 using NoMercy.MediaProcessing.People;
 using NoMercy.MediaProcessing.Seasons;
@@ -28,7 +29,9 @@ using NoMercy.Providers.File;
 using NoMercy.Queue;
 using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
 using ICollectionRepository = NoMercy.Data.Repositories.ICollectionRepository;
+using ILibraryRepository = NoMercy.Data.Repositories.ILibraryRepository;
 using IMovieRepository = NoMercy.Data.Repositories.IMovieRepository;
+using LibraryRepository = NoMercy.Data.Repositories.LibraryRepository;
 using MovieRepository = NoMercy.Data.Repositories.MovieRepository;
 
 namespace NoMercy.Server;
@@ -72,6 +75,8 @@ public class Startup
         services.AddScoped<ITvShowRepository, TvShowRepository>();
 
         // Add Managers
+        // services.AddScoped<IEncoderManager, EncoderManager>();
+        services.AddScoped<ILibraryManager, LibraryManager>();
         services.AddScoped<IMovieManager, MovieManager>();
         services.AddScoped<ICollectionManager, CollectionManager>();
         services.AddScoped<IShowManager, ShowManager>();
