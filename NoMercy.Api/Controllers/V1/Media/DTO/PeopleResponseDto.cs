@@ -59,7 +59,7 @@ public record PeopleResponseItemDto
     [JsonProperty("deathday")] public DateTime? DeathDay { get; set; }
     [JsonProperty("gender")] public string Gender { get; set; }
     [JsonProperty("homepage")] public string? Homepage { get; set; }
-    [JsonProperty("imdbId")] public string? ImdbId { get; set; }
+    [JsonProperty("imdb_id")] public string? ImdbId { get; set; }
     [JsonProperty("known_for_department")] public string? KnownForDepartment { get; set; }
     [JsonProperty("media_type")] public string MediaType { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
