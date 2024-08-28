@@ -1,6 +1,7 @@
+using NoMercy.NmSystem;
 using Serilog.Events;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.Providers.File;
 
 public class FileWatcherEventArgs
 {
@@ -63,12 +64,12 @@ public class FolderWatcher : IDisposable
         watcher.EnableRaisingEvents = false;
         watcher.IncludeSubdirectories = IncludeSubdirectories;
         watcher.NotifyFilter = NotifyFilters.Attributes |
-                               NotifyFilters.CreationTime |
+                               // NotifyFilters.CreationTime |
                                NotifyFilters.DirectoryName |
                                NotifyFilters.FileName |
-                               NotifyFilters.LastAccess |
+                               // NotifyFilters.LastAccess |
                                NotifyFilters.LastWrite |
-                               NotifyFilters.Security |
+                               // NotifyFilters.Security |
                                NotifyFilters.Size;
         watcher.InternalBufferSize = 64 * 1024;
 

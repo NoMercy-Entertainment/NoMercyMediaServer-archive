@@ -26,7 +26,7 @@ public class AddMovieJob : AbstractMediaJob
     {
         await using MediaContext context = new();
         JobDispatcher jobDispatcher = new();
-        
+
         FileRepository fileRepository = new(context);
         FileManager fileManager = new(fileRepository, jobDispatcher);
 
@@ -36,19 +36,17 @@ public class AddMovieJob : AbstractMediaJob
         Library movieLibrary = await context.Libraries
             .Where(f => f.Id == LibraryId)
             .Include(f => f.FolderLibraries)
-                .ThenInclude(f => f.Folder)
+            .ThenInclude(f => f.Folder)
             .FirstAsync();
 
         TmdbMovieAppends? movieAppends = await movieManager.AddMovieAsync(Id, movieLibrary);
         if (movieAppends == null) return;
 
         if (movieAppends.BelongsToCollection != null)
-        {
             jobDispatcher.DispatchJob<AddCollectionJob>(movieAppends.BelongsToCollection.Id, LibraryId);
-        }
-        
+
         await fileManager.FindFiles(Id, movieLibrary);
-        
+
         Logger.App($"Movie {Id} added to library, extra data will be added in the background");
 
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto

@@ -21,7 +21,7 @@ public class ImagePaletteJob : AbstractPaletteJob<Image>
 
     public override async Task Handle()
     {
-        await using MediaContext context = new MediaContext();
+        await using MediaContext context = new();
 
         List<Image> images = context.Images
             .Where(x => string.IsNullOrEmpty(x._colorPalette))
@@ -35,7 +35,7 @@ public class ImagePaletteJob : AbstractPaletteJob<Image>
         }
 
         await context.SaveChangesAsync();
-        
+
         Logger.App($"Image palettes updated: {images.Count}", LogEventLevel.Verbose);
     }
 }

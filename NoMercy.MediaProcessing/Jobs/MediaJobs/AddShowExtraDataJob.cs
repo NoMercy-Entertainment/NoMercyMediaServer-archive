@@ -43,7 +43,7 @@ public class AddShowExtraDataJob : AbstractMediaExraDataJob<TmdbTvShowAppends>
         await showManager.StoreNetworks(Storage);
         await showManager.StoreCompanies(Storage);
         await showManager.StoreKeywords(Storage);
-        
+
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
             QueryKey = ["tv", Storage.Id.ToString()]

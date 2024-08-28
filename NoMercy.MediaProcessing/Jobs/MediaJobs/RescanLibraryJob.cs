@@ -3,11 +3,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 using NoMercy.Database;
-using NoMercy.MediaProcessing.Files;
-using NoMercy.MediaProcessing.People;
-using NoMercy.NmSystem;
-using NoMercy.Providers.TMDB.Models.People;
-using Serilog.Events;
+using NoMercy.MediaProcessing.Libraries;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 
@@ -15,26 +11,19 @@ namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
 [Serializable]
-public class AddPersonExtraDataJob : AbstractShowExtraDataJob<TmdbPersonAppends, string>
+public class RescanLibraryJob : AbstractMediaJob
 {
     public override string QueueName => "queue";
-    public override int Priority => 1;
+    public override int Priority => 10;
 
     public override async Task Handle()
     {
         await using MediaContext context = new();
         JobDispatcher jobDispatcher = new();
-        FileRepository fileRepository = new(context);
 
-        PersonRepository personRepository = new(context);
-        PersonManager personManager = new(personRepository, jobDispatcher);
+        LibraryRepository libraryRepository = new(context);
+        LibraryManager libraryManager = new(libraryRepository, jobDispatcher);
 
-        foreach (TmdbPersonAppends person in Storage)
-        {
-            await personManager.StoreTranslationsAsync(Name, person);
-            await personManager.StoreImagesAsync(Name, person);
-        }
-
-        Logger.MovieDb($"Movie: {Name}: People: Translations and Images stored", LogEventLevel.Debug);
+        await libraryManager.ProcessLibraryAsync(LibraryId);
     }
 }

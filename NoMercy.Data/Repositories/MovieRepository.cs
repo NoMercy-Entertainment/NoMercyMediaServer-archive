@@ -86,7 +86,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
         {
             MovieUser? movieUser = await context.MovieUser
                 .FirstOrDefaultAsync(mu => mu.MovieId == id && mu.UserId == userId);
-        
+
             if (like)
             {
                 await context.MovieUser.Upsert(new MovieUser(id, userId))
@@ -111,7 +111,6 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             Console.WriteLine(e);
             return false;
         }
-        
     }
 
     public async Task AddMovieAsync(int id)
@@ -119,9 +118,9 @@ public class MovieRepository(MediaContext context) : IMovieRepository
         Library? tvLibrary = await context.Libraries
             .Where(f => f.Type == "movie")
             .FirstOrDefaultAsync();
-        
+
         if (tvLibrary == null) return;
-        
+
         JobDispatcher jobDispatcher = new();
         jobDispatcher.DispatchJob<AddMovieJob>(id, tvLibrary);
     }

@@ -53,9 +53,9 @@ public class MoviesController : BaseController
 
         if (movieAppends is null)
             return NotFoundResponse("Movie not found");
-        
+
         await _movieRepository.AddMovieAsync(id);
-        
+
         return Ok(new InfoResponseDto
         {
             Data = new InfoResponseItemDto(movieAppends, country)

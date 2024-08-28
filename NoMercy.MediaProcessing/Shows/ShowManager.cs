@@ -90,7 +90,7 @@ public class ShowManager(
         );
 
         Logger.MovieDb($"Show {showAppends.Name}: Added to Library {library.Title}", LogEventLevel.Debug);
-        
+
         jobDispatcher.DispatchJob<AddShowExtraDataJob, TmdbTvShowAppends>(showAppends);
 
         return showAppends;
@@ -369,5 +369,4 @@ public class ShowManager(
         Logger.MovieDb($"Show {show.Name}: Companies stored", LogEventLevel.Debug);
         await Task.CompletedTask;
     }
-    
 }

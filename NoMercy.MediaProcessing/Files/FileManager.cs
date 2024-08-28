@@ -17,9 +17,8 @@ public class Subtitle
 public partial class FileManager(
     IFileRepository fileRepository,
     JobDispatcher jobDispatcher
-): IFileManager
+) : IFileManager
 {
-    
     private int Id { get; set; }
     private Movie? Movie { get; set; }
     private Tv? Show { get; set; }
@@ -27,11 +26,11 @@ public partial class FileManager(
     private List<Folder> Folders { get; set; } = [];
     private List<MediaFolder> Files { get; set; } = [];
     public string Type { get; set; } = "";
-    
+
     public async Task FindFiles(int id, Library library)
     {
         Id = id;
-        
+
         await MediaType(id, library);
         Folders = Paths(library, Movie, Show);
 
@@ -69,10 +68,7 @@ public partial class FileManager(
 
         if (items.Count == 0) return;
 
-        foreach (MediaFile item in items)
-        {
-            await StoreAudioItem(item);
-        }
+        foreach (MediaFile item in items) await StoreAudioItem(item);
 
         Logger.App($"Found {items.Count} music files");
     }
@@ -84,9 +80,9 @@ public partial class FileManager(
             .FirstOrDefault(file => file.Parsed is not null);
 
         if (item == null) return;
-        
+
         await StoreVideoItem(item);
-        
+
         Logger.App($"Found {item.Path} for {Movie?.Title}");
     }
 
@@ -98,12 +94,9 @@ public partial class FileManager(
             .ToList();
 
         if (items.Count == 0) return;
-        
-        foreach (MediaFile item in items)
-        {
-            await StoreVideoItem(item);
-        }
-        
+
+        foreach (MediaFile item in items) await StoreVideoItem(item);
+
         Logger.App($"Found {items.Count} files for {Show?.Title}");
     }
 
@@ -116,7 +109,7 @@ public partial class FileManager(
 
         await Task.CompletedTask;
     }
-    
+
     private async Task StoreVideoItem(MediaFile item)
     {
         Folder folder = Folders.FirstOrDefault(folder => item.Path.Contains(folder.Path))!;
@@ -130,7 +123,7 @@ public partial class FileManager(
         string subtitleFolder = Path.Combine(hostFolder, "subtitles");
 
         List<Subtitle> subtitles = [];
-        
+
         if (Directory.Exists(subtitleFolder))
         {
             string[] subtitleFiles = Directory.GetFiles(subtitleFolder);
@@ -150,9 +143,9 @@ public partial class FileManager(
                 });
             }
         }
-        
+
         Episode? episode = await fileRepository.GetEpisode(Show?.Id, item);
-        
+
         try
         {
             VideoFile videoFile = new()
@@ -174,22 +167,21 @@ public partial class FileManager(
                 Quality = item.FFprobe?.VideoStreams.FirstOrDefault()?.Width.ToString() ?? "",
                 Subtitles = JsonConvert.SerializeObject(subtitles)
             };
-            
-            await fileRepository.StoreVideoFile(videoFile);
 
+            await fileRepository.StoreVideoFile(videoFile);
         }
         catch (Exception e)
         {
             Console.WriteLine(e);
         }
     }
-     
-    
+
+
     private async Task MediaType(int id, Library library)
     {
         (Movie, Show, Type) = await fileRepository.MediaType(id, library);
     }
-    
+
     private async Task<ConcurrentBag<MediaFolder>> GetFiles(Library library, string path)
     {
         MediaScan mediaScan = new();
@@ -197,9 +189,8 @@ public partial class FileManager(
         int depth = library.Type switch
         {
             "movie" => 1,
-            "tv" => 2,
-            "anime" => 2,
-            _ => 1
+            "tv" or "anime" => 2,
+            _ => 0
         };
 
         ConcurrentBag<MediaFolder> folders = await mediaScan
@@ -218,7 +209,7 @@ public partial class FileManager(
         string? folder = library.Type switch
         {
             "movie" => movie?.Folder?.Replace("/", ""),
-            "tv" or  "anime" => show?.Folder?.Replace("/", ""),
+            "tv" or "anime" => show?.Folder?.Replace("/", ""),
             _ => ""
         };
 
@@ -239,11 +230,10 @@ public partial class FileManager(
                     Id = rootFolder.Id
                 });
         }
-        
+
         return folders;
     }
 
     [GeneratedRegex(@"(?<lang>\w{3}).(?<type>\w{3,4}).(?<ext>\w{3})$")]
     private static partial Regex SubtitleFileRegex();
-    
 }

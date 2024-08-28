@@ -31,9 +31,9 @@ public class AddCollectionExtraDataJob : AbstractMediaExraDataJob<TmdbCollection
 
         CollectionRepository collectionRepository = new(context);
         CollectionManager collectionManager = new(collectionRepository, movieManager, jobDispatcher);
-        
+
         await collectionManager.StoreImages(Storage);
-        
+
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
             QueryKey = ["collection", Storage.Id.ToString()]
