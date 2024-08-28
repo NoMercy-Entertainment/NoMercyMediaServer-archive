@@ -194,7 +194,7 @@ public abstract class BaseImage : IDisposable
         {
             int x = index % image.Width;
             int y = index / image.Width;
-            
+
             Rgba32 pixel = image[x, y];
 
             double luminance = 0.2126 * pixel.R + 0.7152 * pixel.G + 0.0722 * pixel.B;

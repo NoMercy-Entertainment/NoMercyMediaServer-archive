@@ -5,9 +5,8 @@ using NoMercy.NmSystem;
 
 namespace NoMercy.MediaProcessing.Files;
 
-public class FileRepository(MediaContext context): IFileRepository
+public class FileRepository(MediaContext context) : IFileRepository
 {
-    
     public Task StoreVideoFile(VideoFile videoFile)
     {
         return context.VideoFiles.Upsert(videoFile)
@@ -29,24 +28,24 @@ public class FileRepository(MediaContext context): IFileRepository
             })
             .RunAsync();
     }
-    
+
     public async Task<Episode?> GetEpisode(int? showId, MediaFile item)
     {
         if (item.Parsed == null) return null;
-        
+
         return await context.Episodes
             .Where(e => e.TvId == showId)
             .Where(e => e.SeasonNumber == item.Parsed!.Season)
             .Where(e => e.EpisodeNumber == item.Parsed!.Episode)
             .FirstOrDefaultAsync();
     }
-    
+
     public async Task<(Movie? movie, Tv? show, string type)> MediaType(int id, Library library)
     {
         Movie? movie = null;
         Tv? show = null;
         string type = "";
-        
+
         switch (library.Type)
         {
             case "movie":
@@ -68,7 +67,7 @@ public class FileRepository(MediaContext context): IFileRepository
                 type = "anime";
                 break;
         }
-        
+
         return (movie, show, type);
     }
 }

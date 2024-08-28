@@ -18,7 +18,7 @@ public class CollectionManager(
     ICollectionRepository collectionRepository,
     MovieManager movieManager,
     JobDispatcher jobDispatcher
-): BaseManager, ICollectionManager
+) : BaseManager, ICollectionManager
 {
     public async Task<TmdbCollectionAppends?> AddCollectionAsync(int id, Library library)
     {
@@ -27,16 +27,16 @@ public class CollectionManager(
 
         if (collectionAppends is null) return null;
 
-        var colorPalette = await MovieDbImage
+        string? colorPalette = await MovieDbImage
             .MultiColorPalette([
                 new BaseImage.MultiStringType("poster", collectionAppends.PosterPath),
                 new BaseImage.MultiStringType("backdrop", collectionAppends.BackdropPath)
             ]);
-        
+
         Collection collection = new()
         {
             LibraryId = library.Id,
-            
+
             Id = collectionAppends.Id,
             Title = collectionAppends.Name,
             TitleSort = collectionAppends.Name
@@ -46,9 +46,9 @@ public class CollectionManager(
             Poster = collectionAppends.PosterPath,
             Overview = collectionAppends.Overview,
             Parts = collectionAppends.Parts.Length,
-            _colorPalette = colorPalette,
+            _colorPalette = colorPalette
         };
-        
+
         await collectionRepository.AddAsync(collection);
         Logger.MovieDb($"Movie: {collection.Title}: Added to Database", LogEventLevel.Debug);
 
@@ -70,7 +70,7 @@ public class CollectionManager(
     {
         throw new NotImplementedException();
     }
-    
+
     internal async Task StoreTranslations(TmdbCollectionAppends collection)
     {
         IEnumerable<Translation> translations = collection.Translations.Translations
@@ -90,7 +90,7 @@ public class CollectionManager(
 
         Logger.MovieDb($"Collection: {collection.Name}: Translations stored", LogEventLevel.Debug);
     }
-    
+
     internal async Task StoreImages(TmdbCollectionAppends collection)
     {
         IEnumerable<Image> posters = collection.Images.Posters
@@ -175,21 +175,18 @@ public class CollectionManager(
     public async Task AddCollectionMoviesAsync(TmdbCollectionAppends collectionAppends, Library library)
     {
         List<TmdbMovieAppends> movies = [];
-        
+
         await Parallel.ForEachAsync(collectionAppends.Parts, async (movie, _) =>
         {
             TmdbMovieClient movieClient = new(movie.Id);
             TmdbMovieAppends? movieAppends = await movieClient.WithAllAppends();
             if (movieAppends is null) return;
-            
+
             movies.Add(movieAppends);
         });
 
-        foreach (TmdbMovieAppends movie in movies)
-        {
-            await movieManager.AddMovieAsync(movie.Id, library);
-        }
-        
+        foreach (TmdbMovieAppends movie in movies) await movieManager.AddMovieAsync(movie.Id, library);
+
         Logger.MovieDb($"Collection: {collectionAppends.Name}: Movies added", LogEventLevel.Debug);
     }
 }

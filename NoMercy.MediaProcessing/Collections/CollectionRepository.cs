@@ -4,25 +4,25 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.MediaProcessing.Collections;
 
-public class CollectionRepository(MediaContext context): ICollectionRepository
+public class CollectionRepository(MediaContext context) : ICollectionRepository
 {
     public Task AddAsync(Collection collection)
     {
-       return context.Collections.Upsert(collection)
-           .On(v => new { v.Id })
-           .WhenMatched((ts, ti) => new Collection
-           {
-               Id = ti.Id,
-               Backdrop = ti.Backdrop,
-               Poster = ti.Poster,
-               Title = ti.Title,
-               Overview = ti.Overview,
-               Parts = ti.Parts,
-               LibraryId = ti.LibraryId,
-               TitleSort = ti.TitleSort,
-               _colorPalette = ti._colorPalette
-           })
-           .RunAsync();
+        return context.Collections.Upsert(collection)
+            .On(v => new { v.Id })
+            .WhenMatched((ts, ti) => new Collection
+            {
+                Id = ti.Id,
+                Backdrop = ti.Backdrop,
+                Poster = ti.Poster,
+                Title = ti.Title,
+                Overview = ti.Overview,
+                Parts = ti.Parts,
+                LibraryId = ti.LibraryId,
+                TitleSort = ti.TitleSort,
+                _colorPalette = ti._colorPalette
+            })
+            .RunAsync();
     }
 
     public Task LinkToLibrary(Library library, Collection collection)

@@ -38,7 +38,7 @@ public class RecommendationPaletteJob : AbstractPaletteJob<Recommendation>
                 ]);
 
         await context.SaveChangesAsync();
-        
+
         Logger.App($"Recommendation palettes updated: {recommendations.Count}", LogEventLevel.Verbose);
     }
 }

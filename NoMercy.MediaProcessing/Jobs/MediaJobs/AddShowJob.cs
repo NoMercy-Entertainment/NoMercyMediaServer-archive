@@ -29,7 +29,7 @@ public class AddShowJob : AbstractMediaJob
     {
         await using MediaContext context = new();
         JobDispatcher jobDispatcher = new();
-        
+
         FileRepository fileRepository = new(context);
         FileManager fileManager = new(fileRepository, jobDispatcher);
 
@@ -45,20 +45,17 @@ public class AddShowJob : AbstractMediaJob
         Library tvLibrary = await context.Libraries
             .Where(f => f.Id == LibraryId)
             .Include(f => f.FolderLibraries)
-                .ThenInclude(f => f.Folder)
+            .ThenInclude(f => f.Folder)
             .FirstAsync();
 
         TmdbTvShowAppends? show = await showManager.AddShowAsync(Id, tvLibrary);
         if (show == null) return;
 
         IEnumerable<TmdbSeasonAppends> seasons = await seasonManager.StoreSeasonsAsync(show);
-        foreach (TmdbSeasonAppends season in seasons)
-        {
-            await episodeManager.StoreEpisodes(show, season);
-        }
-        
+        foreach (TmdbSeasonAppends season in seasons) await episodeManager.StoreEpisodes(show, season);
+
         await fileManager.FindFiles(Id, tvLibrary);
-        
+
         Logger.App($"Show {show.Name} added to the library, extra data will be added in the background");
 
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto()

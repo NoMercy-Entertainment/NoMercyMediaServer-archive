@@ -38,7 +38,7 @@ public class SimilarPaletteJob : AbstractPaletteJob<Similar>
                 ]);
 
         await context.SaveChangesAsync();
-        
+
         Logger.App($"Similar palettes updated: {similars.Count}", LogEventLevel.Verbose);
     }
 }

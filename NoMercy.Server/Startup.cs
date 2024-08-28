@@ -83,7 +83,7 @@ public class Startup
         services.AddScoped<ISeasonManager, SeasonManager>();
         services.AddScoped<IEpisodeManager, EpisodeManager>();
         services.AddScoped<IPersonManager, PersonManager>();
-        
+
 
         // Add Controllers and JSON Options
         services.AddControllers()

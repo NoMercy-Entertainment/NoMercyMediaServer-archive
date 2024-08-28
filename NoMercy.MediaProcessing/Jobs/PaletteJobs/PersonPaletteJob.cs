@@ -35,7 +35,7 @@ public class PersonPaletteJob : AbstractPaletteJob<Person>
                 .ColorPalette("person", person.Profile);
 
         await context.SaveChangesAsync();
-        
+
         Logger.App($"Person palettes updated: {people.Count}", LogEventLevel.Verbose);
     }
 }

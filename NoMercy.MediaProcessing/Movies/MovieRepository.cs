@@ -6,7 +6,7 @@ using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.MediaProcessing.Movies;
 
-public class MovieRepository(MediaContext context): IMovieRepository
+public class MovieRepository(MediaContext context) : IMovieRepository
 {
     public Task AddAsync(Movie movie)
     {

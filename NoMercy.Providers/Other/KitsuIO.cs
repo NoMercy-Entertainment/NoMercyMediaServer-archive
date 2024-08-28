@@ -66,7 +66,7 @@ public class Attributes
     [JsonProperty("updatedAt")] public DateTime UpdatedAt { get; set; }
     [JsonProperty("slug")] public string Slug { get; set; } = string.Empty;
     [JsonProperty("synopsis")] public string Synopsis { get; set; } = string.Empty;
-    [JsonProperty("description")] public string Description { get; set; }  = string.Empty;
+    [JsonProperty("description")] public string Description { get; set; } = string.Empty;
     [JsonProperty("coverImageTopOffset")] public int CoverImageTopOffset { get; set; }
     [JsonProperty("titles")] public Titles Titles { get; set; } = new();
     [JsonProperty("canonicalTitle")] public string CanonicalTitle { get; set; } = string.Empty;

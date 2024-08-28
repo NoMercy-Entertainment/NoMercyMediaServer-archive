@@ -110,7 +110,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
         if (depth < 0) return folders;
 
-        ConcurrentBag<MediaFile>? files = Files(folderPath);
+        ConcurrentBag<MediaFile> files = Files(folderPath);
 
         MovieFile movieFile1 = _movieDetector.GetInfo(folderPath);
         movieFile1.Year ??= Str.MatchYearRegex().Match(folderPath)
@@ -140,13 +140,13 @@ public class MediaScan : IDisposable, IAsyncDisposable
         {
             IOrderedEnumerable<string> directories = Directory.GetDirectories(folderPath).OrderBy(f => f);
 
-            foreach (string directory in directories)
+            Parallel.ForEach(directories, (directory, _) =>
             {
                 string folderName = Path.GetFileName(directory);
 
                 if ((_regexFilterEnabled && _folderNameRegex.IsMatch(folderName)) || depth == 0)
                 {
-                    files?.Add(new MediaFile
+                    files.Add(new MediaFile
                     {
                         Name = folderName,
                         Path = directory,
@@ -156,7 +156,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                         Type = "folder"
                     });
 
-                    continue;
+                    return;
                 }
 
                 ConcurrentBag<MediaFile> files2 = depth - 1 > 0 ? Files(directory) : [];
@@ -188,7 +188,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                         ? ScanFolder(directory, depth - 1)
                         : null
                 });
-            }
+            });
 
             ConcurrentBag<MediaFolder> response = new(folders
                 .Where(f => f.Name is not "")
@@ -215,7 +215,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
             IOrderedEnumerable<string> directories = Directory.GetDirectories(folderPath).OrderBy(f => f);
 
-            foreach (string directory in directories)
+            Parallel.ForEach(directories, (directory, _) =>
             {
                 string dir = Path.GetFullPath(directory.ToUtf8());
                 Logger.App($"Scanning {dir}");
@@ -234,7 +234,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                         Type = "folder"
                     });
 
-                    continue;
+                    return;
                 }
 
                 MovieFile movieFile = _movieDetector.GetInfo(directory);
@@ -262,7 +262,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                         ? ScanFoldersOnly(directory, depth - 1)
                         : null
                 });
-            }
+            });
 
             ConcurrentBag<MediaFolder> response = new(folders
                 .Where(f => f.Name is not "")
@@ -270,9 +270,10 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
             return response;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            return [];
+            Logger.App(e.Message, LogEventLevel.Fatal);
+            throw;
         }
     }
 
