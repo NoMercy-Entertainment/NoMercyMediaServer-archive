@@ -43,7 +43,7 @@ public class AddMovieExtraDataJob : AbstractMediaExraDataJob<TmdbMovieAppends>
         await movieManager.StoreNetworks(Storage);
         await movieManager.StoreCompanies(Storage);
         await movieManager.StoreKeywords(Storage);
-        
+
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
             QueryKey = ["movie", Storage.Id.ToString()]

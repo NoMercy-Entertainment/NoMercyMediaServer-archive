@@ -169,9 +169,9 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
         Library? tvLibrary = await context.Libraries
             .Where(f => f.Type == "tv")
             .FirstOrDefaultAsync();
-        
+
         if (tvLibrary == null) return;
-        
+
         JobDispatcher jobDispatcher = new();
         jobDispatcher.DispatchJob<AddShowJob>(id, tvLibrary);
     }

@@ -92,7 +92,6 @@ public partial class MusicLogic : IAsyncDisposable
                         }
                     }
 
-                    ;
                     return;
                 }
 

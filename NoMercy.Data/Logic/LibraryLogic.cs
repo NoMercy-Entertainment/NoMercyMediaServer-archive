@@ -1,13 +1,8 @@
-using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Data.Jobs;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
-using NoMercy.Providers.TMDB.Client;
-using NoMercy.Providers.TMDB.Models.Movies;
-using NoMercy.Providers.TMDB.Models.Shared;
-using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Queue;
 using Serilog.Events;
 
@@ -58,8 +53,6 @@ public class LibraryLogic(Ulid id) : IDisposable, IAsyncDisposable
     {
         Depth = Library.Type switch
         {
-            "movie" => 2,
-            "tv" => 2,
             "music" => 3,
             _ => 1
         };
@@ -73,81 +66,9 @@ public class LibraryLogic(Ulid id) : IDisposable, IAsyncDisposable
                 case "music":
                     await ScanAudioFolder(path);
                     break;
-                default:
-                    await ScanVideoFolder(path);
-                    break;
             }
 
         Logger.App("Scanning done");
-    }
-
-    private async Task ScanVideoFolder(string path)
-    {
-        await using MediaScan mediaScan = new();
-        ConcurrentBag<MediaFolder> list = await mediaScan
-            .Process(path, 1);
-
-        foreach (MediaFolder folder in list) await ProcessVideoFolder(folder);
-
-        Titles.AddRange(list);
-    }
-
-    private async Task ProcessVideoFolder(MediaFolder path)
-    {
-        switch (Library.Type)
-        {
-            case "movie":
-            {
-                await ProcessMovieFolder(path);
-                break;
-            }
-            case "anime":
-            case "tv":
-            {
-                await ProcessTvFolder(path);
-                break;
-            }
-        }
-    }
-
-    private async Task ProcessMovieFolder(MediaFolder folder)
-    {
-        if (folder.Parsed is null) return;
-
-        using TmdbSearchClient tmdbSearchClient = new();
-        TmdbPaginatedResponse<TmdbMovie>? paginatedMovieResponse =
-            await tmdbSearchClient.Movie(folder.Parsed.Title, folder.Parsed.Year);
-
-        if (paginatedMovieResponse?.Results.Length <= 0) return;
-
-        // List<Movie> res = Str.SortByMatchPercentage(paginatedMovieResponse?.Results, m => m.Title, folder.Parsed.Title);
-        List<TmdbMovie> res = paginatedMovieResponse?.Results.ToList() ?? [];
-        if (res.Count is 0) return;
-
-        Titles.Add(res[0].Title);
-
-        TmdbMovieJob tmdbMovieJob = new(res[0].Id, Library);
-        JobDispatcher.Dispatch(tmdbMovieJob, "queue", 5);
-    }
-
-    private async Task ProcessTvFolder(MediaFolder folder)
-    {
-        if (folder.Parsed is null) return;
-
-        using TmdbSearchClient tmdbSearchClient = new();
-        TmdbPaginatedResponse<TmdbTvShow>? paginatedTvShowResponse =
-            await tmdbSearchClient.TvShow(folder.Parsed.Title, folder.Parsed.Year);
-
-        if (paginatedTvShowResponse?.Results.Length <= 0) return;
-
-        // List<TvShow> res = Str.SortByMatchPercentage(paginatedTvShowResponse.Results, m => m.Name, folder.Parsed.Title);
-        List<TmdbTvShow> res = paginatedTvShowResponse?.Results.ToList() ?? [];
-        if (res.Count is 0) return;
-
-        Titles.Add(res[0].Name);
-
-        TmdbShowJob tmdbShowJob = new(res[0].Id, Library);
-        JobDispatcher.Dispatch(tmdbShowJob, "queue", 5);
     }
 
     private async Task ScanAudioFolder(string path)
@@ -158,7 +79,6 @@ public class LibraryLogic(Ulid id) : IDisposable, IAsyncDisposable
                 .Process(path, 2))
             .SelectMany(r => r.SubFolders ?? [])
             .ToList();
-        // .Where(r => r.Path.Contains("0118-vier"));
 
         foreach (MediaFolder rootFolder in rootFolders)
         {
