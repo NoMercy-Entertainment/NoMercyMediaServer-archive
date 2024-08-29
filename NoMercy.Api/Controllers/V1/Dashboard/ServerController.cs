@@ -33,9 +33,9 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 
 [ApiController]
 [Tags("Dashboard Server Management")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/dashboard/server", Order = 10)]
+[Route("api/v{version:apiVersion}/dashboard/server", Order = 10)]
 public class ServerController : BaseController
 {
     private IHostApplicationLifetime ApplicationLifetime { get; }

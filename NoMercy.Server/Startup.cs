@@ -1,5 +1,8 @@
 ﻿using System.Security.Claims;
 using System.Text.Json.Serialization;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using AspNetCore.Swagger.Themes;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http.Connections;
@@ -7,6 +10,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
@@ -27,6 +31,8 @@ using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.File;
 using NoMercy.Queue;
+using NoMercy.Server.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
 using ICollectionRepository = NoMercy.Data.Repositories.ICollectionRepository;
 using ILibraryRepository = NoMercy.Data.Repositories.ILibraryRepository;
@@ -38,6 +44,13 @@ namespace NoMercy.Server;
 
 public class Startup
 {
+    private readonly IApiVersionDescriptionProvider _provider;
+
+    public Startup(IApiVersionDescriptionProvider provider)
+    {
+        _provider = provider;
+    }
+
     public void ConfigureServices(IServiceCollection services)
     {
         // Add Memory Cache
@@ -83,7 +96,6 @@ public class Startup
         services.AddScoped<ISeasonManager, SeasonManager>();
         services.AddScoped<IEpisodeManager, EpisodeManager>();
         services.AddScoped<IPersonManager, PersonManager>();
-
 
         // Add Controllers and JSON Options
         services.AddControllers()
@@ -149,66 +161,31 @@ public class Startup
 
         // Add Other Services
         services.AddCors();
-        services.AddApiVersioning();
         services.AddDirectoryBrowser();
         services.AddResponseCaching();
         services.AddMvc(option => option.EnableEndpointRouting = false);
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(options =>
-        {
-            options.CustomSchemaIds(type => type.ToString());
-            options.SwaggerDoc("v1", new OpenApiInfo
+
+        // Add API versioning
+        services.AddApiVersioning(config =>
             {
-                Title = "NoMercy API",
-                Version = "v1",
-                Description = "NoMercy API",
-                Contact = new OpenApiContact
-                {
-                    Name = "NoMercy",
-                    Email = "stoney@nomercy.tv",
-                    Url = new Uri("https://nomercy.tv")
-                }
-            });
-            options.AddSecurityDefinition("Keycloak", new OpenApiSecurityScheme
+                config.ReportApiVersions = true;
+                config.AssumeDefaultVersionWhenUnspecified = true;
+                config.DefaultApiVersion = new ApiVersion(1, 0);
+                config.UnsupportedApiVersionStatusCode = 418;
+            })
+            .AddApiExplorer(options =>
             {
-                Type = SecuritySchemeType.OAuth2,
-                Flows = new OpenApiOAuthFlows
-                {
-                    Implicit = new OpenApiOAuthFlow
-                    {
-                        AuthorizationUrl =
-                            new Uri($"{Config.AuthBaseUrl}/protocol/openid-connect/auth"),
-                        Scopes = new Dictionary<string, string>
-                        {
-                            { "openid", "openid" },
-                            { "profile", "profile" }
-                        }
-                    }
-                }
+                options.GroupNameFormat = "VV";
+                options.SubstituteApiVersionInUrl = true;
+                options.DefaultApiVersion = new ApiVersion(1, 0);
             });
 
-            OpenApiSecurityScheme keycloakSecurityScheme = new()
-            {
-                Reference = new OpenApiReference
-                {
-                    Id = "Keycloak",
-                    Type = ReferenceType.SecurityScheme
-                },
-                In = ParameterLocation.Header,
-                Name = "Bearer",
-                Scheme = "Bearer"
-            };
+        // Add Swagger
+        services.AddSwaggerGen(options => { options.OperationFilter<SwaggerDefaultValues>(); });
+        services.AddSwaggerGenNewtonsoftSupport();
 
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
-                { keycloakSecurityScheme, Array.Empty<string>() },
-                {
-                    new OpenApiSecurityScheme
-                        { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
-                    new string[] { }
-                }
-            });
-        });
+        services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
 
         services.AddHttpContextAccessor();
         services.AddSignalR(o =>
@@ -248,7 +225,7 @@ public class Startup
         services.AddTransient<DynamicStaticFilesMiddleware>();
     }
 
-    public static void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
         app.UseRouting();
         app.UseCors("AllowNoMercyOrigins");
@@ -279,15 +256,22 @@ public class Startup
         // Development Tools
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
-        app.UseSwaggerUI(options =>
+        app.UseSwaggerUI(ModernStyle.Dark, options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "NoMercy API");
             options.RoutePrefix = string.Empty;
+            options.DocumentTitle = "NoMercy MediaServer API";
             options.OAuthClientId("nomercy-server");
             options.OAuthScopes("openid");
-            options.DocumentTitle = "NoMercy MediaServer API";
             options.EnablePersistAuthorization();
             options.EnableTryItOutByDefault();
+
+            IReadOnlyList<ApiVersionDescription> descriptions = _provider.ApiVersionDescriptions;
+            foreach (ApiVersionDescription description in descriptions)
+            {
+                string url = $"/swagger/{description.GroupName}/swagger.json";
+                string name = description.GroupName.ToUpperInvariant();
+                options.SwaggerEndpoint(url, name);
+            }
         });
 
         // MVC

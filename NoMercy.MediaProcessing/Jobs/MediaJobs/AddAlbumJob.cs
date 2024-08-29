@@ -26,16 +26,16 @@ public class AddAlbumJob : AbstractMusicJob
     {
         await using MediaContext context = new();
         JobDispatcher jobDispatcher = new();
-        
+
         ReleaseRepository releaseRepository = new(context);
         ReleaseManager releaseManager = new(releaseRepository, jobDispatcher);
 
         Library albumLibrary = await context.Libraries
             .Where(f => f.Id == LibraryId)
             .Include(f => f.FolderLibraries)
-                .ThenInclude(f => f.Folder)
+            .ThenInclude(f => f.Folder)
             .FirstAsync();
-        
+
         await releaseManager.AddReleaseAsync(Id, albumLibrary);
 
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto

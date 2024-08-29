@@ -13,7 +13,7 @@ namespace NoMercy.Api.Controllers.V1.Music;
 [ApiController]
 [Tags("Music Albums")]
 [Authorize]
-[Route("api/v{Version:apiVersion}/music/albums")]
+[Route("api/v{version:apiVersion}/music/albums")]
 public class AlbumsController : BaseController
 {
     [HttpGet]

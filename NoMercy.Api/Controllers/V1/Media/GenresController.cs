@@ -12,9 +12,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags("Media Genres")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/genres")]
+[Route("api/v{version:apiVersion}/genres")]
 public class GenresController : BaseController
 {
     private readonly IGenreRepository _genreRepository;

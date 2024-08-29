@@ -13,9 +13,9 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 
 [ApiController]
 [Tags("Dashboard Server Encoder Profiles")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/dashboard/encoderprofiles", Order = 10)]
+[Route("api/v{version:apiVersion}/dashboard/encoderprofiles", Order = 10)]
 public class EncoderController : BaseController
 {
     private readonly IEncoderRepository _encoderRepository;

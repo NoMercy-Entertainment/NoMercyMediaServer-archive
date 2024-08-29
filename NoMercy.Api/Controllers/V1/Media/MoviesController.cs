@@ -18,9 +18,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags(tags: "Media Movies")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/movie/{id:int}")] // match themoviedb.org API
+[Route("api/v{version:apiVersion}/movie/{id:int}")] // match themoviedb.org API
 public class MoviesController : BaseController
 {
     private readonly IMovieRepository _movieRepository;

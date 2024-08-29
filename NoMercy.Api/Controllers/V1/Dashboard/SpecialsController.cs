@@ -16,9 +16,9 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 
 [ApiController]
 [Tags(tags: "Dashboard Specials")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/dashboard/specials", Order = 11)]
+[Route("api/v{version:apiVersion}/dashboard/specials", Order = 11)]
 public class SpecialsController : BaseController
 {
     [HttpGet]

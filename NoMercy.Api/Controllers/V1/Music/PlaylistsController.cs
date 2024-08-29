@@ -12,10 +12,10 @@ using PlaylistResponseItemDto = NoMercy.Api.Controllers.V1.Music.DTO.PlaylistRes
 namespace NoMercy.Api.Controllers.V1.Music;
 
 [ApiController]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Tags("Music Playlists")]
 [Authorize]
-[Route("api/v{Version:apiVersion}/music/playlists", Order = 3)]
+[Route("api/v{version:apiVersion}/music/playlists", Order = 3)]
 public class PlaylistsController : BaseController
 {
     [HttpGet]

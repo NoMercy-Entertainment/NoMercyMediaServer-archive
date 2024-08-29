@@ -10,9 +10,9 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 
 [ApiController]
 [Tags("Dashboard Libraries")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/dashboard/logs", Order = 10)]
+[Route("api/v{version:apiVersion}/dashboard/logs", Order = 10)]
 public class LogController : BaseController
 {
     [HttpGet]
