@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using CommandLine;
 using Microsoft.AspNetCore;
 using NoMercy.Data.Logic;
@@ -64,8 +67,6 @@ public static class Program
     {
         // Console.Clear();
         Console.Title = "NoMercy Server";
-        Console.WindowWidth = 1666;
-        Console.WindowHeight = 1024;
 
         Stopwatch stopWatch = new();
         stopWatch.Start();
@@ -125,6 +126,11 @@ public static class Program
             })
             .UseQuic()
             .UseSockets()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IApiVersionDescriptionProvider, DefaultApiVersionDescriptionProvider>();
+                services.AddSingleton<ISunsetPolicyManager, DefaultSunsetPolicyManager>();
+            })
             .UseStartup<Startup>();
     }
 
@@ -141,7 +147,6 @@ public static class Program
             Seed.Init(),
             Register.Init(),
             Binaries.DownloadAll(),
-            // new Task(() => QueueRunner.Initialize().Wait()),
             // AniDbBaseClient.Init(),
             TrayIcon.Make()
         ];
@@ -164,10 +169,18 @@ public static class Program
         foreach (Task task in startupTasks)
         {
             if (task.IsCompleted) continue;
-            // await task.ConfigureAwait(false);
             task.Start();
         }
 
         await Task.CompletedTask;
+    }
+}
+
+internal class DefaultSunsetPolicyManager : ISunsetPolicyManager
+{
+    public bool TryGetPolicy(string? name, ApiVersion? apiVersion, [MaybeNullWhen(false)] out SunsetPolicy sunsetPolicy)
+    {
+        sunsetPolicy = new SunsetPolicy();
+        return true;
     }
 }

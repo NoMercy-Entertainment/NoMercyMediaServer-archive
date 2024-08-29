@@ -13,9 +13,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags("Media Specials")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/specials")]
+[Route("api/v{version:apiVersion}/specials")]
 public class SpecialController : BaseController
 {
     [HttpGet]

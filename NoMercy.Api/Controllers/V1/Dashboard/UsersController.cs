@@ -14,9 +14,9 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 
 [ApiController]
 [Tags("Dashboard Users")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/dashboard/users", Order = 10)]
+[Route("api/v{version:apiVersion}/dashboard/users", Order = 10)]
 public class UsersController : BaseController
 {
     [HttpGet]

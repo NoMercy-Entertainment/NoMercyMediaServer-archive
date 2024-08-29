@@ -18,7 +18,7 @@ namespace NoMercy.Api.Controllers.V1.Music;
 [ApiController]
 [Tags(tags: "Music Tracks")]
 [Authorize]
-[Route("api/v{Version:apiVersion}/music/tracks")]
+[Route("api/v{version:apiVersion}/music/tracks")]
 public class TracksController : BaseController
 {
     [HttpGet]

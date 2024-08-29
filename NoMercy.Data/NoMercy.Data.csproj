@@ -9,7 +9,7 @@
     <ItemGroup>
         <ProjectReference Include="..\NoMercy.Database\NoMercy.Database.csproj"/>
         <ProjectReference Include="..\NoMercy.Helpers\NoMercy.Helpers.csproj"/>
-        <ProjectReference Include="..\NoMercy.MediaProcessing\NoMercy.MediaProcessing.csproj" />
+        <ProjectReference Include="..\NoMercy.MediaProcessing\NoMercy.MediaProcessing.csproj"/>
         <ProjectReference Include="..\NoMercy.Providers\NoMercy.Providers.csproj"/>
         <ProjectReference Include="..\NoMercy.Queue\NoMercy.Queue.csproj"/>
     </ItemGroup>
@@ -19,8 +19,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Moq" Version="4.20.70" />
-      <PackageReference Include="xunit" Version="2.9.0" />
+        <PackageReference Include="Moq" Version="4.20.70"/>
+        <PackageReference Include="xunit" Version="2.9.0"/>
     </ItemGroup>
 
 </Project>

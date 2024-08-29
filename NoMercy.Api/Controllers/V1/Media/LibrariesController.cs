@@ -12,9 +12,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags("Media Libraries")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/libraries")]
+[Route("api/v{version:apiVersion}/libraries")]
 public class LibrariesController : BaseController
 {
     private readonly ILibraryRepository _libraryRepository;

@@ -13,9 +13,9 @@ using NoMercy.Networking;
 namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/userData")]
+[Route("api/v{version:apiVersion}/userData")]
 public class UserDataController : BaseController
 {
     [HttpGet]
@@ -117,7 +117,7 @@ public class UserDataController : BaseController
 
     [HttpDelete]
     [Route("continue")]
-    public async Task<IActionResult> RemoveContinue(UserRequest body)
+    public async Task<IActionResult> RemoveContinue(FavoriteRequest body)
     {
         Guid userId = HttpContext.User.UserId();
         if (!HttpContext.User.IsAllowed())
@@ -173,7 +173,7 @@ public class UserDataController : BaseController
 
     [HttpGet]
     [Route("watched")]
-    public async Task<IActionResult> Watched([FromBody] UserRequest body)
+    public async Task<IActionResult> Watched([FromBody] FavoriteRequest body)
     {
         Guid userId = HttpContext.User.UserId();
         if (!HttpContext.User.IsAllowed())
@@ -228,7 +228,7 @@ public class UserDataController : BaseController
 
     [HttpGet]
     [Route("favorites")]
-    public async Task<IActionResult> Favorites([FromBody] UserRequest body)
+    public async Task<IActionResult> Favorites([FromBody] FavoriteRequest body)
     {
         Guid userId = HttpContext.User.UserId();
         if (!HttpContext.User.IsAllowed())
@@ -282,7 +282,7 @@ public class UserDataController : BaseController
     }
 }
 
-public class UserRequest
+public class FavoriteRequest
 {
     [JsonProperty("id")] public string Id { get; set; } = "";
     [JsonProperty("type")] public string Type { get; set; } = "";

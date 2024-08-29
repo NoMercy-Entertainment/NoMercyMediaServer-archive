@@ -12,20 +12,20 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.13.12"/>
+        <PackageReference Include="BenchmarkDotNet" Version="0.14.0"/>
         <PackageReference Include="CredentialManagement" Version="1.0.2"/>
         <PackageReference Include="DateTimeRoutines" Version="1.0.16"/>
         <PackageReference Include="FlexLabs.EntityFrameworkCore.Upsert" Version="8.0.0"/>
         <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.3"/>
-        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="13.6.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.7"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.4"/>
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4"/>
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.ResourceMonitoring" Version="8.4.0"/>
+        <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="13.10.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8"/>
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.ResourceMonitoring" Version="8.8.0"/>
         <PackageReference Include="Mono.Nat" Version="3.0.4"/>
-        <PackageReference Include="Moq" Version="4.20.70" />
+        <PackageReference Include="Moq" Version="4.20.70"/>
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
-        <PackageReference Include="Pastel" Version="5.0.0"/>
+        <PackageReference Include="Pastel" Version="5.1.0"/>
         <PackageReference Include="SecureStore" Version="1.2.2"/>
         <PackageReference Include="Serilog.Expressions" Version="5.0.0"/>
         <PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0"/>
@@ -33,8 +33,8 @@
         <PackageReference Include="Serilog.Sinks.File" Version="6.0.0"/>
         <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5"/>
         <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0"/>
-        <PackageReference Include="Ulid" Version="1.3.3"/>
-        <PackageReference Include="xunit" Version="2.9.0" />
+        <PackageReference Include="Ulid" Version="1.3.4"/>
+        <PackageReference Include="xunit" Version="2.9.0"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -49,7 +49,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="system\" />
+        <Folder Include="system\"/>
     </ItemGroup>
 
 </Project>
