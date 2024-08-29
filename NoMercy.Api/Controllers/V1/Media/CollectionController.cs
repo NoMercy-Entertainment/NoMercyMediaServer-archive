@@ -14,9 +14,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags(tags: "Media Collections")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/collection")] // match themoviedb.org API
+[Route("api/v{version:apiVersion}/collection")] // match themoviedb.org API
 public class CollectionsController : BaseController
 {
     private readonly ICollectionRepository _collectionRepository;

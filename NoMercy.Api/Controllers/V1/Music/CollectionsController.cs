@@ -13,10 +13,10 @@ using NoMercy.Networking;
 namespace NoMercy.Api.Controllers.V1.Music;
 
 [ApiController]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Tags("Music Collections")]
 [Authorize]
-[Route("api/v{Version:apiVersion}/music/collection", Order = 2)]
+[Route("api/v{version:apiVersion}/music/collection", Order = 2)]
 public class CollectionsController : BaseController
 {
     [HttpGet]

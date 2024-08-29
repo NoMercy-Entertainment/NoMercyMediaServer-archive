@@ -12,12 +12,12 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags(tags: "Media People")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
 public class PeopleController : BaseController
 {
     [HttpGet]
-    [Route("api/v{Version:apiVersion}/person")] // match themoviedb.org API
+    [Route("api/v{version:apiVersion}/person")] // match themoviedb.org API
     public async Task<IActionResult> Index([FromQuery] PageRequestDto request)
     {
         Guid userId = HttpContext.User.UserId();
@@ -38,7 +38,7 @@ public class PeopleController : BaseController
     }
 
     [HttpGet]
-    [Route("/api/v{Version:apiVersion}/person/{id:int}")] // match themoviedb.org API
+    [Route("/api/v{version:apiVersion}/person/{id:int}")] // match themoviedb.org API
     public async Task<IActionResult> Show(int id)
     {
         if (!HttpContext.User.IsAllowed())

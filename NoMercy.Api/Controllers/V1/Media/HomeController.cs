@@ -14,9 +14,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags("Media")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}")]
+[Route("api/v{version:apiVersion}")]
 public class HomeController : BaseController
 {
     [HttpGet]

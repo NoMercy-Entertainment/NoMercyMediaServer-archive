@@ -18,9 +18,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 
 [ApiController]
 [Tags(tags: "Media TV Shows")]
-[ApiVersion("1")]
+[ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{Version:apiVersion}/tv/{id:int}")] // match themoviedb.org API
+[Route("api/v{version:apiVersion}/tv/{id:int}")] // match themoviedb.org API
 public class TvShowsController : BaseController
 {
     private readonly ITvShowRepository _tvShowRepository;

@@ -13,22 +13,14 @@ public class AccessLogMiddleware
 
     private readonly string[] _ignoredStartsWithRoutes =
     [
-        "/images"
+        "/images",
+        "/swagger",
+        "/index"
     ];
 
     private readonly string[] _ignoreExact =
     [
         "/",
-        "/swagger",
-        "/swagger-ui",
-        "/swagger-ui/favicon-16x16.png",
-        "/swagger-ui/favicon-32x32.png",
-        "/swagger-ui/favicon.ico",
-        "/swagger-ui/index.html",
-        "/swagger-ui/swagger-ui-bundle.js",
-        "/swagger-ui/swagger-ui-standalone-preset.js",
-        "/swagger-ui/swagger-ui.css",
-        "/swagger/v1/swagger.json",
         "/api/v1/dashboard/logs"
     ];
 
