@@ -67,7 +67,7 @@ public class CollectionLogic(TmdbCollectionAppends collectionAppends, Library li
 
         Logger.MovieDb($"Collection {collectionAppends.Name} stored");
 
-        Movie[] movies = collectionAppends.Parts.ToList()
+        Movie?[] movies = collectionAppends.Parts.ToList()
             .ConvertAll<Movie>(movie => new Movie
             {
                 Id = movie.Id,

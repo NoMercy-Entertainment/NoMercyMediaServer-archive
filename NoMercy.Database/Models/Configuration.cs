@@ -15,7 +15,7 @@ public class Configuration : Timestamps
 
     [JsonProperty("key")] public string Key { get; set; }
 
-    [JsonProperty("value")] public string? Value { get; set; }
+    [JsonProperty("value")] public string Value { get; set; }
 
     [JsonProperty("modified_by")] public Guid? ModifiedBy { get; set; }
 }

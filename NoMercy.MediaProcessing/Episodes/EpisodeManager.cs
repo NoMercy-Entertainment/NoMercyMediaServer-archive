@@ -21,35 +21,8 @@ public class EpisodeManager(
 {
     public async Task StoreEpisodes(TmdbTvShow show, TmdbSeasonAppends season)
     {
-        (List<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes) = await CollectEpisodes(show, season);
-
-        await episodeRepository.StoreEpisodes(episodes);
-        Logger.MovieDb($"Show: {show.Name}, Season {season.SeasonNumber} Episodes stored", LogEventLevel.Debug);
-
-        jobDispatcher.DispatchJob<AddEpisodeExtraDataJob, TmdbEpisodeAppends>(episodeAppends, show.Name);
-    }
-
-    private static async Task<(List<TmdbEpisodeAppends> episodeAppends, IEnumerable<Episode> episodes)> CollectEpisodes(
-        TmdbTvShow show, TmdbSeasonAppends season)
-    {
-        List<TmdbEpisodeAppends> episodeAppends = [];
-
-        await Parallel.ForEachAsync(season.Episodes, async (episode, _) =>
-        {
-            try
-            {
-                using TmdbEpisodeClient tmdbEpisodeClient = new(show.Id, episode.SeasonNumber, episode.EpisodeNumber);
-                TmdbEpisodeAppends? seasonTask = await tmdbEpisodeClient.WithAllAppends();
-                if (seasonTask is null) return;
-
-                episodeAppends.Add(seasonTask);
-            }
-            catch (Exception e)
-            {
-                Logger.MovieDb(e, LogEventLevel.Error);
-            }
-        });
-
+        IEnumerable<TmdbEpisodeAppends> episodeAppends = await CollectEpisodes(show, season);
+        
         IEnumerable<Episode> episodes = episodeAppends
             .Select(episode => new Episode
             {
@@ -71,7 +44,34 @@ public class EpisodeManager(
                 _colorPalette = MovieDbImage.ColorPalette("still", episode.StillPath).Result
             });
 
-        return (episodeAppends, episodes);
+        await episodeRepository.StoreEpisodes(episodes);
+        Logger.MovieDb($"Show: {show.Name}, Season {season.SeasonNumber} Episodes stored", LogEventLevel.Debug);
+
+        jobDispatcher.DispatchJob<AddEpisodeExtraDataJob, TmdbEpisodeAppends>(episodeAppends, show.Name);
+    }
+
+    private static async Task<List<TmdbEpisodeAppends>> CollectEpisodes(
+        TmdbTvShow show, TmdbSeasonAppends season)
+    {
+        List<TmdbEpisodeAppends> episodeAppends = [];
+
+        await Parallel.ForEachAsync(season.Episodes, async (episode, _) =>
+        {
+            try
+            {
+                using TmdbEpisodeClient tmdbEpisodeClient = new(show.Id, episode.SeasonNumber, episode.EpisodeNumber);
+                TmdbEpisodeAppends? seasonTask = await tmdbEpisodeClient.WithAllAppends();
+                if (seasonTask is null) return;
+
+                episodeAppends.Add(seasonTask);
+            }
+            catch (Exception e)
+            {
+                Logger.MovieDb(e, LogEventLevel.Error);
+            }
+        });
+
+        return episodeAppends;
     }
 
     internal async Task StoreTranslations(string showName, TmdbEpisodeAppends episode)

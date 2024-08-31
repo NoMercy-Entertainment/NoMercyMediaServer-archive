@@ -13,17 +13,17 @@ public class Dev
         MediaContext mediaContext = new();
         JobDispatcher jobDispatcher = new();
 
-        Library movieLibrary = await mediaContext.Libraries
+        Library? movieLibrary = await mediaContext.Libraries
             .Where(f => f.Type == "movie")
-            .FirstAsync();
+            .FirstOrDefaultAsync();
 
-        Library tvLibrary = await mediaContext.Libraries
+        Library? tvLibrary = await mediaContext.Libraries
             .Where(f => f.Type == "tv")
-            .FirstAsync();
+            .FirstOrDefaultAsync();
 
-        Library animeLibrary = await mediaContext.Libraries
+        Library? animeLibrary = await mediaContext.Libraries
             .Where(f => f.Type == "anime")
-            .FirstAsync();
+            .FirstOrDefaultAsync();
 
         int[] tvIds =
         [
