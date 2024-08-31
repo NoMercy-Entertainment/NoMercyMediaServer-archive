@@ -6,23 +6,6 @@ using NoMercy.Queue;
 
 namespace NoMercy.Data.Jobs;
 
-public class ParsedTrack
-{
-    public string LibraryFolder { get; set; } = "";
-    public string? Letter { get; set; }
-    public string? Type { get; set; }
-    public string? Artist { get; set; }
-    public int Year { get; set; }
-    public int? AlbumNumber { get; set; }
-    public int TrackNumber { get; set; }
-    public string? Album { get; set; }
-    public string Title { get; set; } = "";
-    public string? Artists { get; set; }
-    public string? Featuring { get; set; }
-    public string? Duplicate { get; set; }
-    public string Extension { get; set; } = "";
-}
-
 [Serializable]
 public class MusicJob : IShouldQueue, IDisposable, IAsyncDisposable
 {
