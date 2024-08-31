@@ -23,8 +23,8 @@ public class CollectionsController : BaseController
     [Route("tracks")]
     public async Task<IActionResult> Tracks()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view tracks");
 
         List<ArtistTrackDto> tracks = [];
@@ -52,8 +52,8 @@ public class CollectionsController : BaseController
     [Route("artists")]
     public async Task<IActionResult> Artists([FromQuery] FilterRequest request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view artists");
 
         List<ArtistsResponseItemDto> artists = [];
@@ -88,8 +88,8 @@ public class CollectionsController : BaseController
     [Route("albums")]
     public async Task<IActionResult> Albums([FromQuery] FilterRequest request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view albums");
 
         List<AlbumsResponseItemDto> albums = [];
@@ -124,8 +124,8 @@ public class CollectionsController : BaseController
     [Route("playlists")]
     public async Task<IActionResult> Playlists()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view playlists");
 
         List<PlaylistResponseItemDto> playlists = [];

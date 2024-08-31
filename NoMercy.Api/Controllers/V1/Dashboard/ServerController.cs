@@ -48,7 +48,7 @@ public class ServerController : BaseController
     [HttpGet]
     public IActionResult Index()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to access the dashboard");
 
         return Ok();
@@ -58,8 +58,8 @@ public class ServerController : BaseController
     [Route("setup")]
     public async Task<IActionResult> Setup()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsModerator())
+        Guid userId = User.UserId();
+        if (!User.IsModerator())
             return Problem(
                 title: "Unauthorized.",
                 detail: "You do not have permission to access the setup");
@@ -104,7 +104,7 @@ public class ServerController : BaseController
     [Route("start")]
     public IActionResult StartServer()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return Problem(
                 title: "Unauthorized.",
                 detail: "You do not have permission to start the server");
@@ -117,7 +117,7 @@ public class ServerController : BaseController
     [Route("stop")]
     public IActionResult StopServer()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to stop the server");
 
         // ApplicationLifetime.StopApplication();
@@ -128,7 +128,7 @@ public class ServerController : BaseController
     [Route("restart")]
     public IActionResult RestartServer()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to restart the server");
 
         // ApplicationLifetime.StopApplication();
@@ -139,7 +139,7 @@ public class ServerController : BaseController
     [Route("shutdown")]
     public IActionResult Shutdown()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return Problem(
                 "You do not have permission to shutdown the server",
                 type: "/docs/errors/forbidden");
@@ -152,7 +152,7 @@ public class ServerController : BaseController
     [Route("loglevel")]
     public IActionResult LogLevel(LogEventLevel level)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to set the log level");
 
         Logger.SetLogLevel(level);
@@ -164,7 +164,7 @@ public class ServerController : BaseController
     [Route("addfiles")]
     public IActionResult AddFiles([FromBody] AddFilesRequest request)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to add files");
 
         return Ok(request);
@@ -174,7 +174,7 @@ public class ServerController : BaseController
     [Route("directorytree")]
     public IActionResult DirectoryTree([FromBody] PathRequest request)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view folders");
 
         string folder = request.Folder;
@@ -267,7 +267,7 @@ public class ServerController : BaseController
     [Route("filelist")]
     public async Task<IActionResult> FileList([FromBody] FileListRequest request)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return Problem(
                 title: "Unauthorized.",
                 detail: "You do not have permission to view files");
@@ -437,7 +437,7 @@ public class ServerController : BaseController
     [Route("info")]
     public IActionResult ServerInfo()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view server information");
 
         return Ok(new ServerInfoDto
@@ -456,7 +456,7 @@ public class ServerController : BaseController
     [Route("resources")]
     public IActionResult Resources()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view server resources");
 
         Resource? resource;
@@ -487,8 +487,8 @@ public class ServerController : BaseController
     [Route("info")]
     public async Task<IActionResult> Update([FromBody] ServerUpdateRequest request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsModerator())
+        Guid userId = User.UserId();
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update server information");
 
         await using MediaContext mediaContext = new();
@@ -562,7 +562,7 @@ public class ServerController : BaseController
     [Route("paths")]
     public IActionResult ServerPaths()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view server paths");
 
         List<ServerPathsDto> list =
@@ -601,8 +601,8 @@ public class ServerController : BaseController
     [Route("/files/${depth:int}/${path:required}")]
     public async Task<IActionResult> Files(string path, int depth)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsModerator())
+        Guid userId = User.UserId();
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view files");
 
         MediaScan mediaScan = new();
@@ -620,7 +620,7 @@ public class ServerController : BaseController
     [Route("workers/{worker}/{count:int:min(0)}")]
     public async Task<IActionResult> UpdateWorkers(string worker, int count)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update workers");
 
         if (await QueueRunner.SetWorkerCount(worker, count))

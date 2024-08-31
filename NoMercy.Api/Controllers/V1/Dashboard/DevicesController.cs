@@ -30,7 +30,7 @@ public class DevicesController : BaseController
     [HttpGet]
     public Task<IActionResult> Index()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return Task.FromResult(UnauthorizedResponse("You do not have permission to view devices"));
 
         IIncludableQueryable<Device, ICollection<ActivityLog>> devices = _deviceRepository.GetDevicesAsync();
@@ -69,7 +69,7 @@ public class DevicesController : BaseController
     [HttpPost]
     public IActionResult Create()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to create devices");
 
         // Add device creation logic here
@@ -82,7 +82,7 @@ public class DevicesController : BaseController
     [HttpDelete]
     public IActionResult Destroy()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to delete devices");
 
         // Add device deletion logic here

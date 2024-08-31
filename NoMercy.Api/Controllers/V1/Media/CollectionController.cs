@@ -29,8 +29,8 @@ public class CollectionsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Collections([FromQuery] PageRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view collections");
 
         string language = Language();
@@ -72,8 +72,8 @@ public class CollectionsController : BaseController
     [Route("{id:int}")]
     public async Task<IActionResult> Collection(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view collections");
 
         string language = Language();
@@ -115,8 +115,8 @@ public class CollectionsController : BaseController
     [Route("{id:int}/available")]
     public async Task<IActionResult> Available(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view collections");
 
         Collection? collection = await _collectionRepository.GetAvailableCollectionAsync(userId, id);
@@ -141,8 +141,8 @@ public class CollectionsController : BaseController
     [Route("{id:int}/watch")]
     public async Task<IActionResult> Watch(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view collections");
 
         string language = Language();
@@ -161,8 +161,8 @@ public class CollectionsController : BaseController
     [Route("{id:int}/like")]
     public async Task<IActionResult> Like(int id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like collections");
 
         bool success = await _collectionRepository.LikeCollectionAsync(id, userId, request.Value);

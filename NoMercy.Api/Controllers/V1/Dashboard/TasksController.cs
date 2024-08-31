@@ -21,7 +21,7 @@ public class TasksController : BaseController
     [HttpGet]
     public IActionResult Index()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return Unauthorized(new StatusResponseDto<string>
             {
                 Status = "error",
@@ -47,7 +47,7 @@ public class TasksController : BaseController
     [HttpPost]
     public IActionResult Store()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to create tasks");
 
         return Ok(new PlaceholderResponse
@@ -59,7 +59,7 @@ public class TasksController : BaseController
     [HttpPatch]
     public IActionResult Update()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update tasks");
 
         return Ok(new PlaceholderResponse
@@ -71,7 +71,7 @@ public class TasksController : BaseController
     [HttpDelete]
     public IActionResult Destroy()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to delete tasks");
 
         return Ok(new PlaceholderResponse
@@ -84,7 +84,7 @@ public class TasksController : BaseController
     [Route("pause")]
     public IActionResult PauseTask()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to pause tasks");
 
         return Ok(new PlaceholderResponse
@@ -97,7 +97,7 @@ public class TasksController : BaseController
     [Route("resume")]
     public IActionResult ResumeTask()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to resume tasks");
 
         return Ok(new PlaceholderResponse
@@ -110,7 +110,7 @@ public class TasksController : BaseController
     [Route("runners")]
     public IActionResult RunningTaskWorkers()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view task workers");
 
         return Ok(new PlaceholderResponse
@@ -123,7 +123,7 @@ public class TasksController : BaseController
     [Route("queue")]
     public IActionResult EncoderQueue()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view encoder queue");
 
         return Ok(new PlaceholderResponse

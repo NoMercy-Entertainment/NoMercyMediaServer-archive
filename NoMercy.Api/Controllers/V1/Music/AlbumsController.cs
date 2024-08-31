@@ -20,8 +20,8 @@ public class AlbumsController : BaseController
     public async Task<IActionResult> Index([FromQuery] FilterRequest request)
     {
         List<AlbumsResponseItemDto> albums = [];
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view albums");
 
         string language = Language();
@@ -51,8 +51,8 @@ public class AlbumsController : BaseController
     [Route("{id:guid}")]
     public async Task<IActionResult> Show(Guid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view albums");
 
         string language = Language();
@@ -73,8 +73,8 @@ public class AlbumsController : BaseController
     [Route("{id:guid}/like")]
     public async Task<IActionResult> Like(Guid id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like albums");
 
         await using MediaContext mediaContext = new();
@@ -130,7 +130,7 @@ public class AlbumsController : BaseController
     [Route("{id:guid}/rescan")]
     public async Task<IActionResult> Like(Guid id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan albums");
 
         await using MediaContext mediaContext = new();

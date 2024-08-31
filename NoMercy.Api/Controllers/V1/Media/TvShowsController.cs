@@ -36,8 +36,8 @@ public class TvShowsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Tv(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view tv shows");
 
         string language = Language();
@@ -68,8 +68,8 @@ public class TvShowsController : BaseController
     [Route("available")]
     public async Task<IActionResult> Available(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view tv shows");
 
         bool available = await _tvShowRepository.GetTvAvailableAsync(userId, id);
@@ -90,8 +90,8 @@ public class TvShowsController : BaseController
     [Route("watch")]
     public async Task<IActionResult> Watch(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view tv shows");
 
         string language = Language();
@@ -120,8 +120,8 @@ public class TvShowsController : BaseController
     [Route("like")]
     public async Task<IActionResult> Like(int id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like tv shows");
 
         bool success = await _tvShowRepository.LikeTvAsync(id, userId, request.Value);
@@ -144,7 +144,7 @@ public class TvShowsController : BaseController
     [Route("rescan")]
     public async Task<IActionResult> Rescan(int id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan tv shows");
 
         await using MediaContext mediaContext = new();
@@ -186,7 +186,7 @@ public class TvShowsController : BaseController
     [Route("refresh")]
     public async Task<IActionResult> Refresh(int id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to refresh tv shows");
 
         await using MediaContext mediaContext = new();
