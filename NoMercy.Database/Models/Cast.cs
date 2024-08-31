@@ -12,7 +12,7 @@ namespace NoMercy.Database.Models;
 [Index(nameof(CreditId), nameof(TvId), nameof(RoleId), IsUnique = true)]
 [Index(nameof(CreditId), nameof(SeasonId), nameof(RoleId), IsUnique = true)]
 [Index(nameof(CreditId), nameof(EpisodeId), nameof(RoleId), IsUnique = true)]
-// [Index(nameof(Id),nameof(PersonId), IsUnique = true)]
+[Index(nameof(RoleId), IsUnique = false)]
 public class Cast
 {
     [Key]
