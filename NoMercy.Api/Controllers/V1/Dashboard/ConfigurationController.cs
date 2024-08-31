@@ -21,7 +21,7 @@ public class ConfigurationController : BaseController
     [HttpGet]
     public IActionResult Index()
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to view configuration");
 
         return Ok(new PlaceholderResponse()
@@ -33,7 +33,7 @@ public class ConfigurationController : BaseController
     [HttpPost]
     public IActionResult Store()
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to store configuration");
 
         return Ok(new PlaceholderResponse
@@ -45,7 +45,7 @@ public class ConfigurationController : BaseController
     [HttpPatch]
     public IActionResult Update()
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to update configuration");
 
         return Ok(new PlaceholderResponse
@@ -58,7 +58,7 @@ public class ConfigurationController : BaseController
     [Route("languages")]
     public async Task<IActionResult> Languages()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view languages");
 
         await using MediaContext context = new();
@@ -78,7 +78,7 @@ public class ConfigurationController : BaseController
     [Route("countries")]
     public async Task<IActionResult> Countries()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view countries");
 
         await using MediaContext context = new();

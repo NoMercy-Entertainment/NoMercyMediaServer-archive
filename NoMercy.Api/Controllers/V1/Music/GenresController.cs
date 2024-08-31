@@ -16,7 +16,7 @@ public class GenresController : BaseController
     [HttpGet]
     public IActionResult Index()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view genres");
 
         return Ok(new PlaceholderResponse
@@ -29,7 +29,7 @@ public class GenresController : BaseController
     [Route("{id:guid}")]
     public IActionResult Show(Guid id)
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view genres");
 
         return Ok(new PlaceholderResponse

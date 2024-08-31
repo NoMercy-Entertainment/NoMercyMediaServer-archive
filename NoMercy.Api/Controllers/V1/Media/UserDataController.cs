@@ -21,8 +21,8 @@ public class UserDataController : BaseController
     [HttpGet]
     public IActionResult Index()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return Unauthorized(new StatusResponseDto<string>
             {
                 Status = "error",
@@ -39,8 +39,8 @@ public class UserDataController : BaseController
     [Route("continue")]
     public async Task<IActionResult> ContinueWatching()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return Unauthorized(new StatusResponseDto<string>
             {
                 Status = "error",
@@ -119,8 +119,8 @@ public class UserDataController : BaseController
     [Route("continue")]
     public async Task<IActionResult> RemoveContinue(FavoriteRequest body)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return Unauthorized(new StatusResponseDto<string>
             {
                 Status = "error",
@@ -175,8 +175,8 @@ public class UserDataController : BaseController
     [Route("watched")]
     public async Task<IActionResult> Watched([FromBody] FavoriteRequest body)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return Unauthorized(new StatusResponseDto<string>
             {
                 Status = "error",
@@ -230,8 +230,8 @@ public class UserDataController : BaseController
     [Route("favorites")]
     public async Task<IActionResult> Favorites([FromBody] FavoriteRequest body)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return Unauthorized(new StatusResponseDto<string>
             {
                 Status = "error",

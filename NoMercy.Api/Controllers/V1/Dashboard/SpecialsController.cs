@@ -24,7 +24,7 @@ public class SpecialsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view specials");
 
         await using MediaContext mediaContext = new();
@@ -41,8 +41,8 @@ public class SpecialsController : BaseController
     [HttpPost]
     public async Task<IActionResult> Store()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsModerator())
+        Guid userId = User.UserId();
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to create a new special");
 
         try
@@ -101,7 +101,7 @@ public class SpecialsController : BaseController
     [Route("{id:ulid}")]
     public async Task<IActionResult> Update(Ulid id, [FromBody] SpecialUpdateRequest request)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update the special");
 
         await using MediaContext mediaContext = new();
@@ -145,7 +145,7 @@ public class SpecialsController : BaseController
     [Route("{id:ulid}")]
     public async Task<IActionResult> Delete(Ulid id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to delete the special");
 
         try
@@ -186,7 +186,7 @@ public class SpecialsController : BaseController
     [Route("sort")]
     public async Task<IActionResult> Sort(Ulid id, [FromBody] LibrarySortRequest request)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to sort the specials");
 
         await using MediaContext mediaContext = new();
@@ -214,7 +214,7 @@ public class SpecialsController : BaseController
     [Route("rescan")]
     public async Task<IActionResult> RescanAll()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan all specials");
 
         await using MediaContext mediaContext = new();
@@ -318,7 +318,7 @@ public class SpecialsController : BaseController
     [Route("{id:ulid}/rescan")]
     public async Task<IActionResult> Rescan(Ulid id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan the special");
 
         LibraryLogic specialLogic = new(id);

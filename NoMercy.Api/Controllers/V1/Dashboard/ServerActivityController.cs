@@ -21,7 +21,7 @@ public class ServerActivityController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] ServerActivityRequest request)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view activity");
 
         await using MediaContext mediaContext = new();
@@ -48,7 +48,7 @@ public class ServerActivityController : BaseController
     [HttpPost]
     public IActionResult Create()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to create activity");
 
         return Ok(new PlaceholderResponse
@@ -60,7 +60,7 @@ public class ServerActivityController : BaseController
     [HttpDelete]
     public IActionResult Destroy()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to delete activity");
 
         return Ok(new PlaceholderResponse

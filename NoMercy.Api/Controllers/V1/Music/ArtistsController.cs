@@ -21,8 +21,8 @@ public class ArtistsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] FilterRequest request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view artists");
 
         List<ArtistsResponseItemDto> artists = [];
@@ -51,8 +51,8 @@ public class ArtistsController : BaseController
     [Route("{id:guid}")]
     public async Task<IActionResult> Show(Guid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view artists");
 
         await using MediaContext mediaContext = new();
@@ -73,8 +73,8 @@ public class ArtistsController : BaseController
     [Route("{id:guid}/like")]
     public async Task<IActionResult> Like(Guid id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like artists");
 
         await using MediaContext mediaContext = new();
@@ -130,7 +130,7 @@ public class ArtistsController : BaseController
     [Route("{id:guid}/rescan")]
     public async Task<IActionResult> Like(Guid id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan artists");
 
         await using MediaContext mediaContext = new();

@@ -36,8 +36,8 @@ public class MoviesController : BaseController
     [HttpGet]
     public async Task<IActionResult> Movie(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view movies");
 
         string language = Language();
@@ -69,8 +69,8 @@ public class MoviesController : BaseController
     [Route("available")]
     public async Task<IActionResult> Available(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view movies");
 
         bool available = await _movieRepository.GetMovieAvailableAsync(userId, id);
@@ -91,8 +91,8 @@ public class MoviesController : BaseController
     [Route("watch")]
     public async Task<IActionResult> Watch(int id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view movies");
 
         string language = Language();
@@ -110,8 +110,8 @@ public class MoviesController : BaseController
     [Route("like")]
     public async Task<IActionResult> Like(int id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like movies");
 
         bool success = await _movieRepository.LikeMovieAsync(id, userId, request.Value);
@@ -134,7 +134,7 @@ public class MoviesController : BaseController
     [Route("rescan")]
     public async Task<IActionResult> Like(int id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan movies");
 
         await using MediaContext mediaContext = new();
@@ -174,7 +174,7 @@ public class MoviesController : BaseController
     [Route("refresh")]
     public async Task<IActionResult> Refresh(int id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to refresh movies");
 
         await using MediaContext mediaContext = new();
