@@ -17,7 +17,7 @@ namespace NoMercy.Database.Models;
 [Index(nameof(SeasonId))]
 [Index(nameof(EpisodeId))]
 [Index(nameof(PersonId))]
-[Index(nameof(JobId))]
+[Index(nameof(JobId), IsUnique = false)]
 public class Crew
 {
     [Key]
