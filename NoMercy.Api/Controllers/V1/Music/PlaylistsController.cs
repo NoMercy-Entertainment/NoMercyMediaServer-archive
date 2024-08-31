@@ -21,8 +21,8 @@ public class PlaylistsController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view playlists");
 
         List<PlaylistResponseItemDto> playlists = [];
@@ -44,8 +44,8 @@ public class PlaylistsController : BaseController
     [Route("{id:ulid}")]
     public async Task<IActionResult> Show(Ulid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view playlists");
 
         await using MediaContext mediaContext = new();
@@ -72,7 +72,7 @@ public class PlaylistsController : BaseController
     [HttpPost]
     public IActionResult Create()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to create a playlist");
 
         return Ok(new PlaceholderResponse
@@ -85,7 +85,7 @@ public class PlaylistsController : BaseController
     [Route("{id:guid}")]
     public IActionResult Edit(Guid id)
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to edit a playlist");
 
         return Ok(new PlaceholderResponse
@@ -98,7 +98,7 @@ public class PlaylistsController : BaseController
     [Route("{id:guid}")]
     public IActionResult Destroy(Guid id)
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to delete a playlist");
 
         return Ok(new PlaceholderResponse

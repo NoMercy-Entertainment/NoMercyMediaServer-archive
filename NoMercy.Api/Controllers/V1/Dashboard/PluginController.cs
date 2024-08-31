@@ -21,7 +21,7 @@ public class PluginController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to view plugins");
 
         // AniDBAnimeItem randomAnime = await AniDbRandomAnime.GetRandomAnime();
@@ -37,7 +37,7 @@ public class PluginController : BaseController
     [Route("credentials")]
     public IActionResult Credentials()
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to view credentials");
 
         UserPass? aniDb = CredentialManager.Credential("AniDb");
@@ -61,7 +61,7 @@ public class PluginController : BaseController
     [Route("credentials")]
     public IActionResult Credentials([FromBody] AniDbCredentialsRequest request)
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to set credentials");
 
         UserPass? aniDb = CredentialManager.Credential(request.Key);

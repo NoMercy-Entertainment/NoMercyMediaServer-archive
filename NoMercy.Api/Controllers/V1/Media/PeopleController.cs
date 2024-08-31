@@ -20,8 +20,8 @@ public class PeopleController : BaseController
     [Route("api/v{version:apiVersion}/person")] // match themoviedb.org API
     public async Task<IActionResult> Index([FromQuery] PageRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view people");
 
         string language = Language();
@@ -41,7 +41,7 @@ public class PeopleController : BaseController
     [Route("/api/v{version:apiVersion}/person/{id:int}")] // match themoviedb.org API
     public async Task<IActionResult> Show(int id)
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view a person");
 
         string country = Country();

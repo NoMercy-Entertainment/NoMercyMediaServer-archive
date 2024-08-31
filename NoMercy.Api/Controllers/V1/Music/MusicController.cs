@@ -18,8 +18,8 @@ public class MusicController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view music");
 
         List<GenreRowDto<dynamic>> list = [];
@@ -99,7 +99,7 @@ public class MusicController : BaseController
     [Route("search")]
     public IActionResult Search()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to search music");
 
         return Ok(new PlaceholderResponse
@@ -112,7 +112,7 @@ public class MusicController : BaseController
     [Route("search/{query}/{Type}")]
     public IActionResult TypeSearch(string query, string type)
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to search music");
 
         return Ok(new PlaceholderResponse
@@ -125,7 +125,7 @@ public class MusicController : BaseController
     [Route("coverimage")]
     public IActionResult CoverImage()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view cover images");
 
         return Ok(new PlaceholderResponse
@@ -138,7 +138,7 @@ public class MusicController : BaseController
     [Route("images")]
     public IActionResult Images()
     {
-        if (!HttpContext.User.IsAllowed())
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view images");
 
         return Ok(new PlaceholderResponse

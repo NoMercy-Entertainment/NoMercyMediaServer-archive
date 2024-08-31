@@ -21,8 +21,8 @@ public class SpecialController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] PageRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view specials");
 
         List<SpecialsResponseItemDto> specials = [];
@@ -69,8 +69,8 @@ public class SpecialController : BaseController
     [Route("{id:ulid}")]
     public async Task<IActionResult> Show(Ulid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view a special");
 
         string language = Language();
@@ -108,8 +108,8 @@ public class SpecialController : BaseController
     [Route("{id:ulid}/available")]
     public async Task<IActionResult> Available(Ulid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view a special");
 
         await using MediaContext mediaContext = new();
@@ -141,8 +141,8 @@ public class SpecialController : BaseController
     [Route("{id:ulid}/watch")]
     public async Task<IActionResult> Watch(Ulid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view a special");
 
         string language = Language();
@@ -173,8 +173,8 @@ public class SpecialController : BaseController
     [Route("{id:ulid}/like")]
     public async Task<IActionResult> Like(Ulid id, [FromBody] LikeRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like a special");
 
         await using MediaContext mediaContext = new();

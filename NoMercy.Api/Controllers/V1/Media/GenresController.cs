@@ -29,8 +29,8 @@ public class GenresController : BaseController
     {
         request.Take = 1;
 
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view genres");
 
         string language = Language();
@@ -47,8 +47,8 @@ public class GenresController : BaseController
     [Route("{genreId}")]
     public async Task<IActionResult> Genre(int genreId, [FromQuery] PageRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view genres");
 
         string language = Language();

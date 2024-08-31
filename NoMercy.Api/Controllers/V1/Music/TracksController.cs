@@ -24,8 +24,8 @@ public class TracksController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view tracks");
 
         List<ArtistTrackDto> tracks = [];
@@ -53,8 +53,8 @@ public class TracksController : BaseController
     [Route("{id:guid}/like")]
     public async Task<IActionResult> Value(Guid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like tracks");
 
         await using MediaContext mediaContext = new();
@@ -124,8 +124,8 @@ public class TracksController : BaseController
     [Obsolete("Obsolete")]
     public async Task<IActionResult> Lyrics(Guid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view lyrics");
 
         MediaContext mediaContext = new();
@@ -193,8 +193,8 @@ public class TracksController : BaseController
     [Route("{id:guid}/playback")]
     public async Task<IActionResult> Playback(Guid id)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to record playback");
 
         await using MediaContext mediaContext = new();

@@ -27,8 +27,8 @@ public class LibrariesController : BaseController
     [HttpGet]
     public async Task<IActionResult> Libraries()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view libraries");
 
         IQueryable<Library> libraries = _libraryRepository.GetLibrariesAsync(userId);
@@ -47,8 +47,8 @@ public class LibrariesController : BaseController
     [Route("{libraryId:ulid}")]
     public async Task<IActionResult> Library(Ulid libraryId, [FromQuery] PageRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view library");
 
         string language = Language();

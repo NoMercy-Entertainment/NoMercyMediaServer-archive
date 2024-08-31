@@ -22,7 +22,7 @@ public class UsersController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to view users");
 
         await using MediaContext mediaContext = new();
@@ -40,15 +40,15 @@ public class UsersController : BaseController
     [HttpPost]
     public async Task<IActionResult> Store([FromBody] UserRequest request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to create a user");
 
         Logger.Access(
-            $"User {HttpContext.User.Email()} attempting to create a user, if this user is not your email then please contact support.");
+            $"User {User.Email()} attempting to create a user, if this user is not your email then please contact support.");
 
         await using MediaContext mediaContext = new();
 
+        Guid userId = User.UserId();
         User? hasPermission = mediaContext.Users.FirstOrDefault(user => user.Id == userId);
 
         if (hasPermission is null || hasPermission.Owner is false)
@@ -93,11 +93,11 @@ public class UsersController : BaseController
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Destroy(Guid id)
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to delete a user");
 
         Logger.Access(
-            $"User {HttpContext.User.Email()} attempting to delete a user, if this user is not your email then please contact support.");
+            $"User {User.Email()} attempting to delete a user, if this user is not your email then please contact support.");
 
         await using MediaContext mediaContext = new();
         User? user = await mediaContext.Users
@@ -126,7 +126,7 @@ public class UsersController : BaseController
     [Route("permissions")]
     public async Task<IActionResult> PermissionS()
     {
-        if (!HttpContext.User.IsOwner())
+        if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to view user permissions");
 
         await using MediaContext mediaContext = new();
@@ -145,8 +145,8 @@ public class UsersController : BaseController
     [HttpPatch("notifications")]
     public async Task<IActionResult> NotificationS([FromBody] object request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to update notification settings");
 
         await using MediaContext mediaContext = new();
@@ -173,10 +173,10 @@ public class UsersController : BaseController
     [Route("{id:guid}/permissions")]
     public async Task<IActionResult> UserPermissions(Guid id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view user permissions");
 
-        if (HttpContext.User.IsSelf(id))
+        if (User.IsSelf(id))
             return UnauthorizedResponse("You do not have permission to edit your own permissions");
 
         await using MediaContext mediaContext = new();
@@ -199,11 +199,11 @@ public class UsersController : BaseController
     [HttpPatch("{id:guid}/permissions")]
     public async Task<IActionResult> UserPermissionUpdate(Guid id, [FromBody] UserPermissionRequest request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsModerator())
+        Guid userId = User.UserId();
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update a user");
 
-        if (HttpContext.User.IsSelf(id))
+        if (User.IsSelf(id))
             return UnauthorizedResponse("You do not have permission to update your own permissions");
 
         await using MediaContext mediaContext = new();
@@ -214,7 +214,7 @@ public class UsersController : BaseController
         if (user == null)
             return NotFoundResponse("User not found");
 
-        if (HttpContext.User.IsOwner()) user.Manage = request.Manage;
+        if (User.IsOwner()) user.Manage = request.Manage;
 
         user.Allowed = request.Allowed;
         user.AudioTranscoding = request.AudioTranscoding;
@@ -242,8 +242,8 @@ public class UsersController : BaseController
     [HttpPatch("{id:guid}/notifications")]
     public async Task<IActionResult> UserNotification([FromBody] object request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to update notification settings");
 
         await using MediaContext mediaContext = new();

@@ -22,8 +22,8 @@ public class HomeController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] PageRequestDto request)
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view home");
 
         await using MediaContext mediaContext = new();
@@ -120,8 +120,8 @@ public class HomeController : BaseController
     [Route("screensaver")]
     public async Task<IActionResult> Screensaver()
     {
-        Guid userId = HttpContext.User.UserId();
-        if (!HttpContext.User.IsAllowed())
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view screensaver");
 
         await using MediaContext mediaContext = new();

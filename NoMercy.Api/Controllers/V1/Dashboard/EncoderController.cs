@@ -28,7 +28,7 @@ public class EncoderController : BaseController
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view encoder profiles");
 
         await using MediaContext mediaContext = new();
@@ -83,7 +83,7 @@ public class EncoderController : BaseController
     [HttpPost]
     public async Task<IActionResult> Create()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to create encoder profiles");
 
         try
@@ -132,7 +132,7 @@ public class EncoderController : BaseController
     [Route("{id:ulid}")]
     public async Task<IActionResult> Destroy(Ulid id)
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to remove encoder profiles");
 
         EncoderProfile? profile = await _encoderRepository.GetEncoderProfileByIdAsync(id);
@@ -157,7 +157,7 @@ public class EncoderController : BaseController
     [Route("containers")]
     public IActionResult Containers()
     {
-        if (!HttpContext.User.IsModerator())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to remove encoder profiles");
 
         IEnumerable<ContainerDto> containers = [];
