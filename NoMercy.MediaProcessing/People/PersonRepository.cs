@@ -80,31 +80,52 @@ public class PersonRepository(MediaContext context) : IPersonRepository
 
     public Task StoreCastAsync(IEnumerable<Cast> cast, Type type)
     {
+        Role[] roles = context.Roles
+            .Where(role => cast.Select(r => r.CreditId)
+                .Contains(role.CreditId))
+            .ToArray();
+        
+        cast = cast.Select(c =>
+        {
+            c.RoleId = roles.First(r => r.CreditId == c.CreditId).Id;
+            return c;
+        });
+        
         UpsertCommandBuilder<Cast> query = type switch
         {
             Type.Movie => context.Casts.UpsertRange(cast.ToArray()).On(c => new { c.CreditId, c.MovieId, c.RoleId }),
             Type.TvShow => context.Casts.UpsertRange(cast.ToArray()).On(c => new { c.CreditId, c.TvId, c.RoleId }),
             Type.Season => context.Casts.UpsertRange(cast.ToArray()).On(c => new { c.CreditId, c.SeasonId, c.RoleId }),
-            Type.Episode => context.Casts.UpsertRange(cast.ToArray())
-                .On(c => new { c.CreditId, c.EpisodeId, c.RoleId }),
+            Type.Episode => context.Casts.UpsertRange(cast.ToArray()).On(c => new { c.CreditId, c.EpisodeId, c.RoleId }),
             _ => throw new ArgumentOutOfRangeException()
         };
 
         return query.WhenMatched((cs, ci) => new Cast
-            {
-                CreditId = ci.CreditId,
-                MovieId = ci.MovieId,
-                TvId = ci.TvId,
-                SeasonId = ci.SeasonId,
-                EpisodeId = ci.EpisodeId,
-                PersonId = ci.PersonId,
-                RoleId = ci.RoleId
-            })
-            .RunAsync();
+        {
+            CreditId = ci.CreditId,
+            MovieId = ci.MovieId,
+            TvId = ci.TvId,
+            SeasonId = ci.SeasonId,
+            EpisodeId = ci.EpisodeId,
+            PersonId = ci.PersonId,
+            RoleId = ci.RoleId
+        })
+        .RunAsync();
     }
 
     public Task StoreCrewAsync(IEnumerable<Crew> crew, Type type)
     {
+        Job[] jobs = context.Jobs
+            .Where(job => crew.Select(c => c.CreditId)
+                .Contains(job.CreditId))
+            .ToArray();
+        
+        crew = crew.Select(c =>
+        {
+            c.JobId = jobs.First(j => j.CreditId == c.CreditId).Id;
+            return c;
+        });
+        
         UpsertCommandBuilder<Crew> query = type switch
         {
             Type.Movie => context.Crews.UpsertRange(crew.ToArray()).On(c => new { c.CreditId, c.MovieId, c.JobId }),
@@ -115,16 +136,16 @@ public class PersonRepository(MediaContext context) : IPersonRepository
         };
 
         return query.WhenMatched((cs, ci) => new Crew
-            {
-                CreditId = ci.CreditId,
-                MovieId = ci.MovieId,
-                TvId = ci.TvId,
-                SeasonId = ci.SeasonId,
-                EpisodeId = ci.EpisodeId,
-                PersonId = ci.PersonId,
-                JobId = ci.JobId
-            })
-            .RunAsync();
+        {
+            CreditId = ci.CreditId,
+            MovieId = ci.MovieId,
+            TvId = ci.TvId,
+            SeasonId = ci.SeasonId,
+            EpisodeId = ci.EpisodeId,
+            PersonId = ci.PersonId,
+            JobId = ci.JobId
+        })
+        .RunAsync();
     }
 
     public Task StoreCreatorAsync(Creator creator)

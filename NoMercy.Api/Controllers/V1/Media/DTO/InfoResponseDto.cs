@@ -21,130 +21,6 @@ namespace NoMercy.Api.Controllers.V1.Media.DTO;
 public record InfoResponseDto
 {
     [JsonProperty("data")] public InfoResponseItemDto? Data { get; set; }
-
-    public static readonly Func<MediaContext, Guid, int, string, Task<Tv?>> GetTv =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language) =>
-            mediaContext.Tvs.AsNoTracking()
-                .Where(tv => tv.Id == id)
-                .Where(tv => tv.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null)
-                .Include(tv => tv.TvUser)
-                .Include(tv => tv.Library)
-                .ThenInclude(library => library.LibraryUsers)
-                .Include(tv => tv.Media)
-                .Include(tv => tv.AlternativeTitles)
-                .Include(tv => tv.Translations
-                    .Where(translation => translation.Iso6391 == language))
-                .Include(tv => tv.Images
-                    .Where(image =>
-                        (image.Type == "logo" && image.Iso6391 == "en")
-                        || ((image.Type == "backdrop" || image.Type == "poster") &&
-                            (image.Iso6391 == "en" || image.Iso6391 == null))
-                    )
-                    .OrderByDescending(image => image.VoteAverage)
-                )
-                .Include(tv => tv.CertificationTvs)
-                .ThenInclude(certificationTv => certificationTv.Certification)
-                .Include(tv => tv.Creators)
-                .ThenInclude(genreTv => genreTv.Person)
-                .Include(tv => tv.GenreTvs)
-                .ThenInclude(genreTv => genreTv.Genre)
-                .Include(tv => tv.KeywordTvs)
-                .ThenInclude(keywordTv => keywordTv.Keyword)
-
-                // .Include(tv => tv.Cast)
-                //     .ThenInclude(castTv => castTv.Person)
-                //
-                // .Include(tv => tv.Cast)
-                //     .ThenInclude(castTv => castTv.Role)
-                .Include(tv => tv.Crew)
-                .ThenInclude(crewTv => crewTv.Person)
-                .Include(tv => tv.Crew)
-                .ThenInclude(crewTv => crewTv.Job)
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Translations
-                    .Where(translation => translation.Iso6391 == language)
-                )
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(episode => episode.Translations
-                    .Where(translation => translation.Iso6391 == language)
-                )
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(episode => episode.VideoFiles)
-                .ThenInclude(file => file.UserData.Where(
-                    userData => userData.UserId == userId)
-                )
-                .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.VideoFiles)
-                .ThenInclude(file => file.UserData.Where(
-                    userData => userData.UserId == userId))
-                .Include(tv => tv.RecommendationFrom)
-                .Include(tv => tv.SimilarFrom)
-                .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Cast)
-                .ThenInclude(castTv => castTv.Person)
-                .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Cast)
-                .ThenInclude(castTv => castTv.Role)
-                .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Crew)
-                .ThenInclude(crewTv => crewTv.Person)
-                .Include(tv => tv.Episodes)
-                .ThenInclude(episode => episode.Crew)
-                .ThenInclude(crewTv => crewTv.Job)
-                .FirstOrDefault());
-
-    public static readonly Func<MediaContext, Guid, int, Task<Tv?>> GetTvAvailable =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id) =>
-            mediaContext.Tvs.AsNoTracking()
-                .Where(tv => tv.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null)
-                .Where(tv => tv.Id == id)
-                .Include(tv => tv.Episodes)
-                .ThenInclude(tv => tv.VideoFiles)
-                .FirstOrDefault());
-
-    public static readonly Func<MediaContext, Guid, int, string, Task<Tv?>> GetTvPlaylist =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language) =>
-            mediaContext.Tvs.AsNoTracking()
-                .Where(tv => tv.Id == id)
-                .Where(tv => tv.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null)
-                .Include(tv => tv.Seasons.OrderBy(season => season.SeasonNumber))
-                .ThenInclude(season => season.Episodes.OrderBy(episode => episode.EpisodeNumber))
-                .Include(tv => tv.Translations
-                    .Where(translation => translation.Iso6391 == language))
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(tv => tv.Tv)
-                .ThenInclude(tv => tv.Translations
-                    .Where(translation => translation.Iso6391 == language))
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(tv => tv.Tv)
-                .ThenInclude(tv => tv.Media
-                    .Where(media => media.Type == "video"))
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(tv => tv.Tv)
-                .ThenInclude(tv => tv.Images
-                    .Where(image => image.Type == "logo"))
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(tv => tv.VideoFiles)
-                .ThenInclude(file => file.UserData.Where(
-                    userData => userData.UserId == userId))
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Translations
-                    .Where(translation => translation.Iso6391 == language))
-                .Include(tv => tv.Seasons)
-                .ThenInclude(season => season.Episodes)
-                .ThenInclude(episode => episode.Translations
-                    .Where(translation => translation.Iso6391 == language)
-                )
-                .FirstOrDefault());
 }
 
 public record InfoResponseItemDto
@@ -478,17 +354,17 @@ public record InfoResponseItemDto
 
         PeopleDto[] cast = tv.Episodes
             .SelectMany(episode => episode.Cast)
+            .Concat(tv.Cast)
             .Select(cast => new PeopleDto(cast))
             .GroupBy(people => people.Id)
-            .OrderByDescending(peopleGroup => peopleGroup.Count())
             .Select(group => group.First())
             .ToArray();
 
         PeopleDto[] crew = tv.Episodes
             .SelectMany(episode => episode.Crew)
+            .Concat(tv.Crew)
             .Select(crew => new PeopleDto(crew))
             .GroupBy(people => people.Id)
-            .OrderByDescending(peopleGroup => peopleGroup.Count())
             .Select(group => group.First())
             .ToArray();
 

@@ -84,8 +84,9 @@ public class Networking
     private static string GetExternalIp()
     {
         HttpClient client = new();
+        client.BaseAddress = new(Config.ApiBaseUrl);
 
-        string externalIp = client.GetStringAsync($"{Config.ApiBaseUrl}/server/ip").Result.Replace("\"", "");
+        string externalIp = client.GetStringAsync($"server/ip").Result.Replace("\"", "");
 
         ExternalAddress =
             $"https://{Regex.Replace(externalIp, "\\.", "-")}.{NmSystem.Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";

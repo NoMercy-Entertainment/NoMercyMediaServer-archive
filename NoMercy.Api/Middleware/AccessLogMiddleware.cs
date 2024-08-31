@@ -15,7 +15,9 @@ public class AccessLogMiddleware
     [
         "/images",
         "/swagger",
-        "/index"
+        "/index",
+        "/styles",
+        "/scripts"
     ];
 
     private readonly string[] _ignoreExact =

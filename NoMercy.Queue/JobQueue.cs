@@ -87,29 +87,44 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
         }
     }
 
-    public void FailJob(QueueJob queueJob, Exception exception)
+    public void FailJob(QueueJob queueJob, Exception exception, int attempt = 0)
     {
-        lock (Context)
+        try
         {
-            queueJob.ReservedAt = null;
-
-            if (queueJob.Attempts >= maxAttempts)
+            lock (Context)
             {
-                FailedJob failedJob = new()
+                queueJob.ReservedAt = null;
+
+                if (queueJob.Attempts >= maxAttempts)
                 {
-                    Uuid = Guid.NewGuid(),
-                    Connection = "default",
-                    Queue = queueJob.Queue,
-                    Payload = queueJob.Payload,
-                    Exception = JsonConvert.SerializeObject(exception.InnerException ?? exception),
-                    FailedAt = DateTime.UtcNow
-                };
+                    FailedJob failedJob = new()
+                    {
+                        Uuid = Guid.NewGuid(),
+                        Connection = "default",
+                        Queue = queueJob.Queue,
+                        Payload = queueJob.Payload,
+                        Exception = JsonConvert.SerializeObject(exception.InnerException ?? exception),
+                        FailedAt = DateTime.UtcNow
+                    };
 
-                Context.FailedJobs.Add(failedJob);
-                Context.QueueJobs.Remove(queueJob);
+                    Context.FailedJobs.Add(failedJob);
+                    Context.QueueJobs.Remove(queueJob);
+                }
+
+                Context.SaveChanges();
             }
-
-            Context.SaveChanges();
+        }
+        catch (Exception e)
+        {
+            if (attempt < 3)
+            {
+                Thread.Sleep(1000);
+                FailJob(queueJob, exception, attempt + 1);
+            }
+            else
+            {
+                Logger.Queue(e, LogEventLevel.Error);
+            }
         }
     }
 

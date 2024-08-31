@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CommandLine;
@@ -21,20 +22,65 @@ public static class Program
     public static Task Main(string[] args)
     {
         if (args.Length > 0)
-            if (args[0].StartsWith("-loglevel"))
+        {
+            foreach (string arg in args)
             {
-                string[] logLevelArgs = args[0].Split("=");
-                if (Enum.TryParse(logLevelArgs[1], true, out LogEventLevel logLevel))
-                {
-                    Logger.App("Setting log level to " + logLevel);
-                    Logger.SetLogLevel(logLevel);
-                }
-                else
-                {
-                    Logger.App("Invalid log level, using default.");
-                }
+                // if (arg == "--dev")
+                // {
+                //     Logger.App("Running in development mode.");
+                //     
+                //     Config.IsDev = true;
+                //     
+                //     Config.AppBaseUrl = "https://app-dev.nomercy.tv/";
+                //     Config.ApiBaseUrl = "https://api-dev.nomercy.tv/";
+                //     Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
+                //     Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
+                // }
+                //
+                // if (arg.StartsWith("--loglevel"))
+                // {
+                //     string[] logLevelArgs = arg.Split("=");
+                //     if (Enum.TryParse(logLevelArgs[1], true, out LogEventLevel logLevel))
+                //     {
+                //         Logger.App("Setting log level to " + logLevel);
+                //         Logger.SetLogLevel(logLevel);
+                //     }
+                //     else
+                //     {
+                //         Logger.App("Invalid log level, using default.");
+                //     }
+                // }
+                //
+                // if (arg.StartsWith("--internal-port"))
+                // {
+                //     string[] portArgs = arg.Split("=");
+                //     if (int.TryParse(portArgs[1], out int port))
+                //     {
+                //         Logger.App("Setting internal port to " + port);
+                //         Config.InternalServerPort = port;
+                //     }
+                //     else
+                //     {
+                //         Logger.App("Invalid port, using default.");
+                //     }
+                // }
+                //
+                // if (arg.StartsWith("--external-port"))
+                // {
+                //     string[] portArgs = arg.Split("=");
+                //     if (int.TryParse(portArgs[1], out int port))
+                //     {
+                //         Logger.App("Setting external port to " + port);
+                //         Config.ExternalServerPort = port;
+                //     }
+                //     else
+                //     {
+                //         Logger.App("Invalid port, using default.");
+                //     }
+                // }
             }
-
+        }
+        
         AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
         {
             Exception exception = (Exception)eventArgs.ExceptionObject;
@@ -65,8 +111,36 @@ public static class Program
 
     private static async Task Start(StartupOptions options)
     {
-        // Console.Clear();
+        Console.Clear();
         Console.Title = "NoMercy Server";
+        
+        if (options.Dev)
+        {
+            Logger.App("Running in development mode.");
+            
+            Config.IsDev = true;
+            
+            Config.AppBaseUrl = "https://app-dev.nomercy.tv/";
+            Config.ApiBaseUrl = "https://api-dev.nomercy.tv/";
+            Config.ApiServerBaseUrl = $"{Config.ApiBaseUrl}v1/server/";
+            
+            Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
+            Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
+        }
+        
+        Logger.App(Config.AuthBaseUrl);
+
+        if (options.InternalPort != 0)
+        {
+            Logger.App("Setting internal port to " + options.InternalPort);
+            Config.InternalServerPort = options.InternalPort;
+        }
+        
+        if (options.ExternalPort != 0)
+        {
+            Logger.App("Setting external port to " + options.ExternalPort);
+            Config.ExternalServerPort = options.ExternalPort;
+        }
 
         Stopwatch stopWatch = new();
         stopWatch.Start();
@@ -113,9 +187,16 @@ public static class Program
 
     private static IWebHostBuilder CreateWebHostBuilder(this IWebHostBuilder _)
     {
+        var url = new UriBuilder
+        {
+            Host = IPAddress.Any.ToString(),
+            Port = Config.InternalServerPort,
+            Scheme = "https"
+        };
+
         return WebHost.CreateDefaultBuilder([])
             .ConfigureKestrel(Certificate.KestrelConfig)
-            .UseUrls("https://0.0.0.0:" + Config.InternalServerPort)
+            .UseUrls(url.ToString())
             .UseKestrel(options =>
             {
                 options.AddServerHeader = false;
@@ -154,6 +235,22 @@ public static class Program
         AppDomain.CurrentDomain.ProcessExit += (_, _) => { AniDbBaseClient.Dispose(); };
 
         await RunStartup(startupTasks);
+        
+        await using MediaContext mediaContext = new();
+        var configuration = mediaContext.Configuration.ToList();
+        
+        foreach (var config in configuration)
+        {
+            Logger.App($"Configuration: {config.Key} = {config.Value}");
+            if (config.Key == "InternalServerPort")
+            {
+                Config.InternalServerPort = int.Parse(config.Value);
+            }
+            else if (config.Key == "ExternalServerPort")
+            {
+                Config.ExternalServerPort = int.Parse(config.Value);
+            }
+        }
 
         Thread t = new(new Task(() => QueueRunner.Initialize().Wait()).Start)
         {

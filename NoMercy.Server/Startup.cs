@@ -12,7 +12,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
-using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using NoMercy.Api.Constraints;
 using NoMercy.Api.Controllers.Socket;
@@ -60,7 +59,6 @@ public class Startup
         services.AddSingleton<JobQueue>();
         services.AddSingleton<Helpers.Monitoring.ResourceMonitor>();
         services.AddSingleton<Networking.Networking>();
-        services.AddSingleton(LibraryFileWatcher.Instance);
 
         // Add DbContexts
         services.AddDbContext<QueueContext>(optionsAction =>
@@ -162,7 +160,7 @@ public class Startup
         // Add Other Services
         services.AddCors();
         services.AddDirectoryBrowser();
-        services.AddResponseCaching();
+        // services.AddResponseCaching();
         services.AddMvc(option => option.EnableEndpointRouting = false);
         services.AddEndpointsApiExplorer();
 
@@ -201,14 +199,10 @@ public class Startup
                 builder =>
                 {
                     builder
-                        .WithOrigins("https://dev.nomercy.tv")
                         .WithOrigins("https://nomercy.tv")
                         .WithOrigins("https://app-dev.nomercy.tv")
                         .WithOrigins("https://app.nomercy.tv")
-                        .WithOrigins("https://vue-dev.nomercy.tv")
-                        .WithOrigins("https://vue.nomercy.tv")
-                        .WithOrigins("https://app-vilt.nomercy.tv")
-                        .WithOrigins("https://vilt.nomercy.tv")
+                        .WithOrigins("https://dev.nomercy.tv")
                         .WithOrigins("https://cast.nomercy.tv")
                         .WithOrigins("https://vscode.nomercy.tv")
                         .WithOrigins("https://hlsjs.video-dev.org")
@@ -223,6 +217,8 @@ public class Startup
         services.AddResponseCompression(options => { options.EnableForHttps = true; });
 
         services.AddTransient<DynamicStaticFilesMiddleware>();
+        
+        // services.AddSingleton(LibraryFileWatcher.Instance);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -237,7 +233,7 @@ public class Startup
         // Performance Middleware
         app.UseResponseCompression();
         app.UseRequestLocalization();
-        app.UseResponseCaching();
+        // app.UseResponseCaching();
 
         // Custom Middleware
         app.UseMiddleware<LocalizationMiddleware>();
@@ -315,5 +311,6 @@ public class Startup
 
         foreach (Folder folder in folderLibraries.Where(folder => Directory.Exists(folder.Path)))
             DynamicStaticFilesMiddleware.AddPath(folder.Id, folder.Path);
+        
     }
 }

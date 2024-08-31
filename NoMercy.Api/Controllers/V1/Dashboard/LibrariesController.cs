@@ -277,8 +277,8 @@ public class LibrariesController : BaseController
         List<string?> titles = [];
         foreach (Library library in librariesList)
         {
-            LibraryLogic libraryLogic = new(library.Id);
-            await libraryLogic.Process();
+            JobDispatcher jobDispatcher = new();
+            jobDispatcher.DispatchJob<RescanLibraryJob>(library.Id);
         }
 
         return Ok(new StatusResponseDto<List<string?>>

@@ -8,6 +8,9 @@ using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Files;
+using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
@@ -135,25 +138,26 @@ public class MoviesController : BaseController
             return UnauthorizedResponse("You do not have permission to rescan movies");
 
         await using MediaContext mediaContext = new();
-        Movie[] movies = await mediaContext.Movies
+        Movie? movie = await mediaContext.Movies
             .AsNoTracking()
-            .Where(movie => movie.Id == id)
             .Include(movie => movie.Library)
-            .ToArrayAsync();
+            .FirstOrDefaultAsync(movie => movie.Id == id);
 
-        if (movies.Length == 0)
+        if (movie is null)
             return UnprocessableEntityResponse("Movie not found");
 
-        foreach (Movie movie in movies)
-            try
-            {
-                // FindMediaFilesJob findMediaFilesJob = new(movie.Id, movie.Library);
-                // jobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
-            }
-            catch (Exception e)
-            {
-                Logger.MovieDb(e, LogEventLevel.Error);
-            }
+        try
+        {
+            JobDispatcher jobDispatcher = new();
+            FileRepository fileRepository = new(mediaContext);
+            FileManager fileManager = new(fileRepository, jobDispatcher);
+            
+            await fileManager.FindFiles(id, movie.Library);
+        }
+        catch (Exception e)
+        {
+            Logger.MovieDb(e, LogEventLevel.Error);
+        }
 
         return Ok(new StatusResponseDto<string>
         {
@@ -161,7 +165,7 @@ public class MoviesController : BaseController
             Message = "Rescanning {0} for files",
             Args = new object[]
             {
-                movies[0].Title
+                movie.Title
             }
         });
     }
@@ -174,19 +178,18 @@ public class MoviesController : BaseController
             return UnauthorizedResponse("You do not have permission to refresh movies");
 
         await using MediaContext mediaContext = new();
-        Movie[] movies = await mediaContext.Movies
+        Movie? movie = await mediaContext.Movies
             .AsNoTracking()
-            .Where(movie => movie.Id == id)
             .Include(movie => movie.Library)
-            .ToArrayAsync();
+            .FirstOrDefaultAsync(movie => movie.Id == id);
 
-        if (movies.Length == 0)
+        if (movie is null)
             return UnprocessableEntityResponse("Movie not found");
 
         try
         {
-            // TmdbMovieJob tmdbMovieJob = new(id);
-            // jobDispatcher.Dispatch(tmdbMovieJob, "queue", 10);
+            JobDispatcher jobDispatcher = new();
+            jobDispatcher.DispatchJob<AddMovieJob>(id, movie.Library.Id);
         }
         catch (Exception e)
         {
@@ -200,7 +203,7 @@ public class MoviesController : BaseController
             Message = "Refreshing {0}",
             Args = new object[]
             {
-                movies[0].Title
+                movie.Title
             }
         });
     }

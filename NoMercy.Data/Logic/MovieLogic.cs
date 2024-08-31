@@ -476,7 +476,7 @@ public class MovieLogic(int id, Library library) : IDisposable, IAsyncDisposable
     {
         if (Movie == null) return;
 
-        Movie movieResponse = new()
+        Movie? movieResponse = new()
         {
             Id = Movie.Id,
             Title = Movie.Title,

@@ -31,10 +31,10 @@ public class AddPersonExtraDataJob : AbstractShowExtraDataJob<TmdbPersonAppends,
 
         foreach (TmdbPersonAppends person in Storage)
         {
-            await personManager.StoreTranslationsAsync(Name, person);
-            await personManager.StoreImagesAsync(Name, person);
+            await personManager.StoreTranslationsAsync(person);
+            await personManager.StoreImagesAsync(person);
         }
 
-        Logger.MovieDb($"Movie: {Name}: People: Translations and Images stored", LogEventLevel.Debug);
+        Logger.MovieDb($"Show: {Name}: People: Translations and Images stored", LogEventLevel.Debug);
     }
 }
