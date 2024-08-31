@@ -369,4 +369,12 @@ public class ShowManager(
         Logger.MovieDb($"Show {show.Name}: Companies stored", LogEventLevel.Debug);
         await Task.CompletedTask;
     }
+
+    internal async Task StoreCast(TmdbTvShowAppends show)
+    {
+    }
+    
+    internal async Task StoreCrew(TmdbTvShowAppends show)
+    {
+    }
 }

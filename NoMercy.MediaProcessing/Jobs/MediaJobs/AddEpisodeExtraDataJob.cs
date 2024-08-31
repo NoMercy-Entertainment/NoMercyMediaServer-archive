@@ -4,6 +4,7 @@
 
 using NoMercy.Database;
 using NoMercy.MediaProcessing.Episodes;
+using NoMercy.MediaProcessing.People;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Episode;
 using Serilog.Events;
@@ -26,9 +27,15 @@ public class AddEpisodeExtraDataJob : AbstractShowExtraDataJob<TmdbEpisodeAppend
 
         EpisodeRepository episodeRepository = new(context);
         EpisodeManager episodeManager = new(episodeRepository, jobDispatcher);
+        
+        PersonRepository personRepository = new(context);
+        PersonManager personManager = new(personRepository, jobDispatcher);
+
 
         foreach (TmdbEpisodeAppends? episode in Storage)
         {
+            await personManager.StorePeoplesAsync(episode);
+            
             await episodeManager.StoreImages(Name, episode);
             await episodeManager.StoreTranslations(Name, episode);
         }

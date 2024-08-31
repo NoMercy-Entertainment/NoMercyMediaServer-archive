@@ -6,8 +6,8 @@ namespace NoMercy.MediaProcessing.Movies;
 
 public interface IMovieRepository
 {
-    public Task AddAsync(Movie movie);
-    public Task LinkToLibrary(Library library, Movie movie);
+    public Task AddAsync(Movie? movie);
+    public Task LinkToLibrary(Library library, Movie? movie);
     public Task StoreAlternativeTitles(IEnumerable<AlternativeTitle> alternativeTitles);
     public Task StoreTranslations(IEnumerable<Translation> translations);
     public Task StoreContentRatings(IEnumerable<CertificationMovie> certifications);

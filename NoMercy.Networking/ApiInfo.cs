@@ -27,7 +27,8 @@ public partial class ApiInfo
     {
         HttpClient client = new();
         client.Timeout = TimeSpan.FromSeconds(15);
-        HttpResponseMessage response = await client.GetAsync("https://api-dev.nomercy.tv/v1/info");
+        client.BaseAddress = new Uri(Config.ApiBaseUrl);
+        HttpResponseMessage response = await client.GetAsync("v1/info");
         string? content = await response.Content.ReadAsStringAsync();
 
         if (content == null) throw new Exception("Failed to get server info");

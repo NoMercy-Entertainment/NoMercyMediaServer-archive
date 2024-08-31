@@ -467,8 +467,7 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("PersonId");
 
-                    b.HasIndex("RoleId")
-                        .IsUnique();
+                    b.HasIndex("RoleId");
 
                     b.HasIndex("SeasonId");
 
@@ -762,8 +761,7 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("EpisodeId");
 
-                    b.HasIndex("JobId")
-                        .IsUnique();
+                    b.HasIndex("JobId");
 
                     b.HasIndex("MovieId");
 

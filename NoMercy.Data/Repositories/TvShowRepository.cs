@@ -38,15 +38,16 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
             .Include(tv => tv.KeywordTvs)
             .ThenInclude(keywordTv => keywordTv.Keyword)
 
-            // .Include(tv => tv.Cast)
-            //     .ThenInclude(castTv => castTv.Person)
-            //
-            // .Include(tv => tv.Cast)
-            //     .ThenInclude(castTv => castTv.Role)
+            .Include(tv => tv.Cast)
+                .ThenInclude(castTv => castTv.Person)
+            .Include(tv => tv.Cast)
+                .ThenInclude(castTv => castTv.Role)
+            
             .Include(tv => tv.Crew)
             .ThenInclude(crewTv => crewTv.Person)
             .Include(tv => tv.Crew)
             .ThenInclude(crewTv => crewTv.Job)
+            
             .Include(tv => tv.Seasons)
             .ThenInclude(season => season.Translations
                 .Where(translation => translation.Iso6391 == language)

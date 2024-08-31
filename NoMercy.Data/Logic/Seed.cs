@@ -32,15 +32,10 @@ public class Seed : IDisposable, IAsyncDisposable
     private static Folder[] _folders = [];
     private static User[] _users = [];
 
-    public static Task Init()
-    {
-        Task.Run(async () =>
-        {
-            await CreateDatabase();
-            await SeedDatabase();
-        }).Wait();
-
-        return Task.CompletedTask;
+    public static async Task Init()
+    { 
+        await CreateDatabase();
+        await SeedDatabase();
     }
 
     private static async Task CreateDatabase()
@@ -48,23 +43,19 @@ public class Seed : IDisposable, IAsyncDisposable
         try
         {
             await MediaContext.Database.EnsureCreatedAsync();
-            await MediaContext.Database.MigrateAsync();
-            await MediaContext.SaveChangesAsync();
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            //
+            Logger.Setup(e.Message, LogEventLevel.Error);
         }
 
         try
         {
             await QueueContext.Database.EnsureCreatedAsync();
-            await QueueContext.Database.MigrateAsync();
-            await QueueContext.SaveChangesAsync();
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            //
+            Logger.Setup(e.Message, LogEventLevel.Error);
         }
     }
 
@@ -90,7 +81,7 @@ public class Seed : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Logger.Setup(e, LogEventLevel.Error);
+            Logger.Setup(e.Message, LogEventLevel.Error);
         }
     }
 
@@ -98,6 +89,8 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasEncoderProfiles = await MediaContext.EncoderProfiles.AnyAsync();
         if (hasEncoderProfiles) return;
+        
+        Logger.Setup("Adding Encoder Profiles");
 
         EncoderProfileDto[] encoderProfiles;
         if (File.Exists(AppFiles.EncoderProfilesSeedFile))
@@ -198,7 +191,10 @@ public class Seed : IDisposable, IAsyncDisposable
 
     private static async Task Users()
     {
+        Logger.Setup("Adding Users");
+        
         HttpClient client = new();
+        client.BaseAddress = new Uri(Config.ApiServerBaseUrl);
         client.DefaultRequestHeaders.Add("Accept", "application/json");
         client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
@@ -206,7 +202,7 @@ public class Seed : IDisposable, IAsyncDisposable
         IDictionary<string, string?> query = new Dictionary<string, string?>();
         query.Add("server_id", Info.DeviceId.ToString());
 
-        string newUrl = QueryHelpers.AddQueryString("https://api-dev.nomercy.tv/v1/server/users", query);
+        string newUrl = QueryHelpers.AddQueryString("users", query);
 
         HttpResponseMessage response = await client.GetAsync(newUrl);
         string? content = await response.Content.ReadAsStringAsync();
@@ -214,6 +210,8 @@ public class Seed : IDisposable, IAsyncDisposable
         if (content == null) throw new Exception("Failed to get Server info");
 
         ServerUserDto[] serverUsers = content.FromJson<ServerUserDto[]>() ?? [];
+        
+        Logger.Setup($"Found {serverUsers.Length} users");
 
         _users = serverUsers.ToList()
             .ConvertAll<User>(serverUser => new User
@@ -279,6 +277,8 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasGenres = await MediaContext.Genres.AnyAsync();
         if (hasGenres) return;
+        
+        Logger.Setup("Adding Genres");
 
         List<Genre> genres = [];
 
@@ -316,6 +316,8 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasCertifications = await MediaContext.Certifications.AnyAsync();
         if (hasCertifications) return;
+        
+        Logger.Setup("Adding Certifications");
 
         List<Certification> certifications = [];
 
@@ -357,6 +359,8 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasLanguages = await MediaContext.Languages.AnyAsync();
         if (hasLanguages) return;
+        
+        Logger.Setup("Adding Languages");
 
         Language[] languages = (await TmdbConfigClient.Languages())?.ToList()
             .ConvertAll<Language>(language => new Language
@@ -381,6 +385,8 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasCountries = await MediaContext.Countries.AnyAsync();
         if (hasCountries) return;
+        
+        Logger.Setup("Adding Countries");
 
         Country[] countries = (await TmdbConfigClient.Countries())?.ToList()
             .ConvertAll<Country>(country => new Country
@@ -405,6 +411,8 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasMusicGenres = await MediaContext.MusicGenres.AnyAsync();
         if (hasMusicGenres) return;
+        
+        Logger.Setup("Adding Music Genres");
 
         MusicBrainzGenreClient musicBrainzGenreClient = new();
 
@@ -432,6 +440,8 @@ public class Seed : IDisposable, IAsyncDisposable
         try
         {
             if (!File.Exists(AppFiles.FolderRootsSeedFile)) return;
+            
+            Logger.Setup("Adding Folder Roots");
 
             _folders = File.ReadAllTextAsync(AppFiles.FolderRootsSeedFile)
                 .Result.FromJson<Folder[]>() ?? [];
@@ -456,6 +466,8 @@ public class Seed : IDisposable, IAsyncDisposable
         try
         {
             if (!File.Exists(AppFiles.LibrariesSeedFile)) return;
+            
+            Logger.Setup("Adding Libraries");
 
             LibrarySeedDto[] librarySeed = File.ReadAllTextAsync(AppFiles.LibrariesSeedFile)
                 .Result.FromJson<LibrarySeedDto[]>() ?? [];
@@ -513,7 +525,7 @@ public class Seed : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Logger.Setup(e, LogEventLevel.Error);
+            Logger.Setup(e.Message, LogEventLevel.Error);
         }
     }
 
@@ -521,6 +533,8 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasSpecial = await MediaContext.Specials.AnyAsync();
         if (hasSpecial) return;
+        
+        Logger.Setup("Adding Special");
 
         await Task.Run(async () =>
         {
@@ -579,7 +593,7 @@ public class Seed : IDisposable, IAsyncDisposable
 
                 foreach (CollectionItem item in Mcu.McuItems)
                 {
-                    Logger.App($"Searching for {item.title} ({item.year})");
+                    Logger.Setup($"Searching for {item.title} ({item.year})");
                     switch (item.type)
                     {
                         case "movie":
@@ -635,7 +649,7 @@ public class Seed : IDisposable, IAsyncDisposable
 
                 foreach (CollectionItem item in Mcu.McuItems)
                 {
-                    Logger.App($"Searching for {item.title} ({item.year})");
+                    Logger.Setup($"Searching for {item.title} ({item.year})");
                     switch (item.type)
                     {
                         case "movie":
@@ -693,7 +707,7 @@ public class Seed : IDisposable, IAsyncDisposable
                     }
                 }
 
-                Logger.App($"Upsetting {specialItems.Count} SpecialItems");
+                Logger.Setup($"Upsetting {specialItems.Count} SpecialItems");
 
                 await context.SpecialItems.UpsertRange(specialItems
                         .Where(s => s.MovieId is not null))

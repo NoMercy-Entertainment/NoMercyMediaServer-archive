@@ -517,10 +517,9 @@ public class ServerController : BaseController
             await mediaContext.SaveChangesAsync();
 
             HttpClient client = new();
-
-            client.BaseAddress = new Uri("https://api-dev.nomercy.tv/v1/");
-
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.BaseAddress = new Uri(Config.ApiServerBaseUrl);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
 
             HttpRequestMessage httpRequestMessage = new(HttpMethod.Patch, "server/name")

@@ -30,22 +30,21 @@ public static class Register
             { "platform", Info.Platform }
         };
 
-        Logger.Register(@"Registering Server, this takes a moment...");
+        Logger.Register("Registering Server, this takes a moment...");
 
         HttpClient client = new();
+        client.BaseAddress = new(Config.ApiServerBaseUrl);
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        string content = client.PostAsync("https://api-dev.nomercy.tv/v1/server/register",
+        string content = client.PostAsync("register",
                 new FormUrlEncodedContent(serverData))
             .Result.Content.ReadAsStringAsync().Result;
 
         object? data = JsonConvert.DeserializeObject(content);
-
-        // Logger.Register(data);
-
+        
         if (data == null) throw new Exception("Failed to register Server");
 
-        Logger.Register(@"Server registered successfully");
+        Logger.Register("Server registered successfully");
 
         AssignServer().Wait();
 
@@ -60,13 +59,15 @@ public static class Register
         };
 
         HttpClient client = new();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        client.BaseAddress = new Uri(Config.ApiServerBaseUrl);
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
-
-        string content = client
-            .PostAsync("https://api-dev.nomercy.tv/v1/server/assign", new FormUrlEncodedContent(serverData))
+        
+        var content = client
+            .PostAsync("assign", new FormUrlEncodedContent(serverData))
             .Result.Content.ReadAsStringAsync().Result;
-
+        
         ServerRegisterResponse? data = JsonConvert.DeserializeObject<ServerRegisterResponse>(content);
 
         if (data == null) throw new Exception("Failed to assign Server");

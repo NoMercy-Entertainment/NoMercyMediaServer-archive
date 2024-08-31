@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 using NoMercy.Database;
+using NoMercy.MediaProcessing.People;
 using NoMercy.MediaProcessing.Seasons;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Season;
@@ -26,9 +27,14 @@ public class AddSeasonExtraDataJob : AbstractShowExtraDataJob<TmdbSeasonAppends,
 
         SeasonRepository seasonRepository = new(context);
         SeasonManager seasonManager = new(seasonRepository, jobDispatcher);
-
+        
+        PersonRepository personRepository = new(context);
+        PersonManager personManager = new(personRepository, jobDispatcher);
+        
         foreach (TmdbSeasonAppends season in Storage)
         {
+            await personManager.StorePeoplesAsync(season);
+            
             await seasonManager.StoreImagesAsync(Name, season);
             await seasonManager.StoreTranslationsAsync(Name, season);
         }

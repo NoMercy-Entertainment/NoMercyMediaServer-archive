@@ -32,7 +32,7 @@ public class MovieManager(
                 new BaseImage.MultiStringType("backdrop", movieAppends.BackdropPath)
             ]);
 
-        Movie movie = new()
+        Movie? movie = new()
         {
             LibraryId = library.Id,
             Folder = baseUrl,

@@ -8,6 +8,9 @@ using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Files;
+using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
@@ -156,8 +159,11 @@ public class TvShowsController : BaseController
 
         try
         {
-            // FindMediaFilesJob findMediaFilesJob = new(tv.Id, tv.Library);
-            // jobDispatcher.Dispatch(findMediaFilesJob, "queue", 6);
+            JobDispatcher jobDispatcher = new();
+            FileRepository fileRepository = new(mediaContext);
+            FileManager fileManager = new(fileRepository, jobDispatcher);
+            
+            await fileManager.FindFiles(id, tv.Library);
         }
         catch (Exception e)
         {
@@ -193,8 +199,8 @@ public class TvShowsController : BaseController
         if (tv is null)
             return UnprocessableEntityResponse("Tv show not found");
 
-        // TmdbShowJob tmdbShowJob = new(id);
-        // jobDispatcher.Dispatch(tmdbShowJob, "queue", 10);
+        JobDispatcher jobDispatcher = new();
+        jobDispatcher.DispatchJob<AddShowJob>(id, tv.Library.Id);
 
         return Ok(new StatusResponseDto<string>
         {
