@@ -138,6 +138,11 @@ public class Queue(QueueOptions options)
 
         lock (_tasks)
         {
+            while (_tasks.ContainsKey(uniqueId))
+            {
+                uniqueId = Ulid.NewUlid().ToString();
+            }
+            
             _tasks.Add(uniqueId, async () =>
             {
                 try

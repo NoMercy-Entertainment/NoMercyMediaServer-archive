@@ -63,28 +63,36 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
                 .FirstOrDefault());
 
 
-    public QueueJob? ReserveJob(string name, long? currentJobId)
+    public QueueJob? ReserveJob(string name, long? currentJobId, int attempt = 0)
     {
-        lock (Context)
+        try
         {
-            QueueJob? job = ReserveJobQuery(Context, maxAttempts, name, currentJobId).Result;
-
-            if (job == null) return job;
-
-            job.ReservedAt = DateTime.UtcNow;
-            job.Attempts++;
-
-            try
+            lock (Context)
             {
+                QueueJob? job = ReserveJobQuery(Context, maxAttempts, name, currentJobId).Result;
+
+                if (job == null) return job;
+
+                job.ReservedAt = DateTime.UtcNow;
+                job.Attempts++;
+
                 Context.SaveChanges();
+                
+                return job;
             }
-            catch (Exception _)
-            {
-                ReserveJob(name, currentJobId);
-            }
-
-            return job;
         }
+        catch (Exception e)
+        {
+            if (attempt < 3)
+            {
+                Thread.Sleep(1000);
+                return ReserveJob(name, currentJobId, attempt + 1);
+            }
+            
+            Logger.Queue(e, LogEventLevel.Error);
+        }
+        
+        return null;
     }
 
     public void FailJob(QueueJob queueJob, Exception exception, int attempt = 0)
@@ -128,44 +136,60 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
         }
     }
 
-    public void DeleteJob(QueueJob queueJob)
+    public void DeleteJob(QueueJob queueJob, int attempt = 0)
     {
-        lock (Context)
+        try
         {
-            Context.QueueJobs.Remove(queueJob);
-
-            try
+            lock (Context)
             {
+                Context.QueueJobs.Remove(queueJob);
+
                 Context.SaveChanges();
             }
-            catch (Exception e)
+        }
+        catch (Exception e)
+        {
+            if (attempt < 3)
+            {
+                Thread.Sleep(1000);
+                DeleteJob(queueJob, attempt + 1);
+            }
+            else
             {
                 Logger.Queue(e, LogEventLevel.Error);
             }
         }
     }
 
-    public void RequeueFailedJob(int failedJobId)
+    public void RequeueFailedJob(int failedJobId, int attempt = 0)
     {
-        lock (Context)
+        try
         {
-            FailedJob? failedJob = Context.FailedJobs.Find(failedJobId);
-            if (failedJob == null) return;
-
-            Context.FailedJobs.Remove(failedJob);
-            Context.QueueJobs.Add(new QueueJob
+            lock (Context)
             {
-                Queue = failedJob.Queue,
-                Payload = failedJob.Payload,
-                AvailableAt = DateTime.UtcNow,
-                Attempts = 0
-            });
+                FailedJob? failedJob = Context.FailedJobs.Find(failedJobId);
+                if (failedJob == null) return;
 
-            try
-            {
-                Context.SaveChanges();
+                Context.FailedJobs.Remove(failedJob);
+                Context.QueueJobs.Add(new QueueJob
+                {
+                    Queue = failedJob.Queue,
+                    Payload = failedJob.Payload,
+                    AvailableAt = DateTime.UtcNow,
+                    Attempts = 0
+                });
+
+                    Context.SaveChanges();
             }
-            catch (Exception e)
+        }
+        catch (Exception e)
+        {
+            if (attempt < 3)
+            {
+                Thread.Sleep(1000);
+                RequeueFailedJob(failedJobId, attempt + 1);
+            }
+            else
             {
                 Logger.Queue(e, LogEventLevel.Error);
             }
@@ -176,7 +200,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
         EF.CompileAsyncQuery((QueueContext queueContext, string payloadString) =>
             queueContext.QueueJobs.Any(queueJob => queueJob.Payload == payloadString));
 
-    public bool Exists(string payloadString)
+    private bool Exists(string payloadString)
     {
         return ExistsQuery(Context, payloadString).Result;
     }
