@@ -27,7 +27,7 @@ public class CollectionManager(
 
         if (collectionAppends is null) return null;
 
-        string? colorPalette = await MovieDbImage
+        string colorPalette = await MovieDbImage
             .MultiColorPalette([
                 new BaseImage.MultiStringType("poster", collectionAppends.PosterPath),
                 new BaseImage.MultiStringType("backdrop", collectionAppends.BackdropPath)
@@ -71,7 +71,7 @@ public class CollectionManager(
         throw new NotImplementedException();
     }
 
-    internal async Task StoreTranslations(TmdbCollectionAppends collection)
+    private async Task StoreTranslations(TmdbCollectionAppends collection)
     {
         IEnumerable<Translation> translations = collection.Translations.Translations
             .Select(translation => new Translation

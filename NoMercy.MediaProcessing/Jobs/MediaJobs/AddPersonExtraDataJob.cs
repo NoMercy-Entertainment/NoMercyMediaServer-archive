@@ -14,12 +14,13 @@ namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 // ---------------------------------------------------------------------------------------------------------------------
 // Code
 // ---------------------------------------------------------------------------------------------------------------------
-[Serializable]
+[Serializable]        
 public class AddPersonExtraDataJob : AbstractShowExtraDataJob<TmdbPersonAppends, string>
 {
     public override string QueueName => "queue";
     public override int Priority => 1;
-
+    
+    /** Note: TmdbPersonAppends is a reduced set to improve performance. */
     public override async Task Handle()
     {
         await using MediaContext context = new();
@@ -28,7 +29,7 @@ public class AddPersonExtraDataJob : AbstractShowExtraDataJob<TmdbPersonAppends,
 
         PersonRepository personRepository = new(context);
         PersonManager personManager = new(personRepository, jobDispatcher);
-
+        
         foreach (TmdbPersonAppends person in Storage)
         {
             await personManager.StoreTranslationsAsync(person);

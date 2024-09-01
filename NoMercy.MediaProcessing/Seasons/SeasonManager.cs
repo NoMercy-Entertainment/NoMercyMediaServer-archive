@@ -26,7 +26,13 @@ public class SeasonManager(
             try
             {
                 using TmdbSeasonClient tmdbSeasonClient = new(show.Id, season.SeasonNumber);
-                TmdbSeasonAppends? seasonTask = await tmdbSeasonClient.WithAllAppends();
+                TmdbSeasonAppends? seasonTask = await tmdbSeasonClient.WithAppends([
+                    "changes",
+                    "credits",
+                    "external_ids",
+                    "images",
+                    "translations"
+                ]);
                 if (seasonTask is null) return;
 
                 seasonAppends.Add(seasonTask);
