@@ -1,8 +1,8 @@
 
-        \####################################################################################  
-       \#                        ⚠️  WORK IN PROGRESS - USE WITH CAUTION ⚠️                        #  
-      \#    This repository is currently under development and should not be considered stable or reliable.    #  
-     \#################################################################################### 
+                \####################################################################################  
+               \#                        ⚠️  WORK IN PROGRESS - USE WITH CAUTION ⚠️                        #  
+              \#    This repository is currently under development and should not be considered stable or reliable.    #  
+             \#################################################################################### 
 
 ![NoMercy MediaServer Logo](https://github.com/user-attachments/assets/21651ec6-8079-46ee-8fcc-8bf7289451ad)
 
