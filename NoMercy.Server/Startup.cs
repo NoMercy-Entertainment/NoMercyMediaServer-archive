@@ -28,7 +28,6 @@ using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
-using NoMercy.Providers.File;
 using NoMercy.Queue;
 using NoMercy.Server.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;

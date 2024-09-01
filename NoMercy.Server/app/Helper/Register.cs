@@ -70,7 +70,8 @@ public static class Register
         
         ServerRegisterResponse? data = JsonConvert.DeserializeObject<ServerRegisterResponse>(content);
 
-        if (data == null) throw new Exception("Failed to assign Server");
+        if (data is null || data.Status == "error") 
+            throw new Exception("Failed to assign Server");
 
         User newUser = new()
         {
