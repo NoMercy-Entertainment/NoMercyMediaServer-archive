@@ -34,7 +34,7 @@ public class Gpu
     [JsonProperty("memory")] public double Memory { get; set; }
     [JsonProperty("encode")] public double Encode { get; set; }
     [JsonProperty("power")] public double Power { get; set; }
-    [JsonProperty("identifier")] internal Identifier Identifier { get; set; }
+    [JsonProperty("identifier")] internal Identifier Identifier { get; set; } = new();
     [JsonProperty("index")] public int Index => int.Parse(Identifier.ToString().Split('/').LastOrDefault() ?? "0");
 }
 
@@ -68,7 +68,7 @@ public class ResourceMonitor
             IsNetworkEnabled = false,
             IsStorageEnabled = false
         };
-        _computer?.Open();
+        _computer.Open();
     }
 
     private class UpdateVisitor : IVisitor
@@ -262,8 +262,6 @@ public class ResourceMonitor
                     throw new Exception("Error while monitoring hardware");
                 }
             }
-
-            ;
 
             return resource;
         }
