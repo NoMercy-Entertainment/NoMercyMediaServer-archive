@@ -16,7 +16,7 @@ public abstract class BaseImage : IDisposable
     private class ColorPaletteArgument
     {
         public required string Key { get; set; }
-        public Image<Rgba32>? Bitmap { get; set; }
+        public Image<Rgba32>? ImageData { get; set; }
     }
 
     public class MultiUriType(string key, Uri url)
@@ -35,7 +35,7 @@ public abstract class BaseImage : IDisposable
     {
         Dictionary<string, PaletteColors?> palette = new();
 
-        foreach (ColorPaletteArgument item in items) palette.Add(item.Key, ColorPaletteFromImage(item.Bitmap));
+        foreach (ColorPaletteArgument item in items) palette.Add(item.Key, ColorPaletteFromImage(item.ImageData));
 
         IEnumerable<KeyValuePair<string, PaletteColors?>> palettes = palette
             .Where(x => x.Value != null);
@@ -66,14 +66,14 @@ public abstract class BaseImage : IDisposable
 
     protected static async Task<string> ColorPalette(DownloadUrl client, string type, Uri path, bool? download = true)
     {
-        Image<Rgba32>? bitmap = await client.Invoke(path, download);
+        Image<Rgba32>? imageData = await client.Invoke(path, download);
 
         return GenerateColorPalette(new List<ColorPaletteArgument>
         {
             new()
             {
                 Key = type,
-                Bitmap = bitmap
+                ImageData = imageData
             }
         });
     }
@@ -84,11 +84,11 @@ public abstract class BaseImage : IDisposable
         List<ColorPaletteArgument> list = new();
         foreach (MultiUriType item in items)
         {
-            Image<Rgba32>? bitmap = await client.Invoke(item.Url, download);
+            Image<Rgba32>? imageData = await client.Invoke(item.Url, download);
             list.Add(new ColorPaletteArgument
             {
                 Key = item.Key,
-                Bitmap = bitmap
+                ImageData = imageData
             });
         }
 
@@ -98,14 +98,14 @@ public abstract class BaseImage : IDisposable
     protected static async Task<string> ColorPalette(DownloadPath client, string type, string? path,
         bool? download = true)
     {
-        Image<Rgba32>? bitmap = await client.Invoke(path, download);
+        Image<Rgba32>? imageData = await client.Invoke(path, download);
 
         return GenerateColorPalette(new List<ColorPaletteArgument>
         {
             new()
             {
                 Key = type,
-                Bitmap = bitmap
+                ImageData = imageData
             }
         });
     }
@@ -116,11 +116,11 @@ public abstract class BaseImage : IDisposable
         List<ColorPaletteArgument> list = new();
         foreach (MultiStringType item in items)
         {
-            Image<Rgba32>? bitmap = await client.Invoke(item.Path, download);
+            Image<Rgba32>? imageData = await client.Invoke(item.Path, download);
             list.Add(new ColorPaletteArgument
             {
                 Key = item.Key,
-                Bitmap = bitmap
+                ImageData = imageData
             });
         }
 
