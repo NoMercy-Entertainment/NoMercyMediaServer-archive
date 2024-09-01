@@ -450,6 +450,7 @@ public class PersonManager(
         return (peopleIds, casts, crews, roles, jobs);
     }
 
+    /** Note: The data returned here is a reduced set to improve performance. */
     private async Task<List<TmdbPersonAppends>> FetchPeopleByIdsAsync(List<int> ids)
     {
         List<TmdbPersonAppends> personAppends = [];
@@ -459,7 +460,11 @@ public class PersonManager(
             try
             {
                 using TmdbPersonClient personClient = new(id);
-                TmdbPersonAppends? personTask = await personClient.WithAllAppends();
+                TmdbPersonAppends? personTask = await personClient.WithAppends([
+                    "external_ids",
+                    "images",
+                    "translations"
+                ]);
                 if (personTask is null) return;
 
                 personAppends.Add(personTask);
