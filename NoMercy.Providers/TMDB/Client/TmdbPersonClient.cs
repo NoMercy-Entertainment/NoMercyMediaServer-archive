@@ -15,9 +15,9 @@ public class TmdbPersonClient : TmdbBaseClient
         return Get<TmdbPersonDetails>("person/" + Id);
     }
 
-    private Task<TmdbPersonAppends?> WithAppends(string[] appendices, bool? priority = false)
+    public Task<TmdbPersonAppends?> WithAppends(string[] appendices, bool? priority = false)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             ["append_to_response"] = string.Join(",", appendices)
         };
@@ -41,7 +41,7 @@ public class TmdbPersonClient : TmdbBaseClient
 
     public Task<TmdbPersonChanges?> Changes(string startDate, string endDate)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             ["start_date"] = startDate,
             ["end_date"] = endDate

@@ -21,9 +21,9 @@ public class TmdbEpisodeClient : TmdbBaseClient
         return Get<TmdbEpisodeDetails>("tv/" + Id + "/season/" + _seasonNumber + "/episode/" + _episodeNumber);
     }
 
-    private Task<TmdbEpisodeAppends?> WithAppends(string[] appendices)
+    public Task<TmdbEpisodeAppends?> WithAppends(string[] appendices)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             ["append_to_response"] = string.Join(",", appendices)
         };

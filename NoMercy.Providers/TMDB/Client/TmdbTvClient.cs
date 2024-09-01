@@ -30,7 +30,7 @@ public class TmdbTvClient : TmdbBaseClient
 
     public Task<TmdbTvShowAppends?> WithAppends(string[] appendices, bool? priority = false)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             ["append_to_response"] = string.Join(",", appendices)
         };
@@ -69,7 +69,7 @@ public class TmdbTvClient : TmdbBaseClient
 
     public Task<TmdbTvChanges?> Changes(string startDate, string endDate)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             ["start_date"] = startDate,
             ["end_date"] = endDate
