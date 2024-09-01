@@ -2,9 +2,8 @@
                 \####################################################################################  
                \#                        ⚠️  WORK IN PROGRESS - USE WITH CAUTION ⚠️                        #  
               \#    This repository is currently under development and should not be considered stable or reliable.    #  
-             \#################################################################################### 
-
-![NoMercy MediaServer Logo](https://github.com/user-attachments/assets/21651ec6-8079-46ee-8fcc-8bf7289451ad)
+             \####################################################################################
+                      <img src="https://raw.githubusercontent.com/NoMercy-Entertainment/NoMercyMediaServer/master/NoMercy.Server/Assets/logo.png" style="width: auto;height: 240px;">
 
 **"Empower Ownership: Overcome Licensing Barriers and Effortlessly Archive Your Media Collection with Privacy and Simplicity."**
 
