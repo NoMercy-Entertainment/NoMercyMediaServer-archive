@@ -333,7 +333,7 @@ public static class Logger
     public static readonly Dictionary<string, string> Capitalize = new()
     {
         { "_", "System" },
-        // { "system", "System" },
+        { "server", "Server" },
         { "access", "Access" },
         { "app", "App" },
         { "configuration", "Configuration" },

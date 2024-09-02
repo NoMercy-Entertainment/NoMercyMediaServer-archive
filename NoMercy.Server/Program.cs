@@ -21,66 +21,6 @@ public static class Program
 {
     public static Task Main(string[] args)
     {
-        if (args.Length > 0)
-        {
-            foreach (string arg in args)
-            {
-                // if (arg == "--dev")
-                // {
-                //     Logger.App("Running in development mode.");
-                //     
-                //     Config.IsDev = true;
-                //     
-                //     Config.AppBaseUrl = "https://app-dev.nomercy.tv/";
-                //     Config.ApiBaseUrl = "https://api-dev.nomercy.tv/";
-                //     Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
-                //     Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
-                // }
-                //
-                // if (arg.StartsWith("--loglevel"))
-                // {
-                //     string[] logLevelArgs = arg.Split("=");
-                //     if (Enum.TryParse(logLevelArgs[1], true, out LogEventLevel logLevel))
-                //     {
-                //         Logger.App("Setting log level to " + logLevel);
-                //         Logger.SetLogLevel(logLevel);
-                //     }
-                //     else
-                //     {
-                //         Logger.App("Invalid log level, using default.");
-                //     }
-                // }
-                //
-                // if (arg.StartsWith("--internal-port"))
-                // {
-                //     string[] portArgs = arg.Split("=");
-                //     if (int.TryParse(portArgs[1], out int port))
-                //     {
-                //         Logger.App("Setting internal port to " + port);
-                //         Config.InternalServerPort = port;
-                //     }
-                //     else
-                //     {
-                //         Logger.App("Invalid port, using default.");
-                //     }
-                // }
-                //
-                // if (arg.StartsWith("--external-port"))
-                // {
-                //     string[] portArgs = arg.Split("=");
-                //     if (int.TryParse(portArgs[1], out int port))
-                //     {
-                //         Logger.App("Setting external port to " + port);
-                //         Config.ExternalServerPort = port;
-                //     }
-                //     else
-                //     {
-                //         Logger.App("Invalid port, using default.");
-                //     }
-                // }
-            }
-        }
-        
         AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
         {
             Exception exception = (Exception)eventArgs.ExceptionObject;
@@ -126,6 +66,12 @@ public static class Program
             
             Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
             Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
+        }
+        
+        if (!string.IsNullOrEmpty(options.LogLevel))
+        {
+            Logger.App($"Setting log level to: {options.LogLevel}.");
+            Logger.SetLogLevel(Enum.Parse<LogEventLevel>(options.LogLevel.ToTitleCase()));
         }
         
         Logger.App(Config.AuthBaseUrl);
