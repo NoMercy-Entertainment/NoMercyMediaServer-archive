@@ -35,7 +35,7 @@ public static partial class Str
 
     public static string RemoveAccents(this string s)
     {
-        Encoding destEncoding = Encoding.GetEncoding("iso-8859-8");
+        Encoding destEncoding = Encoding.GetEncoding("ISO-8859-1");
 
         return destEncoding.GetString(
             Encoding.Convert(Encoding.UTF8, destEncoding, Encoding.UTF8.GetBytes(s)));
@@ -126,5 +126,11 @@ public static partial class Str
     {
         str = Regex.Replace(str, @"(\P{Ll})(\P{Ll}\p{Ll})", "$1 $2");
         return Regex.Replace(str, @"(\p{Ll})(\P{Ll})", "$1 $2");
+    }
+    
+    /** This method is used to sanitize a string by removing diacritics, non-alphanumeric characters and accents. */
+    public static string Sanitize(this string str)
+    {
+        return str.RemoveDiacritics().RemoveNonAlphaNumericCharacters().RemoveAccents();
     }
 }

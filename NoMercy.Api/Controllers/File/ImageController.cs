@@ -6,6 +6,7 @@ using NoMercy.Helpers;
 using NoMercy.NmSystem;
 using NoMercy.Providers.Helpers;
 using NoMercy.Providers.TMDB.Client;
+using Serilog.Events;
 
 namespace NoMercy.Api.Controllers.File;
 
@@ -37,22 +38,23 @@ public class ImageController : Controller
             bool emptyArguments = request.Width is null && request.Type is null && request.Quality is 100;
 
             if (emptyArguments || path.Contains(".svg") ||
-                (originalFileSize < request.Width && originalMimeType == request.Type.ToString()))
+                (originalFileSize < request.Width && originalMimeType == request.Format!.DefaultMimeType))
                 return PhysicalFile(filePath, originalMimeType);
 
             string hashedUrl = CacheController.GenerateFileName(Request.GetEncodedUrl()) + "." +
-                               (request.Type.ToString()?.ToLower() ?? fileInfo.Extension);
+                               (request.Format?.FileExtensions.First() ?? fileInfo.Extension);
 
             string cachedImagePath = Path.Join(AppFiles.TempImagesPath, hashedUrl);
-            if (System.IO.File.Exists(cachedImagePath)) return PhysicalFile(cachedImagePath, "image/" + request.Type);
+            if (System.IO.File.Exists(cachedImagePath)) return PhysicalFile(cachedImagePath, request.Format!.DefaultMimeType);
 
             (byte[] magickImage, string mimeType) = Images.ResizeMagickNet(filePath, request);
             await System.IO.File.WriteAllBytesAsync(cachedImagePath, magickImage);
 
-            return File(magickImage, "image/" + mimeType);
+            return File(magickImage,  mimeType);
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            Logger.Error(e, LogEventLevel.Error);
             return NotFound();
         }
     }

@@ -35,8 +35,9 @@ public static class AppFiles
     public static readonly string UserDataPath = Path.Combine(DataPath, "userData");
 
     public static readonly string BinariesPath = Path.Combine(RootPath, "binaries");
-    public static readonly string FfmpegPath = Path.Combine(BinariesPath, "ffmpeg", "ffmpeg" + Info.ExecSuffix);
-    public static readonly string FfProbePath = Path.Combine(BinariesPath, "ffmpeg", "ffprobe" + Info.ExecSuffix);
+    public static readonly string FfmpegFolder = Path.Combine(RootPath, "binaries", "ffmpeg");
+    public static readonly string FfmpegPath = Path.Combine(FfmpegFolder, "ffmpeg" + Info.ExecSuffix);
+    public static readonly string FfProbePath = Path.Combine(FfmpegFolder, "ffprobe" + Info.ExecSuffix);
     public static readonly string FpCalcPath = Path.Combine(BinariesPath, "fpcalc", "fpcalc" + Info.ExecSuffix);
 
     public static readonly string SubtitleEdit =

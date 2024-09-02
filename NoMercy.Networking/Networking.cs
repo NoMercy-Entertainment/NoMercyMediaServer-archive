@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Mono.Nat;
 using Newtonsoft.Json;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Networking;
 
@@ -98,13 +99,20 @@ public class Networking
     {
         _device = args.Device;
 
-        _device.CreatePortMap(new Mapping(Protocol.Tcp, Config.InternalServerPort, Config.ExternalServerPort, 9999999,
-            "NoMercy MediaServer (TCP)"));
-        _device.CreatePortMap(new Mapping(Protocol.Udp, Config.InternalServerPort, Config.ExternalServerPort, 9999999,
-            "NoMercy MediaServer (UDP)"));
-
-        ExternalIp = _device.GetExternalIP().ToString();
-
+        try
+        {
+            _device.CreatePortMap(new Mapping(Protocol.Tcp, Config.InternalServerPort, Config.ExternalServerPort, 9999999,
+                "NoMercy MediaServer (TCP)"));
+            _device.CreatePortMap(new Mapping(Protocol.Udp, Config.InternalServerPort, Config.ExternalServerPort, 9999999,
+                "NoMercy MediaServer (UDP)"));
+            
+            ExternalIp = _device.GetExternalIP().ToString();
+        }
+        catch (Exception e)
+        {
+            Logger.Setup($"Failed to create port map: {e.Message}");
+        }
+        
         if (ExternalIp == "")
             ExternalIp = GetExternalIp();
         else

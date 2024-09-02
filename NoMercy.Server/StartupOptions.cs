@@ -1,6 +1,7 @@
 using CommandLine;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.Server;
 
@@ -9,6 +10,9 @@ public class StartupOptions
     // dev
     [Option('d', "dev", Required = false, HelpText = "Run the server in development mode.")]
     public bool Dev { get; set; }
+    
+    [Option("logLevel", Required = false, HelpText = "Run the server in development mode.")]
+    public string LogLevel { get; set; }
     
     [Option('i', "internal-port", Required = false, HelpText = "Internal port to use for the server.")]
     public int InternalPort { get; set; }
@@ -29,6 +33,13 @@ public class StartupOptions
             Config.ApiBaseUrl = "https://api-dev.nomercy.tv/";
             Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
             Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
+        }
+        
+        if (!string.IsNullOrEmpty(LogLevel))
+        {
+            config.Add("LogLevel", "true");
+            Logger.App($"Setting log level to: {LogLevel}.");
+            Logger.SetLogLevel(Enum.Parse<LogEventLevel>(LogLevel));
         }
 
         if (InternalPort != 0)
