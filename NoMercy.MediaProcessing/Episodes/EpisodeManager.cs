@@ -19,9 +19,9 @@ public class EpisodeManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, IEpisodeManager
 {
-    public async Task StoreEpisodes(TmdbTvShow show, TmdbSeasonAppends season)
+    public async Task Add(TmdbTvShow show, TmdbSeasonAppends season)
     {
-        IEnumerable<TmdbEpisodeAppends> episodeAppends = await CollectEpisodes(show, season);
+        IEnumerable<TmdbEpisodeAppends> episodeAppends = await Collect(show, season);
         
         IEnumerable<Episode> episodes = episodeAppends
             .Select(episode => new Episode
@@ -41,7 +41,7 @@ public class EpisodeManager(
                 TvdbId = episode.TmdbEpisodeExternalIds.TvdbId,
                 VoteAverage = episode.VoteAverage,
                 VoteCount = episode.VoteCount,
-                _colorPalette = MovieDbImage.ColorPalette("still", episode.StillPath).Result
+                _colorPalette = MovieDbImageManager.ColorPalette("still", episode.StillPath).Result
             });
 
         await episodeRepository.StoreEpisodes(episodes);
@@ -50,7 +50,7 @@ public class EpisodeManager(
         jobDispatcher.DispatchJob<AddEpisodeExtraDataJob, TmdbEpisodeAppends>(episodeAppends, show.Name);
     }
 
-    private static async Task<List<TmdbEpisodeAppends>> CollectEpisodes(
+    private static async Task<List<TmdbEpisodeAppends>> Collect(
         TmdbTvShow show, TmdbSeasonAppends season)
     {
         List<TmdbEpisodeAppends> episodeAppends = [];

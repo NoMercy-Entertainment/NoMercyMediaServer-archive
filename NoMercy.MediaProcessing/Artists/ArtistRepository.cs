@@ -26,6 +26,18 @@ public class ArtistRepository(MediaContext context) : IArtistRepository
             .RunAsync();
     }
 
+    public Task LinkToLibrary(ArtistLibrary artistLibrary)
+    {
+        return context.ArtistLibrary.Upsert(artistLibrary)
+            .On(e => new { e.ArtistId, e.LibraryId })
+            .WhenMatched((s, i) => new ArtistLibrary
+            {
+                ArtistId = i.ArtistId,
+                LibraryId = i.LibraryId
+            })
+            .RunAsync();
+    }
+
     public Task LinkToReleaseGroup(ArtistReleaseGroup artistReleaseGroup)
     {
         return context.ArtistReleaseGroup.Upsert(artistReleaseGroup)

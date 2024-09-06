@@ -6,7 +6,7 @@ namespace NoMercy.MediaProcessing.Recordings;
 
 public class RecordingRepository(MediaContext context) : IRecordingRepository
 {
-    public Task StoreAsync(Track recording, bool update = false)
+    public Task Store(Track recording, bool update = false)
     {
         return context.Tracks.Upsert(recording)
             .On(e => new { e.Id })
@@ -36,6 +36,18 @@ public class RecordingRepository(MediaContext context) : IRecordingRepository
             .WhenMatched((s, i) => new AlbumTrack
             {
                 AlbumId = i.AlbumId,
+                TrackId = i.TrackId
+            })
+            .RunAsync();
+    }
+
+    public Task LinkToArtist(ArtistTrack insert)
+    {
+        return context.ArtistTrack.Upsert(insert)
+            .On(e => new { e.ArtistId, e.TrackId })
+            .WhenMatched((s, i) => new ArtistTrack
+            {
+                ArtistId = i.ArtistId,
                 TrackId = i.TrackId
             })
             .RunAsync();

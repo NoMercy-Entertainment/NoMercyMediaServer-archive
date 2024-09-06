@@ -6,7 +6,7 @@ namespace NoMercy.MediaProcessing.MusicGenres;
 
 public class MusicGenreRepository(MediaContext context) : IMusicGenreRepository
 {
-    public Task StoreAsync(MusicGenre genre)
+    public Task Store(MusicGenre genre)
     {
         return context.MusicGenres.Upsert(genre)
             .On(v => new { v.Id })

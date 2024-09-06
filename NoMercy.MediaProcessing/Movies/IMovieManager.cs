@@ -5,7 +5,7 @@ namespace NoMercy.MediaProcessing.Movies;
 
 public interface IMovieManager
 {
-    Task<TmdbMovieAppends?> AddMovieAsync(int id, Library library);
-    Task UpdateMovieAsync(int id, Library library);
-    Task RemoveMovieAsync(int id, Library library);
+    Task<TmdbMovieAppends?> Add(int id, Library library);
+    Task Update(int id, Library library);
+    Task Remove(int id, Library library);
 }

@@ -52,7 +52,7 @@ public class AddShowJob : AbstractMediaJob
         if (show == null) return;
 
         IEnumerable<TmdbSeasonAppends> seasons = await seasonManager.StoreSeasonsAsync(show);
-        foreach (TmdbSeasonAppends season in seasons) await episodeManager.StoreEpisodes(show, season);
+        foreach (TmdbSeasonAppends season in seasons) await episodeManager.Add(show, season);
 
         await fileManager.FindFiles(Id, tvLibrary);
 

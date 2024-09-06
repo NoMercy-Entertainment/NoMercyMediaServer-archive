@@ -31,10 +31,10 @@ public class SimilarPaletteJob : AbstractPaletteJob<Similar>
             .ToList();
 
         foreach (Similar similar in similars)
-            similar._colorPalette = await MovieDbImage
+            similar._colorPalette = await MovieDbImageManager
                 .MultiColorPalette([
-                    new BaseImage.MultiStringType("poster", similar.Poster),
-                    new BaseImage.MultiStringType("backdrop", similar.Backdrop)
+                    new BaseImageManager.MultiStringType("poster", similar.Poster),
+                    new BaseImageManager.MultiStringType("backdrop", similar.Backdrop)
                 ]);
 
         await context.SaveChangesAsync();

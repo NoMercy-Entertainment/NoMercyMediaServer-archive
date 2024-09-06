@@ -2,7 +2,7 @@
 // Imports
 // ---------------------------------------------------------------------------------------------------------------------
 
-using System.Text;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
@@ -21,7 +21,7 @@ namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
 {
     public override string QueueName => "queue";
-    public override int Priority => 5;
+    public override int Priority => 10;
 
     public override async Task Handle()
     {
@@ -40,7 +40,7 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
         Logger.App("Processing music folder " + FilePath);
 
         await using MediaScan mediaScan = new();
-        List<MediaFolder> rootFolders = (await mediaScan
+        List<MediaFolderExtend> rootFolders = (await mediaScan
                 .DisableRegexFilter()
                 .EnableFileListing()
                 .Process(FilePath, 2))
@@ -50,155 +50,135 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
 
         using MusicBrainzReleaseClient musicBrainzReleaseClient = new();
 
-        foreach (MediaFolder folder in rootFolders)
+        foreach (MediaFolderExtend folder in rootFolders)
         {
+            if(folder.Files?.Count == 0) continue;
+            
             Match match = PathRegex().Match(folder.Path);
+            string artistName = match.Groups["artist"].Success ? match.Groups["artist"].Value : string.Empty;
+            string albumName = match.Groups["album"].Success ? match.Groups["album"].Value : string.Empty;
+            int year = match.Groups["year"].Success ? Convert.ToInt32(match.Groups["year"].Value) : 0;
+            string type2 = match.Groups["type2"].Success ? match.Groups["type2"].Value : string.Empty;
+            string libraryFolder = (match.Groups["library_folder"].Success ? match.Groups["library_folder"].Value : null) ?? string.Empty;
 
-            string ArtistName = match.Groups["artist"].Success ? match.Groups["artist"].Value : string.Empty;
-            string AlbumName = match.Groups["album"].Success ? match.Groups["album"].Value : string.Empty;
-            int Year = match.Groups["year"].Success ? Convert.ToInt32(match.Groups["year"].Value) : 0;
+            Folder? baseFolder = albumLibrary.FolderLibraries
+                .Select(folderLibrary => folderLibrary.Folder)
+                .FirstOrDefault(f => f.Path == libraryFolder);
+            
+            if (baseFolder is null) continue;
+            
+            if (string.IsNullOrEmpty(artistName) && string.IsNullOrEmpty(albumName) && year == 0 && string.IsNullOrEmpty(type2))
+            {
+                Logger.App("No match for: " + folder.Path);
+                continue;
+            }
+            
+            if(type2 == "Singles")
+            {
+                // TODO: handle ["Singles"]
 
-            // if (string.IsNullOrEmpty(ArtistName) || string.IsNullOrEmpty(AlbumName)) return;
+                Logger.App("Singles: " + folder.Path);
+                continue;
+            }
             
             List<string> queryStringBuilder = [];
-            if (!string.IsNullOrEmpty(ArtistName)) queryStringBuilder.Add($"artist:{ArtistName}");
-            if (!string.IsNullOrEmpty(AlbumName)) queryStringBuilder.Add($"release:{AlbumName}");
-            if (Year != 0) queryStringBuilder.Add($"date:{Year}");
+            if (!string.IsNullOrEmpty(artistName)) queryStringBuilder.Add($"artist:{artistName}");
+            if (!string.IsNullOrEmpty(albumName)) queryStringBuilder.Add($"release:{albumName}");
+            if (year != 0) queryStringBuilder.Add($"date:{year}");
             
             string query = string.Join("+", queryStringBuilder);
 
             MusicBrainzReleaseSearchResponse? releases = await musicBrainzReleaseClient.SearchReleases(query);
-            if (releases is null) return;
+
+            // When the strict match fails to include the desired item we fall back to a more global search
+            if (releases is null || !releases.Releases.Any(r => r.Title.Sanitize().Contains(albumName.Sanitize())))
+            {
+                List<string> queryStringBuilder2 = [];
+                if (!string.IsNullOrEmpty(albumName)) queryStringBuilder2.Add($"release:{albumName}");
+            
+                string query2 = string.Join("+", queryStringBuilder2);
+
+                releases = await musicBrainzReleaseClient.SearchReleases(query2);
+            }
+            
+            if (releases is null) continue;
 
             List<MusicBrainzRelease?> matchedReleases = [];
-
+            
             foreach (MusicBrainzRelease _release in releases.Releases)
             {
-                if (_release.Title.Sanitize() != AlbumName.Sanitize()
+                if (_release.Title.Sanitize() != albumName.Sanitize()
                     && _release.Title.Sanitize() != "Various Artists"
                     && _release.Title.Sanitize() != "Soundtracks"
                     && _release.Title.Sanitize() != "Other") continue;
                 
-                if(_release.DateTime is not null && _release.DateTime.Value.Year != Year) continue;
+                if(_release.DateTime is not null && _release.DateTime.Value.Year != year) continue;
                 
                 matchedReleases.Add(_release);
             }
 
-            if (matchedReleases.Count == 0) return;
-
-            foreach (MusicBrainzRelease? release in matchedReleases)
+            if (matchedReleases.Count == 0)
+            {
+                // fingerprint 
+                continue;
+            }
+            
+            MusicBrainzRelease? bestRelease = null;
+            int highestScore = -1;
+            
+            foreach (MusicBrainzRelease? release in matchedReleases.Where(r => r.Title.Sanitize().Contains(albumName.Sanitize())))
             {
                 if (release is null || release.Media.Length == 0) continue;
 
-                var result = await musicBrainzReleaseClient.WithAllAppends(release.Id);
+                var result = await musicBrainzReleaseClient.WithAppends(release.Id, ["recordings"]);
                 if (result?.Media is null) continue;
+                int score = CalculateMatchScore(result,  folder.Files ?? []);
 
-                var tracks = result.Media.SelectMany(m => m.Tracks).ToList();
-                // if (tracks.Count != (folder.Files ?? []).Count) continue;
-
-                foreach (MediaFile file in folder.Files ?? [])
+                if (score > highestScore)
                 {
-                    if (file.Parsed?.Title is null) continue;
-                    
-                    var track = tracks.FirstOrDefault(t => file.Parsed.Title.Sanitize().Contains(t.Title.Sanitize()));
-                    if (track is null) continue;
-
-                    if (!FileMatch(file, result, result.Media.First(), track.Position))
-                    {
-                        // fingerprint
-                        Logger.App("Fingerprinting " + file.Path);
-                        continue;
-                    }
-
-                    Logger.App(new 
-                    {
-                        File = file.Path,
-                        AlbumName = result.Title,
-                        Artist = track.ArtistCredit.FirstOrDefault()?.Name,
-                        AlbumNumber = result.Media.First().Position,
-                        TrackNumber = track.Position,
-                        Track = track.Title,
-                    });
-                    
-                    Logger.App("Matched " + file.Path + " to " + track.ArtistCredit.FirstOrDefault()?.Name + " _ " + track.Title);
+                    highestScore = score;
+                    bestRelease = release;
                 }
             }
-
-            // AcoustIdFingerprintClient acoustIdFingerprintClient = new();
-            // await acoustIdFingerprintClient.Lookup(file.Path);
-            // acoustIdFingerprintClient.Dispose();
+            
+            if (bestRelease is not null)
+            {
+                Logger.App("Matched: " + folder.Path + " - " + bestRelease.Title);
+                
+                jobDispatcher.DispatchJob<AddReleaseJob>(LibraryId, bestRelease.Id, baseFolder, folder);
+            }
+            else
+            {
+                Logger.App("No match for: " + folder.Path);
+                // fingerprint
+                // if finrgerprint is not null
+                // else raw save
+            }
         }
     }
 
+    private int CalculateMatchScore(MusicBrainzRelease release, ConcurrentBag<MediaFile> localTracks)
+    {
+        int score = 0;
+        
+        foreach (var medium in release.Media)
+        {
+            foreach (var track in medium?.Tracks ?? [])
+            {  
+                var matchingLocalTrack = localTracks.FirstOrDefault(t => 
+                    t.Parsed!.Title!.Sanitize().Contains(track.Title.Sanitize()) && Math.Abs(track.Duration - t.FFprobe!.Duration.TotalSeconds) < 10);
+
+                if (matchingLocalTrack != null)
+                {
+                    score++;
+                }
+            }
+        }
+
+        return score;
+    }
     [GeneratedRegex(
-        @"(?<library_folder>.+?)[\\\/]((?<letter>.{1})?|\[(?<type>.+?)\])[\\\/](?<artist>.+?)?[\\\/]?(\[(?<year>\d{4})\]?\s?(?<album>.*)?)")]
+        @"(?<library_folder>.+?)[\\\/]((?<letter>.{1})?|\[(?<type>.+?)\])[\\\/](?<artist>.+?)?[\\\/]?(\[(?<year>\d{4})\]|\[(?<type2>Singles)\])\s?(?<album>.*)?")]
     private static partial Regex PathRegex();
 
-    private bool FileMatch(MediaFile inputFile, MusicBrainzReleaseAppends musicBrainzRelease,
-        MusicBrainzMedia musicBrainzMedia, int trackNumber)
-    {
-        bool hasMatch = FindTrackWithAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, false,
-            musicBrainzRelease.Media.Length,
-            trackNumber, 4);
-        hasMatch = FindTrackWithAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
-            musicBrainzRelease.Media.Length,
-            trackNumber, 3);
-        hasMatch = FindTrackWithAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
-            musicBrainzRelease.Media.Length,
-            trackNumber);
-
-        hasMatch = FindTrackWithoutAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
-            musicBrainzRelease.Media.Length,
-            trackNumber, 4);
-        hasMatch = FindTrackWithoutAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
-            musicBrainzRelease.Media.Length,
-            trackNumber, 3);
-        hasMatch = FindTrackWithoutAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
-            musicBrainzRelease.Media.Length,
-            trackNumber);
-
-        return hasMatch;
-    }
-
-    private bool FindTrackWithoutAlbumNumberByNumberPadded(MediaFile inputFile, MusicBrainzMedia musicBrainzMedia,
-        bool hasMatch,
-        int numberOfAlbums, int trackNumber, int padding = 2)
-    {
-        if (hasMatch) return true;
-        if (numberOfAlbums > 1) return false;
-        if (inputFile.Parsed is null) return false;
-
-        string fileName = Path.GetFileName(inputFile.Parsed.FilePath).RemoveDiacritics()
-            .RemoveNonAlphaNumericCharacters()
-            .ToLower();
-
-        string matchNumber = $"{trackNumber.ToString().PadLeft(padding, '0')} ";
-        if (musicBrainzMedia.Tracks.Length < trackNumber) return false;
-        string matchString = musicBrainzMedia.Tracks[trackNumber - 1].Title
-            .RemoveDiacritics().RemoveNonAlphaNumericCharacters().ToLower().Replace(".mp3", "");
-
-        return fileName.StartsWith(matchNumber)
-               && fileName.Contains(matchString);
-    }
-
-    private bool FindTrackWithAlbumNumberByNumberPadded(MediaFile inputFile, MusicBrainzMedia musicBrainzMedia,
-        bool hasMatch,
-        int numberOfAlbums, int trackNumber, int padding = 2)
-    {
-        if (hasMatch) return true;
-        if (numberOfAlbums == 1) return false;
-        if (inputFile.Parsed is null) return false;
-
-        string fileName = Path.GetFileName(inputFile.Parsed.FilePath).RemoveDiacritics()
-            .RemoveNonAlphaNumericCharacters()
-            .ToLower();
-
-        string matchNumber = $"{musicBrainzMedia.Position}-{trackNumber.ToString().PadLeft(padding, '0')} ";
-        if (musicBrainzMedia.Tracks.Length < trackNumber) return false;
-        string matchString = musicBrainzMedia.Tracks[trackNumber - 1].Title
-            .RemoveDiacritics().RemoveNonAlphaNumericCharacters().ToLower().Replace(".mp3", "");
-
-        return fileName.StartsWith(matchNumber)
-               && fileName.Contains(matchString);
-    }
 }

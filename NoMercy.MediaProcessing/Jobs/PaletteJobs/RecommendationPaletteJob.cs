@@ -31,10 +31,10 @@ public class RecommendationPaletteJob : AbstractPaletteJob<Recommendation>
             .ToList();
 
         foreach (Recommendation recommendation in recommendations)
-            recommendation._colorPalette = await MovieDbImage
+            recommendation._colorPalette = await MovieDbImageManager
                 .MultiColorPalette([
-                    new BaseImage.MultiStringType("poster", recommendation.Poster),
-                    new BaseImage.MultiStringType("backdrop", recommendation.Backdrop)
+                    new BaseImageManager.MultiStringType("poster", recommendation.Poster),
+                    new BaseImageManager.MultiStringType("backdrop", recommendation.Backdrop)
                 ]);
 
         await context.SaveChangesAsync();

@@ -607,7 +607,7 @@ public class ServerController : BaseController
 
         MediaScan mediaScan = new();
 
-        ConcurrentBag<MediaFolder> folders = await mediaScan
+        ConcurrentBag<MediaFolderExtend> folders = await mediaScan
             .EnableFileListing()
             .Process(path, depth);
 

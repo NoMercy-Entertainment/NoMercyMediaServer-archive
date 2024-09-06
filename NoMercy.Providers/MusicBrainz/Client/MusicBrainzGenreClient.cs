@@ -14,7 +14,7 @@ public class MusicBrainzGenreClient : MusicBrainzBaseClient
     {
         List<MusicBrainzGenre> genres = [];
 
-        MusicBrainzAllGenres? data = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string?>
+        MusicBrainzAllGenres? data = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string>
         {
             ["limit"] = 100.ToString(),
             ["offset"] = (page * 100).ToString(),
@@ -27,7 +27,7 @@ public class MusicBrainzGenreClient : MusicBrainzBaseClient
 
         for (int i = 0; i < data.GenreCount / data.Genres.Length; i++)
         {
-            MusicBrainzAllGenres? data2 = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string?>
+            MusicBrainzAllGenres? data2 = await Get<MusicBrainzAllGenres>("genre/all", new Dictionary<string, string>
             {
                 ["limit"] = data.Genres.Length.ToString(),
                 ["offset"] = (i * data.Genres.Length).ToString()
@@ -39,5 +39,16 @@ public class MusicBrainzGenreClient : MusicBrainzBaseClient
         }
 
         return genres;
+    }
+    
+    public async Task<MusicBrainzGenre?> SearchGenre(string query)
+    {
+        MusicBrainzAllGenres? data = await Get<MusicBrainzAllGenres>("genre", new Dictionary<string, string>
+        {
+            ["query"] = Uri.EscapeDataString(query),
+            ["fmt"] = "json"
+        });
+
+        return data?.Genres.FirstOrDefault();
     }
 }

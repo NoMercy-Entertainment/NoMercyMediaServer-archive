@@ -10,6 +10,10 @@ public class MusicBrainzRecordingClient : MusicBrainzBaseClient
     {
     }
 
+    public MusicBrainzRecordingClient(): base()
+    {
+    }
+
     public Task<MusicBrainzRecordingAppends?> WithAppends(string[] appendices, bool? priority = false)
     {
         Dictionary<string, string>? queryParams = new()
@@ -30,5 +34,15 @@ public class MusicBrainzRecordingClient : MusicBrainzBaseClient
             "tags",
             "genres"
         ], priority);
+    }
+    
+    public Task<MusicBrainzRecordingAppends?> SearchRecordings(string query, bool? priority = false)
+    {
+        Dictionary<string, string>? queryParams = new()
+        {
+            ["query"] = Uri.EscapeDataString(query),
+            ["fmt"] = "json"
+        };
+        return Get<MusicBrainzRecordingAppends>($"recording", queryParams, priority);
     }
 }

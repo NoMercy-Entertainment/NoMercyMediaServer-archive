@@ -30,7 +30,7 @@ public class ImagePaletteJob : AbstractPaletteJob<Image>
 
         foreach (Image image in images)
         {
-            image._colorPalette = await MovieDbImage.ColorPalette("image", image.FilePath);
+            image._colorPalette = await MovieDbImageManager.ColorPalette("image", image.FilePath);
             image.UpdatedAt = DateTime.Now;
         }
 

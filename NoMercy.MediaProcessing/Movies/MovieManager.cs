@@ -17,7 +17,7 @@ public class MovieManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, IMovieManager
 {
-    public async Task<TmdbMovieAppends?> AddMovieAsync(int id, Library library)
+    public async Task<TmdbMovieAppends?> Add(int id, Library library)
     {
         using TmdbMovieClient movieClient = new(id);
         TmdbMovieAppends? movieAppends = await movieClient.WithAllAppends();
@@ -26,13 +26,13 @@ public class MovieManager(
 
         string baseUrl = BaseUrl(movieAppends.Title, movieAppends.ReleaseDate);
 
-        string colorPalette = await MovieDbImage
+        string colorPalette = await MovieDbImageManager
             .MultiColorPalette([
-                new BaseImage.MultiStringType("poster", movieAppends.PosterPath),
-                new BaseImage.MultiStringType("backdrop", movieAppends.BackdropPath)
+                new BaseImageManager.MultiStringType("poster", movieAppends.PosterPath),
+                new BaseImageManager.MultiStringType("backdrop", movieAppends.BackdropPath)
             ]);
 
-        Movie? movie = new()
+        Movie movie = new()
         {
             LibraryId = library.Id,
             Folder = baseUrl,
@@ -63,7 +63,7 @@ public class MovieManager(
             VoteCount = movieAppends.VoteCount
         };
 
-        await movieRepository.AddAsync(movie);
+        await movieRepository.Add(movie);
         Logger.MovieDb($"Movie: {movie.Title}: Added to Database", LogEventLevel.Debug);
 
         await movieRepository.LinkToLibrary(library, movie);
@@ -82,12 +82,12 @@ public class MovieManager(
         return movieAppends;
     }
 
-    public Task UpdateMovieAsync(int id, Library library)
+    public Task Update(int id, Library library)
     {
         throw new NotImplementedException();
     }
 
-    public Task RemoveMovieAsync(int id, Library library)
+    public Task Remove(int id, Library library)
     {
         throw new NotImplementedException();
     }

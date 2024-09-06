@@ -39,7 +39,7 @@ public class AddMovieJob : AbstractMediaJob
             .ThenInclude(f => f.Folder)
             .FirstAsync();
 
-        TmdbMovieAppends? movieAppends = await movieManager.AddMovieAsync(Id, movieLibrary);
+        TmdbMovieAppends? movieAppends = await movieManager.Add(Id, movieLibrary);
         if (movieAppends == null) return;
 
         if (movieAppends.BelongsToCollection != null)
