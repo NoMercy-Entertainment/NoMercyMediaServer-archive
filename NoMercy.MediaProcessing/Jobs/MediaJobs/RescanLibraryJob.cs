@@ -24,6 +24,6 @@ public class RescanLibraryJob : AbstractMediaJob
         LibraryRepository libraryRepository = new(context);
         LibraryManager libraryManager = new(libraryRepository, jobDispatcher);
 
-        await libraryManager.ProcessLibraryAsync(LibraryId);
+        await libraryManager.ProcessLibrary(LibraryId);
     }
 }

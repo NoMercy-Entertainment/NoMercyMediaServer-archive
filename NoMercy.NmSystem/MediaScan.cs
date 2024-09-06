@@ -26,9 +26,31 @@ public class MediaFolder
     public DateTime Modified { get; set; }
     public DateTime Accessed { get; set; }
     public string Type { get; set; } = string.Empty;
-    public ConcurrentBag<MediaFile>? Files { get; init; }
-    public ConcurrentBag<MediaFolder>? SubFolders { get; init; }
     public MovieFileExtend? Parsed { get; init; }
+}
+
+public class MediaFolderExtend: MediaFolder
+{
+    public ConcurrentBag<MediaFile> Files { get; init; } = [];
+    public ConcurrentBag<MediaFolderExtend> SubFolders { get; init; } = [];
+}
+
+public class FFprobeData
+{
+    public FFprobeData()
+    {
+        
+    }
+
+    public TimeSpan Duration { get; set; }
+    public MediaFormat Format { get; set; }
+    public AudioStream? PrimaryAudioStream { get; set; }
+    public VideoStream? PrimaryVideoStream { get; set; }
+    public SubtitleStream? PrimarySubtitleStream { get; set; }
+    public List<VideoStream> VideoStreams { get; set; }
+    public List<AudioStream> AudioStreams { get; set; }
+    public List<SubtitleStream> SubtitleStreams { get; set; }
+    public IReadOnlyList<string> ErrorData { get; set; }
 }
 
 public class MediaFile
@@ -43,7 +65,7 @@ public class MediaFile
     public string Type { get; set; } = string.Empty;
     public MovieFileExtend? Parsed { get; init; }
 
-    public IMediaAnalysis? FFprobe { get; init; }
+    public FFprobeData? FFprobe { get; init; }
     // public Fingerprint? FingerPint { get; init; }
 }
 
@@ -94,7 +116,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         return this;
     }
 
-    public Task<ConcurrentBag<MediaFolder>> Process(string rootFolder, int depth = 0)
+    public Task<ConcurrentBag<MediaFolderExtend>> Process(string rootFolder, int depth = 0)
     {
         rootFolder = Path.GetFullPath(rootFolder.ToUtf8());
         return !_fileListingEnabled
@@ -102,11 +124,11 @@ public class MediaScan : IDisposable, IAsyncDisposable
             : Task.Run(() => ScanFolder(rootFolder, depth));
     }
 
-    private ConcurrentBag<MediaFolder> ScanFolder(string folderPath, int depth)
+    private ConcurrentBag<MediaFolderExtend> ScanFolder(string folderPath, int depth)
     {
         folderPath = Path.GetFullPath(folderPath.ToUtf8());
 
-        ConcurrentBag<MediaFolder> folders = [];
+        ConcurrentBag<MediaFolderExtend> folders = [];
 
         if (depth < 0) return folders;
 
@@ -116,7 +138,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         movieFile1.Year ??= Str.MatchYearRegex().Match(folderPath)
             .Value;
 
-        folders.Add(new MediaFolder
+        folders.Add(new MediaFolderExtend
         {
             Name = Path.GetFileName(folderPath),
             Path = folderPath,
@@ -165,7 +187,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 movieFile.Year ??= Str.MatchYearRegex()
                     .Match(directory).Value;
 
-                folders.Add(new MediaFolder
+                folders.Add(new MediaFolderExtend
                 {
                     Name = folderName,
                     Path = directory,
@@ -190,7 +212,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 });
             });
 
-            ConcurrentBag<MediaFolder> response = new(folders
+            ConcurrentBag<MediaFolderExtend> response = new(folders
                 .Where(f => f.Name is not "")
                 .OrderByDescending(f => f.Name));
 
@@ -203,7 +225,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         }
     }
 
-    private ConcurrentBag<MediaFolder> ScanFoldersOnly(string folderPath, int depth)
+    private ConcurrentBag<MediaFolderExtend> ScanFoldersOnly(string folderPath, int depth)
     {
         folderPath = Path.GetFullPath(folderPath.ToUtf8());
 
@@ -211,7 +233,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
         try
         {
-            ConcurrentBag<MediaFolder> folders = [];
+            ConcurrentBag<MediaFolderExtend> folders = [];
 
             IOrderedEnumerable<string> directories = Directory.GetDirectories(folderPath).OrderBy(f => f);
 
@@ -224,7 +246,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                 if (_regexFilterEnabled && _folderNameRegex.IsMatch(folderName))
                 {
-                    folders.Add(new MediaFolder
+                    folders.Add(new MediaFolderExtend
                     {
                         Name = folderName,
                         Path = dir,
@@ -242,7 +264,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 movieFile.Year ??= Str.MatchYearRegex()
                     .Match(directory).Value;
 
-                folders.Add(new MediaFolder
+                folders.Add(new MediaFolderExtend
                 {
                     Name = folderName,
                     Path = directory,
@@ -264,7 +286,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 });
             });
 
-            ConcurrentBag<MediaFolder> response = new(folders
+            ConcurrentBag<MediaFolderExtend> response = new(folders
                 .Where(f => f.Name is not "")
                 .OrderByDescending(f => f.Name));
 
@@ -319,12 +341,25 @@ public class MediaScan : IDisposable, IAsyncDisposable
                     IsSuccess = movieFile?.IsSuccess ?? false
                 };
 
-                IMediaAnalysis? ffprobe;
+                FFprobeData? ffprobe = null;
                 try
                 {
-                    ffprobe = isVideoFile
-                        ? FFProbe.Analyse(file)
-                        : null;
+                    var analysis = FFProbe.Analyse(file);
+                    if (isVideoFile || isAudioFile)
+                    {
+                        ffprobe = new FFprobeData
+                        {
+                            Duration = analysis.Duration,
+                            Format = analysis.Format,
+                            PrimaryAudioStream = analysis.PrimaryAudioStream,
+                            PrimaryVideoStream = analysis.PrimaryVideoStream,
+                            PrimarySubtitleStream = analysis.PrimarySubtitleStream,
+                            VideoStreams = analysis.VideoStreams,
+                            AudioStreams = analysis.AudioStreams,
+                            SubtitleStreams = analysis.SubtitleStreams,
+                            ErrorData = analysis.ErrorData
+                        };
+                    }
                 }
                 catch (Exception e)
                 {

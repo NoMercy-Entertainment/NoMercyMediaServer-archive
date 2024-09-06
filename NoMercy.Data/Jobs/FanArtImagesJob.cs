@@ -59,7 +59,7 @@ public class FanArtImagesJob : IShouldQueue
                     FilePath = "/" + image.Url.FileName(),
                     ArtistId = musicBrainzArtist.Id,
                     Site = image.Url.BasePath(),
-                    _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                    _colorPalette = FanArtImageManager.ColorPalette("image", image.Url).Result
                 });
 
             List<Image> logos = fanArt.Logos.ToList()
@@ -71,7 +71,7 @@ public class FanArtImagesJob : IShouldQueue
                     FilePath = "/" + image.Url.FileName(),
                     ArtistId = musicBrainzArtist.Id,
                     Site = image.Url.BasePath(),
-                    _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                    _colorPalette = FanArtImageManager.ColorPalette("image", image.Url).Result
                 });
             List<Image> banners = fanArt.Banners.ToList()
                 .ConvertAll<Image>(image => new Image
@@ -82,7 +82,7 @@ public class FanArtImagesJob : IShouldQueue
                     FilePath = "/" + image.Url.FileName(),
                     ArtistId = musicBrainzArtist.Id,
                     Site = image.Url.BasePath(),
-                    _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                    _colorPalette = FanArtImageManager.ColorPalette("image", image.Url).Result
                 });
             List<Image> hdLogos = fanArt.HdLogos.ToList()
                 .ConvertAll<Image>(image => new Image
@@ -93,7 +93,7 @@ public class FanArtImagesJob : IShouldQueue
                     FilePath = "/" + image.Url.FileName(),
                     ArtistId = musicBrainzArtist.Id,
                     Site = image.Url.BasePath(),
-                    _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                    _colorPalette = FanArtImageManager.ColorPalette("image", image.Url).Result
                 });
             List<Image> artistBackgrounds = fanArt.Backgrounds.ToList()
                 .ConvertAll<Image>(image => new Image
@@ -104,7 +104,7 @@ public class FanArtImagesJob : IShouldQueue
                     FilePath = "/" + image.Url.FileName(),
                     ArtistId = musicBrainzArtist.Id,
                     Site = image.Url.BasePath(),
-                    _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                    _colorPalette = FanArtImageManager.ColorPalette("image", image.Url).Result
                 });
 
             List<Image> images = thumbs
@@ -147,7 +147,7 @@ public class FanArtImagesJob : IShouldQueue
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e.Message, LogEventLevel.Verbose);
+            Logger.FanArt(e, LogEventLevel.Verbose);
         }
     }
 
@@ -173,7 +173,7 @@ public class FanArtImagesJob : IShouldQueue
                         ArtistId = musicBrainzRelease.Id,
                         Site = image.Url.BasePath(),
                         Name = fanArt.Name,
-                        _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                        _colorPalette = FanArtImageManager.ColorPalette("image", image.Url).Result
                     }));
 
                 cdArts.AddRange(albums.CdArt
@@ -186,7 +186,7 @@ public class FanArtImagesJob : IShouldQueue
                         ArtistId = musicBrainzRelease.Id,
                         Site = image.Url.BasePath(),
                         Name = fanArt.Name,
-                        _colorPalette = FanArtImage.ColorPalette("image", image.Url).Result
+                        _colorPalette = FanArtImageManager.ColorPalette("image", image.Url).Result
                     }));
             }
 
@@ -238,7 +238,7 @@ public class FanArtImagesJob : IShouldQueue
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e.Message, LogEventLevel.Verbose);
+            Logger.FanArt(e, LogEventLevel.Verbose);
         }
     }
 }

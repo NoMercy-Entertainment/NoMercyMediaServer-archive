@@ -4,7 +4,7 @@ namespace NoMercy.MediaProcessing.People;
 
 public interface IPersonManager
 {
-    public Task StorePeoplesAsync(TmdbTvShowAppends show);
-    public Task UpdatePeopleAsync(string showName, TmdbTvShowAppends show);
-    public Task RemovePeopleAsync(string showName, TmdbTvShowAppends show);
+    public Task Store(TmdbTvShowAppends show);
+    public Task Update(string showName, TmdbTvShowAppends show);
+    public Task Remove(string showName, TmdbTvShowAppends show);
 }

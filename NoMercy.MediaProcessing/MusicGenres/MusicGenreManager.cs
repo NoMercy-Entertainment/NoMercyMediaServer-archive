@@ -9,7 +9,7 @@ public class MusicGenreManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, IMusicGenreManager
 {
-    public Task StoreMusicGenreAsync(MusicBrainzGenreDetails genre)
+    public Task Store(MusicBrainzGenreDetails genre)
     {
         throw new NotImplementedException();
     }

@@ -15,27 +15,28 @@ public record ArtistResponseDto
     public static readonly Func<MediaContext, Guid, Guid, Task<Artist?>> GetArtist =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, Guid id) =>
             mediaContext.Artists
-                // .AsNoTracking()
+                .AsNoTracking()
                 .Where(album => album.Id == id)
                 .Where(artist => artist.Library.LibraryUsers
                     .FirstOrDefault(u => u.UserId == userId) != null)
+                
                 .Include(artist => artist.Library)
+                
                 .Include(artist => artist.ArtistUser
                     .Where(artistUser => artistUser.UserId == userId)
                 )
                 .ThenInclude(artistUser => artistUser.User)
                 .ThenInclude(user => user.TrackUser)
                 .ThenInclude(trackUser => trackUser.Track)
-                .Include(artist => artist.AlbumArtist
-                    .Where(albumArtist => albumArtist.Album.AlbumTrack
-                        .Any(track => track.Track.Duration != null)
-                    )
-                )
+                
+                .Include(artist => artist.AlbumArtist)
                 .ThenInclude(albumArtist => albumArtist.Album)
-                .ThenInclude(artist => artist.AlbumArtist)
+                .ThenInclude(albumArtist => albumArtist.AlbumUser)
+                
                 .Include(artist => artist.AlbumArtist)
                 .ThenInclude(albumArtist => albumArtist.Album)
                 .ThenInclude(artist => artist.Translations)
+                
                 .Include(artist => artist.ArtistTrack
                     .OrderBy(artistTrack => artistTrack.Track.TrackNumber)
                     .ThenBy(artistTrack => artistTrack.Track.DiscNumber)
@@ -45,31 +46,47 @@ public record ArtistResponseDto
                 .ThenInclude(track => track.AlbumTrack)
                 .ThenInclude(albumTrack => albumTrack.Album)
                 .ThenInclude(album => album.AlbumArtist)
+                
+                .Include(artist => artist.ArtistTrack)
+                .ThenInclude(artistTrack => artistTrack.Track)
+                .ThenInclude(track => track.AlbumTrack)
+                .ThenInclude(albumTrack => albumTrack.Album)
+                .ThenInclude(album => album.AlbumUser
+                    .Where(albumUser => albumUser.UserId == userId)
+                )
+                
                 .Include(artist => artist.ArtistTrack)
                 .ThenInclude(artistTrack => artistTrack.Track)
                 .ThenInclude(track => track.AlbumTrack)
                 .ThenInclude(albumTrack => albumTrack.Album)
                 .ThenInclude(artist => artist.Translations)
+                
                 .Include(artist => artist.ArtistTrack)
                 .ThenInclude(artistTrack => artistTrack.Track)
                 .ThenInclude(track => track.TrackUser
                     .Where(trackUser => trackUser.UserId == userId)
                 )
                 .ThenInclude(trackUser => trackUser.User)
+                
                 .Include(artist => artist.ArtistReleaseGroup)
                 .ThenInclude(artistReleaseGroup => artistReleaseGroup.ReleaseGroup)
                 .ThenInclude(releaseGroup => releaseGroup.AlbumReleaseGroup)
                 .ThenInclude(albumReleaseGroup => albumReleaseGroup.Album)
                 .ThenInclude(artist => artist.Translations)
+                
                 .Include(artist => artist.ArtistReleaseGroup)
                 .ThenInclude(artistReleaseGroup => artistReleaseGroup.ReleaseGroup)
                 .ThenInclude(releaseGroup => releaseGroup.AlbumReleaseGroup)
                 .ThenInclude(albumReleaseGroup => albumReleaseGroup.Album)
                 .ThenInclude(album => album.AlbumArtist)
+                
                 .Include(artist => artist.Images)
+                
                 .Include(artist => artist.Translations)
+                
                 .Include(artist => artist.ArtistMusicGenre)
                 .ThenInclude(artistMusicGenre => artistMusicGenre.MusicGenre)
+                
                 .FirstOrDefault());
 }
 
@@ -113,47 +130,25 @@ public record ArtistResponseItemDto
             .Select(artistMusicGenre => new GenreDto(artistMusicGenre));
 
         Images = artist.Images.Select(image => new ImageDto(image));
-
-        List<Album> albums = artist.ArtistReleaseGroup
-            .SelectMany(arg => arg.ReleaseGroup.AlbumReleaseGroup ?? new List<AlbumReleaseGroup>())
-            .Where(arg => arg.Album.AlbumTrack != null)
-            .Select(arg => arg.Album)
+        
+        Albums = artist.AlbumArtist
+            .Select(album => new AlbumDto(album, country!))
+            .GroupBy(album => album.Id)
+            .Select(album => album.First());
+        
+        Featured = artist.ArtistTrack
+            .Select(artistTrack => artistTrack.Track.AlbumTrack.First().Album)
             .GroupBy(album => album.Name.RemoveNonAlphaNumericCharacters())
             .Select(album => album.First())
-            .GroupBy(album => album.Folder)
-            .Select(album => album.First())
             .OrderBy(album => album.Year)
-            .ToList();
-
-        IEnumerable<AlbumDto> albums1 = albums
-            .Where(album => album.AlbumTrack.Count == album.Tracks
-                            || album.AlbumArtist.Count(albumArtist => albumArtist.ArtistId == artist.Id) >=
-                            album.AlbumArtist.Count / 4)
-            .Select(album => new AlbumDto(album, country!));
-
-        IEnumerable<AlbumDto> albums2 = albums
-            .Select(album => new AlbumDto(album, country!))
-            .Where(album => album.AlbumArtist == artist.Id);
-
-        Albums = albums1.Concat(albums2)
-            .GroupBy(album => album.Id)
-            .Select(album => album.First());
-
-        Featured = albums
             .Where(album => Albums.All(albumDto => albumDto.Id != album.Id))
             .Select(album => new AlbumDto(album, country!))
-            .GroupBy(album => album.Id)
-            .Select(album => album.First());
-
-        // Featured = albums
-        //     .Where(album => album.AlbumTrack.Count != album.Tracks)
-        //     .Select(album => new AlbumDto(album, country!))
-        //     .Where(album => album.AlbumArtist != artist.Id);
-
+            .OrderBy(artistTrack => artistTrack.Year)
+            .ToList();
+        
         Playlists = artist.AlbumArtist
             .DistinctBy(albumArtist => albumArtist.AlbumId)
-            .Where(album => album.Album.AlbumUser != null &&
-                            album.Album.AlbumUser?.Any(user => user.UserId == userId) == true)
+            .Where(album => album.Album.AlbumUser.Any(user => user.UserId == userId))
             .Select(trackAlbum => new AlbumDto(trackAlbum, country!))
             .OrderBy(album => album.Year);
 
@@ -165,18 +160,22 @@ public record ArtistResponseItemDto
             .ThenBy(artistTrack => artistTrack.Disc)
             .ThenBy(artistTrack => artistTrack.Track);
 
+        // :TODO this speaks for itself....
         MediaContext context = new();
         List<ArtistTrackDto> favorites = context.MusicPlays
             .AsNoTracking()
             .Where(musicPlay => musicPlay.UserId == userId)
             .Where(musicPlay => musicPlay.Track.ArtistTrack
                 .Any(artistTrack => artistTrack.ArtistId == artist.Id))
+            
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.TrackUser)
+            
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Album)
             .ThenInclude(albumTrack => albumTrack.Translations)
+            
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.ArtistTrack)
             .ThenInclude(albumTrack => albumTrack.Artist)
@@ -243,14 +242,7 @@ public record ArtistTrackDto
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)
             .Select(albumTrack => new AlbumDto(albumTrack, country));
 
-        using MediaContext mediaContext = new();
-        List<ArtistTrack> artists = mediaContext.ArtistTrack
-            .AsNoTracking()
-            .Where(at => at.TrackId == artistTrack.TrackId)
-            .Include(at => at.Artist)
-            .ToList();
-
-        Artist = artists
+        Artist = artistTrack.Track.ArtistTrack
             .Select(albumTrack => new ArtistDto(albumTrack, country));
     }
 
@@ -322,13 +314,14 @@ public record ArtistDto
 
     public ArtistDto(ArtistTrack artistTrack, string country)
     {
-        string? description = artistTrack.Artist.Translations?
-            .FirstOrDefault(translation => translation.Iso31661 == country)?
-            .Description;
+        // string? description = artistTrack.Artist.Translations
+        //     .FirstOrDefault(translation => translation.Iso31661 == country)?
+        //     .Description;
 
-        Description = !string.IsNullOrEmpty(description)
-            ? description
-            : artistTrack.Artist.Description;
+        // Description = !string.IsNullOrEmpty(description)
+        //     ? description
+        //     : artistTrack.Artist.Description;
+        Description = artistTrack.Artist.Description;
 
         Id = artistTrack.Artist.Id;
         Name = artistTrack.Artist.Name;

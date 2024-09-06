@@ -7,7 +7,7 @@ namespace NoMercy.MediaProcessing.Libraries;
 
 public class LibraryRepository(MediaContext context) : ILibraryRepository
 {
-    public async Task<IEnumerable<MediaFolder>> GetRootFoldersAsync(string path)
+    public async Task<IEnumerable<MediaFolderExtend>> GetRootFoldersAsync(string path)
     {
         await using MediaScan mediaScan = new();
         return (await mediaScan
@@ -17,7 +17,7 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
             .ToList();
     }
 
-    public Task<Library?> GetLibraryWithFoldersAsync(Ulid id)
+    public Task<Library?> GetLibraryWithFolders(Ulid id)
     {
         return context.Libraries
             .AsNoTracking()

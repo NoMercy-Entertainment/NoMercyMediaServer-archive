@@ -187,7 +187,7 @@ public class LibraryFileWatcher
         if (library.Type == "music")
             scan.DisableRegexFilter();
 
-        IEnumerable<MediaFolder> mediaFolder = await scan.Process(path);
+        IEnumerable<MediaFolderExtend> mediaFolder = await scan.Process(path);
 
         switch (library.Type)
         {
@@ -203,7 +203,7 @@ public class LibraryFileWatcher
         }
     }
 
-    private async Task HandleMusicFolder(Library library, MediaFolder path)
+    private async Task HandleMusicFolder(Library library, MediaFolderExtend path)
     {
         Logger.System($"Music {path.Path}: Processing");
 
@@ -213,7 +213,7 @@ public class LibraryFileWatcher
         await Task.CompletedTask;
     }
 
-    private async Task HandleTvFolder(Library library, MediaFolder path)
+    private async Task HandleTvFolder(Library library, MediaFolderExtend path)
     {
         Logger.System($"Tv Show {path.Path}: Processing");
 
@@ -223,7 +223,7 @@ public class LibraryFileWatcher
         await Task.CompletedTask;
     }
 
-    private async Task HandleMovieFolder(Library library, MediaFolder path)
+    private async Task HandleMovieFolder(Library library, MediaFolderExtend path)
     {
         Logger.System($"Movie {path.Path}: Processing");
 

@@ -32,7 +32,7 @@ public class AddMovieExtraDataJob : AbstractMediaExraDataJob<TmdbMovieAppends>
         PersonRepository personRepository = new(context);
         PersonManager personManager = new(personRepository, jobDispatcher);
 
-        await personManager.StorePeoplesAsync(Storage);
+        await personManager.Store(Storage);
 
         await movieManager.StoreImages(Storage);
         await movieManager.StoreSimilar(Storage);

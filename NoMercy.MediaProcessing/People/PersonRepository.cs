@@ -7,7 +7,7 @@ namespace NoMercy.MediaProcessing.People;
 
 public class PersonRepository(MediaContext context) : IPersonRepository
 {
-    public Task StoreAsync(IEnumerable<Person> people)
+    public Task Store(IEnumerable<Person> people)
     {
         return context.People.UpsertRange(people.ToArray())
             .On(p => new { p.Id })
@@ -78,7 +78,7 @@ public class PersonRepository(MediaContext context) : IPersonRepository
             .RunAsync();
     }
 
-    public Task StoreCastAsync(IEnumerable<Cast> cast, Type type)
+    public Task StoreCast(IEnumerable<Cast> cast, Type type)
     {
         Role[] roles = context.Roles
             .Where(role => cast.Select(r => r.CreditId)
@@ -113,7 +113,7 @@ public class PersonRepository(MediaContext context) : IPersonRepository
         .RunAsync();
     }
 
-    public Task StoreCrewAsync(IEnumerable<Crew> crew, Type type)
+    public Task StoreCrew(IEnumerable<Crew> crew, Type type)
     {
         Job[] jobs = context.Jobs
             .Where(job => crew.Select(c => c.CreditId)
@@ -174,7 +174,7 @@ public class PersonRepository(MediaContext context) : IPersonRepository
             .RunAsync();
     }
 
-    public Task StoreRolesAsync(IEnumerable<Role> roles)
+    public Task StoreRoles(IEnumerable<Role> roles)
     {
         return context.Roles.UpsertRange(roles.ToArray())
             .On(p => new { p.CreditId })
@@ -188,7 +188,7 @@ public class PersonRepository(MediaContext context) : IPersonRepository
             .RunAsync();
     }
 
-    public Task StoreJobsAsync(IEnumerable<Job> jobs)
+    public Task StoreJobs(IEnumerable<Job> jobs)
     {
         return context.Jobs.UpsertRange(jobs.ToArray())
             .On(p => new { p.CreditId })

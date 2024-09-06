@@ -26,10 +26,10 @@ public class ShowManager(
         string baseUrl = BaseUrl(showAppends.Name, showAppends.FirstAirDate);
         string mediaType = showRepository.GetMediaType(showAppends);
 
-        string colorPalette = await MovieDbImage
+        string colorPalette = await MovieDbImageManager
             .MultiColorPalette([
-                new BaseImage.MultiStringType("poster", showAppends.PosterPath),
-                new BaseImage.MultiStringType("backdrop", showAppends.BackdropPath)
+                new BaseImageManager.MultiStringType("poster", showAppends.PosterPath),
+                new BaseImageManager.MultiStringType("backdrop", showAppends.BackdropPath)
             ]);
 
         Tv show = new()

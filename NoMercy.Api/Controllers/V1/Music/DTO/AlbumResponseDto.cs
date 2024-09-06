@@ -82,23 +82,23 @@ public record AlbumResponseItemDto
         Name = album.Name;
         Type = "albums";
 
-        using MediaContext mediaContext = new();
-        List<AlbumTrack> artists = mediaContext.AlbumTrack
-            .AsNoTracking()
-            .Where(at => at.TrackId == album.Id)
-            .Include(at => at.Track)
-            .ThenInclude(track => track.ArtistTrack)
-            .ThenInclude(artistTrack => artistTrack.Artist)
-            .ThenInclude(artist => artist.Translations)
-            .ToList() ?? [];
+        // using MediaContext mediaContext = new();
+        // List<AlbumTrack> artists = mediaContext.AlbumTrack
+        //     .AsNoTracking()
+        //     .Where(at => at.TrackId == album.Id)
+        //     .Include(at => at.Track)
+        //     .ThenInclude(track => track.ArtistTrack)
+        //     .ThenInclude(artistTrack => artistTrack.Artist)
+        //     .ThenInclude(artist => artist.Translations)
+        //     .ToList() ?? [];
 
-        Artists = artists
-            .SelectMany(albumTrack => albumTrack.Track.ArtistTrack)
-            .Select(albumTrack => new ArtistDto(albumTrack, country!));
+        // Artists = artists
+        //     .SelectMany(albumTrack => albumTrack.Track.ArtistTrack)
+        //     .Select(albumTrack => new ArtistDto(albumTrack, country!));
 
-        // Artists = album.AlbumArtist
-        //     .DistinctBy(trackArtist => trackArtist.ArtistId)
-        //     .Select(albumArtist => new ArtistDto(albumArtist, country!));
+        Artists = album.AlbumArtist
+            .DistinctBy(trackArtist => trackArtist.ArtistId)
+            .Select(albumArtist => new ArtistDto(albumArtist, country!));
 
         Genres = album.AlbumMusicGenre.Select(musicGenre => new GenreDto(musicGenre));
 

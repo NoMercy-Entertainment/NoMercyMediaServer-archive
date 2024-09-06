@@ -1,19 +1,23 @@
 using System.Collections.Concurrent;
 using Newtonsoft.Json;
 using NoMercy.Database;
+using NoMercy.MediaProcessing.Jobs;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace NoMercy.MediaProcessing.Images;
 
-public abstract class BaseImage : IDisposable
+public class BaseImageManager (
+    ImageRepository imageRepository,
+    JobDispatcher jobDispatcher
+): IBaseImageManager, IDisposable
 {
-    protected delegate Task<Image<Rgba32>?> DownloadUrl(Uri path, bool? download);
+    public delegate Task<Image<Rgba32>?> DownloadUrl(Uri path, bool? download);
 
-    protected delegate Task<Image<Rgba32>?> DownloadPath(string? path, bool? download);
+    public delegate Task<Image<Rgba32>?>? DownloadPath(string? path, bool? download);
 
-    private class ColorPaletteArgument
+    public class ColorPaletteArgument
     {
         public required string Key { get; set; }
         public Image<Rgba32>? ImageData { get; set; }
@@ -31,7 +35,7 @@ public abstract class BaseImage : IDisposable
         public readonly string? Path = path;
     }
 
-    private static string GenerateColorPalette(IEnumerable<ColorPaletteArgument> items)
+    public static string GenerateColorPalette(IEnumerable<ColorPaletteArgument> items)
     {
         Dictionary<string, PaletteColors?> palette = new();
 
@@ -46,7 +50,7 @@ public abstract class BaseImage : IDisposable
         return JsonConvert.SerializeObject(dict);
     }
 
-    private static PaletteColors ColorPaletteFromImage(Image<Rgba32>? image)
+    public static PaletteColors ColorPaletteFromImage(Image<Rgba32>? image)
     {
         if (image is null)
             return new PaletteColors
@@ -64,7 +68,7 @@ public abstract class BaseImage : IDisposable
         return GetColorPaletteColors(image);
     }
 
-    protected static async Task<string> ColorPalette(DownloadUrl client, string type, Uri path, bool? download = true)
+    public static async Task<string> ColorPalette(DownloadUrl client, string type, Uri path, bool? download = true)
     {
         Image<Rgba32>? imageData = await client.Invoke(path, download);
 
@@ -78,7 +82,7 @@ public abstract class BaseImage : IDisposable
         });
     }
 
-    protected static async Task<string> MultiColorPalette(DownloadUrl client, IEnumerable<MultiUriType> items,
+    public static async Task<string> MultiColorPalette(DownloadUrl client, IEnumerable<MultiUriType> items,
         bool? download = true)
     {
         List<ColorPaletteArgument> list = new();
@@ -95,7 +99,7 @@ public abstract class BaseImage : IDisposable
         return GenerateColorPalette(list);
     }
 
-    protected static async Task<string> ColorPalette(DownloadPath client, string type, string? path,
+    public static async Task<string> ColorPalette(DownloadPath client, string type, string? path,
         bool? download = true)
     {
         Image<Rgba32>? imageData = await client.Invoke(path, download);
@@ -110,7 +114,7 @@ public abstract class BaseImage : IDisposable
         });
     }
 
-    protected static async Task<string> MultiColorPalette(DownloadPath client, IEnumerable<MultiStringType> items,
+    public static async Task<string> MultiColorPalette(DownloadPath client, IEnumerable<MultiStringType> items,
         bool? download = true)
     {
         List<ColorPaletteArgument> list = new();
@@ -134,7 +138,7 @@ public abstract class BaseImage : IDisposable
         GC.WaitForPendingFinalizers();
     }
 
-    private static PaletteColors GetColorPaletteColors(Image<Rgba32> image)
+    public static PaletteColors GetColorPaletteColors(Image<Rgba32> image)
     {
         const double luminanceThreshold = 128.0;
 
@@ -255,7 +259,7 @@ public abstract class BaseImage : IDisposable
         return saturation;
     }
 
-    private static (double hue, double saturation, double value) RgbaToHsv(Rgba32 color)
+    private (double hue, double saturation, double value) RgbaToHsv(Rgba32 color)
     {
         double r = color.R / 255.0;
         double g = color.G / 255.0;

@@ -4,5 +4,5 @@ namespace NoMercy.MediaProcessing.Libraries;
 
 public interface ILibraryRepository : IDisposable, IAsyncDisposable
 {
-    Task<Library?> GetLibraryWithFoldersAsync(Ulid id);
+    Task<Library?> GetLibraryWithFolders(Ulid id);
 }

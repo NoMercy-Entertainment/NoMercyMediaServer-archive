@@ -1,6 +1,7 @@
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.MediaProcessing.Jobs.PaletteJobs;
+using NoMercy.NmSystem;
 
 namespace NoMercy.MediaProcessing.Jobs;
 
@@ -45,6 +46,27 @@ public class JobDispatcher
         where TJob : AbstractShowExtraDataJob<TChild, string>, new()
     {
         TJob job = new() { Storage = data, Name = name };
+        Queue.JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
+    }
+
+    public void DispatchJob<TJob>(string baseFolderPath, Ulid libraryId)
+        where TJob : AbstractMusicFolderJob, new()
+    {
+        TJob job = new() { FilePath = baseFolderPath, LibraryId = libraryId };
+        Queue.JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
+    }
+
+    public void DispatchJob<TJob>(Ulid libraryId, Guid id, Folder baseFolder, MediaFolder mediaFolder)
+        where TJob : AbstractReleaseJob, new()
+    {
+        TJob job = new() { LibraryId = libraryId, Id = id, BaseFolder = baseFolder, MediaFolder = mediaFolder};
+        Queue.JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
+    }
+    
+    public void DispatchJob<TJob>(Guid id1, Guid? id2 = null, Guid? id3 = null)
+        where TJob : AbstractFanArtDataJob, new()
+    {
+        TJob job = new() { Id1 = id1, Id2 = id2, Id3 = id3 };
         Queue.JobDispatcher.Dispatch(job, job.QueueName, job.Priority);
     }
 }

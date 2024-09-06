@@ -38,10 +38,10 @@ public class AddCollectionJob : AbstractMediaJob
             .ThenInclude(f => f.Folder)
             .FirstAsync();
 
-        TmdbCollectionAppends? collectionAppends = await collectionManager.AddCollectionAsync(Id, collectionLibrary);
+        TmdbCollectionAppends? collectionAppends = await collectionManager.Add(Id, collectionLibrary);
         if (collectionAppends == null) return;
 
-        await collectionManager.AddCollectionMoviesAsync(collectionAppends, collectionLibrary);
+        await collectionManager.AddCollectionMovies(collectionAppends, collectionLibrary);
 
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {

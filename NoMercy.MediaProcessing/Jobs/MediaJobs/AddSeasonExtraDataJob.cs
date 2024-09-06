@@ -33,10 +33,10 @@ public class AddSeasonExtraDataJob : AbstractShowExtraDataJob<TmdbSeasonAppends,
         
         foreach (TmdbSeasonAppends season in Storage)
         {
-            await personManager.StorePeoplesAsync(season);
+            await personManager.Store(season);
             
-            await seasonManager.StoreImagesAsync(Name, season);
-            await seasonManager.StoreTranslationsAsync(Name, season);
+            await seasonManager.StoreImages(Name, season);
+            await seasonManager.StoreTranslations(Name, season);
         }
 
         Logger.MovieDb($"Show: {Name}: Seasons: Images and Translations stored", LogEventLevel.Verbose);

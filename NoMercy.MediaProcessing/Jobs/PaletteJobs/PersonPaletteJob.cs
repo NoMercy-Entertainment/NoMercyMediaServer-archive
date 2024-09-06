@@ -31,7 +31,7 @@ public class PersonPaletteJob : AbstractPaletteJob<Person>
             .ToList();
 
         foreach (Person? person in people)
-            person._colorPalette = await MovieDbImage
+            person._colorPalette = await MovieDbImageManager
                 .ColorPalette("person", person.Profile);
 
         await context.SaveChangesAsync();

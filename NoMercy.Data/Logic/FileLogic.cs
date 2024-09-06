@@ -19,7 +19,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
     private Tv? Show { get; set; }
 
     private List<Folder> Folders { get; set; } = [];
-    public List<MediaFolder> Files { get; set; } = [];
+    public List<MediaFolderExtend> Files { get; set; } = [];
     public string Type { get; set; } = "";
 
     public async Task Process()
@@ -29,7 +29,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
 
         foreach (Folder folder in Folders)
         {
-            ConcurrentBag<MediaFolder> files = await GetFiles(folder.Path);
+            ConcurrentBag<MediaFolderExtend> files = await GetFiles(folder.Path);
 
             if (!files.IsEmpty) Files.AddRange(files);
         }
@@ -217,7 +217,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
         }
     }
 
-    private async Task<ConcurrentBag<MediaFolder>> GetFiles(string path)
+    private async Task<ConcurrentBag<MediaFolderExtend>> GetFiles(string path)
     {
         MediaScan mediaScan = new();
 
@@ -229,7 +229,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
             _ => 1
         };
 
-        ConcurrentBag<MediaFolder> folders = await mediaScan
+        ConcurrentBag<MediaFolderExtend> folders = await mediaScan
             .EnableFileListing()
             .FilterByMediaType(Library.Type)
             .Process(path, depth);

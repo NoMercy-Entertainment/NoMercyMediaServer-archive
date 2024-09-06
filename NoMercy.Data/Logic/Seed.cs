@@ -564,11 +564,11 @@ public class Seed : IDisposable, IAsyncDisposable
                     Logo = Mcu.Special.Logo,
                     Description = Mcu.Special.Description,
                     Creator = Mcu.Special.Creator,
-                    _colorPalette = await NoMercyImage
+                    _colorPalette = await NoMercyImageManager
                         .MultiColorPalette(new[]
                         {
-                            new BaseImage.MultiStringType("poster", Mcu.Special.Poster),
-                            new BaseImage.MultiStringType("backdrop", Mcu.Special.Backdrop)
+                            new BaseImageManager.MultiStringType("poster", Mcu.Special.Poster),
+                            new BaseImageManager.MultiStringType("backdrop", Mcu.Special.Backdrop)
                         })
                 };
 

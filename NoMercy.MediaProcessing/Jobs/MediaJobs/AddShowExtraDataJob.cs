@@ -32,7 +32,7 @@ public class AddShowExtraDataJob : AbstractMediaExraDataJob<TmdbTvShowAppends>
         PersonRepository personRepository = new(context);
         PersonManager personManager = new(personRepository, jobDispatcher);
 
-        await personManager.StorePeoplesAsync(Storage);
+        await personManager.Store(Storage);
         
         await showManager.StoreImages(Storage);
         await showManager.StoreSimilar(Storage);
