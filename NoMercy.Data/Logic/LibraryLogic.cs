@@ -74,13 +74,13 @@ public class LibraryLogic(Ulid id) : IDisposable, IAsyncDisposable
     private async Task ScanAudioFolder(string path)
     {
         await using MediaScan mediaScan = new();
-        IEnumerable<MediaFolder> rootFolders = (await mediaScan
+        IEnumerable<MediaFolderExtend> rootFolders = (await mediaScan
                 .DisableRegexFilter()
                 .Process(path, 2))
             .SelectMany(r => r.SubFolders ?? [])
             .ToList();
 
-        foreach (MediaFolder rootFolder in rootFolders)
+        foreach (MediaFolderExtend rootFolder in rootFolders)
         {
             if (rootFolder.Path == path) return;
 

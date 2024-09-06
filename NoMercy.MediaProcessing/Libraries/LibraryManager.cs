@@ -4,7 +4,6 @@ using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.NmSystem;
-using NoMercy.Providers.Other;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
@@ -20,9 +19,9 @@ public class LibraryManager(
 {
     private Library? _library;
 
-    public async Task ProcessLibraryAsync(Ulid id)
+    public async Task ProcessLibrary(Ulid id)
     {
-        _library = await libraryRepository.GetLibraryWithFoldersAsync(id);
+        _library = await libraryRepository.GetLibraryWithFolders(id);
         if (_library is null) return;
 
         List<string> paths = [];
@@ -54,10 +53,10 @@ public class LibraryManager(
     private async Task ScanVideoFolder(string path, int depth)
     {
         await using MediaScan mediaScan = new();
-        ConcurrentBag<MediaFolder> rootFolders = await mediaScan
+        ConcurrentBag<MediaFolderExtend> rootFolders = await mediaScan
             .Process(path, depth);
 
-        foreach (MediaFolder folder in rootFolders) await ProcessVideoFolder(folder);
+        foreach (MediaFolderExtend folder in rootFolders) await ProcessVideoFolder(folder);
 
         Logger.App("Found " + rootFolders.Count + " subfolders");
     }
@@ -65,18 +64,21 @@ public class LibraryManager(
     private async Task ScanAudioFolder(string path, int depth)
     {
         await using MediaScan mediaScan = new();
-        List<MediaFolder> rootFolders = (await mediaScan
+        List<MediaFolderExtend> rootFolders = (await mediaScan
                 .DisableRegexFilter()
                 .Process(path, depth))
             .SelectMany(r => r.SubFolders ?? [])
             .ToList();
 
-        foreach (MediaFolder rootFolder in rootFolders) await ProcessMusicFolder(rootFolder);
+        foreach (MediaFolderExtend rootFolder in rootFolders)
+        {
+            ProcessMusicFolder(rootFolder);
+        }
 
         Logger.App("Found " + rootFolders.Count + " subfolders");
     }
 
-    private async Task ProcessVideoFolder(MediaFolder path)
+    private async Task ProcessVideoFolder(MediaFolderExtend path)
     {
         if (_library is null) return;
         switch (_library.Type)
@@ -95,16 +97,16 @@ public class LibraryManager(
         }
     }
 
-    private async Task ProcessMovieFolder(MediaFolder folder)
+    private async Task ProcessMovieFolder(MediaFolderExtend folderExtend)
     {
         if (_library is null) return;
-        if (folder.Parsed is null) return;
+        if (folderExtend.Parsed is null) return;
 
-        Logger.App("Processing movie folder " + folder.Path);
+        Logger.App("Processing movie folder " + folderExtend.Path);
 
         using TmdbSearchClient tmdbSearchClient = new();
         TmdbPaginatedResponse<TmdbMovie>? paginatedMovieResponse =
-            await tmdbSearchClient.Movie(folder.Parsed.Title, folder.Parsed.Year);
+            await tmdbSearchClient.Movie(folderExtend.Parsed.Title!, folderExtend.Parsed.Year);
 
         if (paginatedMovieResponse?.Results.Length <= 0) return;
 
@@ -115,16 +117,16 @@ public class LibraryManager(
         jobDispatcher.DispatchJob<AddMovieJob>(res.First().Id, _library);
     }
 
-    private async Task ProcessTvFolder(MediaFolder folder)
+    private async Task ProcessTvFolder(MediaFolderExtend folderExtend)
     {
         if (_library is null) return;
-        if (folder.Parsed is null) return;
+        if (folderExtend.Parsed is null) return;
 
-        Logger.App("Processing tv folder " + folder.Path);
+        Logger.App("Processing tv folder " + folderExtend.Path);
 
         using TmdbSearchClient tmdbSearchClient = new();
         TmdbPaginatedResponse<TmdbTvShow>? paginatedTvShowResponse =
-            await tmdbSearchClient.TvShow(folder.Parsed.Title, folder.Parsed.Year);
+            await tmdbSearchClient.TvShow(folderExtend.Parsed.Title!, folderExtend.Parsed.Year);
 
         if (paginatedTvShowResponse?.Results.Length <= 0) return;
 
@@ -135,15 +137,14 @@ public class LibraryManager(
         jobDispatcher.DispatchJob<AddShowJob>(res.First().Id, _library);
     }
 
-    private async Task ProcessMusicFolder(MediaFolder folder)
+    private void ProcessMusicFolder(MediaFolderExtend baseFolderExtend)
     {
         if (_library is null) return;
-        if (folder.Parsed is null) return;
-
-        Logger.App("Processing music folder " + folder.Path);
+        if (baseFolderExtend.Parsed is null) return;
+        
+        jobDispatcher.DispatchJob<ProcessReleaseFolderJob>(baseFolderExtend.Path, _library.Id);
     }
-
-
+    
     private int GetDepth()
     {
         if (_library is null) return 0;
@@ -155,4 +156,5 @@ public class LibraryManager(
             _ => 1
         };
     }
+    
 }

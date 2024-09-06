@@ -32,12 +32,12 @@ public class MusicJob : IShouldQueue, IDisposable, IAsyncDisposable
         if (Library is null) return;
 
         await using MediaScan mediaScan = new();
-        IEnumerable<MediaFolder> mediaFolder = await mediaScan
+        IEnumerable<MediaFolderExtend> mediaFolder = await mediaScan
             .EnableFileListing()
             .DisableRegexFilter()
             .Process(Folder, 20);
 
-        foreach (MediaFolder list in mediaFolder)
+        foreach (MediaFolderExtend list in mediaFolder)
         {
             Logger.App($"Music {list.Path}: Processing");
 

@@ -29,4 +29,14 @@ public class MusicBrainzReleaseGroupClient : MusicBrainzBaseClient
             "releases"
         ], priority);
     }
+    
+    public Task<MusicBrainzReleaseAppends?> SearchReleaseGroups(string query, bool? priority = false)
+    {
+        Dictionary<string, string>? queryParams = new()
+        {
+            ["query"] = Uri.EscapeDataString(query),
+            ["fmt"] = "json"
+        };
+        return Get<MusicBrainzReleaseAppends>($"release-group", queryParams, priority);
+    }
 }

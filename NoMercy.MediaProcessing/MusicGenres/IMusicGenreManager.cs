@@ -4,5 +4,5 @@ namespace NoMercy.MediaProcessing.MusicGenres;
 
 public interface IMusicGenreManager
 {
-    public Task StoreMusicGenreAsync(MusicBrainzGenreDetails genre);
+    public Task Store(MusicBrainzGenreDetails genre);
 }

@@ -12,7 +12,7 @@ public class MusicBrainzArtistClient : MusicBrainzBaseClient
 
     public Task<MusicBrainzArtistAppends?> WithAppends(string[] appendices, bool? priority = false)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             ["inc"] = string.Join("+", appendices),
             ["fmt"] = "json"
@@ -30,5 +30,16 @@ public class MusicBrainzArtistClient : MusicBrainzBaseClient
             "release-groups",
             "works"
         ], priority);
+    }
+    
+    public Task<MusicBrainzArtistAppends?> SearchArtists(string query, bool? priority = false)
+    {
+        Dictionary<string, string>? queryParams = new()
+        {
+            ["query"] = Uri.EscapeDataString(query),
+            ["fmt"] = "json"
+        };
+
+        return Get<MusicBrainzArtistAppends>("artist", queryParams, priority);
     }
 }

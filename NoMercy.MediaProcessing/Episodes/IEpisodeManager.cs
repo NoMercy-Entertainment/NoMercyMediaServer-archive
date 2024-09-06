@@ -5,5 +5,5 @@ namespace NoMercy.MediaProcessing.Episodes;
 
 public interface IEpisodeManager
 {
-    public Task StoreEpisodes(TmdbTvShow show, TmdbSeasonAppends season);
+    public Task Add(TmdbTvShow show, TmdbSeasonAppends season);
 }

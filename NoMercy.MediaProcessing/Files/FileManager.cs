@@ -24,7 +24,7 @@ public partial class FileManager(
     private Tv? Show { get; set; }
 
     private List<Folder> Folders { get; set; } = [];
-    private List<MediaFolder> Files { get; set; } = [];
+    private List<MediaFolderExtend> Files { get; set; } = [];
     public string Type { get; set; } = "";
 
     public async Task FindFiles(int id, Library library)
@@ -36,7 +36,7 @@ public partial class FileManager(
 
         foreach (Folder folder in Folders)
         {
-            ConcurrentBag<MediaFolder> files = await GetFiles(library, folder.Path);
+            ConcurrentBag<MediaFolderExtend> files = await GetFiles(library, folder.Path);
 
             if (!files.IsEmpty) Files.AddRange(files);
         }
@@ -182,7 +182,7 @@ public partial class FileManager(
         (Movie, Show, Type) = await fileRepository.MediaType(id, library);
     }
 
-    private async Task<ConcurrentBag<MediaFolder>> GetFiles(Library library, string path)
+    private async Task<ConcurrentBag<MediaFolderExtend>> GetFiles(Library library, string path)
     {
         MediaScan mediaScan = new();
 
@@ -193,7 +193,7 @@ public partial class FileManager(
             _ => 0
         };
 
-        ConcurrentBag<MediaFolder> folders = await mediaScan
+        ConcurrentBag<MediaFolderExtend> folders = await mediaScan
             .EnableFileListing()
             .FilterByMediaType(library.Type)
             .Process(path, depth);

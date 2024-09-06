@@ -32,8 +32,8 @@ public class AddPersonExtraDataJob : AbstractShowExtraDataJob<TmdbPersonAppends,
         
         foreach (TmdbPersonAppends person in Storage)
         {
-            await personManager.StoreTranslationsAsync(person);
-            await personManager.StoreImagesAsync(person);
+            await personManager.StoreTranslations(person);
+            await personManager.StoreImages(person);
         }
 
         Logger.MovieDb($"Show: {Name}: People: Translations and Images stored", LogEventLevel.Debug);

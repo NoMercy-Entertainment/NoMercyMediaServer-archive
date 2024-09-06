@@ -39,14 +39,14 @@ public class MovieManagerTests
 
         Movie capturedMovie = null!;
 
-        _movieRepositoryMock.Setup(repo => repo.AddAsync(It.IsAny<Movie>()))
+        _movieRepositoryMock.Setup(repo => repo.Add(It.IsAny<Movie>()))
             .Callback<Movie>(movie => capturedMovie = movie);
 
         // Act
-        await _movieManager.AddMovieAsync(_movieId, _library);
+        await _movieManager.Add(_movieId, _library);
 
         // Assert
-        _movieRepositoryMock.Verify(repo => repo.AddAsync(It.IsAny<Movie>()), Times.Once);
+        _movieRepositoryMock.Verify(repo => repo.Add(It.IsAny<Movie>()), Times.Once);
         _movieRepositoryMock.Verify(repo => repo.LinkToLibrary(_library, It.IsAny<Movie>()), Times.Once);
         Assert.NotNull(capturedMovie);
         Assert.Equal(_movieId, capturedMovie.Id);
@@ -56,13 +56,13 @@ public class MovieManagerTests
     [Fact]
     public async Task UpdateMovieAsync_ShouldThrowNotImplementedException()
     {
-        await Assert.ThrowsAsync<NotImplementedException>(() => _movieManager.UpdateMovieAsync(_movieId, _library));
+        await Assert.ThrowsAsync<NotImplementedException>(() => _movieManager.Update(_movieId, _library));
     }
 
     [Fact]
     public async Task RemoveMovieAsync_ShouldThrowNotImplementedException()
     {
-        await Assert.ThrowsAsync<NotImplementedException>(() => _movieManager.RemoveMovieAsync(_movieId, _library));
+        await Assert.ThrowsAsync<NotImplementedException>(() => _movieManager.Remove(_movieId, _library));
     }
 
     [Fact]

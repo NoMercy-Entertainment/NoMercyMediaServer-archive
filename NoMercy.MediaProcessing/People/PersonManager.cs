@@ -21,11 +21,11 @@ public class PersonManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, IPersonManager
 {
-    public async Task StorePeoplesAsync(TmdbTvShowAppends show)
+    public async Task Store(TmdbTvShowAppends show)
     {
         (List<int> peopleIds, List<Cast> casts, List<Crew> crews, List<Role> roles, List<Job> jobs) = CollectPeople(show);
 
-        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIdsAsync(peopleIds);
+        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIds(peopleIds);
 
         IEnumerable<Person> people = peopleAppends
             .Select(person => new Person
@@ -48,29 +48,29 @@ public class PersonManager(
                 TitleSort = person.Name
             });
 
-        await personRepository.StoreAsync(people);
+        await personRepository.Store(people);
         Logger.MovieDb($"Show: {show.Name}: People stored");
 
-        await personRepository.StoreRolesAsync(roles);
+        await personRepository.StoreRoles(roles);
         Logger.MovieDb($"Show: {show.Name}: Roles stored", LogEventLevel.Debug);
 
-        await personRepository.StoreJobsAsync(jobs);
+        await personRepository.StoreJobs(jobs);
         Logger.MovieDb($"Show: {show.Name}: Jobs stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCastAsync(casts, Type.TvShow);
+        await personRepository.StoreCast(casts, Type.TvShow);
         Logger.MovieDb($"Show: {show.Name}: Cast stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCrewAsync(crews, Type.TvShow);
+        await personRepository.StoreCrew(crews, Type.TvShow);
         Logger.MovieDb($"Show: {show.Name}: Crew stored", LogEventLevel.Debug);
 
         jobDispatcher.DispatchJob<AddPersonExtraDataJob, TmdbPersonAppends>(peopleAppends, show.Name);
     }
     
-    public async Task StorePeoplesAsync(TmdbSeasonAppends season)
+    public async Task Store(TmdbSeasonAppends season)
     {
         (List<int> peopleIds, List<Cast> casts, List<Crew> crews, List<Role> roles, List<Job> jobs) = CollectPeople(season);
 
-        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIdsAsync(peopleIds);
+        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIds(peopleIds);
 
         IEnumerable<Person> people = peopleAppends
             .Select(person => new Person
@@ -93,27 +93,27 @@ public class PersonManager(
                 TitleSort = person.Name
             });
 
-        await personRepository.StoreAsync(people);
+        await personRepository.Store(people);
         Logger.MovieDb($"Show: {season.Name}, Season {season.SeasonNumber}: People stored");
 
-        await personRepository.StoreRolesAsync(roles);
+        await personRepository.StoreRoles(roles);
         Logger.MovieDb($"Show: {season.Name}, Season {season.SeasonNumber}: Roles stored", LogEventLevel.Debug);
 
-        await personRepository.StoreJobsAsync(jobs);
+        await personRepository.StoreJobs(jobs);
         Logger.MovieDb($"Show: {season.Name}, Season {season.SeasonNumber}: Jobs stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCastAsync(casts, Type.Season);
+        await personRepository.StoreCast(casts, Type.Season);
         Logger.MovieDb($"Show: {season.Name}, Season {season.SeasonNumber}: Cast stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCrewAsync(crews, Type.Season);
+        await personRepository.StoreCrew(crews, Type.Season);
         Logger.MovieDb($"Show: {season.Name}, Season {season.SeasonNumber}: Crew stored", LogEventLevel.Debug);
     }
 
-    public async Task StorePeoplesAsync(TmdbEpisodeAppends episode)
+    public async Task Store(TmdbEpisodeAppends episode)
     {
         (List<int> peopleIds, List<Cast> casts, List<Crew> crews, List<Role> roles, List<Job> jobs) = CollectPeople(episode);
 
-        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIdsAsync(peopleIds);
+        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIds(peopleIds);
 
         IEnumerable<Person> people = peopleAppends
             .Select(person => new Person
@@ -136,27 +136,27 @@ public class PersonManager(
                 TitleSort = person.Name
             });
 
-        await personRepository.StoreAsync(people);
+        await personRepository.Store(people);
         Logger.MovieDb($"Show: {episode.Name}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: People stored");
 
-        await personRepository.StoreRolesAsync(roles);
+        await personRepository.StoreRoles(roles);
         Logger.MovieDb($"Show: {episode.Name}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Roles stored", LogEventLevel.Debug);
 
-        await personRepository.StoreJobsAsync(jobs);
+        await personRepository.StoreJobs(jobs);
         Logger.MovieDb($"Show: {episode.Name}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Jobs stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCastAsync(casts, Type.Episode);
+        await personRepository.StoreCast(casts, Type.Episode);
         Logger.MovieDb($"Show: {episode.Name}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Cast stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCrewAsync(crews, Type.Episode);
+        await personRepository.StoreCrew(crews, Type.Episode);
         Logger.MovieDb($"Show: {episode.Name}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Crew stored", LogEventLevel.Debug);
     }
 
-    public async Task StorePeoplesAsync(TmdbMovieAppends movie)
+    public async Task Store(TmdbMovieAppends movie)
     {
         (List<int> peopleIds, List<Cast> casts, List<Crew> crews, List<Role> roles, List<Job> jobs) = CollectPeople(movie);
 
-        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIdsAsync(peopleIds);
+        List<TmdbPersonAppends> peopleAppends = await FetchPeopleByIds(peopleIds);
 
         IEnumerable<Person> people = peopleAppends
             .Select(person => new Person
@@ -179,35 +179,35 @@ public class PersonManager(
                 TitleSort = person.Name
             });
 
-        await personRepository.StoreAsync(people);
+        await personRepository.Store(people);
         Logger.MovieDb($"Movie: {movie.Title}: People stored");
 
-        await personRepository.StoreRolesAsync(roles);
+        await personRepository.StoreRoles(roles);
         Logger.MovieDb($"Movie: {movie.Title}: Roles stored", LogEventLevel.Debug);
 
-        await personRepository.StoreJobsAsync(jobs);
+        await personRepository.StoreJobs(jobs);
         Logger.MovieDb($"Movie: {movie.Title}: Jobs stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCastAsync(casts, Type.Movie);
+        await personRepository.StoreCast(casts, Type.Movie);
         Logger.MovieDb($"Movie: {movie.Title}: Cast stored", LogEventLevel.Debug);
         
-        await personRepository.StoreCrewAsync(crews, Type.Movie);
+        await personRepository.StoreCrew(crews, Type.Movie);
         Logger.MovieDb($"Movie: {movie.Title}: Crew stored", LogEventLevel.Debug);
 
         jobDispatcher.DispatchJob<AddPersonExtraDataJob, TmdbPersonAppends>(peopleAppends, movie.Title);
     }
     
-    public Task UpdatePeopleAsync(string showName, TmdbTvShowAppends show)
+    public Task Update(string showName, TmdbTvShowAppends show)
     {
         throw new NotImplementedException();
     }
 
-    public Task RemovePeopleAsync(string showName, TmdbTvShowAppends show)
+    public Task Remove(string showName, TmdbTvShowAppends show)
     {
         throw new NotImplementedException();
     }
 
-    internal async Task StoreTranslationsAsync(TmdbPersonAppends person)
+    internal async Task StoreTranslations(TmdbPersonAppends person)
     {
         IEnumerable<Translation> translations = person.Translations.Translations
             .Where(translation => translation.TmdbPersonTranslationData.Overview != "")
@@ -224,7 +224,7 @@ public class PersonManager(
         await personRepository.StoreTranslationsAsync(translations);
     }
 
-    internal async Task StoreImagesAsync(TmdbPersonAppends person)
+    internal async Task StoreImages(TmdbPersonAppends person)
     {
         IEnumerable<Image> posters = person.Images.Profiles
             .Select(image => new Image
@@ -451,7 +451,7 @@ public class PersonManager(
     }
 
     /** Note: The data returned here is a reduced set to improve performance. */
-    private async Task<List<TmdbPersonAppends>> FetchPeopleByIdsAsync(List<int> ids)
+    private async Task<List<TmdbPersonAppends>> FetchPeopleByIds(List<int> ids)
     {
         List<TmdbPersonAppends> personAppends = [];
 

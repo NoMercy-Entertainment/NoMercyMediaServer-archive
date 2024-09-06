@@ -6,7 +6,7 @@ namespace NoMercy.MediaProcessing.ReleaseGroups;
 
 public class ReleaseGroupRepository(MediaContext context) : IReleaseGroupRepository
 {
-    public Task StoreAsync(ReleaseGroup releaseGroup)
+    public Task Store(ReleaseGroup releaseGroup)
     {
         return context.ReleaseGroups.Upsert(releaseGroup)
             .On(e => new { e.Id })

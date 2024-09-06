@@ -21,7 +21,7 @@ public partial class MusicLogic : IAsyncDisposable
 {
     private AcoustIdFingerprint? FingerPrint { get; set; }
     private ConcurrentBag<MediaFile>? Files { get; set; }
-    private MediaFolder ListPath { get; set; }
+    private MediaFolderExtend ListPath { get; set; }
 
     private int Year { get; set; }
     private string AlbumName { get; set; }
@@ -29,7 +29,7 @@ public partial class MusicLogic : IAsyncDisposable
     private Library Library { get; set; }
     private Folder? Folder { get; set; }
 
-    public MusicLogic(Library library, MediaFolder listPath)
+    public MusicLogic(Library library, MediaFolderExtend listPath)
     {
         GlobalFFOptions.Configure(options => options.BinaryFolder = Path.Combine(AppFiles.BinariesPath, "ffmpeg"));
 

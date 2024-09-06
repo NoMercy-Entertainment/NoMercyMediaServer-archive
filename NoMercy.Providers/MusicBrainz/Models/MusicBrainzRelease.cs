@@ -9,6 +9,7 @@ public class MusicBrainzRelease
 {
     [JsonProperty("barcode")] public string Barcode { get; set; }
     [JsonProperty("country")] public string Country { get; set; }
+    [JsonProperty("score")] public int? Score { get; set; }
 
     [JsonProperty("disambiguation")] public string? Disambiguation { get; set; }
 
@@ -23,6 +24,8 @@ public class MusicBrainzRelease
     [JsonProperty("status")] public string Status { get; set; }
     [JsonProperty("status-id")] public Guid? StatusId { get; set; }
 
+    [JsonProperty("artist-credit")] public ReleaseArtistCredit[] ArtistCredit { get; set; }
+    
     [JsonProperty("text-representation")]
     public MusicBrainzTextRepresentation MusicBrainzTextRepresentation { get; set; }
 
@@ -44,7 +47,6 @@ public class MusicBrainzReleaseAppends : MusicBrainzRelease
 {
     // [JsonProperty("aliases")] public object[] Aliases { get; set; }
     // [JsonProperty("annotation")] public object Annotation { get; set; }
-    [JsonProperty("artist-credit")] public ReleaseArtistCredit[] ArtistCredit { get; set; }
 
     // [JsonProperty("asin")] public object Asin { get; set; }
     [JsonProperty("collections")] public Collection[] Collections { get; set; }
@@ -71,7 +73,7 @@ public class ReleaseEvent
 
 public class ReleaseArtistCredit
 {
-    [JsonProperty("name")] public string Name { get; set; }
+    [JsonProperty("name")] public string? Name { get; set; }
     [JsonProperty("joinphrase")] public string Joinphrase { get; set; }
     [JsonProperty("artist")] public MusicBrainzArtistDetails MusicBrainzArtist { get; set; }
 }
@@ -139,7 +141,10 @@ public class MusicBrainzTrack
     private int _number;
     [JsonProperty("artist-credit")] public ReleaseArtistCredit[] ArtistCredit { get; set; }
     [JsonProperty("id")] public Guid Id { get; set; }
+    
+    /** Track length in milliseconds */
     [JsonProperty("length")] public int? Length { get; set; }
+    public double Duration => (Length ?? 0) / 1000.0;
 
     [JsonProperty("number")]
     public int Number
@@ -308,4 +313,19 @@ public class MusicBrainzReleaseGroupDetails : MusicBrainzReleaseGroup
 {
     [JsonProperty("releases")] public MusicBrainzRelease[] Releases { get; set; }
     [JsonProperty("relations")] public MusicBrainzWorkRelation[] Relations { get; set; }
+}
+
+public class MusicBrainzReleaseSearchResponse
+{
+    [JsonProperty("created")]
+    public DateTimeOffset Created { get; set; }
+
+    [JsonProperty("count")]
+    public long Count { get; set; }
+
+    [JsonProperty("offset")]
+    public long Offset { get; set; }
+
+    [JsonProperty("releases")]
+    public MusicBrainzRelease[] Releases { get; set; }
 }

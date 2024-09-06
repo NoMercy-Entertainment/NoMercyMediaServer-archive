@@ -6,7 +6,7 @@ namespace NoMercy.MediaProcessing.Collections;
 
 public class CollectionRepository(MediaContext context) : ICollectionRepository
 {
-    public Task AddAsync(Collection collection)
+    public Task Store(Collection collection)
     {
         return context.Collections.Upsert(collection)
             .On(v => new { v.Id })
@@ -27,12 +27,33 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
 
     public Task LinkToLibrary(Library library, Collection collection)
     {
-        throw new NotImplementedException();
+        return context.CollectionLibrary.Upsert(new CollectionLibrary
+        {
+            LibraryId = library.Id,
+            CollectionId = collection.Id
+        })
+            .On(v => new { v.LibraryId, v.CollectionId })
+            .WhenMatched((ts, ti) => new CollectionLibrary
+            {
+                LibraryId = ti.LibraryId,
+                CollectionId = ti.CollectionId
+            })
+            .RunAsync();
     }
 
     public Task StoreAlternativeTitles(IEnumerable<AlternativeTitle> alternativeTitles)
     {
-        throw new NotImplementedException();
+        // return context.AlternativeTitles.UpsertRange(alternativeTitles)
+        //     .On(v => new { v.Iso31661, v.CollectionId })
+        //     .WhenMatched((ts, ti) => new AlternativeTitle
+        //     {
+        //         Iso31661 = ti.Iso31661,
+        //         Title = ti.Title,
+        //         CollectionId = ti.CollectionId
+        //     })
+        //     .RunAsync();
+        
+        return Task.CompletedTask;
     }
 
     public Task StoreTranslations(IEnumerable<Translation> translations)

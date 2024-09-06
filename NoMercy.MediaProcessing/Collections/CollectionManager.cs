@@ -20,17 +20,17 @@ public class CollectionManager(
     JobDispatcher jobDispatcher
 ) : BaseManager, ICollectionManager
 {
-    public async Task<TmdbCollectionAppends?> AddCollectionAsync(int id, Library library)
+    public async Task<TmdbCollectionAppends?> Add(int id, Library library)
     {
         TmdbCollectionClient collectionClient = new(id);
         TmdbCollectionAppends? collectionAppends = await collectionClient.WithAllAppends();
 
         if (collectionAppends is null) return null;
 
-        string colorPalette = await MovieDbImage
+        string colorPalette = await MovieDbImageManager
             .MultiColorPalette([
-                new BaseImage.MultiStringType("poster", collectionAppends.PosterPath),
-                new BaseImage.MultiStringType("backdrop", collectionAppends.BackdropPath)
+                new BaseImageManager.MultiStringType("poster", collectionAppends.PosterPath),
+                new BaseImageManager.MultiStringType("backdrop", collectionAppends.BackdropPath)
             ]);
 
         Collection collection = new()
@@ -49,7 +49,7 @@ public class CollectionManager(
             _colorPalette = colorPalette
         };
 
-        await collectionRepository.AddAsync(collection);
+        await collectionRepository.Store(collection);
         Logger.MovieDb($"Movie: {collection.Title}: Added to Database", LogEventLevel.Debug);
 
         await StoreTranslations(collectionAppends);
@@ -172,7 +172,7 @@ public class CollectionManager(
             jobDispatcher.DispatchJob<ImagePaletteJob, Image>(collection.Id, logosJobItems);
     }
 
-    public async Task AddCollectionMoviesAsync(TmdbCollectionAppends collectionAppends, Library library)
+    public async Task AddCollectionMovies(TmdbCollectionAppends collectionAppends, Library library)
     {
         List<TmdbMovieAppends> movies = [];
 
@@ -185,7 +185,7 @@ public class CollectionManager(
             movies.Add(movieAppends);
         });
 
-        foreach (TmdbMovieAppends movie in movies) await movieManager.AddMovieAsync(movie.Id, library);
+        foreach (TmdbMovieAppends movie in movies) await movieManager.Add(movie.Id, library);
 
         Logger.MovieDb($"Collection: {collectionAppends.Name}: Movies added", LogEventLevel.Debug);
     }

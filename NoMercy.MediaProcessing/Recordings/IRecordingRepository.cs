@@ -4,6 +4,7 @@ namespace NoMercy.MediaProcessing.Recordings;
 
 public interface IRecordingRepository
 {
-    public Task StoreAsync(Track recording, bool update = false);
-    public Task LinkToRelease(AlbumTrack trackRelease);
+    Task Store(Track recording, bool update = false);
+    Task LinkToRelease(AlbumTrack trackRelease);
+    Task LinkToArtist(ArtistTrack insert);
 }

@@ -54,7 +54,7 @@ public class SeasonManager(
                 Poster = s.PosterPath,
                 SeasonNumber = s.SeasonNumber,
                 TvId = show.Id,
-                _colorPalette = MovieDbImage.ColorPalette("poster", s.PosterPath).Result
+                _colorPalette = MovieDbImageManager.ColorPalette("poster", s.PosterPath).Result
             });
 
         await seasonRepository.StoreAsync(seasons);
@@ -76,7 +76,7 @@ public class SeasonManager(
         Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Removed", LogEventLevel.Debug);
     }
 
-    internal async Task StoreTranslationsAsync(string showName, TmdbSeasonAppends season)
+    internal async Task StoreTranslations(string showName, TmdbSeasonAppends season)
     {
         IEnumerable<Translation> translations = season.Translations.Translations
             .Where(translation => translation.Data.Title != null || translation.Data.Overview != "")
@@ -96,7 +96,7 @@ public class SeasonManager(
         Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Translations stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreImagesAsync(string showName, TmdbSeasonAppends season)
+    internal async Task StoreImages(string showName, TmdbSeasonAppends season)
     {
         IEnumerable<Image> posters = season.TmdbSeasonImages.Posters
             .Select(image => new Image

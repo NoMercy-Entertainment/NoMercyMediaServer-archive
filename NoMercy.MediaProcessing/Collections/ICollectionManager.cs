@@ -5,7 +5,7 @@ namespace NoMercy.MediaProcessing.Collections;
 
 public interface ICollectionManager
 {
-    Task<TmdbCollectionAppends?> AddCollectionAsync(int id, Library library);
+    Task<TmdbCollectionAppends?> Add(int id, Library library);
     Task UpdateCollectionAsync(int id, Library library);
     Task RemoveCollectionAsync(int id, Library library);
 }
