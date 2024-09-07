@@ -424,7 +424,8 @@ public class PersonManager(
             casts.Add(new Cast
             {
                 CreditId = aggregateCast.CreditId,
-                PersonId = aggregateCast.Id
+                PersonId = aggregateCast.Id,
+                MovieId = movie.Id
             });
         }
 
