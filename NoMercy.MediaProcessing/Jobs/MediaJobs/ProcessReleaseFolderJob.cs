@@ -9,6 +9,8 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Releases;
 using NoMercy.NmSystem;
+using NoMercy.Providers.AcoustId.Client;
+using NoMercy.Providers.AcoustId.Models;
 using NoMercy.Providers.MusicBrainz.Client;
 using NoMercy.Providers.MusicBrainz.Models;
 
@@ -119,16 +121,55 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
 
             if (matchedReleases.Count == 0)
             {
-                // fingerprint 
-                continue;
+                foreach (MediaFile file in folder.Files ?? [])
+                {
+                    string title = Regex.Replace(Path.GetFileNameWithoutExtension(file.Name), @"^\d+((-|\s)\d+)?","");
+                    
+                    AcoustIdFingerprintClient acoustIdFingerprintClient = new();
+                    AcoustIdFingerprint? fingerprint = await acoustIdFingerprintClient.Lookup(file.Path);
+                    if (fingerprint is not null)
+                    {
+                        if (fingerprint.Results.Length == 0) continue;
+                        AcoustIdFingerprintResult? acoustIdFingerprintResult = fingerprint.Results
+                            .FirstOrDefault(print => print.Recordings != null && (bool)(print.Recordings ?? [])?
+                                .Any(rec => rec?.Title != null && albumName.Sanitize().Contains(rec.Title?.Sanitize() ?? string.Empty)));
+                        
+                        if (acoustIdFingerprintResult is null)
+                        {
+                            acoustIdFingerprintResult = fingerprint.Results
+                                .FirstOrDefault(print => print.Recordings != null && (bool)(print.Recordings ?? [])?
+                                    .Any(rec => rec?.Title != null && title.Sanitize()
+                                        .Contains(rec.Title?.Sanitize() ?? string.Empty)));
+                        }
+
+                        Guid id = acoustIdFingerprintResult?.Recordings?.FirstOrDefault()?.Releases?.FirstOrDefault()?.Id ?? Guid.Empty;
+                        if(id != Guid.Empty)
+                        {
+                            matchedReleases.Add(new MusicBrainzRelease
+                            {
+                                Id = id,
+                                Title = acoustIdFingerprintResult?.Recordings?.FirstOrDefault()?.Releases?.FirstOrDefault()?.Title ?? string.Empty,
+                            });
+                        }
+                        else
+                        {
+                            if (matchedReleases.Count == 0)
+                            {
+                                Logger.App("No match for: " + folder.Path);
+                            }
+                        }
+                    } 
+                    // raw save
+                }
             }
             
             MusicBrainzRelease? bestRelease = null;
             int highestScore = -1;
             
-            foreach (MusicBrainzRelease? release in matchedReleases.Where(r => r.Title.Sanitize().Contains(albumName.Sanitize())))
+            foreach (MusicBrainzRelease? release in matchedReleases.Where(r => r.Title.Sanitize().Contains(albumName.Sanitize()) && r.Media is null))
             {
-                if (release is null || release.Media.Length == 0) continue;
+                // if (release is null || release.Media.Length == 0) continue;
+                if (release is null) continue;
 
                 var result = await musicBrainzReleaseClient.WithAppends(release.Id, ["recordings"]);
                 if (result?.Media is null) continue;
@@ -137,7 +178,7 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
                 if (score > highestScore)
                 {
                     highestScore = score;
-                    bestRelease = release;
+                    bestRelease = release; // 
                 }
             }
             

@@ -134,7 +134,8 @@ public record ArtistResponseItemDto
         Albums = artist.AlbumArtist
             .Select(album => new AlbumDto(album, country!))
             .GroupBy(album => album.Id)
-            .Select(album => album.First());
+            .Select(album => album.First())
+            .OrderBy(artistTrack => artistTrack.Year);
         
         Featured = artist.ArtistTrack
             .Select(artistTrack => artistTrack.Track.AlbumTrack.First().Album)
