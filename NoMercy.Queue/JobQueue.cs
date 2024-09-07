@@ -26,7 +26,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             catch (Exception e)
             {
-                Logger.Queue(e, LogEventLevel.Error);
+                //
             }
         }
     }
@@ -46,7 +46,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             catch (Exception e)
             {
-                Logger.Queue(e, LogEventLevel.Error);
+                //
             }
 
             return job;
@@ -179,7 +179,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
                     Attempts = 0
                 });
 
-                    Context.SaveChanges();
+                Context.SaveChanges();
             }
         }
         catch (Exception e)
