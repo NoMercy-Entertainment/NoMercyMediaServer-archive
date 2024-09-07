@@ -33,9 +33,11 @@ public class Seed : IDisposable, IAsyncDisposable
     private static readonly QueueContext QueueContext = new();
     private static Folder[] _folders = [];
     private static User[] _users = [];
+    private static bool ShouldSeedMarvel { get; set; }
 
-    public static async Task Init()
+    public static async Task Init(bool shouldSeedMarvel)
     { 
+        ShouldSeedMarvel = shouldSeedMarvel;
         await CreateDatabase();
         await SeedDatabase();
     }
@@ -75,7 +77,7 @@ public class Seed : IDisposable, IAsyncDisposable
             await AddLibraries();
             await Users();
 
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            if (ShouldSeedMarvel)
             {
                 Thread thread = new(() => _ = AddSpecial());
                 thread.Start();
@@ -533,212 +535,251 @@ public class Seed : IDisposable, IAsyncDisposable
 
     private static async Task AddSpecial()
     {
-        bool hasSpecial = await MediaContext.Specials.AnyAsync();
-        if (hasSpecial) return;
-        
         Logger.Setup("Adding Special");
 
-        await Task.Run(async () =>
+        try
         {
-            try
+            await using MediaContext context = new();
+            Library movieLibrary = await context.Libraries
+                .Where(f => f.Type == "movie")
+                .Include(l => l.FolderLibraries)
+                .ThenInclude(fl => fl.Folder)
+                .FirstAsync();
+
+            Library tvLibrary = await context.Libraries
+                .Where(f => f.Type == "tv")
+                .Include(l => l.FolderLibraries)
+                .ThenInclude(fl => fl.Folder)
+                .FirstAsync();
+
+            Special special = new()
             {
-                await using MediaContext context = new();
-                Library movieLibrary = await context.Libraries
-                    .Where(f => f.Type == "movie")
-                    .Include(l => l.FolderLibraries)
-                    .ThenInclude(fl => fl.Folder)
-                    .FirstAsync();
-
-                Library tvLibrary = await context.Libraries
-                    .Where(f => f.Type == "tv")
-                    .Include(l => l.FolderLibraries)
-                    .ThenInclude(fl => fl.Folder)
-                    .FirstAsync();
-
-                Special special = new()
-                {
-                    Id = Mcu.Special.Id,
-                    Title = Mcu.Special.Title,
-                    Backdrop = Mcu.Special.Backdrop,
-                    Poster = Mcu.Special.Poster,
-                    Logo = Mcu.Special.Logo,
-                    Description = Mcu.Special.Description,
-                    Creator = Mcu.Special.Creator,
-                    _colorPalette = await NoMercyImageManager
-                        .MultiColorPalette(new[]
-                        {
-                            new BaseImageManager.MultiStringType("poster", Mcu.Special.Poster),
-                            new BaseImageManager.MultiStringType("backdrop", Mcu.Special.Backdrop)
-                        })
-                };
-
-                await context.Specials
-                    .Upsert(special)
-                    .On(v => new { v.Id })
-                    .WhenMatched((si, su) => new Special()
+                Id = Mcu.Special.Id,
+                Title = Mcu.Special.Title,
+                Backdrop = Mcu.Special.Backdrop,
+                Poster = Mcu.Special.Poster,
+                Logo = Mcu.Special.Logo,
+                Description = Mcu.Special.Description,
+                Creator = Mcu.Special.Creator,
+                _colorPalette = await NoMercyImageManager
+                    .MultiColorPalette(new[]
                     {
-                        Id = su.Id,
-                        Title = su.Title,
-                        Backdrop = su.Backdrop,
-                        Poster = su.Poster,
-                        Logo = su.Logo,
-                        Description = su.Description,
-                        Creator = su.Creator,
-                        _colorPalette = su._colorPalette
+                        new BaseImageManager.MultiStringType("poster", Mcu.Special.Poster),
+                        new BaseImageManager.MultiStringType("backdrop", Mcu.Special.Backdrop)
                     })
-                    .RunAsync();
+            };
 
-                TmdbSearchClient client = new();
-                List<int> tvIds = [];
-                List<int> movieIds = [];
-                List<SpecialItem> specialItems = [];
-                
-                JobDispatcher jobDispatcher = new();
-
-                foreach (CollectionItem item in Mcu.McuItems)
+            await context.Specials
+                .Upsert(special)
+                .On(v => new { v.Id })
+                .WhenMatched((si, su) => new Special()
                 {
-                    Logger.Setup($"Searching for {item.title} ({item.year})");
-                    switch (item.type)
+                    Id = su.Id,
+                    Title = su.Title,
+                    Backdrop = su.Backdrop,
+                    Poster = su.Poster,
+                    Logo = su.Logo,
+                    Description = su.Description,
+                    Creator = su.Creator,
+                    _colorPalette = su._colorPalette
+                })
+                .RunAsync();
+
+            TmdbSearchClient client = new();
+            List<int> tvIds = [];
+            List<int> movieIds = [];
+            List<SpecialItem> specialItems = [];
+            
+            JobDispatcher jobDispatcher = new();
+
+            foreach (CollectionItem item in Mcu.McuItems)
+            {
+                Logger.Setup($"Searching for {item.title} ({item.year})");
+                switch (item.type)
+                {
+                    case "movie":
                     {
-                        case "movie":
+                        TmdbPaginatedResponse<TmdbMovie>? result =
+                            await client.Movie(item.title, item.year.ToString());
+                        TmdbMovie? movie = result?.Results.FirstOrDefault(
+                            r => r.Title.ToLower().Contains("making of") == false);
+
+                        if (movie is null) continue;
+                        if (movieIds.Contains(movie.Id)) continue;
+
+                        movieIds.Add(movie.Id);
+
+                        try
                         {
-                            TmdbPaginatedResponse<TmdbMovie>? result =
-                                await client.Movie(item.title, item.year.ToString());
-                            TmdbMovie? movie = result?.Results.FirstOrDefault(
-                                r => r.Title.ToLower().Contains("making of") == false);
-
-                            if (movie is null) continue;
-                            if (movieIds.Contains(movie.Id)) continue;
-
-                            movieIds.Add(movie.Id);
-
-                            try
+                            bool exists = context.Movies.Any(x => x.Id == movie.Id);
+                            if (!exists)
                             {
-                                jobDispatcher.DispatchJob<AddMovieJob>(movie.Id, movieLibrary);
+                                var j = new AddMovieJob
+                                {
+                                    Id = movie.Id,
+                                    LibraryId = movieLibrary.Id
+                                };
+                                j.Handle().Wait();
+                                // jobDispatcher.DispatchJob<AddMovieJob>(movie.Id, movieLibrary);
                             }
-                            catch (Exception e)
-                            {
-                                Logger.Setup(e, LogEventLevel.Fatal);
-                            }
-
-                            break;
                         }
-                        case "tv":
+                        catch (Exception e)
                         {
-                            TmdbPaginatedResponse<TmdbTvShow>? result =
-                                await client.TvShow(item.title, item.year.ToString());
-                            TmdbTvShow? tv = result?.Results.FirstOrDefault(r =>
-                                r.Name.Contains("making of", StringComparison.InvariantCultureIgnoreCase) == false);
-
-                            if (tv is null) continue;
-                            if (tvIds.Contains(tv.Id)) continue;
-
-                            tvIds.Add(tv.Id);
-
-                            try
-                            {
-                                jobDispatcher.DispatchJob<AddShowJob>(tv.Id, tvLibrary);
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.Setup(e, LogEventLevel.Fatal);
-                            }
-
-                            break;
+                            Logger.Setup(e, LogEventLevel.Fatal);
                         }
+
+                        break;
+                    }
+                    case "tv":
+                    {
+                        TmdbPaginatedResponse<TmdbTvShow>? result =
+                            await client.TvShow(item.title, item.year.ToString());
+                        TmdbTvShow? tv = result?.Results.FirstOrDefault(r =>
+                            r.Name.Contains("making of", StringComparison.InvariantCultureIgnoreCase) == false);
+
+                        if (tv is null) continue;
+                        if (tvIds.Contains(tv.Id)) continue;
+
+                        tvIds.Add(tv.Id);
+
+                        try
+                        {
+                            bool exists = context.Tvs.Any(x => x.Id == tv.Id);
+                            if (!exists)
+                            {
+                                var j = new AddShowJob
+                                {
+                                    Id = tv.Id,
+                                    LibraryId = tvLibrary.Id
+                                };
+                                j.Handle().Wait();
+                                // jobDispatcher.DispatchJob<AddMovieJob>(movie.Id, movieLibrary);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Setup(e, LogEventLevel.Fatal);
+                        }
+
+                        break;
                     }
                 }
+            }
 
-                foreach (CollectionItem item in Mcu.McuItems)
+            foreach (CollectionItem item in Mcu.McuItems)
+            {
+                Logger.Setup($"Searching for {item.title} ({item.year})");
+                switch (item.type)
                 {
-                    Logger.Setup($"Searching for {item.title} ({item.year})");
-                    switch (item.type)
+                    case "movie":
                     {
-                        case "movie":
+                        TmdbPaginatedResponse<TmdbMovie>? result =
+                            await client.Movie(item.title, item.year.ToString());
+                        TmdbMovie? movie = result?.Results.FirstOrDefault(r =>
+                            r.Title.Contains("making of", StringComparison.InvariantCultureIgnoreCase) == false);
+                        if (movie is null) continue;
+
+                        specialItems.Add(new SpecialItem
                         {
-                            TmdbPaginatedResponse<TmdbMovie>? result =
-                                await client.Movie(item.title, item.year.ToString());
-                            TmdbMovie? movie = result?.Results.FirstOrDefault(r =>
-                                r.Title.Contains("making of", StringComparison.InvariantCultureIgnoreCase) == false);
-                            if (movie is null) continue;
+                            SpecialId = special.Id,
+                            MovieId = movie.Id,
+                            Order = specialItems.Count
+                        });
+
+                        break;
+                    }
+                    case "tv":
+                    {
+                        TmdbPaginatedResponse<TmdbTvShow>? result =
+                            await client.TvShow(item.title, item.year.ToString());
+                        TmdbTvShow? tv = result?.Results.FirstOrDefault(r =>
+                            r.Name.Contains("making of", StringComparison.InvariantCultureIgnoreCase) == false);
+                        if (tv is null) continue;
+
+                        if (item.episodes.Length == 0)
+                            item.episodes = context.Episodes
+                                .Where(x => x.TvId == tv.Id)
+                                .Where(x => x.SeasonNumber == item.seasons.First())
+                                .Select(x => x.EpisodeNumber)
+                                .ToArray();
+
+                        foreach (int episodeNumber in item.episodes)
+                        {
+                            Episode? episode = context.Episodes
+                                .FirstOrDefault(x =>
+                                    x.TvId == tv.Id
+                                    && x.SeasonNumber == item.seasons.First()
+                                    && x.EpisodeNumber == episodeNumber);
+
+                            if (episode is null) continue;
 
                             specialItems.Add(new SpecialItem
                             {
                                 SpecialId = special.Id,
-                                MovieId = movie.Id,
+                                EpisodeId = episode.Id,
                                 Order = specialItems.Count
                             });
-
-                            break;
                         }
-                        case "tv":
-                        {
-                            TmdbPaginatedResponse<TmdbTvShow>? result =
-                                await client.TvShow(item.title, item.year.ToString());
-                            TmdbTvShow? tv = result?.Results.FirstOrDefault(r =>
-                                r.Name.Contains("making of", StringComparison.InvariantCultureIgnoreCase) == false);
-                            if (tv is null) continue;
 
-                            if (item.episodes.Length == 0)
-                                item.episodes = context.Episodes
-                                    .Where(x => x.TvId == tv.Id)
-                                    .Where(x => x.SeasonNumber == item.seasons.First())
-                                    .Select(x => x.EpisodeNumber)
-                                    .ToArray();
-
-                            foreach (int episodeNumber in item.episodes)
-                            {
-                                Episode? episode = context.Episodes
-                                    .FirstOrDefault(x =>
-                                        x.TvId == tv.Id
-                                        && x.SeasonNumber == item.seasons.First()
-                                        && x.EpisodeNumber == episodeNumber);
-
-                                if (episode is null) continue;
-
-                                specialItems.Add(new SpecialItem
-                                {
-                                    SpecialId = special.Id,
-                                    EpisodeId = episode.Id,
-                                    Order = specialItems.Count
-                                });
-                            }
-
-                            break;
-                        }
+                        break;
                     }
                 }
-
-                Logger.Setup($"Upsetting {specialItems.Count} SpecialItems");
-
-                await context.SpecialItems.UpsertRange(specialItems
-                        .Where(s => s.MovieId is not null))
-                    .On(x => new { x.SpecialId, x.MovieId })
-                    .WhenMatched((old, @new) => new SpecialItem
-                    {
-                        SpecialId = @new.SpecialId,
-                        MovieId = @new.MovieId,
-                        Order = @new.Order
-                    })
-                    .RunAsync();
-
-                await context.SpecialItems.UpsertRange(specialItems
-                        .Where(s => s.EpisodeId is not null))
-                    .On(x => new { x.SpecialId, x.EpisodeId })
-                    .WhenMatched((old, @new) => new SpecialItem
-                    {
-                        SpecialId = @new.SpecialId,
-                        EpisodeId = @new.EpisodeId,
-                        Order = @new.Order
-                    })
-                    .RunAsync();
             }
-            catch (Exception e)
+
+            Logger.Setup($"Upsetting {specialItems.Count} SpecialItems");
+
+            var movies = specialItems
+                .Where(s => s.MovieId is not null);
+
+            foreach (var movie in movies)
             {
-                Logger.Setup(e, LogEventLevel.Error);
-                throw;
+                try
+                {
+                    await context.SpecialItems.Upsert(movie)
+                        .On(x => new { x.SpecialId, x.MovieId })
+                        .WhenMatched((old, @new) => new SpecialItem
+                        {
+                            SpecialId = @new.SpecialId,
+                            MovieId = @new.MovieId,
+                            Order = @new.Order
+                        })
+                        .RunAsync();
+
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
             }
-        });
+            
+            var episodes = specialItems
+                .Where(s => s.EpisodeId is not null);
+
+            foreach (var episode in episodes)
+            {
+                try
+                {
+                    await context.SpecialItems.Upsert(episode)
+                        .On(x => new { x.SpecialId, x.EpisodeId })
+                        .WhenMatched((old, @new) => new SpecialItem
+                        {
+                            SpecialId = @new.SpecialId,
+                            EpisodeId = @new.EpisodeId,
+                            Order = @new.Order
+                        })
+                        .RunAsync();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.Setup(e, LogEventLevel.Error);
+            throw;
+        }
     }
 
     public void Dispose()
