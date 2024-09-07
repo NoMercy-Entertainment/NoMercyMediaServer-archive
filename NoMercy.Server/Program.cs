@@ -19,6 +19,8 @@ namespace NoMercy.Server;
 
 public static class Program
 {
+    private static bool ShouldSeedMarvel { get; set; }
+    
     public static Task Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
@@ -66,6 +68,12 @@ public static class Program
             
             Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
             Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
+        }
+        
+        if(options.Seed)
+        {
+            Logger.App("Seeding database.");
+            ShouldSeedMarvel = true;
         }
         
         if (!string.IsNullOrEmpty(options.LogLevel))
@@ -171,7 +179,7 @@ public static class Program
             AppFiles.CreateAppFolders(),
             Networking.Networking.Discover(),
             Auth.Init(),
-            Seed.Init(),
+            Seed.Init(ShouldSeedMarvel),
             Register.Init(),
             Binaries.DownloadAll(),
             // AniDbBaseClient.Init(),
