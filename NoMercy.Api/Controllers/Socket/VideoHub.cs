@@ -72,8 +72,8 @@ public class ColorPalette
 public class PlayerState
 {
     [JsonProperty("play_State")] public string PlayState { get; set; } = "idle";
-    [JsonProperty("time")] public double Time { get; set; }
-    [JsonProperty("volume")] public double Volume { get; set; } = 20;
+    [JsonProperty("time")] public int Time { get; set; }
+    [JsonProperty("volume")] public int Volume { get; set; } = 20;
     [JsonProperty("muted")] public bool Muted { get; set; }
     [JsonProperty("shuffle")] public bool Shuffle { get; set; }
     [JsonProperty("repeat")] public string Repeat { get; set; } = "none";
@@ -403,7 +403,7 @@ public class VideoHub : ConnectionHub
         await Clients.Others.SendAsync("Mute", mute);
     }
 
-    public async Task Volume(double volume)
+    public async Task Volume(int volume)
     {
         PlayerState state = MusicPlayerState();
         state.Volume = volume;
@@ -411,7 +411,7 @@ public class VideoHub : ConnectionHub
         await Clients.Others.SendAsync("Volume", volume);
     }
 
-    public async Task SeekTo(double value)
+    public async Task SeekTo(int value)
     {
         PlayerState state = MusicPlayerState();
         state.Time = value;
@@ -421,7 +421,7 @@ public class VideoHub : ConnectionHub
         await Clients.Others.SendAsync("SeekTo", value);
     }
 
-    public async Task CurrentTime(double time)
+    public async Task CurrentTime(int time)
     {
         PlayerState state = MusicPlayerState();
         state.Time = time;
