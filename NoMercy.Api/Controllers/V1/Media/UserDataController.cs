@@ -111,7 +111,7 @@ public class UserDataController : BaseController
         {
             Data = filteredContinueWatching
                 .Select(item => new ContinueWatchingItemDto(item,
-                    language ?? "US"))
+                    country))
         });
     }
 

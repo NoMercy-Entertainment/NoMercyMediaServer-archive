@@ -183,7 +183,7 @@ public record PlaylistResponseDto
         [
             new TrackDto()
             {
-                File = $"{baseFolder}/thumbs_256x144.vtt",
+                File = $"{baseFolder}/previews.vtt",
                 Kind = "thumbnails"
             },
             new TrackDto()
@@ -198,7 +198,7 @@ public record PlaylistResponseDto
             },
             new TrackDto()
             {
-                File = $"{baseFolder}/thumbs_256x144.webp",
+                File = $"{baseFolder}/sprite.webp",
                 Kind = "sprite"
             },
             new TrackDto()
