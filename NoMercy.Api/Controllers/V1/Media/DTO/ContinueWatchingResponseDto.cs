@@ -110,7 +110,7 @@ public record ContinueWatchingItemDto
             Backdrop = item.Special.Backdrop;
             Title = item.Special.Title;
             TitleSort = item.Special.Title.TitleSort();
-            Overview = item.Special.Overview;
+            Overview = item.Special.Overview ?? item.Special.Description;
 
             MediaType = "specials";
             Type = "specials";
@@ -120,6 +120,26 @@ public record ContinueWatchingItemDto
                             .Select(specialItem => specialItem.Episode?.VideoFiles
                                 .Any(videoFile => videoFile.Folder != null)).Count()
                         + item.Special.Items.Count(i => i.MovieId != null);
+            Videos = [];
+            ContentRatings = item.Special.Items
+                .SelectMany(specialItem => specialItem.Episode?.Tv.CertificationTvs
+                    .Where(certificationTv => certificationTv.Certification.Iso31661 == "US"
+                                              || certificationTv.Certification.Iso31661 == country)
+                    .Select(certificationTv => new ContentRating
+                    {
+                        Rating = certificationTv.Certification.Rating,
+                        Iso31661 = certificationTv.Certification.Iso31661
+                    }) ?? Array.Empty<ContentRating>())
+                .Concat(item.Special.Items
+                    .Where(specialItem => specialItem.MovieId != null)
+                    .SelectMany(specialItem => specialItem.Movie?.CertificationMovies
+                        .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                                                     || certificationMovie.Certification.Iso31661 == country)
+                        .Select(certificationMovie => new ContentRating
+                        {
+                            Rating = certificationMovie.Certification.Rating,
+                            Iso31661 = certificationMovie.Certification.Iso31661
+                        }) ?? Array.Empty<ContentRating>()));
             // Videos = item.SpecialItemsDto.SpecialItems
             //     .SelectMany(specialDto => specialDto.Tv.Media)
             //     .Select(media => new VideoDto(media))
