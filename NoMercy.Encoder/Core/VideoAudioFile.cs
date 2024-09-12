@@ -186,30 +186,30 @@ public class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegPath) : C
                     $"[{stream.Index}]crop={stream.CropValue},scale={stream.ScaleValue},format={stream.PixelFormat}[v{index}_hls_0]");
             }
 
-            if (index != Container.VideoStreams.Count - 1) complexString.Append(';');
+            if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         }
 
-        if (Container.AudioStreams.Count > 0) complexString.Append(';');
+        if (Container.AudioStreams.Count > 0 && complexString.Length > 0) complexString.Append(';');
         foreach (BaseAudio stream in Container.AudioStreams)
         {
             int index = Container!.AudioStreams.IndexOf(stream);
 
             complexString.Append($"[a:{stream.Index}]volume=3,loudnorm[a{index}_hls_0]");
 
-            if (index != Container.AudioStreams.Count - 1) complexString.Append(';');
+            if (index != Container.AudioStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         }
 
-        if (Container.SubtitleStreams.Count > 0) complexString.Append(';');
+        if (Container.SubtitleStreams.Count > 0 && complexString.Length > 0) complexString.Append(';');
         foreach (BaseSubtitle stream in Container.SubtitleStreams)
         {
             int index = Container!.SubtitleStreams.IndexOf(stream);
 
             complexString.Append($"[s:{stream.Index}]overlay[s{index}_hls_0]");
 
-            if (index != Container.SubtitleStreams.Count - 1) complexString.Append(';');
+            if (index != Container.SubtitleStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         }
 
-        if (Container.ImageStreams.Count > 0) complexString.Append(';');
+        if (Container.ImageStreams.Count > 0 && complexString.Length > 0) complexString.Append(';');
         foreach (BaseImage stream in Container.ImageStreams)
         {
             int index = Container!.ImageStreams.IndexOf(stream);
@@ -221,7 +221,7 @@ public class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegPath) : C
                 complexString.Append(
                     $"[v:{stream.Index}]crop={stream.CropValue},scale={stream.ScaleValue},fps=1/{stream.FrameRate}[i{index}_hls_0]");
 
-            if (index != Container.ImageStreams.Count - 1) complexString.Append(';');
+            if (index != Container.ImageStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         }
 
         command.Append(complexString + "\"");
