@@ -133,4 +133,11 @@ public static partial class Str
     {
         return str.RemoveDiacritics().RemoveNonAlphaNumericCharacters().RemoveAccents();
     }
+    
+    public static bool ContainsSanitized(this string str, string value)
+    {
+        str = str.Sanitize();
+        value = value.Sanitize();
+        return str.Contains(value) || value.Contains(str);
+    }
 }
