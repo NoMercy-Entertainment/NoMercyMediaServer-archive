@@ -6,6 +6,10 @@ namespace NoMercy.Providers.MusicBrainz.Client;
 
 public class MusicBrainzArtistClient : MusicBrainzBaseClient
 {
+    public MusicBrainzArtistClient() : base()
+    {
+    }
+    
     public MusicBrainzArtistClient(Guid? id, string[]? appendices = null) : base((Guid)id!)
     {
     }

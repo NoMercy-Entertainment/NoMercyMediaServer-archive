@@ -103,6 +103,7 @@ public class MusicBrainzReleaseClient : MusicBrainzBaseClient
         Dictionary<string, string>? queryParams = new()
         {
             ["query"] = query,
+            ["inc"] = "recordings",
             ["fmt"] = "json"
         };
         return Get<MusicBrainzReleaseSearchResponse>($"release", queryParams, priority);
