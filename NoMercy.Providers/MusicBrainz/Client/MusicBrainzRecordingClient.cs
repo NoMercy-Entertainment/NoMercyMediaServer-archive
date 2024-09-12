@@ -41,6 +41,7 @@ public class MusicBrainzRecordingClient : MusicBrainzBaseClient
         Dictionary<string, string>? queryParams = new()
         {
             ["query"] = Uri.EscapeDataString(query),
+            ["inc"] = "releases",
             ["fmt"] = "json"
         };
         return Get<MusicBrainzRecordingAppends>($"recording", queryParams, priority);
