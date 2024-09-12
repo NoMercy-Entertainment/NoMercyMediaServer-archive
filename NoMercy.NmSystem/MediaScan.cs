@@ -16,6 +16,28 @@ public class MovieFileExtend
     public int? Episode { get; init; }
     public bool IsSuccess { get; set; }
     public string FilePath { get; set; } = string.Empty;
+
+    public int DiscNumber
+    {
+        get
+        {
+            if (Title is null) return 0;
+            string pattern = @"^((?<discNumber>\d+)(-|\s))?(?<trackNumber>\d+)";
+            Match match = Regex.Match(Title, pattern);
+            return match.Groups["discNumber"].Success ? int.Parse(match.Groups["discNumber"].Value) : 0;
+        }
+    }
+    
+    public int TrackNumber
+    {
+        get
+        {
+            if (Title is null) return 0;
+            string pattern = @"^((?<discNumber>\d+)(-|\s))?(?<trackNumber>\d+)";
+            Match match = Regex.Match(Title, pattern);
+            return match.Groups["trackNumber"].Success ? int.Parse(match.Groups["trackNumber"].Value) : 0;
+        }
+    }
 }
 
 public class MediaFolder
@@ -150,7 +172,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
             {
                 Title = movieFile1.Title,
                 Year = movieFile1.Year,
-                FilePath = movieFile1.Path
+                FilePath = movieFile1.Path,
             },
 
             Files = files.Count > 0
