@@ -55,9 +55,8 @@ public class MusicBrainzLifeSpan
 {
     [JsonProperty("begin")] private string? _beginSpan { get; set; }
 
-    public DateTime? BeginDate
-    {
-        get => DateTimeParser.ParseDateTime(_beginSpan);
+    public DateTime? BeginDate {
+        get => !string.IsNullOrWhiteSpace(_beginSpan) && !string.IsNullOrEmpty(_beginSpan) && _beginSpan.TryParseToDateTime(out DateTime dt) ? dt : null;
         set => _beginSpan = value.ToString();
     }
 
@@ -65,7 +64,7 @@ public class MusicBrainzLifeSpan
 
     public DateTime? EndDate
     {
-        get => DateTimeParser.ParseDateTime(_endSpan);
+        get => !string.IsNullOrWhiteSpace(_endSpan) && !string.IsNullOrEmpty(_endSpan) && _endSpan.TryParseToDateTime(out DateTime dt) ? dt : null;
         set => _endSpan = value.ToString();
     }
 

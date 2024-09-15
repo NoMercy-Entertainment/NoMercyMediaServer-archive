@@ -66,12 +66,12 @@ public class MusixMatchMusixMatchTrack
 
     [JsonProperty("restricted")] public long Restricted { get; set; }
 
-    [JsonProperty("first-release-date")] private string? _firstReleaseDate { get; set; }
+    [JsonProperty("first-release-date")] private string? _firstReleaseDate; 
 
     public DateTime? FirstReleaseDate
     {
-        get => DateTimeParser.ParseDateTime(_firstReleaseDate);
-        set => _firstReleaseDate = value.ToString();
+        get => !string.IsNullOrWhiteSpace(_firstReleaseDate) && !string.IsNullOrEmpty(_firstReleaseDate) && _firstReleaseDate.TryParseToDateTime(out DateTime dt) ? dt : null;
+        set => _firstReleaseDate = value.ToString() ?? string.Empty;
     }
 
     [JsonProperty("updated_time")] public DateTimeOffset UpdatedTime { get; set; }
