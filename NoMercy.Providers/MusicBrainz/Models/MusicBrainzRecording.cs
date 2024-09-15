@@ -21,7 +21,7 @@ public class MusicBrainzRecordingAppends : MusicBrainzRecording
 
     public DateTime? FirstReleaseDate
     {
-        get => DateTimeParser.ParseDateTime(_firstReleaseDate);
+        get => !string.IsNullOrWhiteSpace(_firstReleaseDate) && !string.IsNullOrEmpty(_firstReleaseDate) && _firstReleaseDate.TryParseToDateTime(out DateTime dt) ? dt : null;
         set => _firstReleaseDate = value.ToString();
     }
 
