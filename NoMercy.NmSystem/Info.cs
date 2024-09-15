@@ -15,7 +15,7 @@ public class Info
     public static readonly string Platform = GetPlatform();
     public static readonly string Architecture = RuntimeInformation.ProcessArchitecture.ToString();
     public static readonly string? Cpu = GetCpuFullName();
-    public static readonly string[]? Gpu = GetGpuFullName();
+    public static readonly string[] Gpu = GetGpuFullName();
     public static readonly string? Version = GetSystemVersion();
     public static readonly DateTime BootTime = GetBootTime();
     public static readonly DateTime StartTime = DateTime.UtcNow;
@@ -55,16 +55,18 @@ public class Info
         throw new Exception("Unknown platform");
     }
 
-    private static string?[] GetGpuFullName()
+    private static string[] GetGpuFullName()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             ManagementObjectSearcher searcher = new("select Name from Win32_VideoController");
-            List<string> gpus = new();
+            List<string> gpus = [];
             foreach (ManagementBaseObject? o in searcher.Get())
             {
-                ManagementObject? item = (ManagementObject)o;
-                gpus.Add(item["Name"]?.ToString()?.Trim());
+                if (o is not ManagementObject item) continue;
+                if (item["Name"] is not {} value) continue;
+                if (value.ToString() is not {} valueString) continue;
+                gpus.Add(valueString.Trim());
             }
 
             return gpus.ToArray();
@@ -72,7 +74,7 @@ public class Info
 
         string output = ExecuteBashCommand("lspci | grep 'VGA'");
 
-        return output.Trim().Split(':')?.LastOrDefault()?.Trim()?.Split('\n') ?? [];
+        return output.Trim().Split(':').LastOrDefault()?.Trim()?.Split('\n') ?? [];
     }
 
     private static string? GetCpuFullName()
@@ -102,7 +104,7 @@ public class Info
             ManagementObjectSearcher searcher = new("select Version from Win32_OperatingSystem");
             foreach (ManagementBaseObject? o in searcher.Get())
             {
-                ManagementObject? item = (ManagementObject)o;
+                var item = (ManagementObject)o;
                 return item["Version"].ToString();
             }
         }
