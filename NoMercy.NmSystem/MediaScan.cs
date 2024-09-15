@@ -175,9 +175,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 FilePath = movieFile1.Path,
             },
 
-            Files = files.Count > 0
-                ? files
-                : null
+            Files = files
         });
 
         try
@@ -224,13 +222,11 @@ public class MediaScan : IDisposable, IAsyncDisposable
                         FilePath = movieFile.Path
                     },
 
-                    Files = files2 is { Count: > 0 }
-                        ? files2
-                        : null,
+                    Files = files2,
 
                     SubFolders = depth - 1 > 0
                         ? ScanFolder(directory, depth - 1)
-                        : null
+                        : []
                 });
             });
 
@@ -304,7 +300,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                     SubFolders = depth - 1 > 0
                         ? ScanFoldersOnly(directory, depth - 1)
-                        : null
+                        : []
                 });
             });
 
