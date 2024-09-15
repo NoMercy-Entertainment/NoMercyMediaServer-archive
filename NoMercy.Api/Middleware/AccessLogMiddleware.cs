@@ -7,9 +7,7 @@ using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Middleware;
 
-public class AccessLogMiddleware
-{
-    private readonly RequestDelegate _next;
+public class AccessLogMiddleware(RequestDelegate next) {
 
     private readonly string[] _ignoredStartsWithRoutes =
     [
@@ -36,78 +34,49 @@ public class AccessLogMiddleware
         "/status"
     ];
 
-    public AccessLogMiddleware(RequestDelegate next)
-    {
-        _next = next;
-    }
-
     public async Task InvokeAsync(HttpContext context)
     {
+        if (ShouldIgnoreRoute(context))
+        {
+            await next(context);
+            return;
+        }
+
         string path = HttpUtility.UrlDecode(context.Request.Path);
-
-        bool ignoreStart = _ignoredStartsWithRoutes
-            .Any(route => context.Request.Path.ToString().StartsWith(route));
-
-        bool ignoreExactRoute = _ignoreExact
-            .Any(route => context.Request.Path.ToString().Equals(route));
-
-        if (ignoreStart || ignoreExactRoute)
-        {
-            await _next(context);
-            return;
-        }
-
-        bool ignoreIfGuest = _ignoreIfGuest
-            .Any(route => context.Request.Path.ToString().Equals(route));
-
+        string remoteIpAddress = context.Connection.RemoteIpAddress?.ToString() ?? "Unknown IP";
         string? guid = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (guid is null)
-        {
-            if (ignoreIfGuest)
-            {
-                await _next(context);
-                return;
-            }
 
-            Logger.Http($"Unknown: {context.Connection.RemoteIpAddress}: {path}");
-            await _next(context);
-            return;
+        if (guid == null || !Guid.TryParse(guid, out Guid userId) || userId == Guid.Empty)
+        {
+            Logger.Http($"Unknown: {remoteIpAddress}: {path}");
+        }
+        else if (ShouldIgnoreIfAuthenticated(path) || ShouldIgnoreFolder(path))
+        {
+            // Ignored authenticated route or folder
+        }
+        else
+        {
+            User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
+            Logger.Http($"{user?.Name ?? $"Unknown: {remoteIpAddress}:"}: {path}");
         }
 
+        await next(context);
+    }
 
-        Guid userId = Guid.Parse(guid);
-        if (userId == Guid.Empty)
-        {
-            if (ignoreIfGuest)
-            {
-                await _next(context);
-                return;
-            }
+    private bool ShouldIgnoreRoute(HttpContext context) {
+        string path = context.Request.Path.ToString();
+        return _ignoredStartsWithRoutes.Any(route => path.StartsWith(route)) 
+            || _ignoreExact.Any(path.Equals) 
+            || _ignoreIfGuest.Any(path.Equals);
+    }
 
-            Logger.Http($"Unknown: {context.Connection.RemoteIpAddress}: {path}");
-            await _next(context);
-            return;
-        }
+    private bool ShouldIgnoreIfAuthenticated(string path)
+    {
+        return _ignoreIfAuthenticated.Any(path.Equals);
+    }
 
-        bool ignoreIfAuthenticated = _ignoreIfAuthenticated
-            .Any(route => context.Request.Path.ToString().Equals(route));
-
-        if (ignoreIfAuthenticated)
-        {
-            await _next(context);
-            return;
-        }
-
-        if (ClaimsPrincipleExtensions.FolderIds.Any(x => path.StartsWith("/" + x)))
-        {
-            await _next(context);
-            return;
-        }
-
-        User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
-
-        Logger.Http($"{user?.Name ?? $"Unknown: {context.Connection.RemoteIpAddress}:"}: {path}");
-
-        await _next(context);
+    private static bool ShouldIgnoreFolder(string path)
+    {
+        return ClaimsPrincipleExtensions.FolderIds.Any(x => path.StartsWith("/" + x));
     }
 }
