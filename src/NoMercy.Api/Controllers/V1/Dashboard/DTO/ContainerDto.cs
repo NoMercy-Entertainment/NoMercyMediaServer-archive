@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
-namespace NoMercy.Api.Controllers.V1.Dashboard;
-public class ContainerDto
+namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
+public record ContainerDto
 {
     [JsonProperty("label")] public string Label { get; set; } = string.Empty;
     [JsonProperty("value")] public string Value { get; set; } = string.Empty;

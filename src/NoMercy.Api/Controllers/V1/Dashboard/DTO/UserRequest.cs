@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
-public class UserRequest
+public record UserRequest
 {
     [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("email")] public string Email { get; set; }

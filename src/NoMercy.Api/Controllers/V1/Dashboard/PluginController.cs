@@ -4,6 +4,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NoMercy.Api.Controllers.V1.Dashboard.DTO;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Helpers;
 using NoMercy.Networking;
@@ -48,7 +49,7 @@ public class PluginController : BaseController
                 Message = "No credentials found for AniDb"
             });
 
-        return Ok(new AniDbCredentialsResponse
+        return Ok(new AniDbCredentialsResponseDto
         {
             Key = "AniDb",
             Username = aniDb.Username,
@@ -58,20 +59,20 @@ public class PluginController : BaseController
 
     [HttpPost]
     [Route("credentials")]
-    public IActionResult Credentials([FromBody] AniDbCredentialsRequest request)
+    public IActionResult Credentials([FromBody] AniDbCredentialsRequestDto requestDto)
     {
         if (!User.IsOwner())
             return UnauthorizedResponse("You do not have permission to set credentials");
 
-        UserPass? aniDb = CredentialManager.Credential(request.Key);
-        CredentialManager.SetCredentials(request.Key, request.Username, request.Password ?? aniDb?.Password ?? "",
-            request.ApiKey);
+        UserPass? aniDb = CredentialManager.Credential(requestDto.Key);
+        CredentialManager.SetCredentials(requestDto.Key, requestDto.Username, requestDto.Password ?? aniDb?.Password ?? "",
+            requestDto.ApiKey);
 
         return Ok(new StatusResponseDto<string>
         {
             Status = "ok",
             Message = "Credentials set successfully for {0}",
-            Args = [request.Key]
+            Args = [requestDto.Key]
         });
     }
 }
