@@ -391,7 +391,7 @@ public record SpecialResponseItemDto
         Type = "specials";
         MediaType = "specials";
         ColorPalette = special.ColorPalette;
-        Favorite = special.SpecialUser.Count != 0;
+        Favorite = special.SpecialUser?.Count != 0;
         NumberOfItems = special.Items.Count;
 
         int movies = special.Items.Count(item => item.MovieId is not null && (bool)item.Movie?.VideoFiles.Any());

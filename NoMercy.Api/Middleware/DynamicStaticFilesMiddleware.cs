@@ -7,107 +7,114 @@ using Microsoft.Net.Http.Headers;
 
 namespace NoMercy.Api.Middleware;
 
-public class DynamicStaticFilesMiddleware
-{
-    private readonly RequestDelegate _next;
+public class DynamicStaticFilesMiddleware(RequestDelegate next) {
     private static readonly ConcurrentDictionary<Ulid, PhysicalFileProvider> Providers = new();
 
-    public DynamicStaticFilesMiddleware(RequestDelegate next)
+    private static string? GetContentType(string? extension) => extension switch
     {
-        _next = next;
-    }
+        ".txt" => "text/plain",
+        ".html" => "text/html",
+        ".css" => "text/css",
+        ".js" => "application/javascript",
+        ".json" => "application/json",
+        ".xml" => "application/xml",
+        ".jpg" => "image/jpeg",
+        ".jpeg" => "image/jpeg",
+        ".webp" => "image/webp",
+        ".png" => "image/png",
+        ".gif" => "image/gif",
+        ".bmp" => "image/bmp",
+        ".ico" => "image/x-icon",
+        ".svg" => "image/svg+xml",
+        ".mp3" => "audio/mpeg",
+        ".wav" => "audio/wav",
+        ".mp4" => "video/mp4",
+        ".mpeg" => "video/mpeg",
+        ".vtt" => "text/vtt",
+        ".srt" => "text/srt",
+        ".webm" => "video/webm",
+        ".ttf" => "font/ttf",
+        ".otf" => "font/otf",
+        ".woff" => "font/woff",
+        ".woff2" => "font/woff2",
+        ".eot" => "font/eot",
+        _ => "application/octet-stream"
+    };
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (!context.Request.Path.HasValue)
-        {
-            await _next(context);
+        if (!context.Request.Path.HasValue) {
+            await next(context);
             return;
         }
 
-        string rootPath = context.Request.Path.ToString().Split("/")[1];
+        string? pathValue = context.Request.Path.Value;
+        string rootPath = context.Request.Path.ToString().Split('/')[1];
         if (rootPath == "api" || rootPath == "index.html" || rootPath.StartsWith("swagger") || rootPath == "images")
         {
-            await _next(context);
+            await next(context);
             return;
         }
 
-        try
-        {
-            Ulid share = Ulid.Parse(rootPath);
-
-            if (Providers.TryGetValue(share, out PhysicalFileProvider? provider))
-            {
-                IFileInfo file =
-                    provider.GetFileInfo(context.Request.Path.Value[context.Request.Path.Value.IndexOf('/', 1)..]);
-
-                if (file.PhysicalPath != null)
-                {
-                    string? fullFilePath = file.PhysicalPath;
-                    FileInfo fileInfo = new(fullFilePath);
-                    long fileLength = fileInfo.Length;
-                    string? fileExtension = Path.GetExtension(file.PhysicalPath)?.ToLower();
-
-                    context.Response.ContentType = fileExtension switch
-                    {
-                        ".txt" => "text/plain",
-                        ".html" => "text/html",
-                        ".css" => "text/css",
-                        ".js" => "application/javascript",
-                        ".json" => "application/json",
-                        ".xml" => "application/xml",
-                        ".jpg" => "image/jpeg",
-                        ".jpeg" => "image/jpeg",
-                        ".webp" => "image/webp",
-                        ".png" => "image/png",
-                        ".gif" => "image/gif",
-                        ".bmp" => "image/bmp",
-                        ".ico" => "image/x-icon",
-                        ".svg" => "image/svg+xml",
-                        ".mp3" => "audio/mpeg",
-                        ".wav" => "audio/wav",
-                        ".mp4" => "video/mp4",
-                        ".mpeg" => "video/mpeg",
-                        ".vtt" => "text/vtt",
-                        ".srt" => "text/srt",
-                        ".webm" => "video/webm",
-                        _ => "application/octet-stream"
-                    };
-
-                    if (context.Request.Headers.TryGetValue("Range", out StringValues rangeValue))
-                        try
-                        {
-                            RangeItemHeaderValue range = RangeHeaderValue.Parse(rangeValue.ToString()).Ranges.First();
-                            long start = range.From ?? 0;
-                            long end = range.To ?? fileLength - 1;
-                            long contentLength = end - start + 1;
-                            context.Response.StatusCode = (int)HttpStatusCode.PartialContent;
-                            context.Response.Headers.ContentRange =
-                                new ContentRangeHeaderValue(start, end, fileLength).ToString();
-                            context.Response.Headers.AcceptRanges = "bytes";
-                            context.Response.ContentLength = contentLength;
-
-                            await using FileStream stream = File.OpenRead(fullFilePath);
-                            stream.Seek(start, SeekOrigin.Begin);
-                            await stream.CopyToAsync(context.Response.Body, (int)contentLength);
-                        }
-                        catch
-                        {
-                            await context.Response.SendFileAsync(fullFilePath);
-                        }
-                    else
-                        await context.Response.SendFileAsync(fullFilePath);
-
-                    return;
-                }
+        try {
+            if (!Ulid.TryParse(rootPath, out Ulid share)) {
+                await next(context);
+                return;
             }
 
-            await _next(context);
+            if (!Providers.TryGetValue(share, out PhysicalFileProvider? provider)) {
+                await next(context);
+                return;
+            }
+
+            string? relativePath = pathValue?[pathValue.IndexOf('/', 1)..];
+            IFileInfo? file = relativePath != null ? provider.GetFileInfo(relativePath) : null;
+
+            if (file?.PhysicalPath != null) {
+                await ServeFile(context, file);
+            }
+            else {
+                await next(context);
+            }
         }
-        catch (Exception)
+        catch
         {
-            await _next(context);
+            await next(context);
         }
+    }
+
+    private async static Task ServeFile(HttpContext context, IFileInfo file)
+    {
+        if (file.PhysicalPath is not {} filePhysicalPath) return;
+        var fileInfo = new FileInfo(filePhysicalPath);
+        long fileLength = fileInfo.Length;
+        context.Response.ContentType = GetContentType(Path.GetExtension(file.PhysicalPath).ToLower());
+        
+        try {
+            if (!context.Request.Headers.TryGetValue("Range", out StringValues rangeValue)) return;
+            if (!RangeHeaderValue.TryParse(rangeValue.ToString(), out RangeHeaderValue? parsedValue)) return;
+            if (!Path.Exists(file.PhysicalPath)) return;
+            if (parsedValue.Ranges.Count == 0) return;
+            
+            RangeItemHeaderValue range = parsedValue.Ranges.First();
+            long start = range.From ?? 0;
+            long end = range.To ?? fileLength - 1;
+            long contentLength = end - start + 1;
+            
+            context.Response.StatusCode = (int)HttpStatusCode.PartialContent;
+            context.Response.Headers.ContentRange = new ContentRangeHeaderValue(start, end, fileLength).ToString();
+            context.Response.Headers.AcceptRanges = "bytes";
+            context.Response.ContentLength = contentLength;
+            
+            await using FileStream stream = File.OpenRead(file.PhysicalPath);
+            stream.Seek(start, SeekOrigin.Begin);
+            await stream.CopyToAsync(context.Response.Body, (int)contentLength);
+        }
+        
+        finally {
+            await context.Response.SendFileAsync(file.PhysicalPath);
+        }
+
     }
 
     public static void AddPath(Ulid requestPath, string physicalPath)
