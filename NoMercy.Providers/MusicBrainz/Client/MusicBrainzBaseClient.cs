@@ -1,5 +1,4 @@
 ﻿using System.Net.Http.Headers;
-using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.NmSystem;
 using NoMercy.Providers.Helpers;
 using Serilog.Events;
@@ -47,7 +46,7 @@ public class MusicBrainzBaseClient : IDisposable
     {
         query ??= new Dictionary<string, string>();
 
-        string newUrl = QueryHelpers.AddQueryString(url, query!);
+        string newUrl = url.ToQueryUri(query!);
 
         if (CacheController.Read(newUrl, out T? result)) return result;
 

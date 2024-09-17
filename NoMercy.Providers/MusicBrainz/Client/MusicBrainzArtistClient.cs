@@ -1,5 +1,6 @@
 ﻿// ReSharper disable All
 
+using NoMercy.NmSystem;
 using NoMercy.Providers.MusicBrainz.Models;
 
 namespace NoMercy.Providers.MusicBrainz.Client;
@@ -40,7 +41,7 @@ public class MusicBrainzArtistClient : MusicBrainzBaseClient
     {
         Dictionary<string, string>? queryParams = new()
         {
-            ["query"] = Uri.EscapeDataString(query),
+            ["query"] = query,
             ["fmt"] = "json"
         };
 
