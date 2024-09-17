@@ -614,7 +614,7 @@ public class Seed : IDisposable, IAsyncDisposable
                             bool exists = context.Movies.Any(x => x.Id == movie.Id);
                             if (!exists)
                             {
-                                var j = new AddMovieJob
+                                AddMovieJob j = new AddMovieJob
                                 {
                                     Id = movie.Id,
                                     LibraryId = movieLibrary.Id
@@ -647,7 +647,7 @@ public class Seed : IDisposable, IAsyncDisposable
                             bool exists = context.Tvs.Any(x => x.Id == tv.Id);
                             if (!exists)
                             {
-                                var j = new AddShowJob
+                                AddShowJob j = new AddShowJob
                                 {
                                     Id = tv.Id,
                                     LibraryId = tvLibrary.Id
@@ -728,10 +728,10 @@ public class Seed : IDisposable, IAsyncDisposable
 
             Logger.Setup($"Upsetting {specialItems.Count} SpecialItems");
 
-            var movies = specialItems
+            IEnumerable<SpecialItem> movies = specialItems
                 .Where(s => s.MovieId is not null);
 
-            foreach (var movie in movies)
+            foreach (SpecialItem movie in movies)
             {
                 try
                 {
@@ -752,10 +752,10 @@ public class Seed : IDisposable, IAsyncDisposable
                 }
             }
             
-            var episodes = specialItems
+            IEnumerable<SpecialItem> episodes = specialItems
                 .Where(s => s.EpisodeId is not null);
 
-            foreach (var episode in episodes)
+            foreach (SpecialItem episode in episodes)
             {
                 try
                 {

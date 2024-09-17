@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using SixLabors.ImageSharp.PixelFormats;
@@ -136,8 +137,30 @@ public static partial class Str
     
     public static bool ContainsSanitized(this string str, string value)
     {
-        str = str.Sanitize();
-        value = value.Sanitize();
+        str = str.Sanitize().ToLower();
+        value = value.Sanitize().ToLower();
         return str.Contains(value) || value.Contains(str);
+    }
+    
+    public static bool EqualsSanitized(this string str, string value)
+    {
+        str = str.Sanitize().ToLower();
+        value = value.Sanitize().ToLower();
+        return str.Equals(value) || value.Equals(str);
+    }
+
+    public static string UrlDecode(this string str)
+    {
+        return WebUtility.UrlDecode(str);
+    }
+    
+    public static string UrlEncode(this string str)
+    {
+        return WebUtility.UrlEncode(str);
+    }
+
+    public static string ToQueryUri(this string str, Dictionary<string, string>? parameters)
+    {
+        return str + ((parameters is not null && parameters.Count > 0) ? "?" + string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}")) : string.Empty);
     }
 }

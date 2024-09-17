@@ -1,7 +1,4 @@
 using CommandLine;
-using NoMercy.Networking;
-using NoMercy.NmSystem;
-using Serilog.Events;
 
 namespace NoMercy.Server;
 
