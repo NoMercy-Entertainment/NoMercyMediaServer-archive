@@ -1,7 +1,4 @@
-﻿using Android.App;
-using Android.Content.PM;
-
-namespace NoMercy.App;
+﻿namespace NoMercy.App;
 
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, LaunchMode = LaunchMode.SingleTop,
     ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode |

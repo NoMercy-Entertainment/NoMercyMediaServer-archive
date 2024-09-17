@@ -33,7 +33,7 @@ public class MovieFileExtend
         get
         {
             if (Title is null) return 0;
-            string pattern = @"^((?<discNumber>\d+)(-|\s))?(?<trackNumber>\d+)";
+            string pattern = @"^((?<discNumber>\d+)-)?(?<trackNumber>\d+)";
             Match match = Regex.Match(Title, pattern);
             return match.Groups["trackNumber"].Success ? int.Parse(match.Groups["trackNumber"].Value) : 0;
         }
@@ -53,17 +53,12 @@ public class MediaFolder
 
 public class MediaFolderExtend: MediaFolder
 {
-    public ConcurrentBag<MediaFile> Files { get; init; } = [];
-    public ConcurrentBag<MediaFolderExtend> SubFolders { get; init; } = [];
+    public ConcurrentBag<MediaFile>? Files { get; init; } = [];
+    public ConcurrentBag<MediaFolderExtend>? SubFolders { get; init; } = [];
 }
 
 public class FFprobeData
 {
-    public FFprobeData()
-    {
-        
-    }
-
     public TimeSpan Duration { get; set; }
     public MediaFormat Format { get; set; }
     public AudioStream? PrimaryAudioStream { get; set; }
@@ -150,11 +145,11 @@ public class MediaScan : IDisposable, IAsyncDisposable
     {
         folderPath = Path.GetFullPath(folderPath.ToUtf8());
 
-        ConcurrentBag<MediaFolderExtend> folders = [];
+        ConcurrentBag<MediaFolderExtend>? folders = [];
 
         if (depth < 0) return folders;
 
-        ConcurrentBag<MediaFile> files = Files(folderPath);
+        ConcurrentBag<MediaFile>? files = Files(folderPath);
 
         MovieFile movieFile1 = _movieDetector.GetInfo(folderPath);
         movieFile1.Year ??= Str.MatchYearRegex().Match(folderPath)
@@ -201,7 +196,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                     return;
                 }
 
-                ConcurrentBag<MediaFile> files2 = depth - 1 > 0 ? Files(directory) : [];
+                ConcurrentBag<MediaFile>? files2 = depth - 1 > 0 ? Files(directory) : [];
 
                 MovieFile movieFile = _movieDetector.GetInfo(directory);
                 movieFile.Year ??= Str.MatchYearRegex()
@@ -222,7 +217,9 @@ public class MediaScan : IDisposable, IAsyncDisposable
                         FilePath = movieFile.Path
                     },
 
-                    Files = files2,
+                    Files = files2.Count > 0
+                        ? files2
+                        : null,
 
                     SubFolders = depth - 1 > 0
                         ? ScanFolder(directory, depth - 1)
@@ -230,7 +227,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 });
             });
 
-            ConcurrentBag<MediaFolderExtend> response = new(folders
+            ConcurrentBag<MediaFolderExtend>? response = new(folders
                 .Where(f => f.Name is not "")
                 .OrderByDescending(f => f.Name));
 
@@ -304,7 +301,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 });
             });
 
-            ConcurrentBag<MediaFolderExtend> response = new(folders
+            ConcurrentBag<MediaFolderExtend>? response = new(folders
                 .Where(f => f.Name is not "")
                 .OrderByDescending(f => f.Name));
 
@@ -317,7 +314,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         }
     }
 
-    private ConcurrentBag<MediaFile> Files(string folderPath)
+    private ConcurrentBag<MediaFile>? Files(string folderPath)
     {
         try
         {
@@ -362,7 +359,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 FFprobeData? ffprobe = null;
                 try
                 {
-                    var analysis = FFProbe.Analyse(file);
+                    IMediaAnalysis analysis = FFProbe.Analyse(file);
                     if (isVideoFile || isAudioFile)
                     {
                         ffprobe = new FFprobeData
@@ -404,7 +401,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 files.Add(res);
             });
 
-            ConcurrentBag<MediaFile> response = new(files
+            ConcurrentBag<MediaFile>? response = new(files
                 // .Where(f => f.Name is not "")
                 .OrderBy(f => f.Name));
 

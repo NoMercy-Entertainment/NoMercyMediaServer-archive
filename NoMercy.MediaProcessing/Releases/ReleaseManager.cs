@@ -24,7 +24,7 @@ public class ReleaseManager(
         MusicBrainzReleaseAppends? releaseAppends = await musicBrainzReleaseClient.WithAllAppends(id);
         if (releaseAppends == null) return (null, null);
         
-        var coverPalette = await CoverArtImageManagerManager.Add(releaseAppends.Id);
+        CoverArtImageManagerManager.CoverPalette? coverPalette = await CoverArtImageManagerManager.Add(releaseAppends.Id);
         if (coverPalette is not null)
         {
             await CoverArtCoverArtClient.Download(coverPalette.Url);

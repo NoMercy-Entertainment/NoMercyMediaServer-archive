@@ -1,10 +1,7 @@
 using Asp.Versioning.ApiExplorer;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Any;
-using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using NoMercy.Networking;
-using NoMercy.NmSystem;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace NoMercy.Server.Swagger;

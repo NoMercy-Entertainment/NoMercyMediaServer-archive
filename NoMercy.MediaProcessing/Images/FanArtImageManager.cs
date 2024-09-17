@@ -1,6 +1,5 @@
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
-using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.NmSystem;
 using NoMercy.Providers.FanArt.Client;
 using NoMercy.Providers.FanArt.Models;

@@ -1,5 +1,6 @@
 ﻿// ReSharper disable All
 
+using NoMercy.NmSystem;
 using NoMercy.Providers.CoverArt.Models;
 using NoMercy.Providers.MusicBrainz.Models;
 
