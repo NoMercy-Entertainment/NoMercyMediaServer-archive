@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
-namespace NoMercy.Api.Controllers.V1.Dashboard;
-public class DevicesDto
+namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
+public record DevicesDto
 {
     [JsonProperty("id")] public string Id { get; set; }
     [JsonProperty("device_id")] public string DeviceId { get; set; }

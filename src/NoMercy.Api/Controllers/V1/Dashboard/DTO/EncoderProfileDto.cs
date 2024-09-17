@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
-namespace NoMercy.Api.Controllers.V1.Dashboard;
-public class EncoderProfileDto
+namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
+public record EncoderProfileDto
 {
     [JsonProperty("id")] public string Id { get; set; } = string.Empty;
     [JsonProperty("name")] public string Name { get; set; } = string.Empty;

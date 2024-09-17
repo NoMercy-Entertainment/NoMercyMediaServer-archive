@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
 
-public class ServerInfoDto
+public record ServerInfoDto
 {
     [JsonProperty("server")] public string Server { get; set; } = string.Empty;
     [JsonProperty("cpu")] public string Cpu { get; set; } = string.Empty;

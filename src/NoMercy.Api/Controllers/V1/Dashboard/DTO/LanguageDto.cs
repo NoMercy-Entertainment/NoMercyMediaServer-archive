@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
-namespace NoMercy.Api.Controllers.V1.Dashboard;
-public class LanguageDto
+namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
+public record LanguageDto
 {
     [JsonProperty("id")] public int Id { get; set; }
     [JsonProperty("iso_639_1")] public string? Iso6391 { get; set; }

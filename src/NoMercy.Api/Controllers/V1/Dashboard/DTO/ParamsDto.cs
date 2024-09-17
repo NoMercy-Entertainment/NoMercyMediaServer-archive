@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
-namespace NoMercy.Api.Controllers.V1.Dashboard;
-public class ParamsDto
+namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
+public record ParamsDto
 {
     [JsonProperty("video")] public int Width { get; set; }
     [JsonProperty("crf")] public int Crf { get; set; }

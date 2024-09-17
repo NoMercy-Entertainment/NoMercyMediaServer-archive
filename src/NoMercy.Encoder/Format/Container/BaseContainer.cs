@@ -21,13 +21,13 @@ public class BaseContainer : Classes
 
     public static ContainerDto[] AvailableContainers =>
     [
-        new ContainerDto { Name = AudioContainers.Aac, Type = "audio", IsDefault = false },
-        new ContainerDto { Name = AudioContainers.Flac, Type = "audio", IsDefault = false },
-        new ContainerDto { Name = AudioContainers.Mp3, Type = "audio", IsDefault = true },
-        new ContainerDto { Name = VideoContainers.Hls, Type = "video", IsDefault = false },
-        new ContainerDto { Name = VideoContainers.Mkv, Type = "video", IsDefault = false },
-        new ContainerDto { Name = VideoContainers.Mp4, Type = "video", IsDefault = true },
-        new ContainerDto { Name = VideoContainers.Webm, Type = "video", IsDefault = false }
+        new() { Name = AudioContainers.Aac, Type = "audio", IsDefault = false },
+        new() { Name = AudioContainers.Flac, Type = "audio", IsDefault = false },
+        new() { Name = AudioContainers.Mp3, Type = "audio", IsDefault = true },
+        new() { Name = VideoContainers.Hls, Type = "video", IsDefault = false },
+        new() { Name = VideoContainers.Mkv, Type = "video", IsDefault = false },
+        new() { Name = VideoContainers.Mp4, Type = "video", IsDefault = true },
+        new() { Name = VideoContainers.Webm, Type = "video", IsDefault = false }
     ];
 
     internal readonly Dictionary<string, dynamic> _extraParameters = [];

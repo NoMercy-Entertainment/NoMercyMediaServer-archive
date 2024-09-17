@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
-public class MovieOrEpisode
+public record MovieOrEpisodeDto
 {
     [JsonProperty("id")] public int Id { get; set; }
     [JsonProperty("title")] public string Title { get; set; } = string.Empty;

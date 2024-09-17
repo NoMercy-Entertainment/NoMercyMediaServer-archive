@@ -4,9 +4,11 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Encoder;
 using NoMercy.Encoder.Core;
+using NoMercy.Encoder.Format.Audio;
 using NoMercy.Encoder.Format.Container;
 using NoMercy.Encoder.Format.Image;
 using NoMercy.Encoder.Format.Rules;
+using NoMercy.Encoder.Format.Video;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.NmSystem;
@@ -152,7 +154,7 @@ public class Dev
 
         // Parallel.ForEach(tasks, task => task.Start());
 
-        // await using MediaContext mediaContext = new();
+        await using MediaContext mediaContext = new();
 
         // var stream0 = new X264(VideoCodecs.H264Nvenc.Value)
         //     .SetScale(FrameSizes._4k.Width, -2)
@@ -167,7 +169,7 @@ public class Dev
         //     .AddOpts("keyint=48")
         //     .AddCustomArgument("-x264opts", "no-scenecut")
         //     .AddCustomArgument("-crf", 52);
-        //
+        
         // var stream1 = new X264(VideoCodecs.H264.Value)
         //     .SetScale(FrameSizes._1080p.Width)
         //     .SetConstantRateFactor(20)
@@ -180,126 +182,129 @@ public class Dev
         //     .AddOpts("no-scenecut")
         //     .AddOpts("keyint", 48)
         //     .AddCustomArgument("-x264opts", "no-scenecut");
-        //
-        // var stream2 = new X264(VideoCodecs.H264Nvenc.Value)
-        //     .SetScale(FrameSizes._4k.Width, -2)
-        //     .SetConstantRateFactor(20)
-        //     .ConvertHdrToSdr()
-        //     .SetHlsSegmentFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
-        //     .SetHlsPlaylistFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
-        //     .SetColorSpace(ColorSpaces.Yuv420p)
-        //     .SetPreset(VideoPresets.Slow)
-        //     .SetTune(VideoTunes.Hq)
-        //     .AddOpts("no-scenecut")
-        //     .AddOpts("keyint=48")
-        //     .AddCustomArgument("-x264opts", "no-scenecut");
-        //
-        // var stream3 = new X264(VideoCodecs.H264Nvenc.Value)
-        //     .SetScale(FrameSizes._1080p.Width)
-        //     .SetConstantRateFactor(20)
-        //     .ConvertHdrToSdr()
-        //     .SetHlsSegmentFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
-        //     .SetHlsPlaylistFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
-        //     .SetColorSpace(ColorSpaces.Yuv420p)
-        //     .SetPreset(VideoPresets.Slow)
-        //     .SetTune(VideoTunes.Hq)
-        //     .AddOpts("no-scenecut")
-        //     .AddOpts("keyint", 48)
-        //     .AddCustomArgument("-x264opts", "no-scenecut");
-        //
-        // var stream4 = new Aac()
-        //     .SetAudioChannels(2)
-        //     .SetAllowedLanguages([Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita])
-        //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
-        //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
+        
+        var stream2 = new X264(VideoCodecs.H264Nvenc.Value)
+            .SetScale(FrameSizes._4k.Width, -2)
+            .SetConstantRateFactor(20)
+            .ConvertHdrToSdr()
+            .SetHlsSegmentFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+            .SetHlsPlaylistFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+            .SetColorSpace(ColorSpaces.Yuv420p)
+            .SetPreset(VideoPresets.Slow)
+            .SetTune(VideoTunes.Hq)
+            .AddOpts("no-scenecut")
+            .AddOpts("keyint=48")
+            .AddCustomArgument("-x264opts", "no-scenecut");
+        
+        var stream3 = new X264(VideoCodecs.H264Nvenc.Value)
+            .SetScale(FrameSizes._1080p.Width)
+            .SetConstantRateFactor(20)
+            .ConvertHdrToSdr()
+            .SetHlsSegmentFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+            .SetHlsPlaylistFilename(":type:_:framesize:_SDR/:type:_:framesize:_SDR")
+            .SetColorSpace(ColorSpaces.Yuv420p)
+            .SetPreset(VideoPresets.Slow)
+            .SetTune(VideoTunes.Hq)
+            .AddOpts("no-scenecut")
+            .AddOpts("keyint", 48)
+            .AddCustomArgument("-x264opts", "no-scenecut");
+        
+        var stream4 = new Aac()
+            .SetAudioChannels(2)
+            .SetAllowedLanguages([Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita])
+            .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
+            .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
         //
         // var stream5 = new DolbyDigitalPlus()
         //     .SetAllowedLanguages([Languages.Eng])
         //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
         //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
-        //
+        
         // var stream6 = new DolbyDigital()
         //     .SetAllowedLanguages([Languages.Eng])
         //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
         //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
-        //
-        // var stream7 = new Sprite()
-        //     .SetScale(256)
-        //     .SetFilename("thumbs_:framesize:");
+        
+        var stream7 = new Sprite()
+            .SetScale(256)
+            .SetFilename("thumbs_:framesize:");
 
         // var stream8 = new Vtt()
         //     .SetAllowedLanguages([Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita])
         //     .SetHlsSegmentFilename(":type:_:language:_:codec:/:type:_:language:_:codec:")
         //     .SetHlsPlaylistFilename(":type:_:language:_:codec:/:type:_:language:_:codec:");
-        //
-        // var container = new Hls()
-        //     .SetHlsFlags("independent_segments")
+        
+        var container = new Hls()
+            .SetHlsFlags("independent_segments")
         // .AddStream(stream0)
         // .AddStream(stream1)
-        // .AddStream(stream2)
-        // .AddStream(stream3)
-        // .AddStream(stream4)
+        .AddStream(stream2)
+        .AddStream(stream3)
+        .AddStream(stream4)
         // .AddStream(stream5)
         // .AddStream(stream6)
-        // .AddStream(stream7);
+        .AddStream(stream7);
         // .AddStream(stream8);
 
-        // var ffmpeg = new FfMpeg()
+        var ffmpeg = new FfMpeg()
         // .Open("G:\\Marvels\\Films\\Download\\Iron.Man.2.2010.2160p.US.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT\\Iron.Man.2.2010.2160p.US.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv");
+        .Open("M:\\Films\\Download\\Black.Panther.Wakanda.Forever.2022.1080p.BluRay.REMUX.AVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT\\Black.Panther.Wakanda.Forever.2022.1080p.BluRay.REMUX.AVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv");
         // .Open("M:\\Films\\Films\\Sintel.(2010)\\original\\[SDR-HEVC] Sintel.mkv");
         // .Open("C:\\Users\\Stoney\\AppData\\Local\\NoMercy_C#\\cache\\transcode\\[HDR-HEVC] Cosmos.Laundromat.S01E01.First.Cycle.mkv");
 
-        // var movie = await mediaContext.Movies
+        var movie = await mediaContext.Movies
         // .FirstOrDefaultAsync(x => x.Id == 10138); // Iron Man 2
         // .FirstOrDefaultAsync(x => x.Id == 45745); // Sintel
+        .FirstOrDefaultAsync(x => x.Id == 505642); // black panther wakanda forever
         // .FirstOrDefaultAsync(x => x.Id == 358332); // Cosmos Laundromat
-        // if (movie == null) return;
+        if (movie == null) return;
 
-        // var folder = await mediaContext.Folders
-        //     .FirstOrDefaultAsync(x => x.Id == Ulid.Parse("01HQ5W67GRBPHJKNAZMDYKMVXA"));
-        // if (folder == null) return;
+        var folder = await mediaContext.Folders
+            .FirstOrDefaultAsync(x => x.Id == Ulid.Parse("01HQ5W67GRBPHJKNAZMDYKMVXA"));
+        if (folder == null) return;
 
-        // var folderName = movie.CreateFolderName();
-        // var title = movie.CreateTitle();
-        // var fileName = movie.CreateFileName();
+        var folderName = movie.CreateFolderName();
+        var title = movie.CreateTitle();
+        var fileName = movie.CreateFileName();
         // var basePath = Path.Combine(folder.Path, folderName);
         // var basePath = "C:\\Users\\Stoney\\AppData\\Local\\NoMercy_C#\\cache\\transcode\\ironman";
+        var basePath = "C:\\Users\\Stoney\\AppData\\Local\\NoMercy_C#\\cache\\transcode\\Black.Panther.Wakanda.Forever.(2022)";
         // var basePath = "C:\\Users\\Stoney\\AppData\\Local\\NoMercy_C#\\cache\\transcode\\sintel";
 
-        // ffmpeg.SetBasePath(basePath);
-        // ffmpeg.SetTitle(title);
-        // ffmpeg.ToFile(fileName);
+        ffmpeg.SetBasePath(basePath);
+        ffmpeg.SetTitle(title);
+        ffmpeg.ToFile(fileName);
 
-        // ffmpeg.AddContainer(container);
+        ffmpeg.AddContainer(container);
 
-        // ffmpeg.Build();
-
+        ffmpeg.Build();
+        
+        var fullCommand = ffmpeg.GetFullCommand();
+        Logger.Encoder(fullCommand);
+        
         // var ffmpegFile = Path.Combine(AppFiles.CachePath, "ffmpeg.json");
-
-        // var fullCommand = ffmpeg.GetFullCommand();
-        // Logger.Encoder(fullCommand);
         // await File.WriteAllTextAsync(ffmpegFile, fullCommand);
 
-        // var progressMeta = new ProgressMeta()
-        // {
-        //     Id = movie.Id,
-        //     Title = title,
-        //     BaseFolder = basePath,
-        //     ShareBasePath = folder.Id + "/" + folderName,
-        //     AudioStreams = container.AudioStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.AudioCodec.SimpleValue}").ToList(),
-        //     VideoStreams = container.VideoStreams.Select(x => $"{x.StreamIndex}:{x.Scale.W}x{x.Scale.H}_{x.VideoCodec.SimpleValue}").ToList(),
-        //     SubtitleStreams = container.SubtitleStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.SubtitleCodec.SimpleValue}").ToList(),
-        //     HasGpu = container.VideoStreams.Any(x =>
-        //         x.VideoCodec.Value == VideoCodecs.H264Nvenc.Value || x.VideoCodec.Value == VideoCodecs.H265Nvenc.Value),
-        //     IsHDR = container.VideoStreams.Any(x => x.IsHdr),
-        // };
+        var progressMeta = new ProgressMeta()
+        {
+            Id = movie.Id,
+            Title = title,
+            BaseFolder = basePath,
+            ShareBasePath = folder.Id + "/" + folderName,
+            AudioStreams = container.AudioStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.AudioCodec.SimpleValue}").ToList(),
+            VideoStreams = container.VideoStreams.Select(x => $"{x.StreamIndex}:{x.Scale.W}x{x.Scale.H}_{x.VideoCodec.SimpleValue}").ToList(),
+            SubtitleStreams = container.SubtitleStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.SubtitleCodec.SimpleValue}").ToList(),
+            HasGpu = container.VideoStreams.Any(x =>
+                x.VideoCodec.Value == VideoCodecs.H264Nvenc.Value || x.VideoCodec.Value == VideoCodecs.H265Nvenc.Value),
+            IsHDR = container.VideoStreams.Any(x => x.IsHdr),
+        };
 
-        // var result = await FfMpeg.Run(fullCommand, basePath, progressMeta);
-        // Logger.Encoder(result);
+        var result = await FfMpeg.Run(fullCommand, basePath, progressMeta);
+        Logger.Encoder(result);
 
-        // await stream7.BuildSprite(progressMeta);
+        await stream7.BuildSprite(progressMeta);
 
-        // container.BuildMasterPlaylist();
+        container.BuildMasterPlaylist();
 
         // await Task.Run(async () =>
         // {
