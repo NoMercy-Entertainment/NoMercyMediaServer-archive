@@ -36,7 +36,7 @@ public partial class RecordingManager(
 
                 Logger.MusicBrainz($"Recording {musicBrainzTrack.Title} found", LogEventLevel.Verbose);
 
-                string path = mediaFile!.Parsed?.FilePath.Replace(Path.DirectorySeparatorChar + mediaFile.Name, "") ?? string.Empty;
+                string path = mediaFile.Parsed?.FilePath.Replace(Path.DirectorySeparatorChar + mediaFile.Name, "") ?? string.Empty;
         
                 Track insert = new()
                 {
@@ -46,12 +46,12 @@ public partial class RecordingManager(
                     DiscNumber = musicBrainzMedia.Position,
                     TrackNumber = musicBrainzTrack.Position,
 
-                    Filename = "/" + Path.GetFileName(mediaFile!.Path),
+                    Filename = "/" + Path.GetFileName(mediaFile.Path),
                     Quality = (int)Math.Floor(mediaFile.FFprobe!.Format.BitRate / 1000.0),
                     Duration = HmsRegex().Replace(mediaFile.FFprobe.Duration.ToString("hh\\:mm\\:ss"), ""),
 
-                    FolderId = libraryFolder!.Id,
-                    Folder = path!.Replace(libraryFolder.Path, "").Replace("\\", "/"),
+                    FolderId = libraryFolder.Id,
+                    Folder = path.Replace(libraryFolder.Path, "").Replace("\\", "/"),
                     HostFolder = path.PathName(),
                     
                     Cover = coverPalette?.Url is not null
@@ -110,7 +110,7 @@ public partial class RecordingManager(
         hasMatch = FindTrackWithAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
             musicBrainzRelease.Media.Length,
             trackNumber, 3);
-        ;hasMatch = FindTrackWithAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
+        hasMatch = FindTrackWithAlbumNumberByNumberPadded(inputFile, musicBrainzMedia, hasMatch,
             musicBrainzRelease.Media.Length,
             trackNumber);
 
