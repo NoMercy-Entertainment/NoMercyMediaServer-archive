@@ -7,6 +7,7 @@ using CommandLine;
 using Microsoft.AspNetCore;
 using NoMercy.Data.Logic;
 using NoMercy.Database;
+using NoMercy.Database.Models;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.AniDb.Clients;
@@ -16,7 +17,7 @@ using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
 
 namespace NoMercy.Server;
-
+public delegate Task TaskDelegate();
 public static class Program
 {
     private static bool ShouldSeedMarvel { get; set; }
@@ -141,7 +142,7 @@ public static class Program
 
     private static IWebHostBuilder CreateWebHostBuilder(this IWebHostBuilder _)
     {
-        var url = new UriBuilder
+        UriBuilder? url = new UriBuilder
         {
             Host = IPAddress.Any.ToString(),
             Port = Config.InternalServerPort,
@@ -173,17 +174,17 @@ public static class Program
     {
         ApiInfo.RequestInfo().Wait();
 
-        List<Task> startupTasks =
+        List<TaskDelegate> startupTasks =
         [
-            ConsoleMessages.Logo(),
-            AppFiles.CreateAppFolders(),
-            Networking.Networking.Discover(),
-            Auth.Init(),
-            Seed.Init(ShouldSeedMarvel),
-            Register.Init(),
-            Binaries.DownloadAll(),
-            // AniDbBaseClient.Init(),
-            TrayIcon.Make()
+            new (ConsoleMessages.Logo),
+            new (AppFiles.CreateAppFolders),
+            new (Networking.Networking.Discover),
+            new (Auth.Init),
+            new (() => Seed.Init(ShouldSeedMarvel)),
+            new (Register.Init),
+            new (Binaries.DownloadAll),
+            // new (AniDbBaseClient.Init),
+            new (TrayIcon.Make)
         ];
 
         AppDomain.CurrentDomain.ProcessExit += (_, _) => { AniDbBaseClient.Dispose(); };
@@ -191,9 +192,9 @@ public static class Program
         await RunStartup(startupTasks);
         
         await using MediaContext mediaContext = new();
-        var configuration = mediaContext.Configuration.ToList();
+        List<Configuration>? configuration = mediaContext.Configuration.ToList();
         
-        foreach (var config in configuration)
+        foreach (Configuration? config in configuration)
         {
             Logger.App($"Configuration: {config.Key} = {config.Value}");
             if (config.Key == "InternalServerPort")
@@ -215,15 +216,12 @@ public static class Program
         t.Start();
     }
 
-    private static async Task RunStartup(List<Task> startupTasks)
+    private static async Task RunStartup(List<TaskDelegate> startupTasks)
     {
-        foreach (Task task in startupTasks)
+        foreach (TaskDelegate task in startupTasks)
         {
-            if (task.IsCompleted) continue;
-            task.Start();
+            await task.Invoke();
         }
-
-        await Task.CompletedTask;
     }
 }
 

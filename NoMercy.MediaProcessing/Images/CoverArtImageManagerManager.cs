@@ -2,7 +2,6 @@ using NoMercy.MediaProcessing.Jobs;
 using NoMercy.NmSystem;
 using NoMercy.Providers.CoverArt.Client;
 using NoMercy.Providers.CoverArt.Models;
-using NoMercy.Providers.MusicBrainz.Models;
 using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Images;

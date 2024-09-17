@@ -1,5 +1,6 @@
 ﻿// ReSharper disable All
 
+using NoMercy.NmSystem;
 using NoMercy.Providers.MusicBrainz.Models;
 
 namespace NoMercy.Providers.MusicBrainz.Client;
@@ -45,7 +46,7 @@ public class MusicBrainzGenreClient : MusicBrainzBaseClient
     {
         MusicBrainzAllGenres? data = await Get<MusicBrainzAllGenres>("genre", new Dictionary<string, string>
         {
-            ["query"] = Uri.EscapeDataString(query),
+            ["query"] = query,
             ["fmt"] = "json"
         });
 
