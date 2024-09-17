@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Api.Controllers.V1.Dashboard.DTO;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Middleware;
-using NoMercy.Data.Logic;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;

@@ -243,7 +243,7 @@ public class FfMpeg : Classes
                         CurrentTime = currentTime.TotalSeconds,
                         Duration = totalDuration.TotalSeconds,
                         Remaining = remaining,
-                        RemainingHms = TimeSpan.FromSeconds(remaining).ToString(),
+                        RemainingHms = TimeSpan.FromSeconds(remaining == Single.PositiveInfinity ? 0 : remaining).ToString(),
                         Fps = Convert.ToDouble(fps / 1000),
                         Speed = Convert.ToDouble(speed / 1000),
                         Frame = frame,

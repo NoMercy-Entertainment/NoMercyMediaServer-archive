@@ -1,6 +1,5 @@
-﻿// ReSharper disable All
+﻿// ReSharper disable MemberCanBePrivate.Global
 
-using NoMercy.Providers.CoverArt.Models;
 using NoMercy.Providers.MusicBrainz.Models;
 
 namespace NoMercy.Providers.MusicBrainz.Client;
@@ -29,12 +28,12 @@ public class MusicBrainzReleaseGroupClient : MusicBrainzBaseClient
             "releases"
         ], priority);
     }
-    
+
     public Task<MusicBrainzReleaseAppends?> SearchReleaseGroups(string query, bool? priority = false)
     {
         Dictionary<string, string>? queryParams = new()
         {
-            ["query"] = Uri.EscapeDataString(query),
+            ["query"] = query,
             ["fmt"] = "json"
         };
         return Get<MusicBrainzReleaseAppends>($"release-group", queryParams, priority);
