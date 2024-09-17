@@ -92,7 +92,7 @@ public class MovieManager(
         throw new NotImplementedException();
     }
 
-    internal async Task StoreAlternativeTitles(TmdbMovieAppends movie)
+    public async Task StoreAlternativeTitles(TmdbMovieAppends movie)
     {
         IEnumerable<AlternativeTitle> alternativeTitles = movie.AlternativeTitles.Results.Select(
             tmdbMovieAlternativeTitles => new AlternativeTitle
@@ -107,7 +107,7 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: AlternativeTitles stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreTranslations(TmdbMovieAppends movie)
+    public async Task StoreTranslations(TmdbMovieAppends movie)
     {
         IEnumerable<Translation> translations = movie.Translations.Translations
             .Select(translation => new Translation
@@ -127,7 +127,7 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: Translations stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreContentRatings(TmdbMovieAppends movie)
+    public async Task StoreContentRatings(TmdbMovieAppends movie)
     {
         List<CertificationCriteria> certificationCriteria = movie.ReleaseDates.Results
             .Select(r => new CertificationCriteria
@@ -144,7 +144,7 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: Content Ratings stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreSimilar(TmdbMovieAppends movie)
+    public async Task StoreSimilar(TmdbMovieAppends movie)
     {
         IEnumerable<Similar> similar = movie.Similar.Results
             .Select(tmdbMovie => new Similar
@@ -167,7 +167,7 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: Similar stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreRecommendations(TmdbMovieAppends movie)
+    public async Task StoreRecommendations(TmdbMovieAppends movie)
     {
         IEnumerable<Recommendation> recommendations = movie.Recommendations.Results
             .Select(tmdbMovie => new Recommendation
@@ -191,7 +191,7 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: Recommendations stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreVideos(TmdbMovieAppends movie)
+    public async Task StoreVideos(TmdbMovieAppends movie)
     {
         IEnumerable<Media> videos = movie.Videos.Results
             .Select(media => new Media
@@ -211,7 +211,7 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: Videos stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreImages(TmdbMovieAppends movie)
+    public async Task StoreImages(TmdbMovieAppends movie)
     {
         IEnumerable<Image> posters = movie.Images.Posters
             .Select(image => new Image
@@ -296,7 +296,7 @@ public class MovieManager(
             jobDispatcher.DispatchJob<ImagePaletteJob, Image>(movie.Id, logosJobItems);
     }
 
-    internal async Task StoreKeywords(TmdbMovieAppends movie)
+    public async Task StoreKeywords(TmdbMovieAppends movie)
     {
         IEnumerable<Keyword> keywords = movie.Keywords.Results.Select(
             keyword => new Keyword
@@ -319,7 +319,7 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: Keywords linked to Movie", LogEventLevel.Debug);
     }
 
-    internal async Task StoreGenres(TmdbMovieAppends movie)
+    public async Task StoreGenres(TmdbMovieAppends movie)
     {
         IEnumerable<GenreMovie> genreMovies = movie.Genres.Select(
             genre => new GenreMovie
@@ -332,13 +332,13 @@ public class MovieManager(
         Logger.MovieDb($"Movie: {movie.Title}: Genres stored", LogEventLevel.Debug);
     }
 
-    internal async Task StoreWatchProviders(TmdbMovieAppends movie)
+    public async Task StoreWatchProviders(TmdbMovieAppends movie)
     {
         Logger.MovieDb($"Movie: {movie.Title}: WatchProviders stored", LogEventLevel.Debug);
         await Task.CompletedTask;
     }
 
-    internal async Task StoreNetworks(TmdbMovieAppends movie)
+    public async Task StoreNetworks(TmdbMovieAppends movie)
     {
         // List<Network> networks = movie.Networks.Results.ToList()
         //     .ConvertAll<Network>(x => new Network(x));
@@ -349,7 +349,7 @@ public class MovieManager(
         await Task.CompletedTask;
     }
 
-    internal async Task StoreCompanies(TmdbMovieAppends movie)
+    public async Task StoreCompanies(TmdbMovieAppends movie)
     {
         // List<Company> companies = movie.ProductionCompanies.Results.ToList()
         //     .ConvertAll<ProductionCompany>(x => new ProductionCompany(x));
