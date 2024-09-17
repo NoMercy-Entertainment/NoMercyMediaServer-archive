@@ -201,8 +201,8 @@ public class BaseImage : Classes
 
         if (imageFiles.Length == 0) return;
 
-        int thumbWidth = OutputWidth;
-        int thumbHeight = OutputWidth / 16 * 9;
+        int thumbWidth = Scale.W;
+        int thumbHeight = Scale.H;
 
         int gridWidth = (int)Math.Ceiling(Math.Sqrt(imageFiles.Length));
         int gridHeight = (int)Math.Ceiling((double)imageFiles.Length / gridWidth);
@@ -237,7 +237,7 @@ public class BaseImage : Classes
             if (jpg % gridWidth == 0)
             {
                 dstX = 0;
-                dstY += thumbHeight;
+                dstY += thumbHeight + 1;
             }
             else
             {
