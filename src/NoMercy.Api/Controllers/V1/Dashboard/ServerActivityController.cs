@@ -4,6 +4,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using NoMercy.Api.Controllers.V1.Dashboard.DTO;
 using NoMercy.Api.Controllers.V1.Music;
 using NoMercy.Database;
 using NoMercy.Networking;

@@ -11,11 +11,11 @@ public static class QueueRunner
         Dictionary<string, (int count, List<Worker> workerInstances, CancellationTokenSource _cancellationTokenSource)>
         Workers = new()
         {
-            ["queue"] = (1, [], new CancellationTokenSource()),
+            ["queue"] = (0, [], new CancellationTokenSource()),
             ["encoder"] = (2, [], new CancellationTokenSource()),
             ["cron"] = (1, [], new CancellationTokenSource()),
             ["data"] = (10, [], new CancellationTokenSource()),
-            ["image"] = (10, [], new CancellationTokenSource())
+            ["image"] = (0, [], new CancellationTokenSource())
             // ["request"] = (15, [], new CancellationTokenSource()),
         };
 

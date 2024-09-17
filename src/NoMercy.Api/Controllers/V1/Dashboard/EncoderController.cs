@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using NoMercy.Api.Controllers.V1.Dashboard.DTO;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;

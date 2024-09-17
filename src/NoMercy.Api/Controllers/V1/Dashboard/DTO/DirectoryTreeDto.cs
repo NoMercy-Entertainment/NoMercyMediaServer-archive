@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
-public class DirectoryTreeDto
+public record DirectoryTreeDto
 {
     [JsonProperty("path")] public string Path { get; set; } = string.Empty;
     [JsonProperty("mode")] public int Mode { get; set; }

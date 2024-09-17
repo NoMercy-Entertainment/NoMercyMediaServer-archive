@@ -26,6 +26,7 @@ using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Queue;
 using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
+using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
@@ -303,7 +304,7 @@ public class ServerController : BaseController
             parsed.Year ??= Str.MatchYearRegex().Match(file.FullName)
                 .Value;
 
-            MovieOrEpisode match = new();
+            MovieOrEpisodeDto match = new();
 
             TmdbSearchClient searchClient = new();
 
@@ -340,7 +341,7 @@ public class ServerController : BaseController
                         };
                     }
 
-                    match = new MovieOrEpisode
+                    match = new MovieOrEpisodeDto
                     {
                         Id = episode.Id,
                         Title = episode.Title ?? "",
@@ -378,7 +379,7 @@ public class ServerController : BaseController
                         };
                     }
 
-                    match = new MovieOrEpisode
+                    match = new MovieOrEpisodeDto
                     {
                         Id = movieItem.Id,
                         Title = movieItem.Title,
@@ -405,23 +406,23 @@ public class ServerController : BaseController
                 Parsed = parsed,
                 Match = match,
                 File = file.FullName,
-                Streams = new Streams
+                StreamsDto = new StreamsDto
                 {
                     Video = mediaAnalysis.VideoStreams
-                        .Select(video => new Video
+                        .Select(video => new VideoDto
                         {
                             Index = video.Index,
                             Width = video.Height,
                             Height = video.Width
                         }),
                     Audio = mediaAnalysis.AudioStreams
-                        .Select(stream => new Audio
+                        .Select(stream => new AudioDto
                         {
                             Index = stream.Index,
                             Language = stream.Language
                         }),
                     Subtitle = mediaAnalysis.SubtitleStreams
-                        .Select(stream => new Subtitle
+                        .Select(stream => new SubtitleDto
                         {
                             Index = stream.Index,
                             Language = stream.Language
