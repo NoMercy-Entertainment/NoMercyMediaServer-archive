@@ -187,7 +187,7 @@ public class LibraryFileWatcher
         if (library.Type == "music")
             scan.DisableRegexFilter();
 
-        IEnumerable<MediaFolderExtend> mediaFolder = await scan.Process(path);
+        IEnumerable<MediaFolderExtend>? mediaFolder = await scan.Process(path);
 
         switch (library.Type)
         {

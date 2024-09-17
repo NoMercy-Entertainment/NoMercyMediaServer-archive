@@ -26,9 +26,10 @@ public partial class RecordingManager(
             .FilterByMediaType("music")
             .Process(mediaFolder.Path, 1);
 
-        foreach (var folder in folders)
+        foreach (MediaFolderExtend folder in folders)
         {
-            foreach (var file in folder.Files)
+            if (folder.Files is null) continue;
+            foreach (MediaFile file in folder.Files)
             {
                 MediaFile? mediaFile = FileMatch(file, releaseAppends, musicBrainzMedia, musicBrainzTrack.Position);
                 if (mediaFile is null) continue;
@@ -75,7 +76,7 @@ public partial class RecordingManager(
     {
         Logger.MusicBrainz($"Linking Recording to Artist: {musicBrainzTrack.Title} - {releaseAppends.MusicBrainzReleaseGroup.Title}", LogEventLevel.Verbose);
 
-        foreach (var credit in releaseAppends.ArtistCredit)
+        foreach (ReleaseArtistCredit credit in releaseAppends.ArtistCredit)
         {
             ArtistTrack insert = new()
             {

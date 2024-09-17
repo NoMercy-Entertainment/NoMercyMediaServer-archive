@@ -56,10 +56,10 @@ public abstract class ConsoleMessages
         return string.Join(" ", spacing);
     }
 
-    public static Task Logo(string str = "NoMercy MediaServer")
+    public static Task Logo()
     {
         StringBuilder builder = new();
-        string outputString = "║  " + str + "  ║";
+        string outputString = "║  NoMercy MediaServer  ║";
         int totalWidth = 0;
 
         for (int i = 0; i < ConsoleLetters.Colossal.FirstOrDefault().Value.Count - 1; i++)

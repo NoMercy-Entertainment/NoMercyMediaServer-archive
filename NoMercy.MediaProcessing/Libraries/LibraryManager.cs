@@ -141,10 +141,10 @@ public class LibraryManager(
     {
         if (_library is null) return;
         if (baseFolderExtend.Parsed is null) return;
-        
+
         jobDispatcher.DispatchJob<ProcessReleaseFolderJob>(baseFolderExtend.Path, _library.Id);
     }
-    
+
     private int GetDepth()
     {
         if (_library is null) return 0;
@@ -156,5 +156,5 @@ public class LibraryManager(
             _ => 1
         };
     }
-    
+
 }

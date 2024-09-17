@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Artists;
+using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Recordings;
 using NoMercy.MediaProcessing.ReleaseGroups;
 using NoMercy.MediaProcessing.Releases;
@@ -48,7 +49,7 @@ public class AddReleaseJob : AbstractReleaseJob
             .ThenInclude(f => f.Folder)
             .FirstAsync();
         
-        var (releaseAppends, coverPalette) = await releaseManager.Add(Id, albumLibrary, BaseFolder, MediaFolder);
+        (MusicBrainzReleaseAppends? releaseAppends, CoverArtImageManagerManager.CoverPalette? coverPalette) = await releaseManager.Add(Id, albumLibrary, BaseFolder, MediaFolder);
         
         if (releaseAppends is null || string.IsNullOrEmpty(releaseAppends.Title))
         {
@@ -61,7 +62,7 @@ public class AddReleaseJob : AbstractReleaseJob
         
         await releaseGroupManager.Store(releaseAppends.MusicBrainzReleaseGroup, LibraryId, coverPalette);
             
-        foreach (var artist in releaseAppends.ArtistCredit)
+        foreach (ReleaseArtistCredit? artist in releaseAppends.ArtistCredit)
         {
             await artistManager.Store(artist, albumLibrary, BaseFolder, MediaFolder, releaseAppends);
         }
