@@ -38,8 +38,8 @@ public class MusicBrainzRelease
     [JsonProperty("dateTime")]
     public DateTime? DateTime
     {
-        get => DateTimeParser.ParseDateTime(_date);
-        set => _date = value?.ToString() ?? "";
+        get => !string.IsNullOrWhiteSpace(_date) && !string.IsNullOrEmpty(_date) && _date.TryParseToDateTime(out DateTime dt) ? dt : null;
+        set => _date = value.ToString() ?? string.Empty;
     }
 }
 
@@ -66,8 +66,8 @@ public class ReleaseEvent
     [JsonProperty("dateTime")]
     public DateTime? DateTime
     {
-        get => DateTimeParser.ParseDateTime(_date);
-        set => _date = value?.ToString() ?? "";
+        get => !string.IsNullOrWhiteSpace(_date) && !string.IsNullOrEmpty(_date) && _date.TryParseToDateTime(out DateTime dt) ? dt : null;
+        set => _date = value.ToString() ?? string.Empty;
     }
 }
 
@@ -179,8 +179,8 @@ public class TrackRecording
 
     public DateTime? FirstReleaseDate
     {
-        get => DateTimeParser.ParseDateTime(_firstReleaseDate);
-        set => _firstReleaseDate = value.ToString();
+        get => !string.IsNullOrWhiteSpace(_firstReleaseDate) && !string.IsNullOrEmpty(_firstReleaseDate) && _firstReleaseDate.TryParseToDateTime(out DateTime dt) ? dt : null;
+        set => _firstReleaseDate = value.ToString() ?? string.Empty;
     }
 
     [JsonProperty("genres")] public MusicBrainzGenreDetails[] Genres { get; set; }
@@ -296,8 +296,8 @@ public class MusicBrainzReleaseGroup
 
     public DateTime? FirstReleaseDate
     {
-        get => DateTimeParser.ParseDateTime(_firstReleaseDate);
-        set => _firstReleaseDate = value.ToString();
+        get => !string.IsNullOrWhiteSpace(_firstReleaseDate) && !string.IsNullOrEmpty(_firstReleaseDate) && _firstReleaseDate.TryParseToDateTime(out DateTime dt) ? dt : null;
+        set => _firstReleaseDate = value.ToString() ?? string.Empty;
     }
 
     [JsonProperty("genres")] public MusicBrainzGenreDetails[]? Genres { get; set; }
