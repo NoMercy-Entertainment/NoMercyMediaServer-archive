@@ -14,19 +14,19 @@ public record PlaylistResponseDto
     [JsonProperty("uuid")] public int Uuid { get; set; }
     [JsonProperty("video_id")] public Ulid VideoId { get; set; }
     [JsonProperty("duration")] public string Duration { get; set; }
-    [JsonProperty("tmdbid")] public int Tmdbid { get; set; }
+    [JsonProperty("tmdb_id")] public int TmdbId { get; set; }
     [JsonProperty("video_type")] public string VideoType { get; set; }
     [JsonProperty("playlist_type")] public string PlaylistType { get; set; }
     [JsonProperty("year")] public long Year { get; set; }
+    [JsonProperty("file")] public string File { get; set; }
     [JsonProperty("progress")] public ProgressDto? Progress { get; set; }
-    [JsonProperty("poster")] public string? Poster { get; set; }
     [JsonProperty("image")] public string? Image { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
     [JsonProperty("sources")] public SourceDto[] Sources { get; set; }
     [JsonProperty("fonts")] public List<FontDto?>? Fonts { get; set; }
     [JsonProperty("fontsFile")] public string FontsFile { get; set; }
     [JsonProperty("textTracks")] public List<TextTrackDto> TextTracks { get; set; }
-    [JsonProperty("tracks")] public List<TrackDto> Tracks { get; set; }
+    [JsonProperty("tracks")] public List<TextTrackDto> Tracks { get; set; }
 
     [JsonProperty("season")] public int? Season { get; set; }
     [JsonProperty("episode")] public int? Episode { get; set; }
@@ -64,7 +64,7 @@ public record PlaylistResponseDto
         Uuid = episode.Tv.Id + episode.Id;
         VideoId = videoFile.Id;
         Duration = videoFile.Duration ?? "0";
-        Tmdbid = episode.Tv.Id;
+        TmdbId = episode.Tv.Id;
         VideoType = "tv";
         PlaylistType = "tv";
         Year = episode.Tv.FirstAirDate.ParseYear();
@@ -76,9 +76,9 @@ public record PlaylistResponseDto
                 Date = userData.UpdatedAt
             }
             : null;
-        Poster = episode.Tv.Poster is not null ? "https://image.tmdb.org/t/p/w300" + episode.Tv.Poster : null;
-        Image = episode.Still is not null ? "https://image.tmdb.org/t/p/w300" + episode.Still : null;
+        Image = episode.Still is not null ? "https://image.tmdb.org/t/p/original" + episode.Still : null;
         Logo = logo is not null ? "https://image.tmdb.org/t/p/original" + logo : null;
+        File = $"{baseFolder}{videoFile.Filename}";
         Sources =
         [
             new SourceDto
@@ -91,37 +91,37 @@ public record PlaylistResponseDto
                     ?.Where(lang => lang != null).ToArray()
             }
         ];
-        Fonts = subs.Fonts;
-        FontsFile = subs.FontsFile;
-        Tracks =
+        
+        List<TextTrackDto> tracks =
         [
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/previews.vtt",
                 Kind = "thumbnails"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/chapters.vtt",
                 Kind = "chapters"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/skippers.vtt",
                 Kind = "skippers"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/sprite.webp",
                 Kind = "sprite"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/fonts.json",
                 Kind = "fonts"
             }
         ];
-        TextTracks = subs.TextTracks;
+        
+        Tracks = tracks.Concat(subs.TextTracks).ToList();
 
         Season = index is not null ? 0 : episode.SeasonNumber;
         Episode = index ?? episode.EpisodeNumber;
@@ -150,7 +150,7 @@ public record PlaylistResponseDto
         Uuid = movie.Id;
         VideoId = videoFile.Id;
         Duration = videoFile.Duration ?? "0";
-        Tmdbid = collection?.Id ?? movie.Id;
+        TmdbId = collection?.Id ?? movie.Id;
         VideoType = "movie";
         PlaylistType = "movie";
         Year = movie.ReleaseDate.ParseYear();
@@ -162,9 +162,9 @@ public record PlaylistResponseDto
                 Date = userData.UpdatedAt
             }
             : null;
-        Poster = movie.Poster is not null ? "https://image.tmdb.org/t/p/w300" + movie.Poster : null;
-        Image = movie.Backdrop is not null ? "https://image.tmdb.org/t/p/w300" + movie.Backdrop : null;
+        Image = movie.Backdrop is not null ? "https://image.tmdb.org/t/p/original" + movie.Backdrop : null;
         Logo = logo is not null ? "https://image.tmdb.org/t/p/original" + logo : null;
+        File = $"{baseFolder}{videoFile.Filename}";
         Sources =
         [
             new SourceDto
@@ -177,42 +177,44 @@ public record PlaylistResponseDto
                     ?.Where(lang => lang != null).ToArray()
             }
         ];
-        Fonts = subs.Fonts;
-        FontsFile = subs.FontsFile;
-        Tracks =
+        
+        List<TextTrackDto> tracks =
         [
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/previews.vtt",
                 Kind = "thumbnails"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/chapters.vtt",
                 Kind = "chapters"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/skippers.vtt",
                 Kind = "skippers"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/sprite.webp",
                 Kind = "sprite"
             },
-            new TrackDto()
+            new()
             {
                 File = $"{baseFolder}/fonts.json",
                 Kind = "fonts"
             },
 
-            new TrackDto()
+            new()
             {
                 File = "",
                 Kind = "thumbnails"
-            }
+            },
         ];
+        
+        Tracks = tracks.Concat(subs.TextTracks).ToList();
+        
         TextTracks = subs.TextTracks;
 
         if (index is null) return;
@@ -257,12 +259,9 @@ public record PlaylistResponseDto
             textTracks.Add(new TextTrackDto
             {
                 Label = type,
-                Type = type,
-                Src = $"{baseFolder}/subtitles{videoFile?.Filename
+                File = $"{baseFolder}/subtitles{videoFile?.Filename
                     .Replace(".mp4", "")
                     .Replace(".m3u8", "")}.{language}.{type}.{ext}",
-                SrcLang = $"languages:{language}",
-                Ext = ext,
                 Language = language,
                 Kind = "subtitles"
             });
@@ -302,17 +301,8 @@ public record SourceDto
 public record TextTrackDto
 {
     [JsonProperty("label")] public string Label { get; set; }
-    [JsonProperty("type")] public string Type { get; set; }
-    [JsonProperty("src")] public string Src { get; set; }
-    [JsonProperty("srclang")] public string SrcLang { get; set; }
-    [JsonProperty("ext")] public string Ext { get; set; }
-    [JsonProperty("language")] public string Language { get; set; }
-    [JsonProperty("kind")] public string Kind { get; set; }
-}
-
-public record TrackDto
-{
     [JsonProperty("file")] public string File { get; set; }
+    [JsonProperty("language")] public string Language { get; set; }
     [JsonProperty("kind")] public string Kind { get; set; }
 }
 
