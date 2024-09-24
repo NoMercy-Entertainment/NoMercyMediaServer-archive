@@ -3,6 +3,8 @@ using Moq;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Movies;
+using NoMercy.Networking;
+using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Client.Mocks;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -21,6 +23,9 @@ public class MovieManagerTests
 
     public MovieManagerTests()
     {
+        AppFiles.CreateAppFolders().Wait();
+        ApiInfo.RequestInfo().Wait();
+        
         Mock<JobDispatcher> jobDispatcherMock = new();
         MovieResponseMocks mockDataProvider = new();
 
