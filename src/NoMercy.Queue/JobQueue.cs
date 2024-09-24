@@ -88,8 +88,6 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
                 Thread.Sleep(1000);
                 return ReserveJob(name, currentJobId, attempt + 1);
             }
-            
-            Logger.Queue(e, LogEventLevel.Error);
         }
         
         return null;
@@ -131,7 +129,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             else
             {
-                Logger.Queue(e, LogEventLevel.Error);
+                //
             }
         }
     }
