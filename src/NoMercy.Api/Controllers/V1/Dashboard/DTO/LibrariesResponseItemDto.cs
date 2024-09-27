@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 
@@ -16,7 +17,7 @@ public record LibrariesResponseItemDto
     [JsonProperty("type")] public string? Type { get; set; }
     [JsonProperty("order")] public int? Order { get; set; }
 
-    [JsonProperty("color_palette")] public object? ColorPalette { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
     [JsonProperty("created_at")] public DateTime? CreatedAt { get; set; }
     [JsonProperty("updated_at")] public DateTime? UpdatedAt { get; set; }

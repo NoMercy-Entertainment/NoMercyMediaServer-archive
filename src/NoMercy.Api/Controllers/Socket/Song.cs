@@ -1,9 +1,10 @@
 using Newtonsoft.Json;
+using NoMercy.Database;
 
 namespace NoMercy.Api.Controllers.Socket;
 public class Song
 {
-    [JsonProperty("color_palette")] public ColorPalette ColorPalette { get; set; } = new();
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; } = new();
     [JsonProperty("cover")] public string Cover { get; set; } = string.Empty;
     [JsonProperty("date")] public DateTime Date { get; set; }
     [JsonProperty("disc")] public int Disc { get; set; }
