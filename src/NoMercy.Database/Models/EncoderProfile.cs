@@ -17,7 +17,6 @@ public class EncoderProfile : Timestamps
     [JsonProperty("container")] public string? Container { get; set; }
     [JsonProperty("param")] public string? Param { get; set; }
 
-
     [Column("VideoProfile")]
     [JsonProperty("video_profile")]
     [JsonIgnore]
@@ -60,47 +59,6 @@ public class EncoderProfile : Timestamps
         set => _subtitleProfiles = JsonConvert.SerializeObject(value);
     }
 
-
-
-
-
-
-
-
     [JsonProperty("encoder_profile_folder")]
     public ICollection<EncoderProfileFolder> EncoderProfileFolder { get; set; }
-}
-
-public class IVideoProfile
-{
-    public string Codec { get; set; }
-    public int Bitrate { get; set; }
-    public int Width { get; set; }
-    public int Height { get; set; }
-    public int Framerate { get; set; }
-    public string Preset { get; set; }
-    public string Tune { get; set; }
-    public string SegmentName { get; set; }
-    public string PlaylistName { get; set; }
-    public string ColorSpace { get; set; }
-    public int Crf { get; set; }
-    public int Keyint { get; set; }
-    public string[] Opts { get; set; }
-    public (string key, string Val)[] CustomArguments { get; set; }
-}
-public class IAudioProfile
-{
-    public string Codec { get; set; }
-    public int Channels { get; set; }
-    public string SegmentName { get; set; }
-    public string PlaylistName { get; set; }
-    public string[] AllowedLanguages { get; set; }
-}
-
-public class ISubtitleProfile
-{
-    public string Codec { get; set; }
-    public string SegmentName { get; set; }
-    public string PlaylistName { get; set; }
-    public string[] AllowedLanguages { get; set; }
 }
