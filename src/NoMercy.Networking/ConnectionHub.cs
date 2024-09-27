@@ -92,7 +92,8 @@ public class ConnectionHub : Hub
                 Name = di.Name,
                 Os = di.Os,
                 Type = di.Type,
-                Version = di.Version
+                Version = di.Version,
+                UpdatedAt = di.UpdatedAt
             })
             .RunAsync();
 
