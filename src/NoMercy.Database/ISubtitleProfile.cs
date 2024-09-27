@@ -1,4 +1,4 @@
-namespace NoMercy.Database.Models;
+namespace NoMercy.Database;
 
 public class ISubtitleProfile
 {
