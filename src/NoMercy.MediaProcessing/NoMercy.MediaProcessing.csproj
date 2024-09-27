@@ -12,6 +12,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\NoMercy.Database\NoMercy.Database.csproj"/>
+        <ProjectReference Include="..\NoMercy.Encoder\NoMercy.Encoder.csproj" />
         <ProjectReference Include="..\NoMercy.NmSystem\NoMercy.NmSystem.csproj"/>
         <ProjectReference Include="..\NoMercy.Providers\NoMercy.Providers.csproj"/>
         <ProjectReference Include="..\NoMercy.Queue\NoMercy.Queue.csproj"/>
