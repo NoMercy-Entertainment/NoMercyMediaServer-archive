@@ -34,30 +34,12 @@ public class EncodeVideoJob : AbstractEncoderJob
             .Select(e => e.EncoderProfile)
             .ToList();
 
-        if (!profiles.Any()) return;
+        if (profiles.Count == 0) return;
+        
+        if (await GetFileMetaData(folder, context) is not {success:true} values) return;
+        (_, string folderName, string title, string fileName, string basePath) = values;
 
-        var movie = folder.FolderLibraries.Any(x => x.Library.Type == "movie")
-            ? await context.Movies
-                .FirstOrDefaultAsync(x => x.Id == Id)
-            : null;
-
-        var episode = folder.FolderLibraries.Any(x => x.Library.Type == "tv" || x.Library.Type == "anime")
-            ? await context.Episodes
-                .Include(x => x.Tv)
-                .FirstOrDefaultAsync(x => x.Id == Id)
-            : null;
-
-        if (movie is null && episode is null) return;
-
-        var folderName = (movie?.CreateFolderName().Replace("/", "")
-                          ?? episode!.Tv.CreateFolderName().Replace("/", "") + episode.CreateFolderName())
-            .Replace("/", Path.DirectorySeparatorChar.ToString());
-
-        var title = movie?.CreateTitle() ?? episode!.CreateTitle();
-        var fileName = movie?.CreateFileName() ?? episode!.CreateFileName();
-        var basePath = Path.Combine(folder.Path, folderName);
-
-        foreach (var profile in profiles)
+        foreach (EncoderProfile profile in profiles)
         {
             BaseContainer container = profile.Container switch
             {
@@ -76,7 +58,7 @@ public class EncodeVideoJob : AbstractEncoderJob
                 .SetFilename("thumbs_:framesize:");
             container.AddStream(sprite);
 
-            var ffmpeg = new FfMpeg()
+            VideoAudioFile ffmpeg = new FfMpeg()
                 .Open(InputFile);
 
             ffmpeg.SetBasePath(basePath);
@@ -87,12 +69,12 @@ public class EncodeVideoJob : AbstractEncoderJob
 
             ffmpeg.Build();
 
-            var fullCommand = ffmpeg.GetFullCommand();
+            string fullCommand = ffmpeg.GetFullCommand();
             Logger.Encoder(fullCommand);
 
             var progressMeta = new ProgressMeta
             {
-                Id = movie?.Id ?? episode!.Id,
+                Id = Id,
                 Title = title,
                 BaseFolder = basePath,
                 ShareBasePath = folder.Id + "/" + folderName,
@@ -101,10 +83,10 @@ public class EncodeVideoJob : AbstractEncoderJob
                 SubtitleStreams = container.SubtitleStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.SubtitleCodec.SimpleValue}").ToList(),
                 HasGpu = container.VideoStreams.Any(x =>
                     x.VideoCodec.Value == VideoCodecs.H264Nvenc.Value || x.VideoCodec.Value == VideoCodecs.H265Nvenc.Value),
-                IsHDR = container.VideoStreams.Any(x => x.IsHdr),
+                IsHDR = container.VideoStreams.Any(x => x.IsHdr)
             };
 
-            var result = await ffmpeg.Run(fullCommand, basePath, progressMeta);
+            string result = await ffmpeg.Run(fullCommand, basePath, progressMeta);
             Logger.Encoder(result);
 
             await sprite.BuildSprite(progressMeta);
@@ -112,10 +94,35 @@ public class EncodeVideoJob : AbstractEncoderJob
             container.BuildMasterPlaylist();
         }
     }
+    
+    private async Task<(bool success, string folderName, string title, string fileName, string basePath)> GetFileMetaData(Folder folder, MediaContext context) {
+        Movie? movie = folder.FolderLibraries.Any(x => x.Library.Type == "movie")
+            ? await context.Movies
+                .FirstOrDefaultAsync(x => x.Id == Id)
+            : null;
 
-    private void BuildVideoStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
+        Episode? episode = folder.FolderLibraries.Any(x => x.Library.Type == "tv" || x.Library.Type == "anime")
+            ? await context.Episodes
+                .Include(x => x.Tv)
+                .FirstOrDefaultAsync(x => x.Id == Id)
+            : null;
+
+        if (movie is null && episode is null) return (false, string.Empty, string.Empty, string.Empty, string.Empty);
+
+        string folderName = (movie?.CreateFolderName().Replace("/", "")
+                ?? episode!.Tv.CreateFolderName().Replace("/", "") + episode.CreateFolderName())
+            .Replace("/", Path.DirectorySeparatorChar.ToString());
+
+        // int id = movie?.Id ?? episode!.Id;
+        string title = movie?.CreateTitle() ?? episode!.CreateTitle();
+        string fileName = movie?.CreateFileName() ?? episode!.CreateFileName();
+        string basePath = Path.Combine(folder.Path, folderName);
+        return (true, folderName, title, fileName, basePath);
+    }
+
+    private static void BuildVideoStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
     {
-        foreach (var profile in encoderProfile.VideoProfiles)
+        foreach (IVideoProfile profile in encoderProfile.VideoProfiles)
         {
             BaseVideo stream = BaseVideo.Create(profile.Codec)
                 .SetScale(profile.Width, profile.Height) // FrameSizes._1080p.Width
@@ -130,12 +137,12 @@ public class EncodeVideoJob : AbstractEncoderJob
                 .SetTune(profile.Tune) //VideoTunes.Hq
                 .AddOpts("keyint", profile.Keyint);  //"keyint", 48
 
-            foreach (var opt in profile.Opts)
+            foreach (string opt in profile.Opts)
             {
                 stream.AddOpts(opt); //"no-scenecut"
             }
 
-            foreach (var (key, val) in profile.CustomArguments)
+            foreach ((string key, string val) in profile.CustomArguments)
             {
                 stream.AddCustomArgument(key, val); //"-x264opts", "no-scenecut"
             }
@@ -144,9 +151,9 @@ public class EncodeVideoJob : AbstractEncoderJob
         }
     }
 
-    private void BuildAudioStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
+    private static void BuildAudioStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
     {
-        foreach (var profile in encoderProfile.AudioProfiles)
+        foreach (IAudioProfile profile in encoderProfile.AudioProfiles)
         {
             BaseAudio stream = BaseAudio.Create(profile.Codec)
                 .SetAudioChannels(profile.Channels) // 2
@@ -161,9 +168,9 @@ public class EncodeVideoJob : AbstractEncoderJob
         }
     }
 
-    private void BuildSubtitleStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
+    private static void BuildSubtitleStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
     {
-        foreach (var profile in encoderProfile.SubtitleProfiles)
+        foreach (ISubtitleProfile profile in encoderProfile.SubtitleProfiles)
         {
             BaseSubtitle stream = BaseSubtitle.Create(profile.Codec)
                 .SetAllowedLanguages(profile.AllowedLanguages) //[
