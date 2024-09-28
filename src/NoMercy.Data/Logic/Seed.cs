@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Encoder.Format.Rules;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
@@ -91,96 +92,362 @@ public class Seed : IDisposable, IAsyncDisposable
     private static async Task AddEncoderProfiles()
     {
         bool hasEncoderProfiles = await MediaContext.EncoderProfiles.AnyAsync();
-        if (hasEncoderProfiles) return;
+        // if (hasEncoderProfiles) return;
         
         Logger.Setup("Adding Encoder Profiles");
 
-        EncoderProfileDto[] encoderProfiles;
-        if (File.Exists(AppFiles.EncoderProfilesSeedFile))
-            encoderProfiles = File.ReadAllTextAsync(AppFiles.EncoderProfilesSeedFile).Result
-                .FromJson<EncoderProfileDto[]>() ?? [];
-        else
+        EncoderProfile[] encoderProfiles;
+        // if (File.Exists(AppFiles.EncoderProfilesSeedFile))
+        //     encoderProfiles = File.ReadAllTextAsync(AppFiles.EncoderProfilesSeedFile).Result
+        //         .FromJson<EncoderProfile[]>() ?? [];
+        // else
             encoderProfiles =
             [
-                new EncoderProfileDto
+                new EncoderProfile
                 {
                     Id = Ulid.Parse("01HQ6298ZSZYKJT83WDWTPG4G8"),
-                    Name = "2160p high",
-                    Container = "auto",
-                    Params = new EncoderProfileParamsDto
-                    {
-                        Width = 3840,
-                        Crf = 20,
-                        Preset = "slow",
-                        Profile = "high",
-                        Codec = "H.264",
-                        Audio = "libfdk_aac"
-                    }
+                    Name = "Marvel 4k",
+                    Container = VideoContainers.Hls,
+                    EncoderProfileFolder = [
+                        new EncoderProfileFolder
+                        {
+                            FolderId = Ulid.Parse("01J8T6PB9JDE801599F7YGPGE8"),
+                            EncoderProfileId = Ulid.Parse("01HQ6298ZSZYKJT83WDWTPG4G8"),
+                        },
+                        new EncoderProfileFolder
+                        {
+                            FolderId = Ulid.Parse("01J8T6PDZYCR8JQ8EVQDGCFK8W"),
+                            EncoderProfileId = Ulid.Parse("01HQ6298ZSZYKJT83WDWTPG4G8"),
+                        }
+                    ],
+                    VideoProfiles = [
+                        new IVideoProfile
+                        {
+                            Codec = VideoCodecs.H264Nvenc.Value,
+                            Width = FrameSizes._1080p.Width,
+                            Crf = 20,
+                            SegmentName = ":type:_:framesize:/:type:_:framesize:",
+                            PlaylistName = ":type:_:framesize:/:type:_:framesize:",
+                            ColorSpace = ColorSpaces.Yuv444p,
+                            Preset = VideoPresets.Fast,
+                            Tune = VideoTunes.Hq,
+                            Keyint = 48,
+                            // // Opts = ["no-scenecut"],
+                            CustomArguments = [
+                                new ValueTuple<string, string>()
+                                {
+                                    Item1 = "-x264opts",
+                                    Item2 = "no-scenecut"
+                                }
+                            ]
+                        },
+                        new IVideoProfile
+                        {
+                            Codec = VideoCodecs.H264Nvenc.Value,
+                            Width = FrameSizes._1080p.Width,
+                            Crf = 20,
+                            SegmentName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            PlaylistName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            ColorSpace = ColorSpaces.Yuv420p,
+                            Preset = VideoPresets.Fast,
+                            Tune = VideoTunes.Hq,
+                            Keyint = 48,
+                            CustomArguments = [
+                                new ValueTuple<string, string>()
+                                {
+                                    Item1 = "-x264opts",
+                                    Item2 = "no-scenecut"
+                                }
+                            ]
+                        },
+                        new IVideoProfile
+                        {
+                            Codec = VideoCodecs.H264Nvenc.Value,
+                            Width = FrameSizes._4k.Width,
+                            Crf = 20,
+                            SegmentName = ":type:_:framesize:/:type:_:framesize:",
+                            PlaylistName = ":type:_:framesize:/:type:_:framesize:",
+                            ColorSpace = ColorSpaces.Yuv444p,
+                            Preset = VideoPresets.Fast,
+                            Tune = VideoTunes.Hq,
+                            Keyint = 48,
+                            CustomArguments = [
+                                new ValueTuple<string, string>()
+                                {
+                                    Item1 = "-x264opts",
+                                    Item2 = "no-scenecut"
+                                }
+                            ]
+                        },
+                        new IVideoProfile
+                        {
+                            Codec = VideoCodecs.H264Nvenc.Value,
+                            Width = FrameSizes._4k.Width,
+                            Crf = 20,
+                            SegmentName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            PlaylistName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            ColorSpace = ColorSpaces.Yuv420p,
+                            Preset = VideoPresets.Fast,
+                            Tune = VideoTunes.Hq,
+                            Keyint = 48,
+                            CustomArguments = [
+                                new ValueTuple<string, string>()
+                                {
+                                    Item1 = "-x264opts",
+                                    Item2 = "no-scenecut"
+                                }
+                            ]
+                        },
+                    ],
+                    AudioProfiles = [
+                        new IAudioProfile
+                        {
+                            Codec = AudioCodecs.Aac.Value,
+                            Channels = 2,
+                            SegmentName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            PlaylistName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ]
+                        },
+                        new IAudioProfile
+                        {
+                            Codec = AudioCodecs.TrueHd.Value,
+                            SegmentName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            PlaylistName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ]
+                        }
+                    ],
+                    SubtitleProfiles = [
+                        new ISubtitleProfile
+                        {
+                            Codec = SubtitleCodecs.Webvtt.Value,
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ],
+                            PlaylistName = "subtitles/:filename:.:language:.:variant:"
+                        },
+                        new ISubtitleProfile
+                        {
+                            Codec = SubtitleCodecs.Ass.Value,
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ],
+                            PlaylistName = "subtitles/:filename:.:language:.:variant:"
+                        }
+                    ]
                 },
-                new EncoderProfileDto
-                {
-                    Id = Ulid.Parse("01HQ629JAYQDEQAH0GW3ZHGW8Z"),
-                    Name = "1080p high",
-                    Container = "auto",
-                    Params = new EncoderProfileParamsDto
-                    {
-                        Width = 1920,
-                        Crf = 20,
-                        Preset = "slow",
-                        Profile = "high",
-                        Codec = "H.264",
-                        Audio = "libfdk_aac"
-                    }
-                },
-                new EncoderProfileDto
+                // new EncoderProfile
+                // {
+                //     Id = Ulid.Parse("01HQ629JAYQDEQAH0GW3ZHGW8Z"),
+                //     Name = "1080p high",
+                //     Container = VideoContainers.Hls,
+                //     EncoderProfileFolder = [
+                //         new EncoderProfileFolder
+                //         {
+                //             FolderId = Ulid.Parse("01J8T6PB9JDE801599F7YGPGE8"),
+                //         },
+                //         new EncoderProfileFolder
+                //         {
+                //             FolderId = Ulid.Parse("01J8T6PB9JDE801599F7YGPGE8"),
+                //         }
+                //     ],
+                //     VideoProfiles = [
+                //         new IVideoProfile
+                //         {
+                //             Codec = VideoCodecs.H264Nvenc.Value,
+                //             Width = FrameSizes._1080p.Width,
+                //             Crf = 20,
+                //             SegmentName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                //             PlaylistName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                //             ColorSpace = ColorSpaces.Yuv420p,
+                //             Preset = VideoPresets.Fast,
+                //             Tune = VideoTunes.Hq,
+                //             Keyint = 48,
+                //             CustomArguments = [
+                //                 new ValueTuple<string, string>()
+                //                 {
+                //                     Item1 = "-x264opts",
+                //                     Item2 = "no-scenecut"
+                //                 }
+                //             ]
+                //         }
+                //     ],
+                //     AudioProfiles = [
+                //         new IAudioProfile
+                //         {
+                //             Codec = AudioCodecs.Aac.Value,
+                //             Channels = 2,
+                //             SegmentName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                //             PlaylistName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                //             AllowedLanguages = [
+                //                 Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                //                 Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                //             ]
+                //         },
+                //     ],
+                //     SubtitleProfiles = [
+                //         new ISubtitleProfile
+                //         {
+                //             Codec = SubtitleCodecs.Webvtt.Value,
+                //             AllowedLanguages = [
+                //                 Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                //                 Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                //             ],
+                //             PlaylistName = "subtitles/:filename:.:language:.:variant:"
+                //         }
+                //     ]
+                // },
+                new EncoderProfile
                 {
                     Id = Ulid.Parse("01HQ629SJ32FTV2Q46NX3H1CK9"),
                     Name = "1080p regular",
-                    Container = "auto",
-                    Params = new EncoderProfileParamsDto
-                    {
-                        Width = 1920,
-                        Crf = 25,
-                        Preset = "slow",
-                        Profile = "high",
-                        Codec = "H.264",
-                        Audio = "libfdk_aac"
-                    }
+                    Container = VideoContainers.Hls,
+                    EncoderProfileFolder = [
+                        new EncoderProfileFolder
+                        {
+                            FolderId = Ulid.Parse("01HQ5W78J5ADPV6K0SBZRBGWE3"),
+                            EncoderProfileId = Ulid.Parse("01HQ629SJ32FTV2Q46NX3H1CK9"),
+                        },
+                        new EncoderProfileFolder
+                        {
+                            FolderId = Ulid.Parse("01HQ5W67GRBPHJKNAZMDYKMVXA"),
+                            EncoderProfileId = Ulid.Parse("01HQ629SJ32FTV2Q46NX3H1CK9"),
+                        }
+                    ],
+                    VideoProfiles = [
+                        new IVideoProfile
+                        {
+                            Codec = VideoCodecs.H264Nvenc.Value,
+                            Width = FrameSizes._1080p.Width,
+                            Crf = 23,
+                            SegmentName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            PlaylistName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            ColorSpace = ColorSpaces.Yuv420p,
+                            Preset = VideoPresets.Fast,
+                            Tune = VideoTunes.Hq,
+                            Keyint = 48,
+                            CustomArguments = [
+                                new ValueTuple<string, string>()
+                                {
+                                    Item1 = "-x264opts",
+                                    Item2 = "no-scenecut"
+                                }
+                            ]
+                        }
+                    ],
+                    AudioProfiles = [
+                        new IAudioProfile
+                        {
+                            Codec = AudioCodecs.Aac.Value,
+                            Channels = 2,
+                            SegmentName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            PlaylistName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ]
+                        },
+                    ],
+                    SubtitleProfiles = [
+                        new ISubtitleProfile
+                        {
+                            Codec = SubtitleCodecs.Webvtt.Value,
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ],
+                            PlaylistName = "subtitles/:filename:.:language:.:variant:"
+                        },
+                        new ISubtitleProfile
+                        {
+                            Codec = SubtitleCodecs.Ass.Value,
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ],
+                            PlaylistName = "subtitles/:filename:.:language:.:variant:"
+                        }
+                    ]
                 },
-                new EncoderProfileDto
+                new EncoderProfile
                 {
                     Id = Ulid.Parse("01HR360AKTW47XC6ZQ2V9DF024"),
                     Name = "1080p low",
-                    Container = "auto",
-                    Params = new EncoderProfileParamsDto
-                    {
-                        Width = 1920,
-                        Crf = 28,
-                        Preset = "slow",
-                        Profile = "high",
-                        Codec = "H.264",
-                        Audio = "libfdk_aac"
-                    }
+                    Container = VideoContainers.Hls,
+                    EncoderProfileFolder = [
+                        new EncoderProfileFolder
+                        {
+                            FolderId = Ulid.Parse("01HQ5W4Y1ZHYZKS87P0AG24ERE"),
+                            EncoderProfileId = Ulid.Parse("01HR360AKTW47XC6ZQ2V9DF024"),
+                        },
+                    ],
+                    VideoProfiles = [
+                        new IVideoProfile
+                        {
+                            Codec = VideoCodecs.H264Nvenc.Value,
+                            Width = FrameSizes._1080p.Width,
+                            Crf = 25,
+                            SegmentName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            PlaylistName = ":type:_:framesize:_SDR/:type:_:framesize:_SDR",
+                            ColorSpace = ColorSpaces.Yuv420p,
+                            Preset = VideoPresets.Fast,
+                            Tune = VideoTunes.Hq,
+                            Keyint = 48,
+                            CustomArguments = [
+                                new ValueTuple<string, string>()
+                                {
+                                    Item1 = "-x264opts",
+                                    Item2 = "no-scenecut"
+                                }
+                            ]
+                        }
+                    ],
+                    AudioProfiles = [
+                        new IAudioProfile
+                        {
+                            Codec = AudioCodecs.Aac.Value,
+                            Channels = 2,
+                            SegmentName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            PlaylistName = ":type:_:language:_:codec:/:type:_:language:_:codec:",
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ]
+                        },
+                    ],
+                    SubtitleProfiles = [
+                        new ISubtitleProfile
+                        {
+                            Codec = SubtitleCodecs.Webvtt.Value,
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ],
+                            PlaylistName = "subtitles/:filename:.:language:.:variant:"
+                        },
+                        new ISubtitleProfile
+                        {
+                            Codec = SubtitleCodecs.Ass.Value,
+                            AllowedLanguages = [
+                                Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
+                                Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
+                            ],
+                            PlaylistName = "subtitles/:filename:.:language:.:variant:"
+                        }
+                    ]
                 }
             ];
 
-        await MediaContext.EncoderProfiles.UpsertRange(encoderProfiles.ToList()
-                .ConvertAll<EncoderProfile>(encoderProfile => new EncoderProfile
-                {
-                    Id = encoderProfile.Id,
-                    Name = encoderProfile.Name,
-                    Container = encoderProfile.Container,
-                    Param = new EncoderProfileParamsDto
-                    {
-                        Width = encoderProfile.Params.Width,
-                        Crf = encoderProfile.Params.Crf,
-                        Preset = encoderProfile.Params.Preset,
-                        Profile = encoderProfile.Params.Profile,
-                        Codec = encoderProfile.Params.Codec,
-                        Audio = encoderProfile.Params.Audio
-                    }.ToJson()
-                })
-            )
+        await File.WriteAllTextAsync(AppFiles.EncoderProfilesSeedFile, encoderProfiles.ToJson());
+
+        await MediaContext.EncoderProfiles.UpsertRange(encoderProfiles)
             .On(v => new { v.Id })
             .WhenMatched((vs, vi) => new EncoderProfile
             {
@@ -188,7 +455,31 @@ public class Seed : IDisposable, IAsyncDisposable
                 Name = vi.Name,
                 Container = vi.Container,
                 Param = vi.Param,
-                UpdatedAt = vi.UpdatedAt
+                _videoProfiles = vi._videoProfiles,
+                _audioProfiles = vi._audioProfiles,
+                _subtitleProfiles = vi._subtitleProfiles,
+                UpdatedAt = vi.UpdatedAt,
+            })
+            .RunAsync();
+
+        List<EncoderProfileFolder> encoderProfileFolders = [];
+        foreach (var encoderProfile in encoderProfiles)
+        {
+            encoderProfileFolders.AddRange(encoderProfile.EncoderProfileFolder.ToList()
+                .Select(encoderProfileFolder => new EncoderProfileFolder
+                {
+                    EncoderProfileId = encoderProfile.Id,
+                    FolderId = encoderProfileFolder.FolderId
+                }));
+        }
+
+        await MediaContext.EncoderProfileFolder
+            .UpsertRange(encoderProfileFolders)
+            .On(v => new { v.FolderId, v.EncoderProfileId })
+            .WhenMatched((vs, vi) => new EncoderProfileFolder
+            {
+                FolderId = vi.FolderId,
+                EncoderProfileId = vi.EncoderProfileId
             })
             .RunAsync();
     }

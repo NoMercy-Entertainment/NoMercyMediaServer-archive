@@ -209,7 +209,7 @@ public partial class FileManager(
                     .Where(stream => stream != null && stream != "und")),
                 Quality = item.FFprobe?.VideoStreams.FirstOrDefault()?.Width.ToString() ?? "",
                 Subtitles = JsonConvert.SerializeObject(subtitles),
-                _tracks = JsonConvert.SerializeObject(tracks),
+                Tracks = tracks.ToArray(),
             };
 
             await fileRepository.StoreVideoFile(videoFile);

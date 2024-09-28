@@ -25,6 +25,7 @@ public class BaseSubtitle : Classes
     protected virtual CodecDto[] AvailableCodecs => [];
     protected virtual string[] AvailableContainers => [];
 
+    protected string Variant { get; set; } = "full";
     private string _hlsSegmentFilename = "";
 
     internal string HlsSegmentFilename
@@ -33,8 +34,9 @@ public class BaseSubtitle : Classes
             .Replace(":language:", Language)
             .Replace(":codec:", SubtitleCodec.SimpleValue)
             .Replace(":type:", Type)
-            .Replace("/", Str.DirectorySeparator)
-            .Replace("\\", Str.DirectorySeparator);
+            .Replace(":filename:", FileName)
+            .Replace("\\", Str.DirectorySeparator)
+            .Replace("/", Str.DirectorySeparator);
         set => _hlsSegmentFilename = value;
     }
 
@@ -46,20 +48,12 @@ public class BaseSubtitle : Classes
             .Replace(":language:", Language)
             .Replace(":codec:", SubtitleCodec.SimpleValue)
             .Replace(":type:", Type)
-            .Replace(":variant:", "full")
-            .Replace("/", Str.DirectorySeparator)
-            .Replace("\\", Str.DirectorySeparator);
+            .Replace(":variant:", Variant)
+            .Replace(":filename:", FileName)
+            .Replace("\\", Str.DirectorySeparator)
+            .Replace("/", Str.DirectorySeparator);
         set => _hlsPlaylistFilename = value;
     }
-
-    public dynamic Data => new
-    {
-        SubtitleCodec,
-        Type,
-        _extraParameters,
-        _ops,
-        _filters
-    };
 
     #endregion
 
@@ -77,15 +71,33 @@ public class BaseSubtitle : Classes
         return this;
     }
 
-    protected BaseSubtitle AddCustomArgument(string key, dynamic i)
+    public BaseSubtitle AddCustomArgument(string key, dynamic? i)
     {
         _extraParameters.Add(key, i);
+        return this;
+    }
+
+    public BaseSubtitle AddCustomArguments((string key, string Val)[] profileCustomArguments)
+    {
+        foreach ((string key, string Val) in profileCustomArguments)
+            AddCustomArgument(key, Val);
         return this;
     }
 
     public BaseSubtitle AddOpts(string key, dynamic value)
     {
         _ops.Add(key, value);
+        return this;
+    }
+    public BaseSubtitle AddOpt(string value)
+    {
+        AddCustomArgument(value, null);
+        return this;
+    }
+    public BaseSubtitle AddOpts(string[] value)
+    {
+        foreach (string opt in value)
+            AddOpt(opt);
         return this;
     }
 
@@ -125,35 +137,72 @@ public class BaseSubtitle : Classes
         {
             if (SubtitleStreams.All(stream => stream.Language != allowedLanguage)) continue;
 
-            BaseSubtitle newStream = (BaseSubtitle)MemberwiseClone();
+            foreach (var stream in SubtitleStreams.Where(stream => stream.Language == allowedLanguage))
+            {
+                BaseSubtitle newStream = (BaseSubtitle)MemberwiseClone();
 
-            newStream.IsSubtitle = true;
+                newStream.IsSubtitle = true;
 
-            newStream.SubtitleStream = SubtitleStreams
-                .Find(stream => stream.Language == allowedLanguage)!;
+                newStream.SubtitleStream = stream;
 
-            newStream.Index = SubtitleStreams.IndexOf(newStream.SubtitleStream);
-            
-            newStream.Extension = GetExtension(newStream);
+                newStream.Index = SubtitleStreams.IndexOf(newStream.SubtitleStream);
 
-            streams.Add(newStream);
+                newStream.Variant = GetVariant(newStream);
+
+                if(newStream.SubtitleStream!.CodecName == newStream.SubtitleCodec.SimpleValue) continue;
+
+                if(streams.Any(s => s.Extension == newStream.Extension && s.Variant == newStream.Variant && s.Language == newStream.Language)) continue;
+
+                streams.Add(newStream);
+            }
+            Logger.Encoder($"Added {streams.Count} subtitle streams", LogEventLevel.Verbose);
         }
 
         return streams;
     }
 
-    private string GetExtension(BaseSubtitle stream)
+    private string GetVariant(BaseSubtitle stream)
     {
-        string ext = "vtt";
+        var variant = "full";
+
+        string? description = "";
+        if(stream.SubtitleStream!.Tags?.TryGetValue("title", out description) is false) return variant;
+
+        if (description.Contains("sign", StringComparison.CurrentCultureIgnoreCase) || description.Contains("song", StringComparison.CurrentCultureIgnoreCase))
+        {
+            variant = "sign";
+        }
+        else  if (description.Contains("sdh", StringComparison.CurrentCultureIgnoreCase))
+        {
+            variant = "sdh";
+        }
+
+        return variant;
+    }
+
+    internal static string GetExtension(BaseSubtitle stream)
+    {
+        stream.SubtitleCodec = SubtitleCodecs.Webvtt;
+        var extension = "vtt";
             
         if (stream.SubtitleStream!.CodecName == "hdmv_pgs_subtitle" || stream.SubtitleStream.CodecName == "dvd_subtitle")
         {
             stream.SubtitleCodec = SubtitleCodecs.Copy;
             stream.ConvertSubtitle = true;
-            ext = "sup";
+            extension = "sup";
+        }
+        else if (stream.SubtitleStream.CodecName == "ass")
+        {
+            stream.SubtitleCodec = SubtitleCodecs.Ass;
+            extension = "ass";
+        }
+        else if (stream.SubtitleStream.CodecName == "srt")
+        {
+            stream.SubtitleCodec = SubtitleCodecs.Srt;
+            extension = "srt";
         }
 
-        return ext;
+        return extension;
     }
 
     public void AddToDictionary(Dictionary<string, dynamic> commandDictionary, int index)
@@ -190,9 +239,11 @@ public class BaseSubtitle : Classes
     {
         return profileCodec switch
         {
-            "vtt" => new Vtt(),
+            "webvtt" => new Vtt(),
             "srt" => new Srt(),
+            "ass" => new Ass(),
             "_" => throw new Exception($"Subtitle {profileCodec} is not supported"),
+            _ => throw new ArgumentOutOfRangeException(nameof(profileCodec), profileCodec, null)
         };
     }
 }

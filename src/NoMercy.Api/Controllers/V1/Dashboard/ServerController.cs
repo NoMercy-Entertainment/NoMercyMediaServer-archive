@@ -16,6 +16,7 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers.Monitoring;
+using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
@@ -26,6 +27,7 @@ using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Queue;
 using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
+using JobDispatcher = NoMercy.MediaProcessing.Jobs.JobDispatcher;
 using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -163,10 +165,23 @@ public class ServerController : BaseController
 
     [HttpPost]
     [Route("addfiles")]
-    public IActionResult AddFiles([FromBody] AddFilesRequest request)
+    public async Task<IActionResult> AddFiles([FromBody] AddFilesRequest request)
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to add files");
+
+        await using MediaContext mediaContext = new();
+        JobDispatcher jobDispatcher = new();
+
+        foreach (AddFile file in request.Files)
+        {
+            jobDispatcher.DispatchJob(new EncodeVideoJob
+            {
+                FolderId = request.FolderId,
+                Id = file.Id,
+                InputFile = file.Path,
+            });
+        }
 
         return Ok(request);
     }
@@ -291,7 +306,9 @@ public class ServerController : BaseController
         GlobalFFOptions.Configure(options => options.BinaryFolder = Path.Combine(AppFiles.BinariesPath, "ffmpeg"));
 
         DirectoryInfo directoryInfo = new(directoryPath);
-        FileInfo[] files = directoryInfo.GetFiles();
+        FileInfo[] files = directoryInfo.GetFiles()
+            .Where(file => file.Extension == ".mkv" || file.Extension == ".mp4" || file.Extension == ".avi" || file.Extension == ".webm" || file.Extension == ".flv")
+            .ToArray();
 
         List<FileItemDto> fileList = new();
 
@@ -300,7 +317,7 @@ public class ServerController : BaseController
             IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName);
 
             MovieDetector movieDetector = new();
-            MovieFile parsed = movieDetector.GetInfo(Regex.Replace(file.Name, @"\[.*?\]", ""));
+            MovieFile parsed = movieDetector.GetInfo(Regex.Replace(file.FullName, @"\[.*?\]", ""));
             parsed.Year ??= Str.MatchYearRegex().Match(file.FullName)
                 .Value;
 
@@ -624,7 +641,7 @@ public class ServerController : BaseController
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update workers");
 
-        if (await QueueRunner.SetWorkerCount(worker, count))
+        if (await QueueRunner.SetWorkerCount(worker, count, User.UserId()))
             return Ok($"{worker} worker count set to {count}");
 
         return BadRequestResponse($"{worker} worker count could not be set to {count}");

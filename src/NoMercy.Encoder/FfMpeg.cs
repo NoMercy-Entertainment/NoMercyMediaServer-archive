@@ -168,56 +168,58 @@ public class FfMpeg : Classes
 
                 output2.AppendLine(e.Data);
 
+                string[] x = output2.ToString().Split("\r\n");
+
+                IEnumerable<string[]> enumerable = x
+                    .Select(y => y.Split("="))
+                    .Where(y => y.Length == 2);
+
+                Dictionary<string, dynamic> enumerable2 = new();
+                foreach (string[] strings in enumerable)
+                    enumerable2.Add(strings.FirstOrDefault() ?? "", strings.LastOrDefault() ?? "");
+
+                enumerable2.Add("totalDuration", totalDuration);
+
+                Regex progressRegex = new(@"(\d{2}):(\d{2}):(\d{2})\.(\d+)");
+                dynamic? progressMatch =
+                    progressRegex.Match(enumerable2.GetValueOrDefault("out_time", ""));
+
+                if (progressMatch.Success)
+                {
+                    int hours = int.Parse(progressMatch.Groups[1].Value, CultureInfo.InvariantCulture);
+                    int minutes = int.Parse(progressMatch.Groups[2].Value, CultureInfo.InvariantCulture);
+                    int seconds = int.Parse(progressMatch.Groups[3].Value, CultureInfo.InvariantCulture);
+                    int milliseconds = int.Parse(progressMatch.Groups[4].Value, CultureInfo.InvariantCulture);
+
+                    currentTime = new TimeSpan(0, hours, minutes, seconds, milliseconds / 100);
+                    progressPercentage = currentTime.TotalMilliseconds / totalDuration.TotalMilliseconds * 100;
+                }
+
+                double speed = enumerable2.TryGetValue("speed", out dynamic? s) ? double.Parse(s.Replace("N/A", "0").TrimEnd('x'), CultureInfo.InvariantCulture) : 0;
+
+                double fps = enumerable2.TryGetValue("fps", out dynamic? f) ? double.Parse(f, CultureInfo.InvariantCulture) : 0;
+                int frame = enumerable2.TryGetValue("frame", out dynamic? f2) ? int.Parse(f2, CultureInfo.InvariantCulture) : 0;
+                string bitrate = enumerable2.GetValueOrDefault("bitrate", "");
+
+                double remaining =
+                    Math.Floor((totalDuration.TotalSeconds - currentTime.TotalSeconds) / speed);
+
+                string? thumbFolder = Directory.GetDirectories(meta.BaseFolder, "*thumbs_*")
+                    .FirstOrDefault();
+
+                string thumbnail = "";
+                string thumbnailFolder = "";
+                if (Directory.Exists(thumbFolder))
+                {
+                    thumbnail = Directory.GetFiles(thumbFolder).LastOrDefault() ?? "";
+                    thumbnail = Path.GetFileName(thumbnail);
+                    thumbnailFolder = Path.GetFileNameWithoutExtension(thumbnail).Split("-").FirstOrDefault() ?? "";
+                }
+
+                string remainingHMS = TimeSpan.FromSeconds(double.IsPositiveInfinity(remaining) || double.IsNegativeInfinity(remaining) ? 0 : remaining).ToString();
+
                 if (e.Data.Contains("progress"))
                 {
-                    string[] x = output2.ToString().Split("\r\n");
-                    IEnumerable<string[]> enumerable = x
-                        .Select(y => y.Split("="))
-                        .Where(y => y.Length == 2);
-
-                    Dictionary<string, dynamic> enumerable2 = new();
-                    foreach (string[] strings in enumerable)
-                        enumerable2.Add(strings.FirstOrDefault() ?? "", strings.LastOrDefault() ?? "");
-
-                    enumerable2.Add("totalDuration", totalDuration);
-
-                    Regex progressRegex = new(@"(\d{2}):(\d{2}):(\d{2})\.(\d+)");
-                    dynamic? progressMatch =
-                        progressRegex.Match(enumerable2.GetValueOrDefault("out_time", ""));
-
-                    if (progressMatch.Success)
-                    {
-                        int hours = int.Parse(progressMatch.Groups[1].Value, CultureInfo.InvariantCulture);
-                        int minutes = int.Parse(progressMatch.Groups[2].Value, CultureInfo.InvariantCulture);
-                        int seconds = int.Parse(progressMatch.Groups[3].Value, CultureInfo.InvariantCulture);
-                        int milliseconds = int.Parse(progressMatch.Groups[4].Value, CultureInfo.InvariantCulture);
-
-                        currentTime = new TimeSpan(0, hours, minutes, seconds, milliseconds / 100);
-                        progressPercentage = currentTime.TotalMilliseconds / totalDuration.TotalMilliseconds * 100;
-                    }
-
-                    double speed = enumerable2.TryGetValue("speed", out dynamic? s) ? double.Parse(s.Replace("N/A", "0").TrimEnd('x'), CultureInfo.InvariantCulture) : 0;
-                    
-                    double fps = enumerable2.TryGetValue("fps", out dynamic? f) ? double.Parse(f, CultureInfo.InvariantCulture) : 0;
-                    int frame = enumerable2.TryGetValue("frame", out dynamic? f2) ? int.Parse(f2, CultureInfo.InvariantCulture) : 0;
-                    string bitrate = enumerable2.GetValueOrDefault("bitrate", "");
-
-                    double remaining =
-                        Math.Floor((totalDuration.TotalSeconds - currentTime.TotalSeconds) / speed);
-
-                    string? thumbFolder = Directory.GetDirectories(meta.BaseFolder, "*thumbs_*")
-                        .FirstOrDefault();
-
-                    string thumbnail = "";
-                    string thumbnailFolder = "";
-                    if (Directory.Exists(thumbFolder))
-                    {
-                        thumbnail = Directory.GetFiles(thumbFolder).LastOrDefault() ?? "";
-                        thumbnail = Path.GetFileName(thumbnail);
-                        thumbnailFolder = Path.GetFileNameWithoutExtension(thumbnail).Split("-").FirstOrDefault() ?? "";
-                    }
-                    
-                    string remainingHMS = TimeSpan.FromSeconds(double.IsPositiveInfinity(remaining) || double.IsNegativeInfinity(remaining) ? 0 : remaining).ToString();
 
                     Progress progress = new()
                     {
@@ -246,10 +248,40 @@ public class FfMpeg : Classes
                         .Prepend("0")
                         .ToArray();
 
-                    // Logger.Encoder(progress);
-
                     Networking.Networking.SendToAll("Encoder", "dashboardHub", progress);
                     output2 = new StringBuilder();
+                }
+                else
+                {
+
+                    Progress progress = new()
+                    {
+                        Percentage = progressPercentage,
+                        Status = "Done",
+                        CurrentTime = currentTime.TotalSeconds,
+                        Duration = totalDuration.TotalSeconds,
+                        Remaining = remaining,
+                        RemainingHms = remainingHMS,
+                        Fps = fps,
+                        Speed = speed,
+                        Frame = frame,
+                        Bitrate = bitrate,
+                        HasGpu = meta.HasGpu,
+                        IsHDR = meta.IsHDR,
+                        VideoStreams = meta.VideoStreams,
+                        AudioStreams = meta.AudioStreams,
+                        SubtitleStreams = meta.SubtitleStreams,
+                        Thumbnail = $"{meta.ShareBasePath}/{thumbnailFolder}/{thumbnail}",
+                        Title = meta.Title,
+                        Id = meta.Id
+                    };
+
+                    progress.RemainingSplit = progress.RemainingHms
+                        .Split(":")
+                        .Prepend("0")
+                        .ToArray();
+
+                    Networking.Networking.SendToAll("Encoder", "dashboardHub", progress);
                 }
             }
         };
