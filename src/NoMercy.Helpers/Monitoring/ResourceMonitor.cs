@@ -4,7 +4,7 @@ using NoMercy.NmSystem;
 namespace NoMercy.Helpers.Monitoring;
 public class ResourceMonitor
 {
-    private static readonly Computer Computer;
+    private static readonly Computer? Computer = null;
 
     static ResourceMonitor()
     {
@@ -55,7 +55,7 @@ public class ResourceMonitor
 
     public static Resource Monitor()
     {
-
+        if (Computer is null) return new Resource();
         Resource resource = new()
         {
             Cpu = new Cpu

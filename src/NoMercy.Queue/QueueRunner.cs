@@ -152,7 +152,7 @@ public static class QueueRunner
         return Task.CompletedTask;
     }
 
-    public static async Task<bool> SetWorkerCount(string name, int max)
+    public static async Task<bool> SetWorkerCount(string name, int max, Guid? userId)
     {
         if (!Workers.ContainsKey(name)) return false;
         
@@ -161,12 +161,14 @@ public static class QueueRunner
             .Upsert(new Configuration()
             {
                 Key = $"{name}Runners",
+                ModifiedBy = userId,
                 Value = max.ToString()
             })
             .On(x => x.Key)
             .WhenMatched((s, i) => new Configuration
             {
                 Value = max.ToString(),
+                ModifiedBy = i.ModifiedBy,
                 UpdatedAt = i.UpdatedAt
             })
             .RunAsync();

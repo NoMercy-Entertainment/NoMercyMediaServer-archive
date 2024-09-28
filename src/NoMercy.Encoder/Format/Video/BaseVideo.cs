@@ -97,6 +97,7 @@ public abstract class BaseVideo : Classes
     {
         get => _hlsSegmentFilename
             .Replace(":framesize:", $"{Scale.W}x{Scale.H}")
+            .Replace(":filename:", FileName)
             .Replace(":type:", Type);
         set => _hlsSegmentFilename = value;
     }
@@ -109,6 +110,7 @@ public abstract class BaseVideo : Classes
     {
         get => _hlsPlaylistFilename
             .Replace(":framesize:", $"{Scale.W}x{Scale.H}")
+            .Replace(":filename:", FileName)
             .Replace(":type:", Type);
         set => _hlsPlaylistFilename = value;
     }
@@ -152,6 +154,13 @@ public abstract class BaseVideo : Classes
         return this;
     }
 
+    public BaseVideo AddCustomArguments((string key, string Val)[] profileCustomArguments)
+    {
+        foreach ((string key, string Val) in profileCustomArguments)
+            AddCustomArgument(key, Val);
+        return this;
+    }
+
     internal BaseVideo AddFilter(string key, dynamic value)
     {
         _filters[key] = $"\"{value}\"";
@@ -159,7 +168,7 @@ public abstract class BaseVideo : Classes
         return this;
     }
 
-    public BaseVideo AddOpts(string key, dynamic value)
+    public BaseVideo AddOpt(string key, dynamic value)
     {
         _ops.Add(key, $"\"{value}\"");
         return this;
@@ -200,12 +209,14 @@ public abstract class BaseVideo : Classes
     public BaseVideo SetScale(int width, int? height)
     {
         OutputWidth = width;
-        OutputHeight = height;
 
-        if (height == null)
+        if(height is 0)
             ScaleValue = $"{width}:-2";
         else
+        {
+            OutputHeight = height;
             ScaleValue = $"{width}:{height}";
+        }
 
         return this;
     }
@@ -260,6 +271,13 @@ public abstract class BaseVideo : Classes
         return this;
     }
 
+    public BaseVideo AddOpts(string[] profileOpts)
+    {
+        foreach (string opt in profileOpts)
+            AddOpts(opt);
+        return this;
+    }
+
     public BaseVideo SetHlsSegmentFilename(string value)
     {
         HlsSegmentFilename = value;
@@ -284,9 +302,9 @@ public abstract class BaseVideo : Classes
         return this;
     }
 
-    public BaseVideo ConvertHdrToSdr()
+    public BaseVideo ConvertHdrToSdr(bool value = true)
     {
-        ConverToSdr = true;
+        ConverToSdr = value;
         return this;
     }
 

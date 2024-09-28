@@ -77,8 +77,9 @@ public record InfoResponseItemDto
         ColorPalette = movie.ColorPalette;
         Backdrop = movie.Images.FirstOrDefault(image => image is { Type: "backdrop", Iso6391: null })?.FilePath ??
             movie.Backdrop;
-        Poster = movie.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ??
-            movie.Poster;
+        // Poster = movie.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ??
+        //          movie.Poster;
+        Poster = movie.Poster;
 
         ExternalIds = new ExternalIds
         {
@@ -293,7 +294,8 @@ public record InfoResponseItemDto
         ColorPalette = tv.ColorPalette;
         Backdrop = tv.Images.FirstOrDefault(image => image is { Type: "backdrop", Iso6391: null })?.FilePath ??
             tv.Backdrop;
-        Poster = tv.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ?? tv.Poster;
+        // Poster = tv.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ?? tv.Poster;
+        Poster = tv.Poster;
 
         ExternalIds = new ExternalIds
         {

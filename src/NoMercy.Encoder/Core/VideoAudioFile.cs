@@ -59,7 +59,11 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
                 (keyValuePair.Value as BaseSubtitle)!.SubtitleStreams = fMediaAnalysis!.SubtitleStreams!;
                 (keyValuePair.Value as BaseSubtitle)!.SubtitleStream = fMediaAnalysis!.PrimarySubtitleStream!;
 
-                Container.SubtitleStreams.AddRange((keyValuePair.Value as BaseSubtitle)!.Build());
+                List<BaseSubtitle> x = (keyValuePair.Value as BaseSubtitle)!.Build();
+                foreach (BaseSubtitle newStream in x)
+                    newStream.Extension = BaseSubtitle.GetExtension(newStream);
+
+                Container.SubtitleStreams.AddRange(x);
             }
             else if (keyValuePair.Value.IsImage)
             {
@@ -334,7 +338,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 
     public async Task<string> Run(string fullCommand, string basePath, ProgressMeta progressMeta)
     {
-        // string result = await FfMpeg.Run(fullCommand, basePath, progressMeta);
+        string result = await FfMpeg.Run(fullCommand, basePath, progressMeta);
         
         if (ConvertSubtitle)
         {
@@ -342,7 +346,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             ConvertSubtitles(Container.SubtitleStreams.Where(x => x.ConvertSubtitle).ToList());
         }
         
-        return "";
+        return result;
     }
 
     private void ConvertSubtitles(List<BaseSubtitle> subtitles)
@@ -350,12 +354,8 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         List<Task> tasks = new();
         subtitles.ForEach(subtitle =>
         {        
-            string input = Path.Combine(BasePath, $"{subtitle.HlsPlaylistFilename}.{subtitle.Extension}");            
-            string output = Path.Combine(BasePath, $"{subtitle.HlsPlaylistFilename}.{subtitle.Extension}");
-            
-            // SupImageExtractor.ExtractImages(input, BasePath);
-
-            string arg = $" /convert \"{input}\" WebVtt /ocr -l {subtitle.Language} /output \"{output}\"";;
+            string input = Path.Combine(BasePath, $"{subtitle.HlsPlaylistFilename}.{subtitle.Extension}");
+            string arg = $" /convert \"{input}\" WebVtt";;
             
             Logger.Encoder(AppFiles.SubtitleEdit + arg);
             tasks.Add(Shell.Exec(AppFiles.SubtitleEdit, arg));

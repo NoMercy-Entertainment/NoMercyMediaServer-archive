@@ -152,6 +152,8 @@ public class TvShowsController : BaseController
             .AsNoTracking()
             .Where(tv => tv.Id == id)
             .Include(tv => tv.Library)
+                .ThenInclude(library => library.FolderLibraries)
+                    .ThenInclude(folderLibrary => folderLibrary.Folder)
             .FirstOrDefaultAsync();
 
         if (tv is null)
