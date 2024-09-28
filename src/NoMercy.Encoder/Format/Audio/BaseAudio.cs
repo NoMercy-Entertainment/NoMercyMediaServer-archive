@@ -43,6 +43,7 @@ public abstract class BaseAudio : Classes
         get => _hlsSegmentFilename
             .Replace(":language:", Language)
             .Replace(":codec:", AudioCodec.SimpleValue)
+            .Replace(":filename:", FileName)
             .Replace(":type:", Type);
         set => _hlsSegmentFilename = value;
     }
@@ -59,6 +60,7 @@ public abstract class BaseAudio : Classes
         get => _hlsPlaylistFilename
             .Replace(":language:", Language)
             .Replace(":codec:", AudioCodec.SimpleValue)
+            .Replace(":filename:", FileName)
             .Replace(":type:", Type);
         set => _hlsPlaylistFilename = value;
     }
@@ -118,6 +120,13 @@ public abstract class BaseAudio : Classes
         return this;
     }
 
+    public BaseAudio AddCustomArguments((string key, string Val)[] profileCustomArguments)
+    {
+        foreach ((string key, string Val) in profileCustomArguments)
+            AddCustomArgument(key, Val);
+        return this;
+    }
+
     public BaseAudio AddOpts(string key, dynamic value)
     {
         _ops[key] = value;
@@ -130,9 +139,15 @@ public abstract class BaseAudio : Classes
         return this;
     }
 
-    public BaseAudio AddOpts(string value)
+    public BaseAudio AddOpt(string value)
     {
         AddCustomArgument(value, null);
+        return this;
+    }
+    public BaseAudio AddOpts(string[] value)
+    {
+        foreach (string opt in value)
+            AddOpt(opt);
         return this;
     }
 
@@ -174,16 +189,20 @@ public abstract class BaseAudio : Classes
         {
             if (AudioStreams.All(audioStream => audioStream.Language != allowedLanguage)) continue;
 
-            BaseAudio newStream = (BaseAudio)MemberwiseClone();
+            foreach (var stream in AudioStreams.Where(audioStream => audioStream.Language == allowedLanguage))
+            {
+                BaseAudio newStream = (BaseAudio)MemberwiseClone();
 
-            newStream.IsAudio = true;
+                newStream.IsAudio = true;
 
-            newStream.AudioStream = AudioStreams
-                .Find(audioStream => audioStream.Language == allowedLanguage)!;
+                newStream.AudioStream = stream;
 
-            newStream.Index = AudioStreams.IndexOf(newStream.AudioStream);
+                newStream.Index = AudioStreams.IndexOf(newStream.AudioStream);
 
-            streams.Add(newStream);
+                if(streams.Any(s => s.HlsPlaylistFilename == newStream.HlsPlaylistFilename)) continue;
+
+                streams.Add(newStream);
+            }
         }
 
         return streams;

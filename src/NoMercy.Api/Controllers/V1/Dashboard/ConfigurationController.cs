@@ -24,7 +24,7 @@ public class ConfigurationController : BaseController
     [HttpGet]
     public IActionResult Index()
     {
-        if (!User.IsOwner())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view configuration");
 
         return Ok(new ConfigDto
@@ -55,7 +55,7 @@ public class ConfigurationController : BaseController
     [HttpPost]
     public IActionResult Store()
     {
-        if (!User.IsOwner())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to store configuration");
 
         return Ok(new PlaceholderResponse
@@ -67,8 +67,10 @@ public class ConfigurationController : BaseController
     [HttpPatch]
     public async Task<IActionResult> Update([FromBody] ConfigDtoData request)
     {
-        if (!User.IsOwner())
+        if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update configuration");
+
+        Guid userId = User.UserId();
         
         if (request.InternalServerPort != 0)
         {
@@ -78,13 +80,14 @@ public class ConfigurationController : BaseController
                 {
                     Key = "InternalServerPort",
                     Value = request.InternalServerPort.ToString(),
-                    ModifiedBy = User.UserId()
+                    ModifiedBy = userId
                 })
                 .On(e => e.Key)
                 .WhenMatched((o, n) =>new Configuration
                 {
                     Id = o.Id,
                     Value = n.Value,
+                    ModifiedBy = n.ModifiedBy,
                     UpdatedAt = n.UpdatedAt
                 })
                 .RunAsync();
@@ -98,13 +101,14 @@ public class ConfigurationController : BaseController
                 {
                     Key = "ExternalServerPort",
                     Value = request.ExternalServerPort.ToString(),
-                    ModifiedBy = User.UserId()
+                    ModifiedBy = userId
                 })
                 .On(e => e.Key)
                 .WhenMatched((o, n) =>new Configuration
                 {
                     Id = o.Id,
                     Value = n.Value,
+                    ModifiedBy = n.ModifiedBy,
                     UpdatedAt = n.UpdatedAt
                 })
                 .RunAsync();
@@ -113,32 +117,32 @@ public class ConfigurationController : BaseController
         if (request.QueueWorkers is not null)
         {
             Config.QueueWorkers = new(Config.QueueWorkers.Key, (int)request.QueueWorkers);
-            await QueueRunner.SetWorkerCount(Config.QueueWorkers.Key, (int)request.QueueWorkers);
+            await QueueRunner.SetWorkerCount(Config.QueueWorkers.Key, (int)request.QueueWorkers, userId);
         }
         if (request.EncoderWorkers is not null)
         {
             Config.EncoderWorkers = new(Config.EncoderWorkers.Key, (int)request.EncoderWorkers);
-            await QueueRunner.SetWorkerCount(Config.EncoderWorkers.Key, (int)request.EncoderWorkers);
+            await QueueRunner.SetWorkerCount(Config.EncoderWorkers.Key, (int)request.EncoderWorkers, userId);
         }
         if (request.CronWorkers is not null)
         {
             Config.CronWorkers = new(Config.CronWorkers.Key, (int)request.CronWorkers);
-            await QueueRunner.SetWorkerCount(Config.CronWorkers.Key, (int)request.CronWorkers);
+            await QueueRunner.SetWorkerCount(Config.CronWorkers.Key, (int)request.CronWorkers, userId);
         }
         if (request.DataWorkers is not null)
         {
             Config.DataWorkers = new(Config.DataWorkers.Key, (int)request.DataWorkers);
-            await QueueRunner.SetWorkerCount(Config.DataWorkers.Key, (int)request.DataWorkers);
+            await QueueRunner.SetWorkerCount(Config.DataWorkers.Key, (int)request.DataWorkers, userId);
         }
         if (request.ImageWorkers is not null)
         {
             Config.ImageWorkers = new(Config.ImageWorkers.Key, (int)request.ImageWorkers);
-            await QueueRunner.SetWorkerCount(Config.ImageWorkers.Key, (int)request.ImageWorkers);
+            await QueueRunner.SetWorkerCount(Config.ImageWorkers.Key, (int)request.ImageWorkers, userId);
         }
         if (request.RequestWorkers is not null)
         {
             Config.RequestWorkers = new(Config.RequestWorkers.Key, (int)request.RequestWorkers);
-            await QueueRunner.SetWorkerCount(Config.RequestWorkers.Key, (int)request.RequestWorkers);
+            await QueueRunner.SetWorkerCount(Config.RequestWorkers.Key, (int)request.RequestWorkers, userId);
         }
         
         if (request.ServerName is not null)
@@ -155,6 +159,7 @@ public class ConfigurationController : BaseController
             {
                 Id = o.Id,
                 Value = request.ServerName,
+                ModifiedBy = n.ModifiedBy,
                 UpdatedAt = n.UpdatedAt
             })
             .RunAsync();

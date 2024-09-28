@@ -31,18 +31,24 @@ public class Dev
         await using MediaContext mediaContext = new();
         JobDispatcher jobDispatcher = new();
         
-        // Folder? folder = await mediaContext.Folders
-        //     .Include(f => f.FolderLibraries)
-        //     .ThenInclude(f => f.Library)
-        //     .Include(f => f.EncoderProfileFolder)
-        //     .ThenInclude(f => f.EncoderProfile)
-        //     .FirstOrDefaultAsync(f => f.Id == Ulid.Parse("01HQ5W4Y1ZHYZKS87P0AG24ERE"));
+        Folder? folder = await mediaContext.Folders
+            .Include(f => f.FolderLibraries)
+            .ThenInclude(f => f.Library)
+            .Include(f => f.EncoderProfileFolder)
+            .ThenInclude(f => f.EncoderProfile)
+            .FirstOrDefaultAsync(f => f.Id == Ulid.Parse("01HQ5W4Y1ZHYZKS87P0AG24ERE"));
 
         // jobDispatcher.DispatchJob(new EncodeVideoJob
         // {
         //     FolderId = folder!.Id,
         //     Id = 1830793,
         //     InputFile = "M:\\Download\\complete\\[kmplx] A Certain Scientific Accelerator (BD 1080p x265 10-Bit FLAC) [Dual-Audio]\\Episode 01 - Accelerator (Academy City's Mightiest Esper).mkv",
+        // });
+        // jobDispatcher.DispatchJob(new EncodeVideoJob
+        // {
+        //     FolderId = folder!.Id,
+        //     Id = 1850385,
+        //     InputFile = "M:\\Download\\complete\\[kmplx] A Certain Scientific Accelerator (BD 1080p x265 10-Bit FLAC) [Dual-Audio]\\Episode 02 - Necromancer (Raiser of the Dead).mkv",
         // });
 
         // Library? movieLibrary = await mediaContext.Libraries

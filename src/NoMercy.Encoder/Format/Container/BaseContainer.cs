@@ -114,4 +114,15 @@ public class BaseContainer : Classes
     {
         HlsPlaylistGenerator.Build(BasePath, FileName);
     }
+
+    public static BaseContainer Create(string? profileContainer)
+    {
+        return profileContainer switch
+        {
+            "mkv" => new Mkv(),
+            "Mp4" => new Mp4(),
+            "Hls" => new Hls().SetHlsFlags("independent_segments"),
+            _ => new Hls().SetHlsFlags("independent_segments")
+        };
+    }
 }

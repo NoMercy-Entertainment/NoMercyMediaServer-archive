@@ -41,17 +41,11 @@ public class EncodeVideoJob : AbstractEncoderJob
 
         foreach (EncoderProfile profile in profiles)
         {
-            BaseContainer container = profile.Container switch
-            {
-                "mkv" => new Mkv(),
-                "Mp4" => new Mp4(),
-                "Hls" => new Hls().SetHlsFlags("independent_segments"),
-                _ => new Hls().SetHlsFlags("independent_segments")
-            };
+            BaseContainer container = BaseContainer.Create(profile.Container);
 
-            BuildVideoStreams(profile, ref container, fileName);
-            BuildAudioStreams(profile, ref container, fileName);
-            BuildSubtitleStreams(profile, ref container, fileName);
+            BuildVideoStreams(profile, ref container);
+            BuildAudioStreams(profile, ref container);
+            BuildSubtitleStreams(profile, ref container);
 
             BaseImage sprite = new Sprite()
                 .SetScale(320)
@@ -86,8 +80,7 @@ public class EncodeVideoJob : AbstractEncoderJob
                 IsHDR = container.VideoStreams.Any(x => x.IsHdr)
             };
 
-            string result = await ffmpeg.Run(fullCommand, basePath, progressMeta);
-            Logger.Encoder(result);
+            await ffmpeg.Run(fullCommand, basePath, progressMeta);
 
             await sprite.BuildSprite(progressMeta);
 
@@ -107,78 +100,71 @@ public class EncodeVideoJob : AbstractEncoderJob
                 .FirstOrDefaultAsync(x => x.Id == Id)
             : null;
 
-        if (movie is null && episode is null) return (false, string.Empty, string.Empty, string.Empty, string.Empty);
+        if (movie is null && episode is null)
+        {
+            return (false, string.Empty, string.Empty, string.Empty, string.Empty);
+        }
 
         string folderName = (movie?.CreateFolderName().Replace("/", "")
                 ?? episode!.Tv.CreateFolderName().Replace("/", "") + episode.CreateFolderName())
             .Replace("/", Path.DirectorySeparatorChar.ToString());
 
-        // int id = movie?.Id ?? episode!.Id;
         string title = movie?.CreateTitle() ?? episode!.CreateTitle();
         string fileName = movie?.CreateFileName() ?? episode!.CreateFileName();
         string basePath = Path.Combine(folder.Path, folderName);
+
         return (true, folderName, title, fileName, basePath);
     }
 
-    private static void BuildVideoStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
+    private static void BuildVideoStreams(EncoderProfile encoderProfile, ref BaseContainer container)
     {
         foreach (IVideoProfile profile in encoderProfile.VideoProfiles)
         {
             BaseVideo stream = BaseVideo.Create(profile.Codec)
-                .SetScale(profile.Width, profile.Height) // FrameSizes._1080p.Width
-                .SetConstantRateFactor(profile.Crf) //20
-                .SetFrameRate(profile.Framerate) //24
-                .SetKiloBitrate(profile.Bitrate) // 5000
+                .SetScale(profile.Width, profile.Height)
+                .SetConstantRateFactor(profile.Crf)
+                .SetFrameRate(profile.Framerate)
+                .SetKiloBitrate(profile.Bitrate)
                 .ConvertHdrToSdr()
-                .SetHlsSegmentFilename(profile.SegmentName) //":type:_:framesize:_SDR/:type:_:framesize:_SDR"
-                .SetHlsPlaylistFilename(profile.PlaylistName) //":type:_:framesize:_SDR/:type:_:framesize:_SDR"
-                .SetColorSpace(profile.ColorSpace) //ColorSpaces.Yuv420p
-                .SetPreset(profile.Preset) //VideoPresets.Fast
-                .SetTune(profile.Tune) //VideoTunes.Hq
-                .AddOpts("keyint", profile.Keyint);  //"keyint", 48
-
-            foreach (string opt in profile.Opts)
-            {
-                stream.AddOpts(opt); //"no-scenecut"
-            }
-
-            foreach ((string key, string val) in profile.CustomArguments)
-            {
-                stream.AddCustomArgument(key, val); //"-x264opts", "no-scenecut"
-            }
+                .SetHlsSegmentFilename(profile.SegmentName)
+                .SetHlsPlaylistFilename(profile.PlaylistName)
+                .SetColorSpace(profile.ColorSpace)
+                .SetPreset(profile.Preset)
+                .SetTune(profile.Tune)
+                .AddOpt("keyint", profile.Keyint)
+                .AddOpts(profile.Opts)
+                .AddCustomArguments(profile.CustomArguments);
 
             container.AddStream(stream);
         }
     }
 
-    private static void BuildAudioStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
+    private static void BuildAudioStreams(EncoderProfile encoderProfile, ref BaseContainer container)
     {
         foreach (IAudioProfile profile in encoderProfile.AudioProfiles)
         {
             BaseAudio stream = BaseAudio.Create(profile.Codec)
-                .SetAudioChannels(profile.Channels) // 2
-                .SetAllowedLanguages(profile.AllowedLanguages) //[
-                //     Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
-                //     Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
-                // ])
-                .SetHlsSegmentFilename(profile.SegmentName) //":type:_:language:_:codec:/:type:_:language:_:codec:"
-                .SetHlsPlaylistFilename(profile.PlaylistName); //":type:_:language:_:codec:/:type:_:language:_:codec:"
+                .SetAudioChannels(profile.Channels)
+                .SetAllowedLanguages(profile.AllowedLanguages)
+                .SetHlsSegmentFilename(profile.SegmentName)
+                .SetHlsPlaylistFilename(profile.PlaylistName)
+                .AddOpts(profile.Opts)
+                .AddCustomArguments(profile.CustomArguments);
 
             container.AddStream(stream);
         }
     }
 
-    private static void BuildSubtitleStreams(EncoderProfile encoderProfile, ref BaseContainer container, string fileName)
+    private static void BuildSubtitleStreams(EncoderProfile encoderProfile, ref BaseContainer container)
     {
         foreach (ISubtitleProfile profile in encoderProfile.SubtitleProfiles)
         {
             BaseSubtitle stream = BaseSubtitle.Create(profile.Codec)
-                .SetAllowedLanguages(profile.AllowedLanguages) //[
-                //     Languages.Dut, Languages.Eng, Languages.Jpn, Languages.Fre, Languages.Ger, Languages.Ita,
-                //     Languages.Spa,  Languages.Por, Languages.Rus, Languages.Kor, Languages.Chi, Languages.Ara
-                // ])
-                .SetHlsSegmentFilename(profile.SegmentName) //":type:_:language:_:codec:/_:language:_:codec:"
-                .SetHlsPlaylistFilename(profile.PlaylistName); //$"subtitles/{fileName}.:language:.:variant:";
+                .SetAllowedLanguages(profile.AllowedLanguages)
+                .SetHlsSegmentFilename(profile.SegmentName)
+                .SetHlsPlaylistFilename(profile.PlaylistName)
+                .AddOpts(profile.Opts)
+                .AddCustomArguments(profile.CustomArguments);
 
             container.AddStream(stream);
         }
