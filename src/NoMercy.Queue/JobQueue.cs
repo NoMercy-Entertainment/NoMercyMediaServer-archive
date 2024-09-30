@@ -20,13 +20,9 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
 
             Context.QueueJobs.Add(queueJob);
 
-            try
+            if(Context.ChangeTracker.HasChanges())
             {
                 Context.SaveChanges();
-            }
-            catch (Exception e)
-            {
-                //
             }
         }
     }
@@ -40,13 +36,9 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
 
             Context.QueueJobs.Remove(job);
 
-            try
+            if(Context.ChangeTracker.HasChanges())
             {
                 Context.SaveChanges();
-            }
-            catch (Exception e)
-            {
-                //
             }
 
             return job;
@@ -76,7 +68,10 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
                 job.ReservedAt = DateTime.UtcNow;
                 job.Attempts++;
 
-                Context.SaveChanges();
+                if(Context.ChangeTracker.HasChanges())
+                {
+                    Context.SaveChanges();
+                }
                 
                 return job;
             }
@@ -118,7 +113,10 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
                     Context.QueueJobs.Remove(queueJob);
                 }
 
-                Context.SaveChanges();
+                if(Context.ChangeTracker.HasChanges())
+                {
+                    Context.SaveChanges();
+                }
             }
         }
         catch (Exception e)
@@ -144,7 +142,10 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             {
                 Context.QueueJobs.Remove(queueJob);
 
-                Context.SaveChanges();
+                if(Context.ChangeTracker.HasChanges())
+                {
+                    Context.SaveChanges();
+                }
             }
         }
         catch (Exception e)
@@ -183,7 +184,10 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
                     Attempts = 0
                 });
 
-                Context.SaveChanges();
+                if(Context.ChangeTracker.HasChanges())
+                {
+                    Context.SaveChanges();
+                }
             }
         }
         catch (Exception e)

@@ -218,13 +218,12 @@ public class FfMpeg : Classes
 
                 string remainingHMS = TimeSpan.FromSeconds(double.IsPositiveInfinity(remaining) || double.IsNegativeInfinity(remaining) ? 0 : remaining).ToString();
 
-                if (e.Data.Contains("progress"))
+                if (e.Data.Contains("progress") || e.Data.Contains("continue"))
                 {
-
                     Progress progress = new()
                     {
                         Percentage = progressPercentage,
-                        Status = "Encoding",
+                        Status = "running",
                         CurrentTime = currentTime.TotalSeconds,
                         Duration = totalDuration.TotalSeconds,
                         Remaining = remaining,
@@ -248,40 +247,8 @@ public class FfMpeg : Classes
                         .Prepend("0")
                         .ToArray();
 
-                    Networking.Networking.SendToAll("Encoder", "dashboardHub", progress);
+                    Networking.Networking.SendToAll("encoder-progress", "dashboardHub", progress);
                     output2 = new StringBuilder();
-                }
-                else
-                {
-
-                    Progress progress = new()
-                    {
-                        Percentage = progressPercentage,
-                        Status = "Done",
-                        CurrentTime = currentTime.TotalSeconds,
-                        Duration = totalDuration.TotalSeconds,
-                        Remaining = remaining,
-                        RemainingHms = remainingHMS,
-                        Fps = fps,
-                        Speed = speed,
-                        Frame = frame,
-                        Bitrate = bitrate,
-                        HasGpu = meta.HasGpu,
-                        IsHDR = meta.IsHDR,
-                        VideoStreams = meta.VideoStreams,
-                        AudioStreams = meta.AudioStreams,
-                        SubtitleStreams = meta.SubtitleStreams,
-                        Thumbnail = $"{meta.ShareBasePath}/{thumbnailFolder}/{thumbnail}",
-                        Title = meta.Title,
-                        Id = meta.Id
-                    };
-
-                    progress.RemainingSplit = progress.RemainingHms
-                        .Split(":")
-                        .Prepend("0")
-                        .ToArray();
-
-                    Networking.Networking.SendToAll("Encoder", "dashboardHub", progress);
                 }
             }
         };
@@ -290,13 +257,11 @@ public class FfMpeg : Classes
 
         ffmpeg.Close();
 
-        // Networking.SendToAll("Encoder", "socket", new Progress
-        // {
-        //     Status = "done",
-        //     Id = 0,
-        // });
-
-        // Logger.Encoder(output.ToString());
+        Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
+        {
+            Status = "completed",
+            Id = meta.Id
+        });
 
         return output.ToString();
     }

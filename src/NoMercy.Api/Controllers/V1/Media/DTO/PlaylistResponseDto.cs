@@ -41,7 +41,9 @@ public record PlaylistResponseDto
         UserData? userData = videoFile.UserData.FirstOrDefault();
         string baseFolder = $"/{videoFile.Share}{videoFile.Folder}";
 
-        string? logo = episode.Tv.Images.FirstOrDefault(image => image.Type == "logo")?.FilePath;
+        string? logo = episode.Tv.Images
+            .OrderByDescending(image => image.VoteAverage)
+            .FirstOrDefault(image => image.Type == "logo")?.FilePath;
 
         string tvTitle = episode.Tv.Translations.FirstOrDefault()?.Title ?? episode.Tv.Title;
 
@@ -111,7 +113,9 @@ public record PlaylistResponseDto
         VideoFile? videoFile = movie.VideoFiles.FirstOrDefault();
         if (videoFile is null) return;
 
-        string? logo = movie.Images.FirstOrDefault(image => image.Type == "logo")?.FilePath;
+        string? logo = movie.Images
+            .OrderByDescending(image => image.VoteAverage)
+            .FirstOrDefault(image => image.Type == "logo")?.FilePath;
         UserData? userData = videoFile.UserData.FirstOrDefault();
         string baseFolder = $"/{videoFile.Share}{videoFile.Folder}";
 

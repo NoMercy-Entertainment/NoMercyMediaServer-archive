@@ -165,7 +165,9 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         // command.Append(" -hide_banner -probesize 4092M -analyzeduration 9999M");
         command.Append($" -threads {Math.Floor(threadCount * 0.8)} ");
 
-        if (HasGpu) command.Append(" -extra_hw_frames 3 -init_hw_device opencl=ocl -progress - ");
+        if (HasGpu) command.Append(" -extra_hw_frames 3 -init_hw_device opencl=ocl ");
+
+        command.Append(" -progress - ");
 
         command.Append($" -y -i \"{Container.InputFile}\" ");
 

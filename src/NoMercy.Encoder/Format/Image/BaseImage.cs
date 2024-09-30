@@ -185,6 +185,14 @@ public class BaseImage : Classes
     }
 
 
+    public (int width, int height) GetImageDimensions(string imagePath)
+    {
+        using (SixLabors.ImageSharp.Image image = SixLabors.ImageSharp.Image.Load(imagePath))
+        {
+            return (image.Width, image.Height);
+        }
+    }
+
     public async Task BuildSprite(ProgressMeta progressMeta)
     {
         string spriteFilename = Filename.Split("/").First() + ".webp";
@@ -201,8 +209,7 @@ public class BaseImage : Classes
 
         if (imageFiles.Length == 0) return;
 
-        int thumbWidth = Scale.W;
-        int thumbHeight = Scale.H;
+        (int thumbWidth, int thumbHeight) = GetImageDimensions(imageFiles.First());
 
         int gridWidth = (int)Math.Ceiling(Math.Sqrt(imageFiles.Length));
         int gridHeight = (int)Math.Ceiling((double)imageFiles.Length / gridWidth);
@@ -237,7 +244,7 @@ public class BaseImage : Classes
             if (jpg % gridWidth == 0)
             {
                 dstX = 0;
-                dstY += thumbHeight + 1;
+                dstY += thumbHeight;
             }
             else
             {
@@ -251,8 +258,8 @@ public class BaseImage : Classes
 
         if (Directory.Exists(thumbnailsFolder))
         {
-            // Logger.Encoder($"Deleting folder {thumbnailsFolder}");
-            // Directory.Delete(thumbnailsFolder, true);
+            Logger.Encoder($"Deleting folder {thumbnailsFolder}");
+            Directory.Delete(thumbnailsFolder, true);
         }
     }
 

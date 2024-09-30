@@ -6,13 +6,10 @@ using CommandLine;
 using Microsoft.AspNetCore;
 using NoMercy.Data.Logic;
 using NoMercy.Database;
-using NoMercy.Database.Models;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
-using NoMercy.Providers.AniDb.Clients;
 using NoMercy.Queue;
 using NoMercy.Server.app.Helper;
-using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
 
 namespace NoMercy.Server;
@@ -54,46 +51,9 @@ public static class Program
     {
         Console.Clear();
         Console.Title = "NoMercy Server";
-        
-        if (options.Dev)
-        {
-            Logger.App("Running in development mode.");
-            
-            Config.IsDev = true;
-            
-            Config.AppBaseUrl = "https://app-dev.nomercy.tv/";
-            Config.ApiBaseUrl = "https://api-dev.nomercy.tv/";
-            Config.ApiServerBaseUrl = $"{Config.ApiBaseUrl}v1/server/";
-            
-            Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
-            Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
-        }
-        
-        if(options.Seed)
-        {
-            Logger.App("Seeding database.");
-            ShouldSeedMarvel = true;
-        }
-        
-        if (!string.IsNullOrEmpty(options.LogLevel))
-        {
-            Logger.App($"Setting log level to: {options.LogLevel}.");
-            Logger.SetLogLevel(Enum.Parse<LogEventLevel>(options.LogLevel.ToTitleCase()));
-        }
-        
-        Logger.App(Config.AuthBaseUrl);
 
-        if (options.InternalPort != 0)
-        {
-            Logger.App("Setting internal port to " + options.InternalPort);
-            Config.InternalServerPort = options.InternalPort;
-        }
-        
-        if (options.ExternalPort != 0)
-        {
-            Logger.App("Setting external port to " + options.ExternalPort);
-            Config.ExternalServerPort = options.ExternalPort;
-        }
+        options.ApplySettings(out bool shouldSeedMarvel);
+        ShouldSeedMarvel = shouldSeedMarvel;
 
         Stopwatch stopWatch = new();
         stopWatch.Start();
@@ -140,7 +100,7 @@ public static class Program
 
     private static IWebHostBuilder CreateWebHostBuilder(this IWebHostBuilder _)
     {
-        UriBuilder? url = new UriBuilder
+        UriBuilder url = new()
         {
             Host = IPAddress.Any.ToString(),
             Port = Config.InternalServerPort,
@@ -172,44 +132,9 @@ public static class Program
     {
         ApiInfo.RequestInfo().Wait();
 
-        await using MediaContext mediaContext = new();
-        List<Configuration> configuration = mediaContext.Configuration.ToList();
-        
-        foreach (Configuration? config in configuration)
+        if (UserSettings.TryGetUserSettings(out var settings))
         {
-            Logger.App($"Configuration: {config.Key} = {config.Value}");
-            if (config.Key == "InternalServerPort")
-            {
-                Config.InternalServerPort = int.Parse(config.Value);
-            }
-            else if (config.Key == "ExternalServerPort")
-            {
-                Config.ExternalServerPort = int.Parse(config.Value);
-            }
-            else if (config.Key == "queueRunners")
-            {
-                Config.QueueWorkers = new(Config.QueueWorkers.Key, config.Value.ToInt());
-            }
-            else if (config.Key == "encoderRunners")
-            {
-                Config.EncoderWorkers = new(Config.EncoderWorkers.Key, config.Value.ToInt());
-            }
-            else if (config.Key == "cronRunners")
-            {
-                Config.CronWorkers = new(Config.CronWorkers.Key, config.Value.ToInt());
-            }
-            else if (config.Key == "dataRunners")
-            {
-                Config.DataWorkers = new(Config.DataWorkers.Key, config.Value.ToInt());
-            }
-            else if (config.Key == "imageRunners")
-            {
-                Config.ImageWorkers = new(Config.ImageWorkers.Key, config.Value.ToInt());
-            }
-            else if (config.Key == "requestRunners")
-            {
-                Config.RequestWorkers = new(Config.RequestWorkers.Key, config.Value.ToInt());
-            }
+            UserSettings.ApplySettings(settings);
         }
 
         List<TaskDelegate> startupTasks =
@@ -225,7 +150,7 @@ public static class Program
             new (TrayIcon.Make)
         ];
 
-        AppDomain.CurrentDomain.ProcessExit += (_, _) => { AniDbBaseClient.Dispose(); };
+        // AppDomain.CurrentDomain.ProcessExit += (_, _) => { AniDbBaseClient.Dispose(); };
 
         await RunStartup(startupTasks);
 

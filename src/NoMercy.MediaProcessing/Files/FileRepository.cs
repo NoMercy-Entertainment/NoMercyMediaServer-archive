@@ -13,7 +13,6 @@ public class FileRepository(MediaContext context) : IFileRepository
             .On(vf => vf.Filename)
             .WhenMatched((vs, vi) => new VideoFile
             {
-                Id = vi.Id,
                 EpisodeId = vi.EpisodeId,
                 MovieId = vi.MovieId,
                 Folder = vi.Folder,

@@ -29,9 +29,10 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
     public Task<Folder?> GetLibraryFolder(Ulid folderId)
     {
         return context.Folders
-            .AsNoTracking()
             .Include(folder => folder.FolderLibraries)
                 .ThenInclude(folderLibrary => folderLibrary.Library)
+                    .ThenInclude(f => f.FolderLibraries)
+                        .ThenInclude(f => f.Folder)
             .Include(folder => folder.EncoderProfileFolder)
                 .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
             .FirstOrDefaultAsync(folder => folder.Id == folderId);

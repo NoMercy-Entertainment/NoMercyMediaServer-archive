@@ -335,6 +335,30 @@ public class ServerController : BaseController
                     TmdbTvShow? show = shows?.Results.FirstOrDefault();
                     if (show == null || !parsed.Season.HasValue || !parsed.Episode.HasValue) continue;
 
+                    bool hasShow = mediaContext.Tvs
+                        .Any(item => item.Id == show.Id);
+
+                    Ulid libraryId = await mediaContext.Libraries
+                        .Where(item => item.Type == type)
+                        .Select(item => item.Id)
+                        .FirstOrDefaultAsync();
+
+                    if (!hasShow)
+                    {
+                        Networking.Networking.SendToAll("Notify", "socket", new NotifyDto
+                        {
+                            Title = "Show not found",
+                            Message = $"Show {show.Name} not found in library, adding now",
+                            Type = "info"
+                        });
+                        AddShowJob job = new()
+                        {
+                            LibraryId = libraryId,
+                            Id = show.Id
+                        };
+                        await job.Handle();
+                    }
+
                     Episode? episode = mediaContext.Episodes
                         .Where(item => item.TvId == show.Id)
                         .Where(item => item.SeasonNumber == parsed.Season)
@@ -386,6 +410,30 @@ public class ServerController : BaseController
                         TmdbMovieClient movieClient = new(movie.Id);
                         TmdbMovieDetails? details = await movieClient.Details();
                         if (details == null) continue;
+
+                        bool hasMovie = mediaContext.Movies
+                            .Any(item => item.Id == movie.Id);
+
+                        Ulid libraryId = await mediaContext.Libraries
+                            .Where(item => item.Type == type)
+                            .Select(item => item.Id)
+                            .FirstOrDefaultAsync();
+
+                        if (!hasMovie)
+                        {
+                            Networking.Networking.SendToAll("Notify", "socket", new NotifyDto
+                            {
+                                Title = "Movie not found",
+                                Message = $"Movie {movie.Title} not found in library, adding now",
+                                Type = "info"
+                            });
+                            AddMovieJob job = new()
+                            {
+                                LibraryId = libraryId,
+                                Id = movie.Id
+                            };
+                            await job.Handle();
+                        }
 
                         movieItem = new Movie
                         {

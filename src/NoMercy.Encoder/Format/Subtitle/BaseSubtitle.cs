@@ -168,7 +168,11 @@ public class BaseSubtitle : Classes
         string? description = "";
         if(stream.SubtitleStream!.Tags?.TryGetValue("title", out description) is false) return variant;
 
-        if (description.Contains("sign", StringComparison.CurrentCultureIgnoreCase) || description.Contains("song", StringComparison.CurrentCultureIgnoreCase))
+        if (
+            description.Contains("sign", StringComparison.CurrentCultureIgnoreCase)
+            || description.Contains("song", StringComparison.CurrentCultureIgnoreCase)
+            || description.Contains("s&s", StringComparison.CurrentCultureIgnoreCase)
+            )
         {
             variant = "sign";
         }
