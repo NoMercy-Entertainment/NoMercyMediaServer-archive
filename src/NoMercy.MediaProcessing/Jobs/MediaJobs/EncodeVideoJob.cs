@@ -10,6 +10,7 @@ using NoMercy.Encoder.Format.Image;
 using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
+using NoMercy.MediaProcessing.Files;
 using NoMercy.NmSystem;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
@@ -17,15 +18,23 @@ namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 public class EncodeVideoJob : AbstractEncoderJob
 {
     public override string QueueName => "encoder";
-    public override int Priority => 10;
+    public override int Priority => 4;
+    public string Status { get; set; } = "pending";
 
     public override async Task Handle()
     {
         await using MediaContext context = new();
+        await using QueueContext queueContext = new();
         JobDispatcher jobDispatcher = new();
 
+        // Status = "processing";
+        // await queueContext.SaveChangesAsync();
+
         LibraryRepository libraryRepository = new(context);
-        LibraryManager libraryManager = new(libraryRepository, jobDispatcher);
+        // LibraryManager libraryManager = new(libraryRepository, jobDispatcher);
+
+        FileRepository fileRepository = new(context);
+        FileManager fileManager = new(fileRepository, jobDispatcher);
 
         Folder? folder = await libraryRepository.GetLibraryFolder(FolderId);
         if (folder is null) return;
@@ -37,7 +46,7 @@ public class EncodeVideoJob : AbstractEncoderJob
         if (profiles.Count == 0) return;
         
         if (await GetFileMetaData(folder, context) is not {success:true} values) return;
-        (_, string folderName, string title, string fileName, string basePath) = values;
+        (_, string folderName, string title, string fileName, string basePath, int baseId) = values;
 
         foreach (EncoderProfile profile in profiles)
         {
@@ -85,10 +94,12 @@ public class EncodeVideoJob : AbstractEncoderJob
             await sprite.BuildSprite(progressMeta);
 
             container.BuildMasterPlaylist();
+
+            await fileManager.FindFiles(baseId, folder.FolderLibraries.First().Library);
         }
     }
     
-    private async Task<(bool success, string folderName, string title, string fileName, string basePath)> GetFileMetaData(Folder folder, MediaContext context) {
+    private async Task<(bool success, string folderName, string title, string fileName, string basePath, int baseId)> GetFileMetaData(Folder folder, MediaContext context) {
         Movie? movie = folder.FolderLibraries.Any(x => x.Library.Type == "movie")
             ? await context.Movies
                 .FirstOrDefaultAsync(x => x.Id == Id)
@@ -102,7 +113,7 @@ public class EncodeVideoJob : AbstractEncoderJob
 
         if (movie is null && episode is null)
         {
-            return (false, string.Empty, string.Empty, string.Empty, string.Empty);
+            return (false, string.Empty, string.Empty, string.Empty, string.Empty, 0);
         }
 
         string folderName = (movie?.CreateFolderName().Replace("/", "")
@@ -112,11 +123,12 @@ public class EncodeVideoJob : AbstractEncoderJob
         string title = movie?.CreateTitle() ?? episode!.CreateTitle();
         string fileName = movie?.CreateFileName() ?? episode!.CreateFileName();
         string basePath = Path.Combine(folder.Path, folderName);
+        int baseId = movie?.Id ?? episode!.Tv.Id;
 
-        return (true, folderName, title, fileName, basePath);
+        return (true, folderName, title, fileName, basePath, baseId);
     }
 
-    private static void BuildVideoStreams(EncoderProfile encoderProfile, ref BaseContainer container)
+    private static void BuildVideoStreams(EncoderProfile? encoderProfile, ref BaseContainer container)
     {
         foreach (IVideoProfile profile in encoderProfile.VideoProfiles)
         {
@@ -139,7 +151,7 @@ public class EncodeVideoJob : AbstractEncoderJob
         }
     }
 
-    private static void BuildAudioStreams(EncoderProfile encoderProfile, ref BaseContainer container)
+    private static void BuildAudioStreams(EncoderProfile? encoderProfile, ref BaseContainer container)
     {
         foreach (IAudioProfile profile in encoderProfile.AudioProfiles)
         {
@@ -155,7 +167,7 @@ public class EncodeVideoJob : AbstractEncoderJob
         }
     }
 
-    private static void BuildSubtitleStreams(EncoderProfile encoderProfile, ref BaseContainer container)
+    private static void BuildSubtitleStreams(EncoderProfile? encoderProfile, ref BaseContainer container)
     {
         foreach (ISubtitleProfile profile in encoderProfile.SubtitleProfiles)
         {

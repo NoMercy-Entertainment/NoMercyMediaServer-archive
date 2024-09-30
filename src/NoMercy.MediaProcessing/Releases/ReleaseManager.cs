@@ -19,7 +19,8 @@ public class ReleaseManager(
     public async Task<(MusicBrainzReleaseAppends? releaseAppends, CoverArtImageManagerManager.CoverPalette? coverPalette)> Add(Guid id, Library albumLibrary, Folder libraryFolder,
         MediaFolder mediaFolder)
     {
-        Logger.MusicBrainz($"Adding Release: {id}", LogEventLevel.Verbose);
+        Logger.MusicBrainz($"Adding Release: {id} to Library: {albumLibrary.Title}", LogEventLevel.Verbose);
+
         MusicBrainzReleaseClient musicBrainzReleaseClient = new();
         MusicBrainzReleaseAppends? releaseAppends = await musicBrainzReleaseClient.WithAllAppends(id);
         if (releaseAppends == null) return (null, null);

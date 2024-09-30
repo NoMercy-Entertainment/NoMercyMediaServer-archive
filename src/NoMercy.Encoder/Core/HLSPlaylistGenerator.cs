@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
 using NoMercy.NmSystem;
 using static NoMercy.Encoder.Core.IsoLanguageMapper;
 
@@ -74,10 +73,10 @@ public static class HlsPlaylistGenerator
                 string resolution = $"{parts[1]}x{parts[2]}";
                 bool isSdr = parts.Length == 4 && parts[3] == "SDR";
 
-                string vCodec = RunProcess("ffprobe",
+                string vCodec = RunProcess(AppFiles.FfProbePath,
                         $"-v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {videoFile}")
                     .Trim();
-                string profile = RunProcess("ffprobe",
+                string profile = RunProcess(AppFiles.FfProbePath,
                         $"-v error -select_streams v:0 -show_entries stream=profile -of default=noprint_wrappers=1:nokey=1 {videoFile}")
                     .Trim();
                 string vCodecProfile = MapProfileToCodec(vCodec, profile);
@@ -137,7 +136,7 @@ public static class HlsPlaylistGenerator
         return double.Parse(x, CultureInfo.InvariantCulture);
     }
 
-    private static string RunProcess(string command, string arguments)
+    private static string RunProcess(string command, string arguments, string? cwd = null)
     {
         Process process = new()
         {
@@ -145,6 +144,7 @@ public static class HlsPlaylistGenerator
             {
                 FileName = command,
                 Arguments = arguments,
+                WorkingDirectory = cwd,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,

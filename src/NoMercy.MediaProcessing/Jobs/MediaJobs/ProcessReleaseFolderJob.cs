@@ -22,7 +22,7 @@ namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
 {
     public override string QueueName => "queue";
-    public override int Priority => 10;
+    public override int Priority => 4;
 
     private bool _fromFingerprint = false;
 

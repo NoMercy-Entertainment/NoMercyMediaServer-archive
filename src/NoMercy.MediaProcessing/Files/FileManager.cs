@@ -5,6 +5,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Files;
 public partial class FileManager(
@@ -29,6 +30,8 @@ public partial class FileManager(
 
         foreach (Folder folder in Folders)
         {
+            Logger.App($"Scanning {Movie?.Title ?? Show?.Title} for files in {folder.Path}");
+
             ConcurrentBag<MediaFolderExtend>? files = await GetFiles(library, folder.Path);
 
             if (!files.IsEmpty) Files.AddRange(files);
@@ -129,6 +132,8 @@ public partial class FileManager(
                 if (match.Groups["type"].Value != "sign" && match.Groups["type"].Value != "song" &&
                     match.Groups["type"].Value != "full") continue;
 
+                if(match.Groups["ext"].Value == "sup") continue;
+
                 subtitles.Add(new Subtitle
                 {
                     Language = match.Groups["lang"].Value,
@@ -190,7 +195,7 @@ public partial class FileManager(
         
         try
         {
-            Logger.App($"Storing video file: {episode?.Id}, {Movie?.Id}");
+            Logger.App($"Storing video file: {episode?.Id}, {Movie?.Id}", LogEventLevel.Verbose);
             VideoFile videoFile = new()
             {
                 EpisodeId = episode?.Id,

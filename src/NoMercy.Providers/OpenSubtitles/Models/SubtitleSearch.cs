@@ -1,5 +1,4 @@
 using System.Xml.Serialization;
-using Newtonsoft.Json;
 
 namespace NoMercy.Providers.OpenSubtitles.Models;
 

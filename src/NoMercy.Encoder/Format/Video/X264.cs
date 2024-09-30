@@ -12,7 +12,10 @@ public class X264 : BaseVideo
 
     public X264(string videoCodec = "libx264")
     {
-        SetVideoCodec(videoCodec);
+        if(HasGpu)
+            SetVideoCodec(videoCodec);
+        else
+            SetVideoCodec(VideoCodecs.H264.Value);
     }
 
     protected override CodecDto[] AvailableCodecs =>

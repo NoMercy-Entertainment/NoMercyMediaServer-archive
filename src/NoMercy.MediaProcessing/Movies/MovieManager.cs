@@ -19,6 +19,8 @@ public class MovieManager(
 {
     public async Task<TmdbMovieAppends?> Add(int id, Library library)
     {
+        Logger.MovieDb($"Movie: {id}: Adding to Library {library.Title}");
+
         using TmdbMovieClient movieClient = new(id);
         TmdbMovieAppends? movieAppends = await movieClient.WithAllAppends();
 
@@ -75,7 +77,7 @@ public class MovieManager(
             StoreContentRatings(movieAppends)
         );
 
-        Logger.MovieDb($"Movie: {movieAppends.Title}: Added to Library {library.Title}", LogEventLevel.Debug);
+        Logger.MovieDb($"Movie: {movieAppends.Title}: Added to Library {library.Title}");
 
         jobDispatcher.DispatchJob<AddMovieExtraDataJob, TmdbMovieAppends>(movieAppends);
 
