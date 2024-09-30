@@ -2,7 +2,7 @@
   "profiles": {
     "https": {
       "commandName": "Project",
-      "commandLineArgs": "--dev  --logLevel=verbose",
+      "commandLineArgs": "--dev --loglevel=verbose",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

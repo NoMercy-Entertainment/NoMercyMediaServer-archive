@@ -18,6 +18,8 @@ public class ShowManager(
 {
     public async Task<TmdbTvShowAppends?> AddShowAsync(int id, Library library)
     {
+        Logger.MovieDb($"Show {id}: Adding to Library {library.Title}");
+
         using TmdbTvClient showClient = new(id);
         TmdbTvShowAppends? showAppends = await showClient.WithAllAppends();
 
@@ -89,7 +91,7 @@ public class ShowManager(
             StoreContentRatings(showAppends)
         );
 
-        Logger.MovieDb($"Show {showAppends.Name}: Added to Library {library.Title}", LogEventLevel.Debug);
+        Logger.MovieDb($"Show {showAppends.Name}: Added to Library {library.Title}");
 
         jobDispatcher.DispatchJob<AddShowExtraDataJob, TmdbTvShowAppends>(showAppends);
 

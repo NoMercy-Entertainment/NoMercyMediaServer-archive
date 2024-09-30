@@ -1,7 +1,6 @@
 using System.Security;
 using AniDB;
 using NoMercy.Helpers;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 using Serilog.Events;
 

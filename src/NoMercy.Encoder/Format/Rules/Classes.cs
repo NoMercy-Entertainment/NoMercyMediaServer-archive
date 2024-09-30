@@ -1,4 +1,5 @@
 using NoMercy.Encoder.Format.Container;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Encoder.Format.Rules;
 
@@ -17,10 +18,10 @@ public class Classes
     internal virtual bool IsSubtitle { get; set; }
     internal int Index { get; set; }
     internal bool ConvertSubtitle { get; set; }
-    public BaseContainer Container { get; set; }
+    public BaseContainer Container { get; set; } = default!;
 
     internal string HlsFlags { get; set; } = "independent_segments";
-    internal int HlsListSize { get; set; } = 0;
+    internal int HlsListSize { get; set; }
     internal string HlsPlaylistType { get; set; } = "event";
     protected int HlsTime { get; set; } = 4;
 
@@ -39,16 +40,16 @@ public class Classes
 
     public class VideoQualityDto
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public int Width { get; set; }
         public int Height { get; set; }
     }
 
     public class CodecDto
     {
-        public string Name { get; set; }
-        public string Value { get; set; }
-        public string SimpleValue { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string SimpleValue { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
         public bool RequiresGpu { get; set; }
         public bool RequiresStrict { get; set; }
@@ -56,8 +57,8 @@ public class Classes
 
     public class ContainerDto
     {
-        public string Name { get; set; }
-        public string Type { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
         public bool IsDefault { get; set; }
     }
 
@@ -128,11 +129,11 @@ public class Classes
         {
             string result = FfMpeg.Exec("-init_hw_device cuda=hw -filter_hw_device hw -hwaccels 2>&1").Result;
             // Logger.Encoder(result);
-            return true;
+            return !result.Contains("Failed", StringComparison.InvariantCultureIgnoreCase);
         }
         catch (Exception e)
         {
-            // Logger.Encoder(e.Message);
+            Logger.Encoder(e.Message);
             return false;
         }
     }

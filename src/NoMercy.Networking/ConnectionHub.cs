@@ -129,15 +129,25 @@ public class ConnectionHub : Hub
             Device? device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
             if (device is not null)
             {
-                await mediaContext.ActivityLogs.AddAsync(new ActivityLog
+                ActivityLog log = new()
                 {
                     DeviceId = device.Id,
                     Time = DateTime.Now,
                     Type = "Disconnected from server",
                     UserId = client.Sub
-                });
+                };
+                try
+                {
+                    await mediaContext.ActivityLogs.AddAsync(log);
+                    await mediaContext.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                   await Task.Delay(1000);
 
-                await mediaContext.SaveChangesAsync();
+                   await mediaContext.ActivityLogs.AddAsync(log);
+                   await mediaContext.SaveChangesAsync();
+                }
             }
 
             Networking.SocketClients.Remove(Context.ConnectionId, out _);

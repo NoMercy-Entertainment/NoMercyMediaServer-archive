@@ -10,7 +10,10 @@ public class X265 : BaseVideo
 
     public X265(string videoCodec = "libx265")
     {
-        SetVideoCodec(videoCodec);
+        if(HasGpu)
+            SetVideoCodec(videoCodec);
+        else
+            SetVideoCodec(VideoCodecs.H265.Value);
     }
 
     protected override CodecDto[] AvailableCodecs =>

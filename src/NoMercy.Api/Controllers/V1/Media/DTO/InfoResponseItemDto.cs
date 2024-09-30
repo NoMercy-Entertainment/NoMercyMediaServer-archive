@@ -102,6 +102,7 @@ public record InfoResponseItemDto
             .Select(keywordMovie => keywordMovie.Keyword.Name);
 
         Logo = movie.Images
+            .OrderByDescending(image => image.VoteAverage)
             .FirstOrDefault(media => media.Type == "logo")?.FilePath;
 
         Videos = movie.Media
@@ -206,6 +207,7 @@ public record InfoResponseItemDto
             .Select(keywordMovie => keywordMovie.Name);
 
         Logo = tmdbMovie.Images.Logos
+            .OrderByDescending(image => image.VoteAverage)
             .FirstOrDefault(logo => logo.Iso6391 == "en")?.FilePath;
 
         Videos = tmdbMovie.Videos.Results
@@ -316,6 +318,7 @@ public record InfoResponseItemDto
             .Select(keywordTv => keywordTv.Keyword.Name);
 
         Logo = tv.Images
+            .OrderByDescending(image => image.VoteAverage)
             .FirstOrDefault(media => media.Type == "logo")?.FilePath;
 
         Videos = tv.Media
@@ -461,6 +464,7 @@ public record InfoResponseItemDto
             .Select(keywordTv => keywordTv.Name);
 
         Logo = tmdbTv.Images.Logos
+            .OrderByDescending(image => image.VoteAverage)
             .FirstOrDefault(media => media.Iso6391 == "en")?.FilePath;
 
         Videos = tmdbTv.Videos.Results
@@ -574,6 +578,7 @@ public record InfoResponseItemDto
 
         Logo = collection.CollectionMovies
             .Select(collectionMovie => collectionMovie.Movie.Images
+                .OrderByDescending(image => image.VoteAverage)
                 .FirstOrDefault(media => media.Type == "logo")?.FilePath)
             .FirstOrDefault();
 

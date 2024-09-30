@@ -10,7 +10,10 @@ public class Vp9 : BaseVideo
     public Vp9(string videoCodec = "vp9")
     {
         throw new NotImplementedException("Vp9 is not implemented yet.");
-        SetVideoCodec(videoCodec);
+        if(HasGpu)
+            SetVideoCodec(videoCodec);
+        else
+            SetVideoCodec(VideoCodecs.Vp9.Value);
     }
 
     protected override CodecDto[] AvailableCodecs =>
