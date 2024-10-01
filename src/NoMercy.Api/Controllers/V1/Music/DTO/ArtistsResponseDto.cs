@@ -21,6 +21,10 @@ public record ArtistsResponseDto
                 )
                 .Include(artist => artist.ArtistTrack)
                 .ThenInclude(artistTrack => artistTrack.Track)
+                .Include(artist => artist.Images
+                    .Where(image => image.Type == "thumb")
+                    .OrderByDescending(image => image.VoteCount)
+                )
                 .Where(artist => artist.ArtistTrack.Any(artistTrack => artistTrack.Track.Duration != null))
                 .GroupBy(artist => artist.Name).Select(x => x.First())
         );

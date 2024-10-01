@@ -179,7 +179,7 @@ public class FanArtImageManager(
         await Task.CompletedTask;
     }
 
-    private async Task StoreReleaseImages(Albums fanArtArtistAlbums, Guid artistId, Artist dbArtist)
+    private async Task StoreReleaseImages(Albums fanArtArtistAlbums, Guid albumId, Artist dbArtist)
     {
           try
           {
@@ -190,7 +190,7 @@ public class FanArtImageManager(
                         Type = "cdArt",
                         VoteCount = image.Likes,
                         FilePath = "/" + image.Url.FileName(),
-                        ArtistId = artistId,
+                        AlbumId = albumId,
                         Site = image.Url.BasePath(),
                         _colorPalette = ColorPalette("image", image.Url).Result
                     })
@@ -205,7 +205,7 @@ public class FanArtImageManager(
                         Type = "cover",
                         VoteCount = image.Likes,
                         FilePath = "/" + image.Url.FileName(),
-                        ArtistId = artistId,
+                        AlbumId = albumId,
                         Site = image.Url.BasePath(),
                         _colorPalette = ColorPalette("image", image.Url).Result
                     })
