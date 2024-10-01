@@ -46,6 +46,10 @@ public record CarouselResponseItemDto
             .Where(artist => artist.Cover != null && artist.ArtistTrack.Count > 0)
             .Where(artist => artist.ArtistTrack
                 .Any(artistTrack => artistTrack.Track.Duration != null))
+            .Include(artist => artist.Images
+                .Where(image => image.Type == "thumb")
+                .OrderByDescending(image => image.VoteCount)
+            )
             .Include(artist => artist.ArtistTrack)
             .ThenInclude(artistTrack => artistTrack.Track)
             .OrderByDescending(artist => artist.CreatedAt)
@@ -59,6 +63,11 @@ public record CarouselResponseItemDto
             .Include(albumUser => albumUser.Artist)
             .ThenInclude(artist => artist.ArtistTrack)
             .ThenInclude(artistTrack => artistTrack.Track)
+            .Include(albumUser => albumUser.Artist)
+                .ThenInclude(artist => artist.Images
+                    .Where(image => image.Type == "thumb")
+                    .OrderByDescending(image => image.VoteCount)
+                )
             .Select(artistUser => new CarouselResponseItemDto(artistUser))
             .Take(36)
             .ToListAsync();
@@ -79,6 +88,10 @@ public record CarouselResponseItemDto
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.ArtistTrack)
             .ThenInclude(artistTrack => artistTrack.Artist)
+            .ThenInclude(musicPlay => musicPlay.Images
+                .Where(image => image.Type == "thumb")
+                .OrderByDescending(image => image.VoteCount)
+            )
             .SelectMany(p => p.Track.ArtistTrack)
             .Select(artistTrack => new TopMusicDto(artistTrack))
             .AsEnumerable()
@@ -115,7 +128,8 @@ public record CarouselResponseItemDto
     public CarouselResponseItemDto(Artist artist)
     {
         ColorPalette = artist.ColorPalette;
-        Cover = artist.Cover;
+        Cover = artist.Cover ?? artist.Images
+            .FirstOrDefault()?.FilePath;
         Disambiguation = artist.Disambiguation;
         Description = artist.Description;
         Folder = artist.Folder ?? "";
@@ -151,7 +165,8 @@ public record CarouselResponseItemDto
     public CarouselResponseItemDto(ArtistUser playlist)
     {
         ColorPalette = playlist.Artist.ColorPalette;
-        Cover = playlist.Artist.Cover;
+        Cover = playlist.Artist.Cover ?? playlist.Artist.Images
+            .FirstOrDefault()?.FilePath;
         Disambiguation = playlist.Artist.Disambiguation;
         Description = playlist.Artist.Description;
         Folder = playlist.Artist.Folder ?? "";

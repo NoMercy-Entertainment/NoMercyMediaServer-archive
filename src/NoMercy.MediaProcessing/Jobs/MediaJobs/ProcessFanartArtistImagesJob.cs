@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
@@ -41,24 +42,29 @@ public class ProcessFanartArtistImagesJob : AbstractFanArtDataJob
             
             await imageManager.StoreReleaseImages(fanArt.ArtistAlbum, Id1, dbArtist);
 
+            Database.Models.Image? artistCover = await imageManager.StoreArtistImages(fanArt, Id1, dbArtist);
             try
             {
-                Database.Models.Image? artistCover = await imageManager.StoreArtistImages(fanArt, Id1, dbArtist);
-                if (artistCover is not null && dbArtist.Cover is not null && dbArtist._colorPalette is not "")
+                if (artistCover is not null && (dbArtist.Cover is null || dbArtist._colorPalette is ""))
                 {
-                    dbArtist.Cover = artistCover?.FilePath ?? dbArtist.Cover;
+                    dbArtist.Cover = artistCover.FilePath ?? dbArtist.Cover;
+                    dbArtist._colorPalette = artistCover._colorPalette.Replace("\"image\"", "\"cover\"");
 
-                    dbArtist._colorPalette = artistCover?._colorPalette.Replace("\"image\"", "\"cover\"")
-                                             ?? dbArtist._colorPalette;
-                    
-                    dbArtist.UpdatedAt = DateTime.UtcNow;
-
-                    await context.SaveChangesAsync();
+                    await context.Artists.Upsert(dbArtist)
+                        .On(v => v.Id)
+                        .WhenMatched((s, i) => new Artist
+                        {
+                            Id = i.Id,
+                            Cover = i.Cover,
+                            _colorPalette = i._colorPalette,
+                            UpdatedAt = i.UpdatedAt
+                        })
+                        .RunAsync();
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                // ignored
+                Logger.FanArt(e, LogEventLevel.Warning);
             }
         }
         catch (Exception e)

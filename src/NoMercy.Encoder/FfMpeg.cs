@@ -168,7 +168,7 @@ public class FfMpeg : Classes
 
                 output2.AppendLine(e.Data);
 
-                string[] x = output2.ToString().Split("\r\n");
+                string[] x = Regex.Split( output2.ToString(), @"[\r\n]+");
 
                 IEnumerable<string[]> enumerable = x
                     .Select(y => y.Split("="))
