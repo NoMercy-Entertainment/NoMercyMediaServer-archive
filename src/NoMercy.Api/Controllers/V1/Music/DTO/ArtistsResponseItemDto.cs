@@ -19,7 +19,8 @@ public record ArtistsResponseItemDto
     public ArtistsResponseItemDto(Artist artist)
     {
         ColorPalette = artist.ColorPalette;
-        Cover = artist.Cover;
+        Cover = artist.Cover ?? artist.Images
+            .FirstOrDefault()?.FilePath;
         Disambiguation = artist.Disambiguation;
         Description = artist.Description;
         Id = artist.Id;
