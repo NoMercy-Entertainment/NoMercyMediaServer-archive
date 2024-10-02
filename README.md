@@ -10,6 +10,8 @@
 
 **"Empower Ownership: Overcome Licensing Barriers and Effortlessly Archive Your Media Collection with Privacy and Simplicity."**
 
+[![CI](https://github.com/NoMercy-Entertainment/NoMercyMediaServer/actions/workflows/ci.yml/badge.svg)](https://github.com/NoMercy-Entertainment/NoMercyMediaServer/actions/workflows/ci.yml)
+
 ## Features
 
 - **Automatic Encoding**: Effortlessly convert your media files into various formats.
