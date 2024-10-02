@@ -95,7 +95,35 @@ public class EncodeVideoJob : AbstractEncoderJob
 
             container.BuildMasterPlaylist();
 
+            if (ffmpeg.ConvertSubtitle)
+            {
+                Networking.Networking.SendToAll("encoder-progress", "dashboardHub",  new Progress
+                {
+                    Id = Id,
+                    Status = "running",
+                    Title = title,
+                    Message = "Converting subtitles",
+                });
+
+                Logger.Encoder($"Converting subtitle {ffmpeg.FileName}");
+                ffmpeg.ConvertSubtitles(ffmpeg.Container.SubtitleStreams.Where(x => x.ConvertSubtitle).ToList());
+            }
+
+            Networking.Networking.SendToAll("encoder-progress", "dashboardHub",  new Progress
+            {
+                Id = Id,
+                Status = "running",
+                Title = title,
+                Message = "Scanning files",
+            });
+
             await fileManager.FindFiles(baseId, folder.FolderLibraries.First().Library);
+
+            Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
+            {
+                Status = "completed",
+                Id = Id
+            });
         }
     }
     

@@ -83,11 +83,6 @@ public class AddReleaseJob : AbstractReleaseJob
         
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
-            QueryKey = ["libraries", LibraryId.ToString()]
-        });
-        
-        Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
-        {
             QueryKey = ["album", Id.ToString()]
         });
     }

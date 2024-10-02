@@ -53,7 +53,7 @@ public static class HlsPlaylistGenerator
             string? folderName = Path.GetFileName(Path.GetDirectoryName(audioFile));
             string[] parts = folderName?.Split('_') ?? ["eng", "aac"];
             string language = parts[1];
-            string codecName = parts[2];
+            string codecName = parts.Length > 2 ? parts[2] : "aac";
             int index = audioFiles.IndexOf(audioFile);
 
             if (!audioGroups.ContainsKey(codecName)) audioGroups[codecName] = [];

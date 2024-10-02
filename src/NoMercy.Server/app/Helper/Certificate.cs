@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Security.Cryptography;
@@ -94,7 +95,6 @@ public static class Certificate
         string response = client
             .GetStringAsync(serverUrl)
             .Result;
-        // Logger.Certificate(response);
 
         CertificateResponse data = JsonConvert.DeserializeObject<CertificateResponse>(response)
                                    ?? throw new Exception("Failed to deserialize JSON");
@@ -112,7 +112,7 @@ public static class Certificate
         await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.CertificateAuthority}");
         await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.Certificate}\n{data.IssuerCertificate}");
 
-        Logger.Certificate(@"SSL Certificate renewed");
+        Logger.Certificate("SSL Certificate renewed");
 
         await Task.CompletedTask;
     }
