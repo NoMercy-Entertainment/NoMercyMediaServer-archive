@@ -8,6 +8,7 @@ public class Progress : ProgressMeta
     [JsonProperty("bitrate")] public string Bitrate { get; set; }
     [JsonProperty("progress")] public double Percentage { get; set; }
     [JsonProperty("status")] public string Status { get; set; }
+    [JsonProperty("message")] public string Message { get; set; }
     [JsonProperty("speed")] public double Speed { get; set; }
     [JsonProperty("duration")] public double Duration { get; set; }
     [JsonProperty("remaining")] public double Remaining { get; set; }

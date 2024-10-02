@@ -338,20 +338,12 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
     [GeneratedRegex(@"crop=(\d+:\d+:\d+:\d+)", RegexOptions.Multiline)]
     private static partial Regex CropDetectRegex();
 
-    public async Task<string> Run(string fullCommand, string basePath, ProgressMeta progressMeta)
+    public Task Run(string fullCommand, string basePath, ProgressMeta progressMeta)
     {
-        string result = await FfMpeg.Run(fullCommand, basePath, progressMeta);
-        
-        if (ConvertSubtitle)
-        {
-            Logger.Encoder($"Converting subtitle {FileName}");
-            ConvertSubtitles(Container.SubtitleStreams.Where(x => x.ConvertSubtitle).ToList());
-        }
-        
-        return result;
+        return FfMpeg.Run(fullCommand, basePath, progressMeta);
     }
 
-    private void ConvertSubtitles(List<BaseSubtitle> subtitles)
+    public void ConvertSubtitles(List<BaseSubtitle> subtitles)
     {
         List<Task> tasks = new();
         subtitles.ForEach(subtitle =>

@@ -95,7 +95,7 @@ public static class Register
 
         ClaimsPrincipleExtensions.AddUser(newUser);
 
-        Logger.Register(@"Server assigned successfully");
+        Logger.Register("Server assigned successfully");
 
         Certificate.RenewSslCertificate().Wait();
 
