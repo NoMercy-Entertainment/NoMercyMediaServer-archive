@@ -4,6 +4,10 @@ on:
     branches:
       - "dev"
   workflow_dispatch:
+    inputs:
+      MANUAL_COMMIT_REF:
+        description: "c62684fa3377a565d789796314397d42bc25b5b1"
+        required: true
   
 jobs:
   build:
