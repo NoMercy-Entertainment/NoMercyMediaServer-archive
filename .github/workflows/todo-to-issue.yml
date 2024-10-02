@@ -23,3 +23,20 @@ jobs:
           AUTO_ASSIGN: "true"
           PROJECT: "organization/NoMercy-Entertainment/NoMercyMediaServer"
           PROJECTS_SECRET: "${{ secrets.TODO_PROJECTS_SECRET }}"
+          ISSUE_TEMPLATE: |
+            ### 📝 Todo Task
+            **Description:**  
+            {{ title }}
+
+            **Details:**  
+            {{ body }}
+
+            **File:**  
+            {{ url }}
+
+            **Code Snippet:**
+            ```  
+            {{ snippet }}
+            ```
+
+          IDENTIFIERS: '[{"name": "TODO", "labels": ["todo"]}]'
