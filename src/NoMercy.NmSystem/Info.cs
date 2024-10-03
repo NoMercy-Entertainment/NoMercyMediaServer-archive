@@ -24,10 +24,7 @@ public class Info
     private static Guid GetDeviceId()
     {
         string? generatedId = new DeviceIdBuilder()
-            .AddMachineName()
-            .AddOsVersion()
             .OnWindows(windows => windows
-                .AddProcessorId()
                 .AddMotherboardSerialNumber()
                 .AddSystemDriveSerialNumber())
             .OnLinux(linux => linux
