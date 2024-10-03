@@ -160,7 +160,7 @@ public class UsersController : BaseController
         if (user == null)
             return NotFoundResponse("User not found");
 
-        // TODO Implement notification settings
+        // TODO Implement notification settings.
 
         return Ok(new StatusResponseDto<string>
         {
@@ -257,7 +257,7 @@ public class UsersController : BaseController
         if (user == null)
             return NotFoundResponse("User not found");
 
-        // TODO Implement notification settings
+        // TODO Implement notification settings.
 
         return Ok(new StatusResponseDto<string>
         {
