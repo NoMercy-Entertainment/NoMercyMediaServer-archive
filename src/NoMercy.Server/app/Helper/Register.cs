@@ -91,6 +91,19 @@ public static class Register
         using MediaContext mediaContext = new();
         mediaContext.Users.Upsert(newUser)
             .On(x => x.Id)
+            .WhenMatched((oldUser, newUser) => new User
+            {
+                Id = newUser.Id,
+                Name = newUser.Name,
+                Email = newUser.Email,
+                Owner = newUser.Owner,
+                Allowed = newUser.Allowed,
+                AudioTranscoding = newUser.AudioTranscoding,
+                NoTranscoding = newUser.NoTranscoding,
+                VideoTranscoding = newUser.VideoTranscoding,
+                Manage = newUser.Manage,
+                UpdatedAt = newUser.UpdatedAt,
+            })
             .Run();
 
         ClaimsPrincipleExtensions.AddUser(newUser);

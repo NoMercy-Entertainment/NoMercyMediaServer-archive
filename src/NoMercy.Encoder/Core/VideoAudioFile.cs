@@ -7,6 +7,7 @@ using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
 using NoMercy.NmSystem;
+using Serilog.Events;
 using Logger = NoMercy.NmSystem.Logger;
 
 namespace NoMercy.Encoder.Core;
@@ -184,12 +185,12 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             {
                 isHdr = stream.IsHdr;
                 complexString.Append(
-                    $"[v:{stream.Index}]crop={stream.CropValue},scale={stream.ScaleValue},zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format={stream.PixelFormat}[v{index}_hls_0]");
+                    $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format={stream.PixelFormat}[v{index}_hls_0]");
             }
             else
             {
                 complexString.Append(
-                    $"[{stream.Index}]crop={stream.CropValue},scale={stream.ScaleValue},format={stream.PixelFormat}[v{index}_hls_0]");
+                    $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},format={stream.PixelFormat}[v{index}_hls_0]");
             }
 
             if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
@@ -222,10 +223,10 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 
             if (isHdr)
                 complexString.Append(
-                    $"[v:{stream.Index}]crop={stream.CropValue},scale={stream.ScaleValue},zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,fps=1/{stream.FrameRate}[i{index}_hls_0]");
+                    $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,fps=1/{stream.FrameRate}[i{index}_hls_0]");
             else
                 complexString.Append(
-                    $"[v:{stream.Index}]crop={stream.CropValue},scale={stream.ScaleValue},fps=1/{stream.FrameRate}[i{index}_hls_0]");
+                    $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},fps=1/{stream.FrameRate}[i{index}_hls_0]");
 
             if (index != Container.ImageStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         }
@@ -343,18 +344,54 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         return FfMpeg.Run(fullCommand, basePath, progressMeta);
     }
 
-    public void ConvertSubtitles(List<BaseSubtitle> subtitles)
+    public async void ConvertSubtitles(List<BaseSubtitle> subtitles, int id, string title, string? imgPath)
     {
-        List<Task> tasks = new();
-        subtitles.ForEach(subtitle =>
-        {        
+        foreach (var subtitle in subtitles)
+        {
             string input = Path.Combine(BasePath, $"{subtitle.HlsPlaylistFilename}.{subtitle.Extension}");
             string arg = $" /convert \"{input}\" WebVtt";;
-            
-            Logger.Encoder(AppFiles.SubtitleEdit + arg);
-            tasks.Add(Shell.Exec(AppFiles.SubtitleEdit, arg));
-        });
-        
-        Task.WaitAll(tasks.ToArray());
+
+            Networking.Networking.SendToAll("encoder-progress", "dashboardHub",  new Progress
+            {
+                Id = id,
+                Status = "running",
+                Title = title,
+                Thumbnail = $"/images/original{imgPath}",
+                Message = $"Converting {subtitle.Language} subtitle to WebVtt",
+            });
+
+            Logger.Encoder($"Converting {subtitle.Language} subtitle to WebVtt");
+            Logger.Encoder(AppFiles.SubtitleEdit + arg, LogEventLevel.Debug);
+
+            Task<string> execTask = Shell.Exec(AppFiles.SubtitleEdit, arg);
+
+            Task progressTask = Task.Run(async () =>
+            {
+                while (!execTask.IsCompleted)
+                {
+                    Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
+                    {
+                        Id = id,
+                        Status = "running",
+                        Title = title,
+                        Thumbnail = $"/images/original{imgPath}",
+                        Message = $"Converting {subtitle.Language} subtitle to WebVtt",
+                    });
+
+                    await Task.Delay(1000);
+                }
+            });
+
+            await Task.WhenAll(execTask, progressTask);
+
+            Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
+            {
+                Id = id,
+                Status = "completed",
+                Title = title,
+                Thumbnail = $"/images/original{imgPath}",
+                Message = $"Completed converting {subtitle.Language} subtitle to WebVtt",
+            });
+        };
     }
 }
