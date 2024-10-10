@@ -58,7 +58,15 @@ public abstract class TmdbImageClient : TmdbBaseClient
                 if (!System.IO.File.Exists(filePath))
                     await System.IO.File.WriteAllBytesAsync(filePath, await response.Content.ReadAsByteArrayAsync());
 
-                return isSvg ? null : Image.Load<Rgba32>(filePath);
+                try
+                {
+                    return isSvg ? null : Image.Load<Rgba32>(filePath);
+                }
+                catch (Exception e)
+                {
+                    Logger.MovieDb($"Error loading image: {path} - {e.Message}", LogEventLevel.Error);
+                    return null;
+                }
             }
             catch (InvalidImageContentException e)
             {

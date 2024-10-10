@@ -255,7 +255,7 @@ public class FfMpeg : Classes
                     }
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
                 //
             }
