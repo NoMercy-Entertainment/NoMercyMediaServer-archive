@@ -21,6 +21,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Collections;
 using NoMercy.MediaProcessing.Episodes;
+using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Libraries;
 using NoMercy.MediaProcessing.Movies;
 using NoMercy.MediaProcessing.People;
@@ -216,7 +217,7 @@ public class Startup
 
         services.AddTransient<DynamicStaticFilesMiddleware>();
         
-        // services.AddSingleton(LibraryFileWatcher.Instance);
+        services.AddSingleton(LibraryFileWatcher.Instance);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
