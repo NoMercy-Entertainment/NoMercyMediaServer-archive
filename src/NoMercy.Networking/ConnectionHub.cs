@@ -100,18 +100,18 @@ public class ConnectionHub : Hub
         Device? device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
 
         client.CustomName = device?.CustomName;
-
+        
         if (device is not null)
         {
-            await mediaContext.ActivityLogs.AddAsync(new ActivityLog
+            await using MediaContext mediaContext2 = new();
+            await mediaContext2.ActivityLogs.AddAsync(new ActivityLog()
             {
                 DeviceId = device.Id,
                 Time = DateTime.Now,
                 Type = "Connected to server",
                 UserId = user.Id
             });
-
-            await mediaContext.SaveChangesAsync();
+            await mediaContext2.SaveChangesAsync();
         }
 
         Networking.SocketClients.TryAdd(Context.ConnectionId, client);
@@ -143,10 +143,10 @@ public class ConnectionHub : Hub
                 }
                 catch (Exception e)
                 {
-                   await Task.Delay(1000);
+                    await Task.Delay(1000);
 
-                   await mediaContext.ActivityLogs.AddAsync(log);
-                   await mediaContext.SaveChangesAsync();
+                    await mediaContext.ActivityLogs.AddAsync(log);
+                    await mediaContext.SaveChangesAsync();
                 }
             }
 
