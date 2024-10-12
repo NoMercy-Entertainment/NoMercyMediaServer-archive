@@ -146,7 +146,6 @@ public class ConnectionHub : Hub
 
     private static async Task SaveActivityLog(MediaContext mediaContext, ActivityLog log, int count = 0)
     {
-        
         try
         {
             await mediaContext.ActivityLogs.AddAsync(log);
