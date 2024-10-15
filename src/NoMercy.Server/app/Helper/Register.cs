@@ -5,6 +5,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.Server.app.Helper;
 
@@ -67,11 +68,16 @@ public static class Register
         string? content = client
             .PostAsync("assign", new FormUrlEncodedContent(serverData))
             .Result.Content.ReadAsStringAsync().Result;
+
+        Logger.Register(serverData, LogEventLevel.Verbose);
         
         ServerRegisterResponse? data = JsonConvert.DeserializeObject<ServerRegisterResponse>(content);
 
-        if (data is null || data.Status == "error") 
+        if (data is null || data.Status == "error")
+        {
+            Logger.Register(data, LogEventLevel.Error);
             throw new Exception("Failed to assign Server");
+        }
 
         User newUser = new()
         {

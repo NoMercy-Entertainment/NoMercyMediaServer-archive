@@ -38,7 +38,7 @@ public abstract class TmdbImageClient : TmdbBaseClient
                 if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
                 string filePath = Path.Join(folder, path.Replace("/", ""));
-                if (System.IO.File.Exists(filePath))
+                if (File.Exists(filePath))
                     return isSvg ? null : await Image.LoadAsync<Rgba32>(filePath);
 
                 using HttpClient httpClient = new();
@@ -55,8 +55,8 @@ public abstract class TmdbImageClient : TmdbBaseClient
                 if (download is false)
                     return isSvg ? null : Image.Load<Rgba32>(await response.Content.ReadAsStreamAsync());
 
-                if (!System.IO.File.Exists(filePath))
-                    await System.IO.File.WriteAllBytesAsync(filePath, await response.Content.ReadAsByteArrayAsync());
+                if (!File.Exists(filePath))
+                    await File.WriteAllBytesAsync(filePath, await response.Content.ReadAsByteArrayAsync());
 
                 try
                 {

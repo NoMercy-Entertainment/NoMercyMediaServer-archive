@@ -69,7 +69,10 @@ public class FolderWatcher : IDisposable
 
         Logger.System($"Watching folder: {folder}");
 
-        return () => { watcher.Dispose(); };
+        return () =>
+        {
+            watcher.Dispose();
+        };
     }
 
     private static string _prevChanged = "";
