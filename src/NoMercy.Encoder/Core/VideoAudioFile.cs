@@ -16,6 +16,8 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 {
     public string FfmpegPath => ffmpegPath;
 
+    private bool Priority { get; set; } = false;
+
     public VideoAudioFile AddContainer(BaseContainer container)
     {
         string cropValue = CropDetect(fMediaAnalysis.Path);
@@ -133,7 +135,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         for (int i = 0; i < sections; i++)
         {
             string execString =
-                $"-threads 1 -nostats -hide_banner -ss {i * step} -i \"{path}\" -vframes 2 -vf cropdetect -t {1} -f null -";
+                $"-threads 1 -nostats -hide_banner -ss {i * step} -i \"{path}\" -vframes 10 -vf cropdetect -t {1} -f null -";
 
             string result = FfMpeg.Exec(execString, executable: FfmpegPath).Result;
             results.Add(result);
@@ -157,6 +159,13 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
     {
     }
 
+    public VideoAudioFile Prioritize()
+    {
+        Priority = true;
+
+        return this;
+    }
+
     public string GetFullCommand()
     {
         int threadCount = Environment.ProcessorCount;
@@ -164,7 +173,14 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         StringBuilder command = new();
 
         // command.Append(" -hide_banner -probesize 4092M -analyzeduration 9999M");
-        command.Append($" -threads {Math.Floor(threadCount * 0.8)} ");
+        if (Priority)
+        {
+            command.Append($" -threads {Math.Floor(threadCount * 2.0)} ");
+        }
+        else
+        {
+            command.Append($" -threads {Math.Floor(threadCount * 0.8)} ");
+        }
 
         if (HasGpu) command.Append(" -extra_hw_frames 3 -init_hw_device opencl=ocl ");
 
@@ -181,19 +197,30 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         {
             int index = Container!.VideoStreams.IndexOf(stream);
 
+            // if source is smaller than requested size, don't upscale
+            if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height) continue;
+
+            // if source is not HDR then don't make the HDR profile
+            if (!stream.IsHdr
+                && (stream.PixelFormat == VideoPixelFormats.Yuv444p
+                    || stream.PixelFormat == VideoPixelFormats.Yuv444p10le)
+            ) continue;
+
             if (stream.ConverToSdr && stream.IsHdr)
             {
                 isHdr = stream.IsHdr;
                 complexString.Append(
                     $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format={stream.PixelFormat}[v{index}_hls_0]");
+
+                if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
             }
             else
             {
                 complexString.Append(
                     $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},format={stream.PixelFormat}[v{index}_hls_0]");
-            }
 
-            if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
+                if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
+            }
         }
 
         if (Container.AudioStreams.Count > 0 && complexString.Length > 0) complexString.Append(';');
@@ -234,11 +261,20 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         if (complexString.Length > 0)
         {
             command.Append(" -filter_complex \"");
-            command.Append(complexString + "\"");
+            command.Append(complexString.Replace(";;", ";") + "\"");
         }
 
         foreach (BaseVideo stream in Container.VideoStreams)
         {
+            // if source is smaller than requested size, don't upscale
+            if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height) continue;
+
+            // if source is not HDR then don't make the HDR profile
+            if (!stream.IsHdr
+                && (stream.PixelFormat == VideoPixelFormats.Yuv444p
+                    || stream.PixelFormat == VideoPixelFormats.Yuv444p10le)
+               ) continue;
+
             Dictionary<string, dynamic> commandDictionary = new();
 
             int index = Container!.VideoStreams.IndexOf(stream);
@@ -344,7 +380,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         return FfMpeg.Run(fullCommand, basePath, progressMeta);
     }
 
-    public async void ConvertSubtitles(List<BaseSubtitle> subtitles, int id, string title, string? imgPath)
+    public async Task ConvertSubtitles(List<BaseSubtitle> subtitles, int id, string title, string? imgPath)
     {
         foreach (var subtitle in subtitles)
         {
@@ -384,14 +420,15 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 
             await Task.WhenAll(execTask, progressTask);
 
-            Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
-            {
-                Id = id,
-                Status = "completed",
-                Title = title,
-                Thumbnail = $"/images/original{imgPath}",
-                Message = $"Completed converting {subtitle.Language} subtitle to WebVtt",
-            });
         };
+
+        Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
+        {
+            Id = id,
+            Status = "completed",
+            Title = title,
+            Thumbnail = $"/images/original{imgPath}",
+            Message = $"Completed converting subtitles to WebVtt",
+        });
     }
 }
