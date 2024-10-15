@@ -70,6 +70,8 @@ public class EncodeVideoJob : AbstractEncoderJob
 
             ffmpeg.AddContainer(container);
 
+            ffmpeg.Prioritize();
+
             ffmpeg.Build();
 
             string fullCommand = ffmpeg.GetFullCommand();
@@ -97,7 +99,7 @@ public class EncodeVideoJob : AbstractEncoderJob
 
             if (ffmpeg.ConvertSubtitle)
             {
-                ffmpeg.ConvertSubtitles(ffmpeg.Container.SubtitleStreams
+                await ffmpeg.ConvertSubtitles(ffmpeg.Container.SubtitleStreams
                     .Where(x => x.ConvertSubtitle)
                     .ToList(), Id, fileMetadata.Title, fileMetadata.ImgPath);
             }
