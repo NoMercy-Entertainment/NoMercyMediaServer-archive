@@ -176,4 +176,11 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
         JobDispatcher jobDispatcher = new();
         jobDispatcher.DispatchJob<AddShowJob>(id, tvLibrary);
     }
+
+    public Task DeleteTvAsync(int id)
+    {
+        return context.Tvs
+            .Where(tv => tv.Id == id)
+            .ExecuteDeleteAsync();
+    }
 }

@@ -9,7 +9,7 @@ public class DolbyDigital : BaseAudio
         SetAudioCodec(AudioFormats.DolbyDigital);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         AudioCodecs.Ac3
     ];

@@ -143,10 +143,12 @@ public class BaseImage : Classes
     public void CreateFolder()
     {
         string path = Path.Combine(BasePath, Filename.Split("/").First());
-        // Logger.Encoder($"Creating folder {path}");
 
         if (!Directory.Exists(path))
+        {
+            Logger.Encoder($"Creating folder {path}", LogEventLevel.Verbose);
             Directory.CreateDirectory(path);
+        }
     }
 
 

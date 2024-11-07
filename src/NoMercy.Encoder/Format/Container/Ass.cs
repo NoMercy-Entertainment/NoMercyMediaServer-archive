@@ -10,7 +10,7 @@ public class Ass : BaseContainer
         AddCustomArgument("-f", SubtitleFormats.Ass);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         SubtitleCodecs.Ass
     ];

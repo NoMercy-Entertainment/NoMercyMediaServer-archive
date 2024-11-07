@@ -1,9 +1,9 @@
 namespace NoMercy.NmSystem;
 public class AnimeInfo
 {
-    public string FileName { get; set; }
-    public string Group { get; set; }
-    public string Name { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string Group { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
     public int? Season { get; set; }
     public int? Episode { get; set; }
     public string? Title { get; set; }

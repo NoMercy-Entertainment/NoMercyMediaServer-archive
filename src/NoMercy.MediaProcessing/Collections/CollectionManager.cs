@@ -35,8 +35,6 @@ public class CollectionManager(
 
         Collection collection = new()
         {
-            LibraryId = library.Id,
-
             Id = collectionAppends.Id,
             Title = collectionAppends.Name,
             TitleSort = collectionAppends.Name
@@ -46,10 +44,13 @@ public class CollectionManager(
             Poster = collectionAppends.PosterPath,
             Overview = collectionAppends.Overview,
             Parts = collectionAppends.Parts.Length,
-            _colorPalette = colorPalette
+            _colorPalette = colorPalette,
+
+            LibraryId = library.Id,
         };
 
         await collectionRepository.Store(collection);
+
         Logger.MovieDb($"Movie: {collection.Title}: Added to Database", LogEventLevel.Debug);
 
         await StoreTranslations(collectionAppends);

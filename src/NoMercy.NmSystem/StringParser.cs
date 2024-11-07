@@ -52,7 +52,7 @@ public static class StringParser
         name = Regex.Replace(name, ": ", ".");
         name = Regex.Replace(name, ":", ".");
         name = Regex.Replace(name, "\\. *$", "");
-        name = Regex.Replace(name, @"'|\?|\.\s|-\.|\.\(\d {1,3}\)|[^[:print:]\]|[^-_.[:alnum:]\]", "");
+        name = Regex.Replace(name, @"'|\?|\.\s|-\.|\.\(\d {1,3}\)|[^[:print:]\]|[^-_.\[:alnum:]\]", "");
         name = Regex.Replace(name, "\\. {2,}", ".");
 
         return name.Trim();

@@ -8,6 +8,9 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Encoder.Format.Container;
+using NoMercy.Encoder.Format.Rules;
+using NoMercy.Encoder.Format.Video;
 using NoMercy.Networking;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
@@ -33,52 +36,9 @@ public class EncoderController : BaseController
             return UnauthorizedResponse("You do not have permission to view encoder profiles");
 
         await using MediaContext mediaContext = new();
-        List<EncoderProfile> profiles = await _encoderRepository.GetEncoderProfilesAsync();
-
-        List<EncoderProfileDto> encoderProfiles = profiles
-            .Where(profile => profile.Param != null)
-            .Select(profile => new EncoderProfileDto
-            {
-                Id = profile.Id.ToString(),
-                Name = profile.Name,
-                Container = profile.Container,
-                CreatedAt = profile.CreatedAt,
-                UpdatedAt = profile.UpdatedAt,
-                Params = JsonConvert.DeserializeObject<ParamsDto>(profile.Param!)
-            })
-            .ToList();
+        List<EncoderProfile> encoderProfiles = await _encoderRepository.GetEncoderProfilesAsync();
 
         return Ok(encoderProfiles);
-
-        // List<EncoderProfileDto> encoderProfiles = [];
-        //
-        // foreach (EncoderProfile profile in profiles)
-        // {
-        //     if (profile.Param == null) continue;
-        //
-        //     ParamsDto? paramJson = JsonConvert.DeserializeObject<ParamsDto>(profile.Param);
-        //
-        //     EncoderProfileDto profileDto = new()
-        //     {
-        //         Id = profile.Id.ToString(),
-        //         Name = profile.Name,
-        //         Container = profile.Container,
-        //         CreatedAt = profile.CreatedAt,
-        //         UpdatedAt = profile.UpdatedAt,
-        //         Params = paramJson is not null
-        //             ? new ParamsDto
-        //             {
-        //                 Width = paramJson.Width,
-        //                 Crf = paramJson.Crf,
-        //                 Preset = paramJson.Preset,
-        //                 Profile = paramJson.Profile,
-        //                 Codec = paramJson.Codec,
-        //                 Audio = paramJson.Audio
-        //             }
-        //             : null
-        //     };
-        //     encoderProfiles.Add(profileDto);
-        // }
     }
 
     [HttpPost]
@@ -161,19 +121,27 @@ public class EncoderController : BaseController
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to remove encoder profiles");
 
-        IEnumerable<ContainerDto> containers = [];
-        // IEnumerable<ContainerDto> containers = BaseContainer.AvailableContainers
-        //     .Select(container => new ContainerDto
-        //     {
-        //         Label = container.Name,
-        //         Value = container.Name,
-        //         Type = container.Type,
-        //         IsDefault = container.IsDefault
-        //     });
+        ContainerDto[] containers = BaseContainer.AvailableContainers
+            .Select(container => new ContainerDto(container)).ToArray();
 
         return Ok(new DataResponseDto<ContainerDto[]>
         {
-            Data = containers.ToArray()
+            Data = containers
+        });
+    }
+
+    [HttpGet]
+    [Route("framesizes")]
+    public IActionResult FrameSizes()
+    {
+        if (!User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to remove encoder profiles");
+
+        Classes.VideoQualityDto[] frameSizes = BaseVideo.AvailableVideoSizes;
+
+        return Ok(new DataResponseDto<Classes.VideoQualityDto[]>
+        {
+            Data = frameSizes.ToArray()
         });
     }
 }

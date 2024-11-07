@@ -7,46 +7,46 @@ public class SubtitleSearchResponse
 {
     [XmlArray("params")]
     [XmlArrayItem("param")]
-    public List<SubtitleSearchResponseParam> Params { get; set; }
+    public List<SubtitleSearchResponseParam> Params { get; set; } = new();
 }
 
 public class SubtitleSearchResponseParam
 {
     [XmlElement("value")]
-    public SubtitleSearchResponseMemberValue Value { get; set; }
+    public SubtitleSearchResponseMemberValue Value { get; set; } = new();
 }
 
 public class SubtitleSearchResponseResponseValue
 {
     [XmlElement("struct")]
-    public SubtitleSearchResponseStruct Struct { get; set; }
+    public SubtitleSearchResponseStruct Struct { get; set; } = new();
 }
 
 public class SubtitleSearchResponseStruct
 {
     [XmlElement("member")]
-    public List<SubtitleSearchResponseMember> Members { get; set; }
+    public List<SubtitleSearchResponseMember> Members { get; set; } = new();
 }
 
 public class SubtitleSearchResponseMember
 {
     [XmlElement("name")]
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     [XmlElement("value")]
-    public SubtitleSearchResponseMemberValue MemberValue { get; set; }
+    public SubtitleSearchResponseMemberValue MemberValue { get; set; } = new();
 }
 
 public class SubtitleSearchResponseMemberValue
 {
     [XmlElement("struct", IsNullable = true)]
-    public SubtitleSearchResponseStruct InnerStruct { get; set; }
+    public SubtitleSearchResponseStruct InnerStruct { get; set; } = new();
 
     [XmlElement("array", IsNullable = true)]
-    public SubtitleSearchResponseArrayData ArrayData { get; set; }
+    public SubtitleSearchResponseArrayData ArrayData { get; set; } = new();
 
     [XmlElement("string", IsNullable = true)]
-    public string StringValue { get; set; }
+    public string StringValue { get; set; } = string.Empty;
 
     [XmlElement("double", IsNullable = true)]
     public double? DoubleValue { get; set; }

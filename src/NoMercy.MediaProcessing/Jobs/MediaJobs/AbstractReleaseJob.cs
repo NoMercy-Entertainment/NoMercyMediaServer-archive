@@ -15,8 +15,8 @@ namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 public abstract class AbstractReleaseJob : IShouldQueue
 {
     public Guid Id { get; set; }
-    public MediaFolder MediaFolder { get; set; }
-    public Folder BaseFolder { get; set; }
+    public MediaFolder MediaFolder { get; set; } = new();
+    public Folder BaseFolder { get; set; } = new();
     public Ulid LibraryId { get; set; }
 
     public abstract string QueueName { get; }

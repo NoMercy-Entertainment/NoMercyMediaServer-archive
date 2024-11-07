@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CommandLine;
 using Microsoft.AspNetCore;
 using NoMercy.Data.Logic;
 using NoMercy.Database;
+using NoMercy.MediaProcessing.Files;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Queue;
@@ -100,16 +102,21 @@ public static class Program
 
     private static IWebHostBuilder CreateWebHostBuilder(this IWebHostBuilder _)
     {
-        UriBuilder url = new()
+        UriBuilder localhostIPv4Url = new()
         {
             Host = IPAddress.Any.ToString(),
             Port = Config.InternalServerPort,
-            Scheme = "https"
+            Scheme = Uri.UriSchemeHttps
+        };
+
+        var urls = new List<string>
+        {
+            localhostIPv4Url.ToString()
         };
 
         return WebHost.CreateDefaultBuilder([])
             .ConfigureKestrel(Certificate.KestrelConfig)
-            .UseUrls(url.ToString())
+            .UseUrls(urls.ToArray())
             .UseKestrel(options =>
             {
                 options.AddServerHeader = false;
@@ -130,7 +137,7 @@ public static class Program
 
     private static async Task Init()
     {
-        ApiInfo.RequestInfo().Wait();
+        await ApiInfo.RequestInfo();
 
         if (UserSettings.TryGetUserSettings(out var settings))
         {
@@ -154,13 +161,21 @@ public static class Program
 
         await RunStartup(startupTasks);
 
-        Thread t = new(new Task(() => QueueRunner.Initialize().Wait()).Start)
+        Thread queues = new(new Task(() => QueueRunner.Initialize().Wait()).Start)
         {
             Name = "Queue workers",
             Priority = ThreadPriority.Lowest,
             IsBackground = true
         };
-        t.Start();
+        queues.Start();
+
+        Thread fileWatcher = new(new Task(() => _ = new LibraryFileWatcher()).Start)
+        {
+            Name = "Library File Watcher",
+            Priority = ThreadPriority.Lowest,
+            IsBackground = true
+        };
+        fileWatcher.Start();
     }
 
     private static async Task RunStartup(List<TaskDelegate> startupTasks)

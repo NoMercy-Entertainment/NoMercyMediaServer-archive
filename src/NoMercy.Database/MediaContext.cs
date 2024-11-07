@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-// ReSharper disable InconsistentNaming
+﻿// ReSharper disable InconsistentNaming
 
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database.Models;
@@ -126,7 +125,7 @@ public class MediaContext : DbContext
     public virtual DbSet<Recommendation> Recommendations { get; init; }
     public virtual DbSet<Role> Roles { get; init; }
     public virtual DbSet<RunningTask> RunningTasks { get; init; }
-    public virtual DbSet<Season?> Seasons { get; init; }
+    public virtual DbSet<Season> Seasons { get; init; }
     public virtual DbSet<Similar> Similar { get; init; }
     public virtual DbSet<SpecialItem> SpecialItems { get; init; }
     public virtual DbSet<Special> Specials { get; init; }

@@ -111,6 +111,31 @@ public class FfMpeg : Classes
         return error;
     }
 
+    public static async Task<string> Ffprobe(string args, string? cwd = null, string? executable = null)
+    {
+        Process ffprobe = new();
+        ffprobe.StartInfo = new ProcessStartInfo
+        {
+            WindowStyle = ProcessWindowStyle.Hidden,
+            FileName = executable ?? AppFiles.FfProbePath,
+            WorkingDirectory = cwd,
+            Arguments = args,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true
+        };
+
+        ffprobe.Start();
+
+        string result = await ffprobe.StandardOutput.ReadToEndAsync();
+
+        ffprobe.Close();
+
+        return result;
+    }
+
     public static async Task<string> Run(string args, string cwd, ProgressMeta meta)
     {
         Process ffmpeg = new();

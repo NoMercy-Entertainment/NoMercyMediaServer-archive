@@ -124,4 +124,11 @@ public class MovieRepository(MediaContext context) : IMovieRepository
         JobDispatcher jobDispatcher = new();
         jobDispatcher.DispatchJob<AddMovieJob>(id, tvLibrary);
     }
+
+    public Task DeleteMovieAsync(int id)
+    {
+        return context.Movies
+            .Where(movie => movie.Id == id)
+            .ExecuteDeleteAsync();
+    }
 }

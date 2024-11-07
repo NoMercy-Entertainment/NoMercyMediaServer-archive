@@ -9,7 +9,7 @@ public class Flac : BaseAudio
         SetAudioCodec(AudioFormats.Flac);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         AudioCodecs.Flac
     ];

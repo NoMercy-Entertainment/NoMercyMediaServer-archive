@@ -31,7 +31,6 @@ using AppFiles = NoMercy.NmSystem.AppFiles;
 using JobDispatcher = NoMercy.MediaProcessing.Jobs.JobDispatcher;
 using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
 
@@ -223,7 +222,9 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
         try
         {
             string[] directories = Directory.GetDirectories(folder);
-            array = directories.Select(d => CreateDirectoryTreeDto(folder, d)).ToList();
+            array = directories.Select(d => CreateDirectoryTreeDto(folder, d))
+                .OrderBy(file => file.Path)
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -488,8 +489,8 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
                         .Select(video => new VideoDto
                         {
                             Index = video.Index,
-                            Width = video.Height,
-                            Height = video.Width
+                            Width = video.Width,
+                            Height = video.Height,
                         }),
                     Audio = mediaAnalysis.AudioStreams
                         .Select(stream => new AudioDto
@@ -641,27 +642,27 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
 
         List<ServerPathsDto> list =
         [
-            new ServerPathsDto
+            new()
             {
                 Key = "Cache",
                 Value = AppFiles.CachePath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Logs",
                 Value = AppFiles.LogPath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Metadata",
                 Value = AppFiles.MetadataPath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Transcodes",
                 Value = AppFiles.TranscodePath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Configs",
                 Value = AppFiles.ConfigPath

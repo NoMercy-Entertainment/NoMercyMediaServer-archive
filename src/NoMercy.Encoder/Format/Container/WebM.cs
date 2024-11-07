@@ -12,8 +12,21 @@ public class WebM : BaseContainer
         AddCustomArgument("-f", VideoFormats.Webm);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc
+    ];
+
+    public override CodecDto[] AvailableVideoCodecs => [
+        VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc,
+    ];
+
+    public override CodecDto[] AvailableAudioCodecs => [
+        AudioCodecs.Opus, AudioCodecs.Vorbis,
+    ];
+
+    public override CodecDto[] AvailableSubtitleCodecs => [
+        SubtitleCodecs.Webvtt, SubtitleCodecs.Srt, SubtitleCodecs.Ass,
+        SubtitleCodecs.Copy
     ];
 }

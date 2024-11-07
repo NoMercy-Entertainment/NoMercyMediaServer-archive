@@ -199,6 +199,9 @@ public class Startup(IApiVersionDescriptionProvider provider)
                         .WithOrigins("https://cast.nomercy.tv")
                         .WithOrigins("https://vscode.nomercy.tv")
                         .WithOrigins("https://hlsjs.video-dev.org")
+                        .WithOrigins("http://192.168.2.201:5501")
+                        .WithOrigins("http://localhost")
+                        .WithOrigins("https://localhost")
                         .AllowAnyMethod()
                         .AllowCredentials()
                         .SetIsOriginAllowedToAllowWildcardSubdomains()
@@ -211,10 +214,10 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
         services.AddTransient<DynamicStaticFilesMiddleware>();
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            services.AddSingleton(LibraryFileWatcher.Instance);
-        }
+        // if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        // {
+            // services.AddSingleton(LibraryFileWatcher.Instance);
+        // }
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -307,6 +310,6 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
         foreach (Folder folder in folderLibraries.Where(folder => Directory.Exists(folder.Path)))
             DynamicStaticFilesMiddleware.AddPath(folder.Id, folder.Path);
-        
+
     }
 }

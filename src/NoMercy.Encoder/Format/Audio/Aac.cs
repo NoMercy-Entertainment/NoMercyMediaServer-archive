@@ -9,7 +9,7 @@ public class Aac : BaseAudio
         SetAudioCodec(audioCodec);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         AudioCodecs.Aac,
     ];

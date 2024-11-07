@@ -107,6 +107,8 @@ public class Classes
         public bool IsDefault { get; set; }
         public bool RequiresGpu { get; set; }
         public bool RequiresStrict { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public string Label => Name;
     }
 
     public class ContainerDto
