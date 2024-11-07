@@ -41,7 +41,7 @@ public class RecommendationPaletteJob : AbstractPaletteJob<Recommendation>
         {
             await context.SaveChangesAsync();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }

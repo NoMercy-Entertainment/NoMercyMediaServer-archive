@@ -1,4 +1,3 @@
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using Newtonsoft.Json;
 using NoMercy.NmSystem;
@@ -25,7 +24,7 @@ public class MusicBrainzRelease
     [JsonProperty("status-id")] public Guid? StatusId { get; set; }
 
     [JsonProperty("artist-credit")] public ReleaseArtistCredit[] ArtistCredit { get; set; }
-    
+
     [JsonProperty("text-representation")]
     public MusicBrainzTextRepresentation MusicBrainzTextRepresentation { get; set; }
 

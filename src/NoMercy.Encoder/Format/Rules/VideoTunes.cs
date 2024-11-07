@@ -1,6 +1,6 @@
 namespace NoMercy.Encoder.Format.Rules;
 
-public static class VideoTunes
+public class VideoTunes
 {
     public static string Hq = "hq";
     public static string Li = "li";

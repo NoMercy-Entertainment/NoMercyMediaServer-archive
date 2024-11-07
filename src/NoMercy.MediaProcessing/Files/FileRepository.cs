@@ -71,4 +71,30 @@ public class FileRepository(MediaContext context) : IFileRepository
 
         return (movie, show, type);
     }
+
+    public async Task SetCreatedAt(VideoFile videoFile)
+    {
+        string path = videoFile.HostFolder.Substring(0, videoFile.HostFolder.LastIndexOf('/'));
+        DateTime createdDateTime = Directory.GetCreationTime(path);
+
+        if (videoFile.CreatedAt == createdDateTime) return;
+        
+        if (videoFile.EpisodeId is not null)
+        {
+            Tv? tv = await context.Tvs.FindAsync(videoFile.EpisodeId);
+            if (tv is null) return;
+
+            tv.CreatedAt = createdDateTime;
+            await context.SaveChangesAsync();
+        }
+        else if (videoFile.MovieId is not null)
+        {
+            Movie? movie = await context.Movies.FindAsync(videoFile.MovieId);
+            if (movie is null) return;
+
+            movie.CreatedAt = createdDateTime;
+            await context.SaveChangesAsync();
+        }
+
+    }
 }

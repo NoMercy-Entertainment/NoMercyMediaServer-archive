@@ -128,39 +128,39 @@ public class UserDataController : BaseController
 
         await using MediaContext mediaContext = new();
 
-        UserData? userData = body.Type switch
+        List<UserData>? userData = body.Type switch
         {
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
                 .Where(data => data.MovieId == int.Parse(body.Id))
-                .FirstOrDefaultAsync(),
+                .ToListAsync(),
             "tv" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
                 .Where(data => data.TvId == int.Parse(body.Id))
-                .FirstOrDefaultAsync(),
+                .ToListAsync(),
             "special" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
                 .Where(data => data.SpecialId == Ulid.Parse(body.Id))
-                .FirstOrDefaultAsync(),
+                .ToListAsync(),
             "collection" => await mediaContext.UserData
                 .AsNoTracking()
                 .Where(data => data.UserId == userId)
                 .Where(data => data.CollectionId == int.Parse(body.Id))
-                .FirstOrDefaultAsync(),
+                .ToListAsync(),
             _ => null
         };
 
-        if (userData == null)
+        if (userData == null || userData.Count == 0)
             return NotFound(new StatusResponseDto<string>
             {
                 Status = "error",
                 Message = "Item not found"
             });
 
-        mediaContext.UserData.Remove(userData);
+        mediaContext.UserData.RemoveRange(userData);
         await mediaContext.SaveChangesAsync();
 
         return Ok(new StatusResponseDto<string>

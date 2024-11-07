@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.Networking;
 
@@ -27,7 +28,7 @@ public partial class ApiInfo
     public static async Task RequestInfo()
     {
         HttpClient client = new();
-        client.Timeout = TimeSpan.FromSeconds(15);
+        client.Timeout = TimeSpan.FromSeconds(120);
         client.BaseAddress = new Uri(Config.ApiBaseUrl);
         HttpResponseMessage response = await client.GetAsync("v1/info");
         string? content = await response.Content.ReadAsStringAsync();
@@ -36,7 +37,7 @@ public partial class ApiInfo
 
         try
         {
-            ApiInfo? data = JsonConvert.DeserializeObject<ApiInfo>(content);
+            ApiInfo? data = content.FromJson<ApiInfo>();
             if (data == null) throw new Exception("Failed to deserialize server info");
 
             Quote = data.Data.Quote;
@@ -58,6 +59,7 @@ public partial class ApiInfo
         }
         catch (Exception e)
         {
+            Logger.Setup(content, LogEventLevel.Error);
             // Logger.Setup(e, LogEventLevel.Error);
             throw;
         }

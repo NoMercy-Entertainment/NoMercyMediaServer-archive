@@ -47,13 +47,10 @@ public record InfoResponseItemDto
 
     public InfoResponseItemDto(Movie movie, string? country)
     {
-        string? title = movie.Translations.FirstOrDefault()?.Title;
         string? overview = movie.Translations.FirstOrDefault()?.Overview;
 
         Id = movie.Id;
-        Title = !string.IsNullOrEmpty(title)
-            ? title
-            : movie.Title;
+        Title = movie.Title;
         Overview = !string.IsNullOrEmpty(overview)
             ? overview
             : movie.Overview;
@@ -161,9 +158,7 @@ public record InfoResponseItemDto
             .Data.Overview;
 
         Id = tmdbMovie.Id;
-        Title = !string.IsNullOrEmpty(title)
-            ? title
-            : tmdbMovie.Title;
+        Title = tmdbMovie.Title;
         Overview = !string.IsNullOrEmpty(overview)
             ? overview
             : tmdbMovie.Overview;

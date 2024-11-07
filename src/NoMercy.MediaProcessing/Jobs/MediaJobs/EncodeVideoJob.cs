@@ -27,12 +27,7 @@ public class EncodeVideoJob : AbstractEncoderJob
         await using QueueContext queueContext = new();
         JobDispatcher jobDispatcher = new();
 
-        // Status = "processing";
-        // await queueContext.SaveChangesAsync();
-
-        LibraryRepository libraryRepository = new(context);
-        // LibraryManager libraryManager = new(libraryRepository, jobDispatcher);
-
+        using LibraryRepository libraryRepository = new(context);
         FileRepository fileRepository = new(context);
         FileManager fileManager = new(fileRepository, jobDispatcher);
 
@@ -95,7 +90,11 @@ public class EncodeVideoJob : AbstractEncoderJob
 
             await sprite.BuildSprite(progressMeta);
 
-            container.BuildMasterPlaylist();
+            await container.BuildMasterPlaylist();
+
+            await container.ExtractChapters();
+
+            await container.ExtractFonts();
 
             if (ffmpeg.ConvertSubtitle)
             {
@@ -165,17 +164,17 @@ public class EncodeVideoJob : AbstractEncoderJob
     public record FileMetadata
     {
         public bool Success { get; set; }
-        public string FolderName { get; set; }
-        public string Title { get; set; }
-        public string FileName { get; set; }
-        public string Path { get; set; }
+        public string FolderName { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+        public string Path { get; set; } = string.Empty;
         public int Id { get; set; }
         public string? ImgPath { get; set; }
     }
 
     private static void BuildVideoStreams(EncoderProfile? encoderProfile, ref BaseContainer container)
     {
-        foreach (IVideoProfile profile in encoderProfile.VideoProfiles)
+        foreach (IVideoProfile profile in encoderProfile?.VideoProfiles ?? [])
         {
             BaseVideo stream = BaseVideo.Create(profile.Codec)
                 .SetScale(profile.Width, profile.Height)
@@ -198,7 +197,7 @@ public class EncodeVideoJob : AbstractEncoderJob
 
     private static void BuildAudioStreams(EncoderProfile? encoderProfile, ref BaseContainer container)
     {
-        foreach (IAudioProfile profile in encoderProfile.AudioProfiles)
+        foreach (IAudioProfile profile in encoderProfile?.AudioProfiles ?? [])
         {
             BaseAudio stream = BaseAudio.Create(profile.Codec)
                 .SetAudioChannels(profile.Channels)
@@ -214,7 +213,7 @@ public class EncodeVideoJob : AbstractEncoderJob
 
     private static void BuildSubtitleStreams(EncoderProfile? encoderProfile, ref BaseContainer container)
     {
-        foreach (ISubtitleProfile profile in encoderProfile.SubtitleProfiles)
+        foreach (ISubtitleProfile profile in encoderProfile?.SubtitleProfiles ?? [])
         {
             BaseSubtitle stream = BaseSubtitle.Create(profile.Codec)
                 .SetAllowedLanguages(profile.AllowedLanguages)

@@ -56,11 +56,26 @@ public class TvShowsController : BaseController
         if (tvShowAppends is null)
             return NotFoundResponse("Tv show not found");
 
-        await _tvShowRepository.AddTvShowAsync(id);
+        // await _tvShowRepository.AddTvShowAsync(id);
 
         return Ok(new InfoResponseDto
         {
             Data = new InfoResponseItemDto(tvShowAppends, language)
+        });
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteTv(int id)
+    {
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to delete shows");
+
+        await _tvShowRepository.DeleteTvAsync(id);
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = "Show deleted"
         });
     }
 

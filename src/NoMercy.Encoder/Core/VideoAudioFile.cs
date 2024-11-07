@@ -198,7 +198,12 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             int index = Container!.VideoStreams.IndexOf(stream);
 
             // if source is smaller than requested size, don't upscale
-            if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height) continue;
+            // if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height) continue;
+            if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height)
+            {
+                stream.Scale.W = stream.VideoStream.Width;
+                stream.Scale.H = stream.VideoStream.Height;
+            }
 
             // if source is not HDR then don't make the HDR profile
             if (!stream.IsHdr
@@ -267,7 +272,12 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         foreach (BaseVideo stream in Container.VideoStreams)
         {
             // if source is smaller than requested size, don't upscale
-            if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height) continue;
+            // if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height) continue;
+            if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height)
+            {
+                stream.Scale.W = stream.VideoStream.Width;
+                stream.Scale.H = stream.VideoStream.Height;
+            }
 
             // if source is not HDR then don't make the HDR profile
             if (!stream.IsHdr
@@ -393,10 +403,10 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
                 Status = "running",
                 Title = title,
                 Thumbnail = $"/images/original{imgPath}",
-                Message = $"Converting {subtitle.Language} subtitle to WebVtt",
+                Message = $"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt",
             });
 
-            Logger.Encoder($"Converting {subtitle.Language} subtitle to WebVtt");
+            Logger.Encoder($"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt");
             Logger.Encoder(AppFiles.SubtitleEdit + arg, LogEventLevel.Debug);
 
             Task<string> execTask = Shell.Exec(AppFiles.SubtitleEdit, arg);
@@ -411,7 +421,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
                         Status = "running",
                         Title = title,
                         Thumbnail = $"/images/original{imgPath}",
-                        Message = $"Converting {subtitle.Language} subtitle to WebVtt",
+                        Message = $"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt",
                     });
 
                     await Task.Delay(1000);

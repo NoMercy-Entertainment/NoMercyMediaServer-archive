@@ -8,7 +8,7 @@ namespace NoMercy.Encoder.Core;
 
 public static class HlsPlaylistGenerator
 {
-    public static void Build(string inputFilePath, string outputFilename, List<string>? priorityLanguages = null)
+    public static Task Build(string inputFilePath, string outputFilename, List<string>? priorityLanguages = null)
     {
         priorityLanguages ??= ["eng", "jpn"];
 
@@ -114,6 +114,8 @@ public static class HlsPlaylistGenerator
         }
 
         File.WriteAllText(Path.Combine(inputFilePath, outputFilename + ".m3u8"), masterPlaylist.ToString());
+
+        return Task.CompletedTask;
     }
 
     private static double GetTotalSize(string videoFolderPath)

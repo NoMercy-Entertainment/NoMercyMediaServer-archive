@@ -105,6 +105,9 @@ public record LibraryResponseItemDto
         TitleSort = movie.Title
             .TitleSort(movie.ReleaseDate);
         Type = "movie";
+        HaveItems = movie.VideoFiles
+            .Count(v => v.Folder != null);
+        NumberOfItems = 1;
 
         Genres = movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
@@ -163,6 +166,9 @@ public record LibraryResponseItemDto
         TitleSort = movie.Movie.Title
             .TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
+        HaveItems = movie.Movie.VideoFiles
+            .Count(v => v.Folder != null);
+        NumberOfItems = 1;
 
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))

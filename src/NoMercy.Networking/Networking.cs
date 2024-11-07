@@ -1,7 +1,7 @@
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -63,6 +63,8 @@ public class Networking
 
     public static string ExternalAddress { get; private set; } = "";
 
+    public static bool Ipv6Enabled => CheckIpv6();
+
     private static string GetInternalIp()
     {
         using Socket socket = new(AddressFamily.InterNetwork, SocketType.Dgram, 0);
@@ -86,7 +88,7 @@ public class Networking
         HttpClient client = new();
         client.BaseAddress = new(Config.ApiBaseUrl);
 
-        string externalIp = client.GetStringAsync($"server/ip").Result.Replace("\"", "");
+        string externalIp = client.GetStringAsync($"v1/ip").Result.Replace("\"", "");
 
         ExternalAddress =
             $"https://{Regex.Replace(externalIp, "\\.", "-")}.{Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
@@ -113,14 +115,14 @@ public class Networking
                 publicPort: Config.ExternalServerPort,
                 lifetime: 0,
                 description: "NoMercy MediaServer (UDP)"));
-            
+
             ExternalIp = _device.GetExternalIP().ToString();
         }
         catch (Exception e)
         {
             Logger.Setup($"Failed to create port map: {e.Message}");
         }
-        
+
         if (ExternalIp == "")
             ExternalIp = GetExternalIp();
 
@@ -202,5 +204,19 @@ public class Networking
             }
 
         return true;
+    }
+
+    public static bool CheckIpv6()
+    {
+        if (!Socket.OSSupportsIPv6) return false;
+
+        foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (nic.Supports(NetworkInterfaceComponent.IPv6))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

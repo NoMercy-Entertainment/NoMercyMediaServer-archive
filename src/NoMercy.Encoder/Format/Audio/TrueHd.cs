@@ -9,7 +9,7 @@ public class TrueHd : BaseAudio
         SetAudioCodec(AudioFormats.TrueHd);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         AudioCodecs.TrueHd
     ];

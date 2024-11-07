@@ -38,7 +38,7 @@ public class PersonPaletteJob : AbstractPaletteJob<Person>
         {
             await context.SaveChangesAsync();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }

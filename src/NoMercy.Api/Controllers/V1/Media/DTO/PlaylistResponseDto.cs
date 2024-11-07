@@ -93,15 +93,18 @@ public record PlaylistResponseDto
                     ?.Where(lang => lang != null).ToArray()
             }
         ];
-        
+
         Tracks = videoFile.Tracks.Select(t => new IVideoTrack
         {
             Label = t.Label,
             File = $"{baseFolder}{t.File}",
             Language = t.Language,
             Kind = t.Kind
-        }).Concat(subs.TextTracks).ToList();
-        
+        })
+            .Concat(subs.TextTracks)
+            .OrderBy(track => track.Language)
+            .ToList();
+
         Season = index is not null ? 0 : episode.SeasonNumber;
         Episode = index ?? episode.EpisodeNumber;
         SeasonName = episode.Season.Title;
@@ -158,15 +161,18 @@ public record PlaylistResponseDto
                     ?.Where(lang => lang != null).ToArray()
             }
         ];
-        
+
         Tracks = videoFile.Tracks.Select(t => new IVideoTrack
         {
             Label = t.Label,
             File = $"{baseFolder}{t.File}",
             Language = t.Language,
             Kind = t.Kind
-        }).Concat(subs.TextTracks).ToList();
-        
+        })
+            .Concat(subs.TextTracks)
+            .OrderBy(track => track.Language)
+            .ToList();
+
         if (index is null) return;
         SeasonName = "Collection";
         Season = 0;

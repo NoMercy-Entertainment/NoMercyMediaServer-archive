@@ -336,7 +336,7 @@ public static class EncoderProfileSeedData
         ];
     }
 
-    private static string[] AllLanguages()
+    public static string[] AllLanguages()
     {
         return
         [

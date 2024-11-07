@@ -148,7 +148,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
                 }
             }
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // if (e.Message.Contains("affected 0 row(s)"))
             // {

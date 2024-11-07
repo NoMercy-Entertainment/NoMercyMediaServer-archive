@@ -10,7 +10,7 @@ public class Vtt : BaseContainer
         AddCustomArgument("-f", SubtitleFormats.WebVtt);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         SubtitleCodecs.Webvtt
     ];

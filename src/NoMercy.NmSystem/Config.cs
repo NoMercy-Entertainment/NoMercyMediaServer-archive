@@ -2,7 +2,7 @@ namespace NoMercy.NmSystem;
 
 public class Config
 {
-    public static string AuthBaseUrl = "https://auth.nomercy.tv/realms/NoMercyTV/";
+    public static string AuthBaseUrl { get; set; } = "https://auth.nomercy.tv/realms/NoMercyTV/";
     public static string TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
     public static readonly string TokenClientId = "nomercy-server";
 
@@ -12,7 +12,7 @@ public class Config
 
     public static int InternalServerPort { get; set; } = 7626;
     public static int ExternalServerPort { get; set; } = 7626;
-    
+
     public static KeyValuePair<string, int> QueueWorkers { get; set; } = new("queue", 1);
     public static KeyValuePair<string, int> EncoderWorkers { get; set; } = new("encoder", 2);
     public static KeyValuePair<string, int> CronWorkers { get; set; } = new("cron", 1);

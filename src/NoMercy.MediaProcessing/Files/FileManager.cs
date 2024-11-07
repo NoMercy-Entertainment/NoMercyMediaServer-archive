@@ -218,6 +218,8 @@ public partial class FileManager(
             };
 
             await fileRepository.StoreVideoFile(videoFile);
+
+            await fileRepository.SetCreatedAt(videoFile);
         }
         catch (Exception e)
         {

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 
@@ -14,6 +15,7 @@ public class DashboardHub : ConnectionHub
     {
         await base.OnDisconnectedAsync(exception);
         Logger.Socket("Dashboard client disconnected");
+
         StopResources();
     }
 

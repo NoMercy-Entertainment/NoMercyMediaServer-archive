@@ -4,43 +4,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Primitives;
 using Microsoft.Net.Http.Headers;
+using NoMercy.Encoder.Format.Rules;
 
 namespace NoMercy.Api.Middleware;
 
 public class DynamicStaticFilesMiddleware(RequestDelegate next)
 {
     private static readonly ConcurrentDictionary<Ulid, PhysicalFileProvider> Providers = new();
-
-    private static string GetContentType(string? extension) => extension switch
-    {
-        ".txt" => "text/plain",
-        ".html" => "text/html",
-        ".css" => "text/css",
-        ".js" => "application/javascript",
-        ".json" => "application/json",
-        ".xml" => "application/xml",
-        ".jpg" => "image/jpeg",
-        ".jpeg" => "image/jpeg",
-        ".webp" => "image/webp",
-        ".png" => "image/png",
-        ".gif" => "image/gif",
-        ".bmp" => "image/bmp",
-        ".ico" => "image/x-icon",
-        ".svg" => "image/svg+xml",
-        ".mp3" => "audio/mpeg",
-        ".wav" => "audio/wav",
-        ".mp4" => "video/mp4",
-        ".mpeg" => "video/mpeg",
-        ".vtt" => "text/vtt",
-        ".srt" => "text/srt",
-        ".webm" => "video/webm",
-        ".ttf" => "font/ttf",
-        ".otf" => "font/otf",
-        ".woff" => "font/woff",
-        ".woff2" => "font/woff2",
-        ".eot" => "font/eot",
-        _ => "application/octet-stream"
-    };
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -97,7 +67,7 @@ public class DynamicStaticFilesMiddleware(RequestDelegate next)
         var fileInfo = new FileInfo(filePhysicalPath);
         long fileLength = fileInfo.Length;
 
-        context.Response.ContentType = GetContentType(Path.GetExtension(file.PhysicalPath).ToLower());
+        context.Response.ContentType = MimeTypes.GetMimeTypeFromFile(file.PhysicalPath);
 
         if (!context.Request.Headers.TryGetValue("Range", out StringValues rangeValue))
         {

@@ -10,4 +10,5 @@ public interface ITvShowRepository
     Task<bool> LikeTvAsync(int id, Guid userId, bool like);
 
     Task AddTvShowAsync(int id);
+    Task DeleteTvAsync(int id);
 }

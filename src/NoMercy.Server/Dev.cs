@@ -1,4 +1,5 @@
 using NoMercy.NmSystem;
+// using NoMercy.Providers.Discord;
 using NoMercy.Providers.OpenSubtitles.Client;
 using NoMercy.Providers.OpenSubtitles.Models;
 
@@ -6,8 +7,12 @@ namespace NoMercy.Server;
 
 public class Dev
 {
-    public static async void Run()
+    public static void Run()
     {
+        // DiscordBot discordBot = new();
+        // await discordBot.MainAsync();
+
+
         // OpenSubtitlesClient client = new();
         // OpenSubtitlesClient subtitlesClient = await client.Login();
         // SubtitleSearchResponse? x = await subtitlesClient.SearchSubtitles("Black Panther Wakanda Forever (2022)", "dut");

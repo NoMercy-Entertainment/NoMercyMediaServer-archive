@@ -10,7 +10,7 @@ public class Vorbis : BaseAudio
         AddCustomArgument("-strict", "-2");
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         AudioCodecs.LibVorbis,
         AudioCodecs.Vorbis

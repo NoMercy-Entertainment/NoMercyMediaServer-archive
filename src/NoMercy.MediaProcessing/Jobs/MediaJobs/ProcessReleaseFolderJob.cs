@@ -76,7 +76,8 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
                 out string releaseType,
                 out string libraryFolder);
 
-            if (!BaseFolderCheck(albumLibrary, libraryFolder, folder, out Folder baseFolder)) continue;
+            if (!BaseFolderCheck(albumLibrary, libraryFolder, folder, out Folder? baseFolder)) continue;
+            if (baseFolder is null) continue;
 
             Logger.App("Processing: " + baseFolder.Path + " - " + libraryFolder + " - " + artistName + " - " + albumName + " - " + year + " - " + releaseType);
 
@@ -92,7 +93,7 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
     }
 
     private bool BaseFolderCheck(Library albumLibrary, string libraryFolder, MediaFolderExtend folder,
-        out Folder baseFolder)
+        out Folder? baseFolder)
     {
         Folder? foundBaseFolder = albumLibrary.FolderLibraries
             .Select(folderLibrary => folderLibrary.Folder)

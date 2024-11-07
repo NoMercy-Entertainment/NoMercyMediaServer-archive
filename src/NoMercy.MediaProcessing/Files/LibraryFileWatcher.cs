@@ -29,7 +29,7 @@ public class LibraryFileWatcher
 
     private const int Delay = 10;
 
-    private LibraryFileWatcher()
+    public LibraryFileWatcher()
     {
         Logger.System("Starting FileSystem Watcher", LogEventLevel.Debug);
 
