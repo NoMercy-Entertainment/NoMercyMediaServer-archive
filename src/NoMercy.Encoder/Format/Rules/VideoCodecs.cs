@@ -15,7 +15,7 @@ public static class VideoCodecs
     {
         Name = "H.264 (nvenc)",
         Value = "h264_nvenc",
-        SimpleValue = "h264",
+        SimpleValue = "h264_nvenc",
         RequiresGpu = true,
         IsDefault = false
     };
@@ -24,7 +24,7 @@ public static class VideoCodecs
     {
         Name = "H.265",
         Value = "libx265",
-        SimpleValue = "hevc",
+        SimpleValue = "h265",
         RequiresGpu = false,
         IsDefault = true
     };
@@ -33,14 +33,14 @@ public static class VideoCodecs
     {
         Name = "H.265 (nvenc)",
         Value = "h265_nvenc",
-        SimpleValue = "hevc",
+        SimpleValue = "h265_nvenc",
         RequiresGpu = true,
         IsDefault = false
     };
 
     public static readonly Classes.CodecDto Vp9 = new()
     {
-        Name = "vp9",
+        Name = "VP9",
         Value = "vp9",
         SimpleValue = "vp9",
         RequiresGpu = false,
@@ -50,8 +50,17 @@ public static class VideoCodecs
     public static readonly Classes.CodecDto Vp9Nvenc = new()
     {
         Name = "VP9 (nvenc)",
-        Value = "libvpx-vp9",
-        SimpleValue = "vp9",
+        Value = "vp9_nvenc",
+        SimpleValue = "vp9_nvenc",
+        RequiresGpu = true,
+        IsDefault = false
+    };
+
+    public static readonly Classes.CodecDto Av1 = new()
+    {
+        Name = "av1",
+        Value = "av1",
+        SimpleValue = "av1",
         RequiresGpu = true,
         IsDefault = false
     };

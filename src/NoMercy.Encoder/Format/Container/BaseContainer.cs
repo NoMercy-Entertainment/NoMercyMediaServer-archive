@@ -21,13 +21,44 @@ public class BaseContainer : Classes
 
     public static ContainerDto[] AvailableContainers =>
     [
-        new() { Name = AudioContainers.Aac, Type = "audio", IsDefault = false },
-        new() { Name = AudioContainers.Flac, Type = "audio", IsDefault = false },
-        new() { Name = AudioContainers.Mp3, Type = "audio", IsDefault = true },
         new() { Name = VideoContainers.Hls, Type = "video", IsDefault = false },
         new() { Name = VideoContainers.Mkv, Type = "video", IsDefault = false },
         new() { Name = VideoContainers.Mp4, Type = "video", IsDefault = true },
-        new() { Name = VideoContainers.Webm, Type = "video", IsDefault = false }
+        new() { Name = VideoContainers.Webm, Type = "video", IsDefault = false },
+        new() { Name = AudioContainers.Flac, Type = "audio", IsDefault = false },
+        new() { Name = AudioContainers.Mp3, Type = "audio", IsDefault = true },
+    ];
+
+    public static string GetName(string container)
+    {
+        return container switch
+        {
+            "mkv" => "Mkv",
+            "mp4" => "Mp4",
+            "m3u8" => "Hls",
+            "webm" => "WebM",
+            "flv" => "Flv",
+            "flac" => "Flac",
+            "mp3" => "Mp3",
+            _ => throw new ArgumentOutOfRangeException(nameof(container), container, null)
+        };
+    }
+
+    public virtual CodecDto[] AvailableVideoCodecs => [
+        VideoCodecs.H264, VideoCodecs.H264Nvenc,
+        VideoCodecs.H265, VideoCodecs.H265Nvenc,
+        VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc
+    ];
+
+    public virtual CodecDto[] AvailableAudioCodecs => [
+        AudioCodecs.Aac, AudioCodecs.Opus, AudioCodecs.Vorbis,
+        AudioCodecs.Mp3, AudioCodecs.Flac, AudioCodecs.Ac3,
+        AudioCodecs.Eac3, AudioCodecs.LibOpus, AudioCodecs.TrueHd,
+    ];
+
+    public virtual CodecDto[] AvailableSubtitleCodecs => [
+        SubtitleCodecs.Webvtt, SubtitleCodecs.Srt, SubtitleCodecs.Ass,
+        SubtitleCodecs.Copy
     ];
 
     internal readonly Dictionary<string, dynamic> _extraParameters = [];
@@ -35,7 +66,7 @@ public class BaseContainer : Classes
     private readonly Dictionary<string, dynamic> _ops = [];
     protected internal readonly Dictionary<int, dynamic> Streams = [];
 
-    protected virtual CodecDto[] AvailableCodecs => [];
+    public virtual CodecDto[] AvailableCodecs => [];
     protected virtual string[] AvailablePresets => [];
     protected virtual string[] AvailableProfiles => [];
     protected virtual string[] AvailableTunes => [];
@@ -110,9 +141,9 @@ public class BaseContainer : Classes
 
     #endregion
 
-    public void BuildMasterPlaylist()
+    public Task BuildMasterPlaylist()
     {
-        HlsPlaylistGenerator.Build(BasePath, FileName);
+        return HlsPlaylistGenerator.Build(BasePath, FileName);
     }
 
     public static BaseContainer Create(string? profileContainer)
@@ -124,5 +155,15 @@ public class BaseContainer : Classes
             "Hls" => new Hls().SetHlsFlags("independent_segments"),
             _ => new Hls().SetHlsFlags("independent_segments")
         };
+    }
+
+    public Task ExtractChapters()
+    {
+        return Chapters.Extract(InputFile, BasePath);
+    }
+
+    public Task ExtractFonts()
+    {
+        return Fonts.Extract(InputFile, BasePath);
     }
 }

@@ -12,7 +12,6 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
 
@@ -35,7 +34,7 @@ public class TasksController : BaseController
 
         List<TaskDto> list =
         [
-            new TaskDto
+            new()
             {
                 Id = "pqiilkpnf8lmwrcxn0l8tngf",
                 Title = "Scan media library",

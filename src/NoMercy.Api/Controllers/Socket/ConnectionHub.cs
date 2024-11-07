@@ -1,5 +1,4 @@
-// #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-//
+// //
 // using System.Security.Claims;
 // using System.Web.Http;
 // using Microsoft.AspNetCore.SignalR;
@@ -98,7 +97,7 @@
 //             .RunAsync();
 //
 //         var device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
-//         
+//
 //         client.CustomName = device?.CustomName;
 //
 //         if (device is not null)

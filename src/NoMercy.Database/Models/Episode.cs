@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-
+﻿
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -53,18 +52,18 @@ public class Episode : ColorPalettes
     public string CreateFolderName()
     {
         return "/" + string
-            .Concat( 
+            .Concat(
                 Tv.Title.CleanFileName(),
-                ".S", SeasonNumber.ToString("00"), 
+                ".S", SeasonNumber.ToString("00"),
                 "E", EpisodeNumber.ToString("00")
            ).CleanFileName();
     }
 
     public string CreateTitle()
     {
-        return string. Concat( 
+        return string. Concat(
             Tv.Title,
-            " S", SeasonNumber.ToString("00"), 
+            " S", SeasonNumber.ToString("00"),
             "E", EpisodeNumber.ToString("00"),
             " ", Title,
             " NoMercy");

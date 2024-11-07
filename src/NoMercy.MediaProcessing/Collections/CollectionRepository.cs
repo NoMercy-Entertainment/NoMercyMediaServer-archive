@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Providers.TMDB.Models.Collections;
 
 namespace NoMercy.MediaProcessing.Collections;
 
@@ -21,6 +22,24 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
                 LibraryId = ti.LibraryId,
                 TitleSort = ti.TitleSort,
                 _colorPalette = ti._colorPalette,
+            })
+            .RunAsync();
+    }
+
+    public Task LinkToMovies(TmdbCollectionAppends collection)
+    {
+        return context.CollectionMovie.UpsertRange(collection.Parts
+                .Select(movie => new CollectionMovie
+                {
+                    MovieId = movie.Id,
+                    CollectionId = collection.Id
+                })
+            )
+            .On(v => new { v.MovieId, v.CollectionId })
+            .WhenMatched((ts, ti) => new CollectionMovie
+            {
+                MovieId = ti.MovieId,
+                CollectionId = ti.CollectionId
             })
             .RunAsync();
     }

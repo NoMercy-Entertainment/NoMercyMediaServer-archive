@@ -374,9 +374,11 @@ public class ShowManager(
 
     internal async Task StoreCast(TmdbTvShowAppends show)
     {
+        await Task.CompletedTask;
     }
     
     internal async Task StoreCrew(TmdbTvShowAppends show)
     {
+        await Task.CompletedTask;
     }
 }

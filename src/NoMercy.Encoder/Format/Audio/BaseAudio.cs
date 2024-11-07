@@ -1,10 +1,12 @@
 using FFMpegCore;
 using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Rules;
+using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.Encoder.Format.Audio;
 
-public abstract class BaseAudio : Classes
+public class BaseAudio : Classes
 {
     #region Properties
 
@@ -22,15 +24,15 @@ public abstract class BaseAudio : Classes
 
     public int StreamIndex => AudioStream?.Index ?? -1;
 
-    private long _bitRate = -1;
+    public long _bitRate = -1;
 
     private long BitRate => _bitRate == -1
         ? AudioStream?.BitRate ?? -1
         : _bitRate;
 
-    internal int AudioChannels { get; set; }
+    public int AudioChannels { get; set; }
 
-    private int AudioQualityLevel { get; set; } = -1;
+    public int AudioQualityLevel { get; set; } = -1;
     private string[] AllowedLanguages { get; set; } = ["eng"];
 
     protected virtual int Passes => 1;
@@ -39,12 +41,20 @@ public abstract class BaseAudio : Classes
     private readonly Dictionary<string, dynamic> _filters = [];
     private readonly Dictionary<string, dynamic> _ops = [];
 
-    protected virtual string[] AvailableContainers { get; set; } = [];
-    protected virtual CodecDto[] AvailableCodecs { get; set; } = [];
+    protected virtual string[] AvailableContainers { get; set; } = [
+        AudioContainers.Mp3, AudioContainers.Flac, AudioContainers.M4a,
+        AudioContainers.Aac, AudioContainers.Ogg, AudioContainers.Wav
+    ];
+
+    public virtual CodecDto[] AvailableCodecs { get; set; } = [
+        AudioCodecs.Aac, AudioCodecs.Opus, AudioCodecs.Vorbis,
+        AudioCodecs.Mp3, AudioCodecs.Flac, AudioCodecs.Ac3,
+        AudioCodecs.Eac3, AudioCodecs.TrueHd
+    ];
 
     private string _hlsSegmentFilename = "";
 
-    private string HlsSegmentFilename
+    public string HlsSegmentFilename
     {
         get => _hlsSegmentFilename
             .Replace(":language:", Language)
@@ -56,12 +66,12 @@ public abstract class BaseAudio : Classes
 
     private string _hlsPlaylistFilename = "";
 
-    protected BaseAudio()
+    public BaseAudio()
     {
         AudioChannels = AudioStream?.Channels ?? -1;
     }
 
-    internal string HlsPlaylistFilename
+    public string HlsPlaylistFilename
     {
         get => _hlsPlaylistFilename
             .Replace(":language:", Language)
@@ -239,10 +249,12 @@ public abstract class BaseAudio : Classes
     public void CreateFolder()
     {
         string path = Path.Combine(BasePath, HlsSegmentFilename.Split("/").First());
-        // Logger.Encoder($"Creating folder {path}");
 
         if (!Directory.Exists(path))
+        {
+            Logger.Encoder($"Creating folder {path}", LogEventLevel.Verbose);
             Directory.CreateDirectory(path);
+        }
     }
 
     public static BaseAudio Create(string profileCodec)

@@ -10,7 +10,7 @@ public static class LogReader
         List<LogEntry> logEntries = new();
 
         IEnumerable<Task<IEnumerable<LogEntry>>> tasks =
-            logFiles.Select(fileInfo => ProcessFileAsync(fileInfo.FullName, limit, filter));
+            logFiles.Select(fileInfo => ProcessFileAsync(fileInfo.FullName, limit, filter) ?? new Task<IEnumerable<LogEntry>?>(() => null)) as IEnumerable<Task<IEnumerable<LogEntry>>>;
 
         IEnumerable<LogEntry>[] results = await Task.WhenAll(tasks);
 

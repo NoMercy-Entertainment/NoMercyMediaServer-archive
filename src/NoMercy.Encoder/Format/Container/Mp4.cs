@@ -12,11 +12,25 @@ public class Mp4 : BaseContainer
         AddCustomArgument("-f", VideoFormats.Mp4);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.H264, VideoCodecs.H264Nvenc,
         VideoCodecs.H265, VideoCodecs.H265Nvenc,
         VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc
+    ];
+
+    public override CodecDto[] AvailableVideoCodecs => [
+        VideoCodecs.H264, VideoCodecs.H264Nvenc,
+        VideoCodecs.H265, VideoCodecs.H265Nvenc,
+    ];
+
+    public override CodecDto[] AvailableAudioCodecs => [
+        AudioCodecs.Mp3
+    ];
+
+    public override CodecDto[] AvailableSubtitleCodecs => [
+        SubtitleCodecs.Webvtt, SubtitleCodecs.Srt, SubtitleCodecs.Ass,
+        SubtitleCodecs.Copy
     ];
 
     public override Mp4 ApplyFlags()

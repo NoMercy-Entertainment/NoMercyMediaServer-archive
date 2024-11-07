@@ -38,7 +38,7 @@ public class ImagePaletteJob : AbstractPaletteJob<Image>
         {
             await context.SaveChangesAsync();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             // ignored
         }

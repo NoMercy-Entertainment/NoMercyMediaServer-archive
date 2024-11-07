@@ -9,4 +9,5 @@ public interface IMovieRepository
     IEnumerable<Movie> GetMoviePlaylistAsync(Guid userId, int id, string language);
     Task<bool> LikeMovieAsync(int id, Guid userId, bool like);
     Task AddMovieAsync(int id);
+    Task DeleteMovieAsync(int id);
 }

@@ -86,4 +86,14 @@ public static class DateTimeParser
             ? 0
             : _parseYear(self);
     }
+
+    public static string ToHis(this double time)
+    {
+        return TimeSpan.FromSeconds(time).ToString(@"hh\:mm\:ss\.fff");
+    }
+
+    public static string ToHis(this long time)
+    {
+        return TimeSpan.FromSeconds(time).ToString(@"hh\:mm\:ss\.fff");
+    }
 }

@@ -9,7 +9,7 @@ public class Vp9 : BaseVideo
 
     public Vp9(string videoCodec = "vp9")
     {
-        throw new NotImplementedException("Vp9 is not implemented yet.");
+        // throw new NotImplementedException("Vp9 is not implemented yet.");
         if(HasGpu)
             SetVideoCodec(videoCodec);
         else
@@ -28,26 +28,32 @@ public class Vp9 : BaseVideo
         VideoContainers.Flv, VideoContainers.Hls
     ];
 
-    protected internal override string[] AvailablePresets =>
+    public override string[] AvailablePresets =>
     [
         VideoPresets.VeryFast, VideoPresets.Faster, VideoPresets.Fast,
         VideoPresets.Medium,
         VideoPresets.Slow, VideoPresets.Slower, VideoPresets.VerySlow
     ];
 
-    protected internal override string[] AvailableProfiles =>
+    public override string[] AvailableProfiles =>
     [
         VideoProfiles.Unknown, VideoProfiles.Profile0, VideoProfiles.Profile1,
         VideoProfiles.Profile2, VideoProfiles.Profile3
     ];
 
-    protected internal override string[] AvailableTune =>
+    public override string[] AvailableColorSpaces =>
+    [
+        ColorSpaces.Yuv420p, ColorSpaces.Yuv420p10le,
+        ColorSpaces.Yuv422p, ColorSpaces.Yuv444p,
+    ];
+
+    public override string[] AvailableTune =>
     [
         VideoTunes.Hq, VideoTunes.Li,
         VideoTunes.Ull, VideoTunes.Lossless
     ];
 
-    protected internal override string[] AvailableLevels => [];
+    public override string[] AvailableLevels => [];
 
     public override int GetPasses()
     {

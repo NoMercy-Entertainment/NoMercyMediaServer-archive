@@ -57,11 +57,26 @@ public class MoviesController : BaseController
         if (movieAppends is null)
             return NotFoundResponse("Movie not found");
 
-        await _movieRepository.AddMovieAsync(id);
+        // await _movieRepository.AddMovieAsync(id);
 
         return Ok(new InfoResponseDto
         {
             Data = new InfoResponseItemDto(movieAppends, country)
+        });
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteMovie(int id)
+    {
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to delete movies");
+
+        await _movieRepository.DeleteMovieAsync(id);
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = "Movie deleted"
         });
     }
 

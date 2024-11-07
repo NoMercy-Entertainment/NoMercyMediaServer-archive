@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -15,7 +14,7 @@ public class EncoderProfile : Timestamps
 
     [Key] [JsonProperty("name")] public required string Name { get; set; }
     [JsonProperty("container")] public string? Container { get; set; }
-    [JsonProperty("param")] public string? Param { get; set; }
+    [JsonProperty("type")] public string? Param { get; set; }
 
     [Column("VideoProfile")]
     [JsonProperty("video_profile")]

@@ -131,6 +131,7 @@ public class HomeController : BaseController
                             image.Tv.Library.LibraryUsers.FirstOrDefault(u => u.UserId == userId) != null
             )
             .Where(image => image.Height > 1080)
+            .Where(image => image.Width > image.Height)
             .Where(image => image._colorPalette != "")
             .Where(image =>
                 (image.Type == "backdrop" && image.VoteAverage > 2 && image.Iso6391 == null) ||

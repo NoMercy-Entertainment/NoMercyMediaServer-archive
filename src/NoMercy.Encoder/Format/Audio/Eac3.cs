@@ -9,7 +9,7 @@ public class Eac3 : BaseAudio
         SetAudioCodec(AudioFormats.Eac3);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         AudioCodecs.Eac3
     ];

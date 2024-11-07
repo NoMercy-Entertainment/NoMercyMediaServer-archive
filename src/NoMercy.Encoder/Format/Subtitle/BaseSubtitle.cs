@@ -22,13 +22,18 @@ public class BaseSubtitle : Classes
     private readonly Dictionary<string, dynamic> _extraParameters = [];
     private readonly Dictionary<string, dynamic> _filters = [];
     private readonly Dictionary<string, dynamic> _ops = [];
-    protected virtual CodecDto[] AvailableCodecs => [];
-    protected virtual string[] AvailableContainers => [];
+    public virtual CodecDto[] AvailableCodecs => [
+        SubtitleCodecs.Webvtt, SubtitleCodecs.Srt, SubtitleCodecs.Ass,
+        SubtitleCodecs.Copy
+    ];
+    protected virtual string[] AvailableContainers => [
+        SubtitleContainers.WebVtt, SubtitleContainers.Srt, SubtitleContainers.Ass
+    ];
 
     protected string Variant { get; set; } = "full";
     private string _hlsSegmentFilename = "";
 
-    internal string HlsSegmentFilename
+    public string HlsSegmentFilename
     {
         get => _hlsSegmentFilename
             .Replace(":language:", Language)
@@ -42,7 +47,7 @@ public class BaseSubtitle : Classes
 
     private string _hlsPlaylistFilename = "";
 
-    internal string HlsPlaylistFilename
+    public string HlsPlaylistFilename
     {
         get => _hlsPlaylistFilename
             .Replace(":language:", Language)
@@ -232,10 +237,12 @@ public class BaseSubtitle : Classes
     public void CreateFolder()
     {
         string path = Path.Combine(BasePath, HlsPlaylistFilename.Split(Str.DirectorySeparator).First());
-        Logger.Encoder($"Creating folder {path}", LogEventLevel.Verbose);
 
         if (!Directory.Exists(path))
+        {
+            Logger.Encoder($"Creating folder {path}", LogEventLevel.Verbose);
             Directory.CreateDirectory(path);
+        }
     }
 
     #endregion

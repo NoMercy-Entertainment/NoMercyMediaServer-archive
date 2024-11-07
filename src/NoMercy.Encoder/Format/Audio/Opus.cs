@@ -10,7 +10,7 @@ public class Opus : BaseAudio
         AddCustomArgument("-strict", "-2");
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         AudioCodecs.LibOpus,
         AudioCodecs.Opus

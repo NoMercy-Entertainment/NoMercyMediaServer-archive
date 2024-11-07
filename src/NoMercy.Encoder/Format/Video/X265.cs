@@ -29,7 +29,7 @@ public class X265 : BaseVideo
         VideoContainers.Hls
     ];
 
-    protected internal override string[] AvailablePresets
+    public override string[] AvailablePresets
     {
         get
         {
@@ -53,7 +53,7 @@ public class X265 : BaseVideo
         }
     }
 
-    protected internal override string[] AvailableProfiles
+    public override string[] AvailableProfiles
     {
         get
         {
@@ -72,7 +72,7 @@ public class X265 : BaseVideo
         }
     }
 
-    protected internal override string[] AvailableTune
+    public override string[] AvailableTune
     {
         get
         {
@@ -91,7 +91,13 @@ public class X265 : BaseVideo
         }
     }
 
-    protected internal override string[] AvailableLevels
+    public override string[] AvailableColorSpaces =>
+    [
+        ColorSpaces.Yuv420p, ColorSpaces.Yuv420p10le,
+        ColorSpaces.Yuv422p, ColorSpaces.Yuv444p,
+    ];
+
+    public override string[] AvailableLevels
     {
         get
         {

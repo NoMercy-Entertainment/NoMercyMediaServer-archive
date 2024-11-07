@@ -12,10 +12,27 @@ public class Mkv : BaseContainer
         AddCustomArgument("-f", VideoFormats.Mkv);
     }
 
-    protected override CodecDto[] AvailableCodecs =>
+    public override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.H264, VideoCodecs.H264Nvenc,
         VideoCodecs.H265, VideoCodecs.H265Nvenc,
         VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc
+    ];
+
+    public override CodecDto[] AvailableVideoCodecs => [
+        VideoCodecs.H264, VideoCodecs.H264Nvenc,
+        VideoCodecs.H265, VideoCodecs.H265Nvenc,
+        VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc
+    ];
+
+    public override CodecDto[] AvailableAudioCodecs => [
+        AudioCodecs.Aac, AudioCodecs.Opus, AudioCodecs.Vorbis,
+        AudioCodecs.Mp3, AudioCodecs.Flac, AudioCodecs.Ac3,
+        AudioCodecs.Eac3, AudioCodecs.LibOpus, AudioCodecs.TrueHd,
+    ];
+
+    public override CodecDto[] AvailableSubtitleCodecs => [
+        SubtitleCodecs.Webvtt, SubtitleCodecs.Srt, SubtitleCodecs.Ass,
+        SubtitleCodecs.Copy
     ];
 }

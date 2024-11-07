@@ -34,18 +34,27 @@ public abstract class BaseVideo : Classes
     public bool HdrAllowed { get; set; }
     public bool ConverToSdr { get; set; }
 
-    protected internal virtual string[] AvailableContainers => [];
-    protected internal virtual string[] AvailablePresets => [];
-    protected internal virtual string[] AvailableProfiles => [];
-    protected internal virtual string[] AvailableTune => [];
-    protected internal virtual string[] AvailableLevels => [];
-    protected virtual CodecDto[] AvailableCodecs => [];
+    protected internal virtual string[] AvailableContainers => [
+        VideoContainers.Hls, VideoContainers.Mkv,
+        VideoContainers.Mp4, VideoContainers.Webm
+    ];
+
+    public virtual string[] AvailablePresets => [];
+    public virtual string[] AvailableProfiles => [];
+    public virtual string[] AvailableTune => [];
+    public virtual string[] AvailableColorSpaces => [];
+    public virtual string[] AvailableLevels => [];
+    protected virtual CodecDto[] AvailableCodecs => [
+        VideoCodecs.H264, VideoCodecs.H264Nvenc, VideoCodecs.H265,
+        VideoCodecs.H265Nvenc, VideoCodecs.Vp9, VideoCodecs.Vp9Nvenc,
+        VideoCodecs.Av1,
+    ];
 
     internal readonly Dictionary<string, dynamic> _extraParameters = [];
     internal readonly Dictionary<string, dynamic> _filters = [];
     internal readonly Dictionary<string, dynamic> _ops = [];
 
-    protected internal static VideoQualityDto[] AvailableVideoSizes =>
+    public static VideoQualityDto[] AvailableVideoSizes =>
     [
         FrameSizes._240p, FrameSizes._360p,
         FrameSizes._480p, FrameSizes._720p,
@@ -343,10 +352,12 @@ public abstract class BaseVideo : Classes
     public void CreateFolder()
     {
         string path = Path.Combine(BasePath, HlsSegmentFilename.Split("/").First());
-        Logger.Encoder($"Creating folder {path}");
 
         if (!Directory.Exists(path))
+        {
+            Logger.Encoder($"Creating folder {path}", LogEventLevel.Verbose);
             Directory.CreateDirectory(path);
+        }
     }
 
     public static BaseVideo Create(string profileCodec)

@@ -5,21 +5,27 @@ public class PaletteColors
 {
     [JsonProperty("dominant", NullValueHandling = NullValueHandling.Ignore)]
     public string Dominant { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     [JsonProperty("primary", NullValueHandling = NullValueHandling.Ignore)]
     public string Primary { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     [JsonProperty("lightVibrant", NullValueHandling = NullValueHandling.Ignore)]
     public string LightVibrant { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     [JsonProperty("darkVibrant", NullValueHandling = NullValueHandling.Ignore)]
     public string DarkVibrant { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     [JsonProperty("lightMuted", NullValueHandling = NullValueHandling.Ignore)]
     public string LightMuted { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     [JsonProperty("darkMuted", NullValueHandling = NullValueHandling.Ignore)]
     public string DarkMuted { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     // private string _dominant;
     // private string _primary;
