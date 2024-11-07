@@ -26,6 +26,9 @@ public class DashboardHub : ConnectionHub
 
     public void StopResources()
     {
-        ResourceMonitor.StopBroadcasting();
+        if (Networking.Networking.SocketClients.Values.All(x => x.Endpoint != "/dashboardHub"))
+        {
+            ResourceMonitor.StopBroadcasting();
+        }
     }
 }

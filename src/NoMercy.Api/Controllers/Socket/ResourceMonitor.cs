@@ -10,6 +10,7 @@ public static class ResourceMonitor
 
     public static void StartBroadcasting()
     {
+        if (_broadcasting) return;
         Logger.Socket("Starting resource monitoring broadcast");
         _broadcasting = true;
         _cancellationTokenSource = new CancellationTokenSource();
