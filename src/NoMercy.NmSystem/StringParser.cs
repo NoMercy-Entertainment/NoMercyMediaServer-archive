@@ -44,7 +44,7 @@ public static class StringParser
         name = Regex.Replace(name, "\\. {2,}", ".");
         name = Regex.Replace(name, "\\s", ".");
         name = Regex.Replace(name, "&", "and");
-        name = Regex.Replace(name, "#", "%23");
+        name = Regex.Replace(name, "#", ".");
         name = Regex.Replace(name, "!", "");
         name = Regex.Replace(name, "\\*", "-");
         name = Regex.Replace(name, @"\.\.", ".");
