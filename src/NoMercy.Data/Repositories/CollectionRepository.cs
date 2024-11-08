@@ -10,9 +10,9 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
     {
         IOrderedQueryable<Collection> query = context.Collections
             .AsNoTracking()
-            .Where(collection => collection.Library.LibraryUsers
-                .Any(u => u.UserId == userId)
-            )
+            // .Where(collection => collection.Library.LibraryUsers
+            //     .Any(u => u.UserId == userId)
+            // )
             .Where(collection => collection.CollectionMovies
                 .Any(collectionMovie => collectionMovie.Movie.VideoFiles.Count != 0)
             )
