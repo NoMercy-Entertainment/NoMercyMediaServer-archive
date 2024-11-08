@@ -20,6 +20,8 @@ using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.Providers.MusicBrainz.Client;
+using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -31,6 +33,7 @@ using AppFiles = NoMercy.NmSystem.AppFiles;
 using JobDispatcher = NoMercy.MediaProcessing.Jobs.JobDispatcher;
 using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
 
@@ -222,9 +225,7 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
         try
         {
             string[] directories = Directory.GetDirectories(folder);
-            array = directories.Select(d => CreateDirectoryTreeDto(folder, d))
-                .OrderBy(file => file.Path)
-                .ToList();
+            array = directories.Select(d => CreateDirectoryTreeDto(folder, d)).ToList();
         }
         catch (Exception ex)
         {
@@ -307,206 +308,253 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
         GlobalFFOptions.Configure(options => options.BinaryFolder = Path.Combine(AppFiles.BinariesPath, "ffmpeg"));
 
         DirectoryInfo directoryInfo = new(directoryPath);
-        FileInfo[] files = directoryInfo.GetFiles()
-            .Where(file => file.Extension == ".mkv" || file.Extension == ".mp4" || file.Extension == ".avi" || file.Extension == ".webm" || file.Extension == ".flv")
+        FileInfo[] videoFiles = directoryInfo.GetFiles()
+            .Where(file => file.Extension is ".mkv" or ".mp4" or ".avi" or ".webm" or ".flv")
+            .ToArray();
+        
+        FileInfo[] audioFiles = directoryInfo.GetFiles()
+            .Where(file => file.Extension is ".mp3" or ".flac" or ".wav" or ".m4a")
             .ToArray();
 
-        List<FileItemDto> fileList = new();
-
-        await Parallel.ForEachAsync(files, async (file, t) =>
+        List<FileItemDto> fileList = [];
+        if (videoFiles.Length == 0 && audioFiles.Length == 0)
+            return fileList;
+        
+        if (audioFiles.Length > 0 && videoFiles.Length == 0)
         {
-            IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName, cancellationToken: t);
+            const string pattern = @"(?<library_folder>.+?)[\\\/]((?<letter>.{1})?|\[(?<type>.+?)\])[\\\/](?<artist>.+?)?[\\\/]?(\[(?<year>\d{4})\]|\[(?<releaseType>Singles)\])\s?(?<album>.*)?";
+            Match match = Regex.Match(directoryPath, pattern);
+            
+            int year = match.Groups["year"].Success ? Convert.ToInt32(match.Groups["year"].Value) : 0;
+            string albumName = match.Groups["album"].Success ? match.Groups["album"].Value : Regex.Replace(directoryInfo.Name, @"\[\d{4}\]\s?", "");
+            string artistName = match.Groups["artist"].Success ? match.Groups["artist"].Value : string.Empty;
+            string releaseType = match.Groups["releaseType"].Success ? match.Groups["releaseType"].Value : string.Empty;
+            string libraryFolder = (match.Groups["library_folder"].Success ? match.Groups["library_folder"].Value : null) ?? Regex.Split(directoryPath, pattern)?[0] ?? string.Empty;
 
-            MovieDetector movieDetector = new();
-            MovieFile parsed = movieDetector.GetInfo(Regex.Replace(file.FullName, @"\[.*?\]", ""));
-            parsed.Year ??= Str.MatchYearRegex().Match(file.FullName)
-                .Value;
-
-            MovieOrEpisodeDto match = new();
-
-            TmdbSearchClient searchClient = new();
-
-            await using MediaContext mediaContext = new();
-
-            switch (type)
+            Parallel.ForEach(audioFiles, (file, t) =>
             {
-                case "anime" or "tv":
+                fileList.Add(new FileItemDto
                 {
-                    TmdbPaginatedResponse<TmdbTvShow>? shows = await searchClient.TvShow(parsed.Title ?? "", parsed.Year);
-                    TmdbTvShow? show = shows?.Results.FirstOrDefault();
-                    if (show == null || !parsed.Season.HasValue || !parsed.Episode.HasValue) return;
-
-                    bool hasShow = mediaContext.Tvs
-                        .Any(item => item.Id == show.Id);
-
-                    Ulid libraryId = await mediaContext.Libraries
-                        .Where(item => item.Type == type)
-                        .Select(item => item.Id)
-                        .FirstOrDefaultAsync();
-
-                    if (!hasShow)
+                    Size = file.Length,
+                    Mode = (int)file.Attributes,
+                    Name = Path.Combine(directoryPath, file.Name),
+                    Parent = directoryPath,
+                    Parsed = new MovieFile(directoryPath)
                     {
-                        Networking.Networking.SendToAll("Notify", "socket", new NotifyDto
-                        {
-                            Title = "Show not found",
-                            Message = $"Show {show.Name} not found in library, adding now",
-                            Type = "info"
-                        });
-                        AddShowJob job = new()
-                        {
-                            LibraryId = libraryId,
-                            Id = show.Id
-                        };
-                        await job.Handle();
-                    }
-
-                    Episode? episode = mediaContext.Episodes
-                        .Where(item => item.TvId == show.Id)
-                        .Where(item => item.SeasonNumber == parsed.Season)
-                        .FirstOrDefault(item => item.EpisodeNumber == parsed.Episode);
-
-                    if (episode == null)
+                        Title = albumName + " - " + Path.GetFileNameWithoutExtension(file.Name),
+                        Year = year.ToString(),
+                        IsSeries = false,
+                        IsSuccess = true
+                    },
+                    Match = new MovieOrEpisodeDto()
                     {
-                        TmdbEpisodeClient episodeClient = new(show.Id, parsed.Season.Value, parsed.Episode.Value);
-                        TmdbEpisodeDetails? details = await episodeClient.Details();
-                        if (details == null) return;
+                        Title = albumName,
+                    },
+                    File = Path.Combine(directoryPath, file.FullName)
+                });
+            });
+        }
+        else if (videoFiles.Length > 0)
+        {
+            await Parallel.ForEachAsync(videoFiles, async (file, t) =>
+            {
+                IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName, cancellationToken: t);
 
-                        Season? season = await mediaContext.Seasons
-                            .FirstOrDefaultAsync(season => season!.TvId == show.Id && season.SeasonNumber == details.SeasonNumber, cancellationToken: t);
+                MovieDetector movieDetector = new();
+                MovieFile parsed = movieDetector.GetInfo(Regex.Replace(file.FullName, @"\[.*?\]", ""));
+                parsed.Year ??= Str.MatchYearRegex().Match(file.FullName)
+                    .Value;
 
-                        episode = new Episode
-                        {
-                            Id = details.Id,
-                            TvId = show.Id,
-                            SeasonNumber = details.SeasonNumber,
-                            EpisodeNumber = details.EpisodeNumber,
-                            Title = details.Name,
-                            Overview = details.Overview,
-                            Still = details.StillPath,
-                            VoteAverage = details.VoteAverage,
-                            VoteCount = details.VoteCount,
-                            AirDate = details.AirDate,
-                            SeasonId = season?.Id ?? 0,
-                            _colorPalette = await MovieDbImageManager.ColorPalette("still", details.StillPath)
-                        };
+                MovieOrEpisodeDto match = new();
 
-                        mediaContext.Episodes.Add(episode);
-                        await mediaContext.SaveChangesAsync(t);
-                    }
+                TmdbSearchClient searchClient = new();
 
-                    match = new MovieOrEpisodeDto
-                    {
-                        Id = episode.Id,
-                        Title = episode.Title ?? "",
-                        EpisodeNumber = episode.EpisodeNumber,
-                        SeasonNumber = episode.SeasonNumber,
-                        Still = episode.Still,
-                        Duration = mediaAnalysis.Duration,
-                        Overview = episode.Overview
-                    };
+                await using MediaContext mediaContext = new();
 
-                    parsed.ImdbId = episode.ImdbId;
-                    break;
-                }
-                case "movie":
+                switch (type)
                 {
-                    TmdbPaginatedResponse<TmdbMovie>? movies = await searchClient.Movie(parsed.Title ?? "", parsed.Year);
-                    TmdbMovie? movie = movies?.Results.FirstOrDefault();
-                    if (movie == null) return;
-
-                    Movie? movieItem = mediaContext.Movies
-                        .FirstOrDefault(item => item.Id == movie.Id);
-
-                    if (movieItem == null)
+                    case "anime" or "tv":
                     {
-                        TmdbMovieClient movieClient = new(movie.Id);
-                        TmdbMovieDetails? details = await movieClient.Details();
-                        if (details == null) return;
+                        TmdbPaginatedResponse<TmdbTvShow>? shows =
+                            await searchClient.TvShow(parsed.Title ?? "", parsed.Year);
+                        TmdbTvShow? show = shows?.Results.FirstOrDefault();
+                        if (show == null || !parsed.Season.HasValue || !parsed.Episode.HasValue) return;
 
-                        bool hasMovie = mediaContext.Movies
-                            .Any(item => item.Id == movie.Id);
+                        bool hasShow = mediaContext.Tvs
+                            .Any(item => item.Id == show.Id);
 
                         Ulid libraryId = await mediaContext.Libraries
                             .Where(item => item.Type == type)
                             .Select(item => item.Id)
-                            .FirstOrDefaultAsync(cancellationToken: t);
+                            .FirstOrDefaultAsync();
 
-                        if (!hasMovie)
+                        if (!hasShow)
                         {
                             Networking.Networking.SendToAll("Notify", "socket", new NotifyDto
                             {
-                                Title = "Movie not found",
-                                Message = $"Movie {movie.Title} not found in library, adding now",
+                                Title = "Show not found",
+                                Message = $"Show {show.Name} not found in library, adding now",
                                 Type = "info"
                             });
-                            AddMovieJob job = new()
+                            AddShowJob job = new()
                             {
                                 LibraryId = libraryId,
-                                Id = movie.Id
+                                Id = show.Id
                             };
                             await job.Handle();
                         }
 
-                        movieItem = new Movie
+                        Episode? episode = mediaContext.Episodes
+                            .Where(item => item.TvId == show.Id)
+                            .Where(item => item.SeasonNumber == parsed.Season)
+                            .FirstOrDefault(item => item.EpisodeNumber == parsed.Episode);
+
+                        if (episode == null)
                         {
-                            Id = details.Id,
-                            Title = details.Title,
-                            Overview = details.Overview,
-                            Poster = details.PosterPath
+                            TmdbEpisodeClient episodeClient = new(show.Id, parsed.Season.Value, parsed.Episode.Value);
+                            TmdbEpisodeDetails? details = await episodeClient.Details();
+                            if (details == null) return;
+
+                            Season? season = await mediaContext.Seasons
+                                .FirstOrDefaultAsync(
+                                    season => season!.TvId == show.Id && season.SeasonNumber == details.SeasonNumber,
+                                    cancellationToken: t);
+
+                            episode = new Episode
+                            {
+                                Id = details.Id,
+                                TvId = show.Id,
+                                SeasonNumber = details.SeasonNumber,
+                                EpisodeNumber = details.EpisodeNumber,
+                                Title = details.Name,
+                                Overview = details.Overview,
+                                Still = details.StillPath,
+                                VoteAverage = details.VoteAverage,
+                                VoteCount = details.VoteCount,
+                                AirDate = details.AirDate,
+                                SeasonId = season?.Id ?? 0,
+                                _colorPalette = await MovieDbImageManager.ColorPalette("still", details.StillPath)
+                            };
+
+                            mediaContext.Episodes.Add(episode);
+                            await mediaContext.SaveChangesAsync(t);
+                        }
+
+                        match = new MovieOrEpisodeDto
+                        {
+                            Id = episode.Id,
+                            Title = episode.Title ?? "",
+                            EpisodeNumber = episode.EpisodeNumber,
+                            SeasonNumber = episode.SeasonNumber,
+                            Still = episode.Still,
+                            Duration = mediaAnalysis.Duration,
+                            Overview = episode.Overview
                         };
+
+                        parsed.ImdbId = episode.ImdbId;
+                        break;
                     }
-
-                    match = new MovieOrEpisodeDto
+                    case "movie":
                     {
-                        Id = movieItem.Id,
-                        Title = movieItem.Title,
-                        Still = movieItem.Poster,
-                        Duration = mediaAnalysis.Duration,
-                        Overview = movieItem.Overview
-                    };
+                        TmdbPaginatedResponse<TmdbMovie>? movies =
+                            await searchClient.Movie(parsed.Title ?? "", parsed.Year);
+                        TmdbMovie? movie = movies?.Results.FirstOrDefault();
+                        if (movie == null) return;
 
-                    parsed.ImdbId = movieItem.ImdbId;
-                    break;
+                        Movie? movieItem = mediaContext.Movies
+                            .FirstOrDefault(item => item.Id == movie.Id);
+
+                        if (movieItem == null)
+                        {
+                            TmdbMovieClient movieClient = new(movie.Id);
+                            TmdbMovieDetails? details = await movieClient.Details();
+                            if (details == null) return;
+
+                            bool hasMovie = mediaContext.Movies
+                                .Any(item => item.Id == movie.Id);
+
+                            Ulid libraryId = await mediaContext.Libraries
+                                .Where(item => item.Type == type)
+                                .Select(item => item.Id)
+                                .FirstOrDefaultAsync(cancellationToken: t);
+
+                            if (!hasMovie)
+                            {
+                                Networking.Networking.SendToAll("Notify", "socket", new NotifyDto
+                                {
+                                    Title = "Movie not found",
+                                    Message = $"Movie {movie.Title} not found in library, adding now",
+                                    Type = "info"
+                                });
+                                AddMovieJob job = new()
+                                {
+                                    LibraryId = libraryId,
+                                    Id = movie.Id
+                                };
+                                await job.Handle();
+                            }
+
+                            movieItem = new Movie
+                            {
+                                Id = details.Id,
+                                Title = details.Title,
+                                Overview = details.Overview,
+                                Poster = details.PosterPath
+                            };
+                        }
+
+                        match = new MovieOrEpisodeDto
+                        {
+                            Id = movieItem.Id,
+                            Title = movieItem.Title,
+                            Still = movieItem.Poster,
+                            Duration = mediaAnalysis.Duration,
+                            Overview = movieItem.Overview
+                        };
+
+                        parsed.ImdbId = movieItem.ImdbId;
+                        break;
+                    }
                 }
-            }
 
-            string? parentPath = string.IsNullOrEmpty(file.DirectoryName)
-                ? "/"
-                : Path.GetDirectoryName(Path.Combine(file.DirectoryName, ".."));
+                string? parentPath = string.IsNullOrEmpty(file.DirectoryName)
+                    ? "/"
+                    : Path.GetDirectoryName(Path.Combine(file.DirectoryName, ".."));
 
-            fileList.Add(new FileItemDto
-            {
-                Size = file.Length,
-                Mode = (int)file.Attributes,
-                Name = Path.GetFileNameWithoutExtension(file.Name),
-                Parent = parentPath,
-                Parsed = parsed,
-                Match = match,
-                File = file.FullName,
-                StreamsDto = new StreamsDto
+                fileList.Add(new FileItemDto
                 {
-                    Video = mediaAnalysis.VideoStreams
-                        .Select(video => new VideoDto
-                        {
-                            Index = video.Index,
-                            Width = video.Width,
-                            Height = video.Height,
-                        }),
-                    Audio = mediaAnalysis.AudioStreams
-                        .Select(stream => new AudioDto
-                        {
-                            Index = stream.Index,
-                            Language = stream.Language
-                        }),
-                    Subtitle = mediaAnalysis.SubtitleStreams
-                        .Select(stream => new SubtitleDto
-                        {
-                            Index = stream.Index,
-                            Language = stream.Language
-                        })
-                }
+                    Size = file.Length,
+                    Mode = (int)file.Attributes,
+                    Name = Path.GetFileNameWithoutExtension(file.Name),
+                    Parent = parentPath,
+                    Parsed = parsed,
+                    Match = match,
+                    File = file.FullName,
+                    StreamsDto = new StreamsDto
+                    {
+                        Video = mediaAnalysis.VideoStreams
+                            .Select(video => new VideoDto
+                            {
+                                Index = video.Index,
+                                Width = video.Height,
+                                Height = video.Width
+                            }),
+                        Audio = mediaAnalysis.AudioStreams
+                            .Select(stream => new AudioDto
+                            {
+                                Index = stream.Index,
+                                Language = stream.Language
+                            }),
+                        Subtitle = mediaAnalysis.SubtitleStreams
+                            .Select(stream => new SubtitleDto
+                            {
+                                Index = stream.Index,
+                                Language = stream.Language
+                            })
+                    }
+                });
             });
-        });
+        }
 
         return fileList.OrderBy(file => file.Name).ToList();
     }
@@ -642,27 +690,27 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
 
         List<ServerPathsDto> list =
         [
-            new()
+            new ServerPathsDto
             {
                 Key = "Cache",
                 Value = AppFiles.CachePath
             },
-            new()
+            new ServerPathsDto
             {
                 Key = "Logs",
                 Value = AppFiles.LogPath
             },
-            new()
+            new ServerPathsDto
             {
                 Key = "Metadata",
                 Value = AppFiles.MetadataPath
             },
-            new()
+            new ServerPathsDto
             {
                 Key = "Transcodes",
                 Value = AppFiles.TranscodePath
             },
-            new()
+            new ServerPathsDto
             {
                 Key = "Configs",
                 Value = AppFiles.ConfigPath
