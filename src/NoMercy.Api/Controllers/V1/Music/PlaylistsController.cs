@@ -30,9 +30,6 @@ public class PlaylistsController : BaseController
         await foreach (Playlist playlist in PlaylistResponseDto.GetPlaylists(mediaContext, userId))
             playlists.Add(new PlaylistResponseItemDto(playlist));
 
-        if (playlists.Count == 0)
-            return NotFoundResponse("Playlists not found");
-
         return Ok(new PlaylistResponseDto
         {
             Data = playlists
