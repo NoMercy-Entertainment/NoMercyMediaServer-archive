@@ -30,6 +30,17 @@ public static class CacheController
                 return false;
             }
 
+            if (Config.IsDev == false)
+            {
+                // invalidate cache after 1 day of creation date
+                if (File.GetCreationTime(fullname) < DateTime.Now.SubDays(1))
+                {
+                    File.Delete(fullname);
+                    value = default;
+                    return false;
+                }
+            }
+
             T? data;
             try
             {
@@ -78,4 +89,5 @@ public static class CacheController
             await Write(url, data, retry + 1);
         }
     }
+    
 }

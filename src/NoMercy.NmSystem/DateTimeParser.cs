@@ -73,6 +73,12 @@ public static class DateTimeParser
                && dateTime != default;
     }
 
+    public static DateTime SubDays(this DateTime self, int days)
+    {
+        if (days < 0) throw new ArgumentOutOfRangeException(nameof(days), "Days must be positive.");
+        return self.Subtract(new TimeSpan(days, 0, 0, 0));
+    }
+
     public static int ParseYear(this DateTime? self)
     {
         return string.IsNullOrEmpty(self.ToString())
