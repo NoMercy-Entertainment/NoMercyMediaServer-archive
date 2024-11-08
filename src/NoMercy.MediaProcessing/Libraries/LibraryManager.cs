@@ -56,7 +56,7 @@ public class LibraryManager(
         ConcurrentBag<MediaFolderExtend> rootFolders = await mediaScan
             .Process(path, depth);
 
-        foreach (MediaFolderExtend folder in rootFolders) await ProcessVideoFolder(folder);
+        foreach (MediaFolderExtend folder in rootFolders.OrderBy(f => f.Path)) await ProcessVideoFolder(folder);
 
         Logger.App("Found " + rootFolders.Count + " subfolders");
     }
@@ -70,7 +70,7 @@ public class LibraryManager(
             .SelectMany(r => r.SubFolders ?? [])
             .ToList();
 
-        foreach (MediaFolderExtend rootFolder in rootFolders)
+        foreach (MediaFolderExtend rootFolder in rootFolders.OrderBy(f => f.Path))
         {
             ProcessMusicFolder(rootFolder);
         }

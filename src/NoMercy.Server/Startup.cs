@@ -193,11 +193,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
                 {
                     builder
                         .WithOrigins("https://nomercy.tv")
-                        .WithOrigins("https://app-dev.nomercy.tv")
-                        .WithOrigins("https://app.nomercy.tv")
-                        .WithOrigins("https://dev.nomercy.tv")
-                        .WithOrigins("https://cast.nomercy.tv")
-                        .WithOrigins("https://vscode.nomercy.tv")
+                        .WithOrigins("https://*.nomercy.tv")
                         .WithOrigins("https://hlsjs.video-dev.org")
                         .WithOrigins("http://192.168.2.201:5501")
                         .WithOrigins("http://localhost")
