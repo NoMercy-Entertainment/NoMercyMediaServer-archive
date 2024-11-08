@@ -51,13 +51,13 @@ public class CollectionManager(
 
         await collectionRepository.Store(collection);
 
-        Logger.MovieDb($"Movie: {collection.Title}: Added to Database", LogEventLevel.Debug);
+        Logger.MovieDb($"Collection: {collection.Title}: Added to Database", LogEventLevel.Debug);
 
         await StoreTranslations(collectionAppends);
 
         jobDispatcher.DispatchJob<AddCollectionExtraDataJob, TmdbCollectionAppends>(collectionAppends);
 
-        Logger.MovieDb($"Movie: {collectionAppends.Name}: Added to Library {library.Title}", LogEventLevel.Debug);
+        Logger.MovieDb($"Collection: {collectionAppends.Name}: Added to Library {library.Title}", LogEventLevel.Debug);
 
         return collectionAppends;
     }
@@ -186,7 +186,11 @@ public class CollectionManager(
             movies.Add(movieAppends);
         });
 
-        foreach (TmdbMovieAppends movie in movies) await movieManager.Add(movie.Id, library);
+        foreach (TmdbMovieAppends movie in movies)
+        {
+            await movieManager.Add(movie.Id, library);
+            await collectionRepository.LinkToMovies(collectionAppends);
+        };
 
         Logger.MovieDb($"Collection: {collectionAppends.Name}: Movies added", LogEventLevel.Debug);
     }
