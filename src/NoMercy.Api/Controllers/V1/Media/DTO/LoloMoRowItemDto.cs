@@ -21,6 +21,7 @@ public record LoloMoRowItemDto
     [JsonProperty("genres")] public GenreDto[]? LoloMos { get; set; }
     [JsonProperty("rating")] public RatingClass? Rating { get; set; }
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
 
     public LoloMoRowItemDto(GenreMovie genreMovie)
@@ -33,6 +34,7 @@ public record LoloMoRowItemDto
         TitleSort = genreMovie.Movie.Title.TitleSort(genreMovie.Movie.ReleaseDate);
         Year = genreMovie.Movie.ReleaseDate.ParseYear();
         MediaType = "movie";
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         ColorPalette = genreMovie.Movie.ColorPalette;
     }
 
@@ -47,6 +49,7 @@ public record LoloMoRowItemDto
         Type = genreTv.Tv.Type;
         Year = genreTv.Tv.FirstAirDate.ParseYear();
         MediaType = "tv";
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
         ColorPalette = genreTv.Tv.ColorPalette;
     }
 }

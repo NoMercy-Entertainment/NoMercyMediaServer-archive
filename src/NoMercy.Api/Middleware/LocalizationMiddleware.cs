@@ -1,4 +1,7 @@
+using System.Reflection;
+using I18N.DotNet;
 using Microsoft.AspNetCore.Http;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Middleware;
 
@@ -24,6 +27,10 @@ public class LocalizationMiddleware
             context.Request.Headers.AcceptLanguage = firstLang;
         else
             context.Request.Headers.AcceptLanguage = "en-US".Split('-');
+
+        var reportLocalize = new Localizer();
+        reportLocalize.LoadXML(Assembly.GetExecutingAssembly(), "Resources.I18N.xml", firstLang?.FirstOrDefault() ?? "en");
+        LocalizationHelper.GlobalLocalizer = reportLocalize;
 
         await _next(context);
     }

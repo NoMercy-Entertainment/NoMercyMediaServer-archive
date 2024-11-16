@@ -16,6 +16,7 @@ public record GenresResponseItemDto
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
@@ -45,7 +46,7 @@ public record GenresResponseItemDto
 
         Type = "movie";
         MediaType = "movie";
-
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();
@@ -72,7 +73,7 @@ public record GenresResponseItemDto
 
         Type = "tv";
         MediaType = "tv";
-
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
         NumberOfItems = tv.Tv.NumberOfEpisodes;
         HaveItems = tv.Tv.Episodes
             .Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null));
@@ -103,7 +104,7 @@ public record GenresResponseItemDto
         TitleSort = movie.Movie.Title
             .TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
-
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();
@@ -128,7 +129,7 @@ public record GenresResponseItemDto
         Backdrop = collection.Backdrop;
         Logo = collection.Images
             .FirstOrDefault(media => media.Type == "logo")?.FilePath;
-
+        Link = new Uri($"/collection/{Id}", UriKind.Relative);
         Year = collection.CollectionMovies
             .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
             ?.Movie.ReleaseDate.ParseYear();
@@ -142,7 +143,7 @@ public record GenresResponseItemDto
 
         MediaType = "collection";
         Type = "collection";
-
+        Link = new Uri($"/collection/{Id}", UriKind.Relative);
         NumberOfItems = collection.Parts;
         HaveItems = collection.CollectionMovies
             .Count(collectionMovie => collectionMovie.Movie.VideoFiles.Any(v => v.Folder != null));
@@ -169,7 +170,7 @@ public record GenresResponseItemDto
 
         MediaType = "genres";
         Type = "genres";
-
+        Link = new Uri($"/genres/{Id}", UriKind.Relative);
         NumberOfItems = genre.GenreMovies.Count + genre.GenreTvShows.Count;
         HaveItems = genre.GenreMovies.Count(genreMovie => genreMovie.Movie.VideoFiles
                 .Any(v => v.Folder != null))

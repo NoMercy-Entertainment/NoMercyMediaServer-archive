@@ -44,6 +44,7 @@ public record InfoResponseItemDto
     [JsonProperty("translations")] public IEnumerable<TranslationDto> Translations { get; set; }
     [JsonProperty("seasons")] public IEnumerable<SeasonDto> Seasons { get; set; }
     [JsonProperty("total_duration")] public int TotalDuration { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public InfoResponseItemDto(Movie movie, string? country)
     {
@@ -56,7 +57,7 @@ public record InfoResponseItemDto
             : movie.Overview;
         Type = "movie";
         MediaType = "movie";
-
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Watched = movie.VideoFiles
             .Any(videoFile => videoFile.UserData.Any());
 
@@ -164,7 +165,7 @@ public record InfoResponseItemDto
             : tmdbMovie.Overview;
         Type = "movie";
         MediaType = "movie";
-
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Watched = false;
 
         Favorite = false;
@@ -263,7 +264,7 @@ public record InfoResponseItemDto
             : tv.Overview;
         Type = tv.Type ?? "tv";
         MediaType = "tv";
-
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
         Watched = tv.Episodes
             .Any(episode => episode.VideoFiles
                 .Any(videoFile => videoFile.UserData.Any()));
@@ -355,7 +356,7 @@ public record InfoResponseItemDto
 
         Cast = cast;
         Crew = crew;
-
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
         Director = crew.FirstOrDefault(people => people.Job == "Director");
         Writer = crew.FirstOrDefault(people => people.Job == "Writer");
         // Directors = tv.Crew
@@ -415,7 +416,7 @@ public record InfoResponseItemDto
             : tmdbTv.Overview;
         Type = tmdbTv.Type ?? "tv";
         MediaType = "tv";
-
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
         Watched = false;
         Favorite = false;
 
@@ -530,6 +531,7 @@ public record InfoResponseItemDto
             : collection.Overview;
         Type = "collection";
         MediaType = "collection";
+        Link = new Uri($"/collection/{Id}", UriKind.Relative);
         // Watched = tv.Watched;
         // Favorite = tv.Favorite;
         TitleSort = collection.Title

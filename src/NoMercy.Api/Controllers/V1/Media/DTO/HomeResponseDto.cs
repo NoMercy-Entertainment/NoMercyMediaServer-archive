@@ -37,6 +37,8 @@ public abstract record HomeResponseDto
                     ) == true
                 )
             )
+            .Include(movie => movie.Translations
+                .Where(translation => translation.Iso6391 == language))
             .OrderBy(genre => genre.Name);
 
         List<Genre> genres = await query

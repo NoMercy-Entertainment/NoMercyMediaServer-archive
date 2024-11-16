@@ -16,6 +16,8 @@ namespace NoMercy.Api.Controllers.V1.Music;
 public class MusicController : BaseController
 {
     [HttpGet]
+    [Route("")]
+    [Route("start")]
     public async Task<IActionResult> Index()
     {
         Guid userId = User.UserId();
@@ -71,21 +73,21 @@ public class MusicController : BaseController
         list.Add(new GenreRowDto<dynamic>
         {
             Title = "Playlists",
-            MoreLink = "app.music.playlists",
+            MoreLink = "/music/playlists",
             Items = playlists
         });
 
         list.Add(new GenreRowDto<dynamic>
         {
             Title = "Artists",
-            MoreLink = "app.music.artists",
+            MoreLink = "/music/artists",
             Items = latestArtists
         });
 
         list.Add(new GenreRowDto<dynamic>
         {
             Title = "Albums",
-            MoreLink = "app.music.albums",
+            MoreLink = "/music/albums",
             Items = latestAlbums!
         });
 

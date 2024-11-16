@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -112,6 +113,98 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
                 .OrderByDescending(image => image.VoteAverage)
             )
             .FirstOrDefaultAsync();
+    }
+
+    public IQueryable<Collection> GetCollectionItems(Guid userId, string? language, int take = 1, int page = 1,
+        Expression<Func<Collection, object>>? orderByExpression = null, string? direction = null)
+    {
+        var x = context.Collections
+            .AsNoTracking()
+            .Where(collection => collection.Library.LibraryUsers
+                .FirstOrDefault(u => u.UserId == userId) != null)
+            .Where(collection => collection.CollectionMovies
+                .Any(collectionMovie => collectionMovie.Movie.VideoFiles.Count != 0)
+            )
+            .Include(collection => collection.CollectionUser
+                .Where(x => x.UserId == userId)
+            )
+            .Include(collection => collection.Library)
+            .ThenInclude(library => library.LibraryUsers)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.Translations
+                .Where(translation => translation.Iso6391 == language))
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.VideoFiles)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.MovieUser
+                .Where(x => x.UserId == userId)
+            )
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.CertificationMovies
+                .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US" ||
+                                             certificationMovie.Certification.Iso31661 == "NL")
+            )
+            .ThenInclude(certificationMovie => certificationMovie.Certification)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.GenreMovies)
+            .ThenInclude(genreMovie => genreMovie.Genre)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.Cast)
+            .ThenInclude(genreMovie => genreMovie.Person)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.Cast)
+            .ThenInclude(genreMovie => genreMovie.Role)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.Crew)
+            .ThenInclude(genreMovie => genreMovie.Job)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.Crew)
+            .ThenInclude(genreMovie => genreMovie.Person)
+            .Include(collection => collection.CollectionMovies)
+            .ThenInclude(movie => movie.Movie)
+            .ThenInclude(movie => movie.Images
+                .Where(image =>
+                    (image.Type == "logo" && image.Iso6391 == "en")
+                    || ((image.Type == "backdrop" || image.Type == "poster") &&
+                        (image.Iso6391 == "en" || image.Iso6391 == null))
+                )
+                .OrderByDescending(image => image.VoteAverage)
+                .Take(30)
+            )
+            .Include(collection => collection.Translations
+                .Where(translation => translation.Iso6391 == language))
+            .Include(collection => collection.Images
+                .Where(image =>
+                    (image.Type == "logo" && image.Iso6391 == "en")
+                    || ((image.Type == "backdrop" || image.Type == "poster") &&
+                        (image.Iso6391 == "en" || image.Iso6391 == null))
+                ));
+
+        if (orderByExpression is not null && direction == "desc")
+        {
+            return x.OrderByDescending(orderByExpression)
+                .Skip(page * take)
+                .Take(take);
+        }
+        if (orderByExpression is not null)
+        {
+            return x.OrderBy(orderByExpression)
+                .Skip(page * take)
+                .Take(take);
+        }
+
+        return x.OrderBy(tv => tv.TitleSort)
+            .Skip(page * take)
+            .Take(take);
     }
 
     public Task<Collection?> GetAvailableCollectionAsync(Guid userId, int id)

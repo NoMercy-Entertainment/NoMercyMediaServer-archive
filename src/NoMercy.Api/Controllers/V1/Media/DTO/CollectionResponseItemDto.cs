@@ -25,6 +25,7 @@ public record CollectionResponseItemDto
     [JsonProperty("watched")] public bool Watched { get; set; }
     [JsonProperty("genres")] public GenreDto[] Genres { get; set; }
     [JsonProperty("total_duration")] public int TotalDuration { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("cast")] public PeopleDto[] Cast { get; set; }
     [JsonProperty("crew")] public PeopleDto[] Crew { get; set; }
@@ -33,7 +34,7 @@ public record CollectionResponseItemDto
 
     [JsonProperty("content_ratings")] public ContentRating[] ContentRatings { get; set; }
 
-    public CollectionResponseItemDto(Collection collection, string? country)
+    public CollectionResponseItemDto(Collection? collection, string? country)
     {
         string? title = collection.Translations.FirstOrDefault()?.Title;
         string? overview = collection.Translations.FirstOrDefault()?.Overview;
@@ -51,6 +52,7 @@ public record CollectionResponseItemDto
 
         Type = "collection";
         MediaType = "collection";
+        Link = new Uri($"/collection/{Id}", UriKind.Relative);
 
         ColorPalette = collection.ColorPalette;
         NumberOfItems = collection.Parts;
@@ -83,7 +85,7 @@ public record CollectionResponseItemDto
             .ToArray();
 
         Collection = collection.CollectionMovies
-            .OrderBy(movie => movie.Movie.ReleaseDate)
+            .OrderBy(movie => movie.Movie.TitleSort)
             .Select(movie => new CollectionMovieDto(movie.Movie))
             .ToArray();
 
@@ -138,8 +140,10 @@ public record CollectionResponseItemDto
         NumberOfItems = tmdbCollectionAppends.Parts.Length;
         HaveItems = 0;
         Favorite = false;
+        Link = new Uri($"/collection/{Id}", UriKind.Relative);
 
         Collection = tmdbCollectionAppends.Parts
+            .OrderBy(item => item.TitleSort())
             .Select(movie => new CollectionMovieDto(movie))
             .ToArray();
 

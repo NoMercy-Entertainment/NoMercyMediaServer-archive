@@ -21,6 +21,7 @@ public record AlbumsResponseTrackDto
     [JsonProperty("quality")] public int? Quality { get; set; }
     [JsonProperty("track")] public int? Track { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("album_track")] public List<AlbumDto> Album { get; set; }
     [JsonProperty("artist_track")] public List<ArtistDto> Artist { get; set; }
@@ -43,6 +44,7 @@ public record AlbumsResponseTrackDto
         Quality = artistTrack.Track.Quality;
         Track = artistTrack.Track.TrackNumber;
         Type = "track";
+        Link = new Uri($"/music/tracks/{Id}", UriKind.Relative);
 
         Album = artistTrack.Track.AlbumTrack
             .Select(albumTrack => new AlbumDto(albumTrack, country))

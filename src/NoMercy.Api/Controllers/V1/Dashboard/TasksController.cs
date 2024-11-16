@@ -223,9 +223,9 @@ public class TasksController : BaseController
 public class QueueJobDto
 {
     [JsonProperty("id")] public int Id { get; set; }
-    [JsonProperty("title")] public string Title { get; set; }
-    [JsonProperty("type")] public string Type { get; set; }
-    [JsonProperty("status")] public string Status { get; set; }
-    [JsonProperty("input_file")] public string InputFile { get; set; }
+    [JsonProperty("title")] public string Title { get; set; } = string.Empty;
+    [JsonProperty("type")] public string Type { get; set; } = string.Empty;
+    [JsonProperty("status")] public string Status { get; set; } = string.Empty;
+    [JsonProperty("input_file")] public string InputFile { get; set; } = string.Empty;
     [JsonProperty("profile")] public string? Profile { get; set; }
 }

@@ -25,6 +25,7 @@ public record PeopleResponseItemDto
     [JsonProperty("profile")] public string? Profile { get; set; }
     [JsonProperty("created_at")] public DateTime CreatedAt { get; set; }
     [JsonProperty("updated_at")] public DateTime UpdatedAt { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public PeopleResponseItemDto(Person person)
     {
@@ -53,5 +54,6 @@ public record PeopleResponseItemDto
         UpdatedAt = person.UpdatedAt;
         MediaType = "person";
         Type = "person";
+        Link = new Uri($"/person/{Id}", UriKind.Relative);
     }
 }

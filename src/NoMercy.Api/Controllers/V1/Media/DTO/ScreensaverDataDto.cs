@@ -19,16 +19,11 @@ public record ScreensaverDataDto
             (type == "tv" && x.TvId == image.TvId)
             || (type == "movie" && x.MovieId == image.MovieId));
 
-        string name = type == "tv"
-            ? image.Tv.Title
-            : image.Movie.Title;
-
         AspectRatio = image.AspectRatio;
         Src = image.FilePath;
         ColorPalette = image.ColorPalette;
         Meta = new Meta
         {
-            Title = name,
             Logo = logo != null
                 ? new Logo
                 {

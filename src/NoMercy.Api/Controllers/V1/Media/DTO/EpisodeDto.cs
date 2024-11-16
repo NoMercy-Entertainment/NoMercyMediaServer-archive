@@ -19,6 +19,7 @@ public record EpisodeDto
     [JsonProperty("progress")] public object? Progress { get; set; }
     [JsonProperty("available")] public bool Available { get; set; }
     [JsonProperty("translations")] public IEnumerable<TranslationDto> Translations { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public EpisodeDto(Episode episode)
     {
@@ -37,6 +38,7 @@ public record EpisodeDto
             : episode.Overview;
         EpisodeNumber = episode.EpisodeNumber;
         SeasonNumber = episode.SeasonNumber;
+        Link = new Uri($"/tv/{episode.TvId}/watch?season={episode.SeasonNumber}&episode={episode.EpisodeNumber}", UriKind.Relative);
         AirDate = episode.AirDate;
         Still = episode.Still;
         ColorPalette = episode.ColorPalette;
@@ -77,6 +79,7 @@ public record EpisodeDto
         Still = episodeData.StillPath;
         ColorPalette = new IColorPalettes();
         Available = false;
+        Link = new Uri($"/tv/{tvId}/watch?season={seasonNumber}&episode={episodeNumber}", UriKind.Relative);
 
         Translations = episodeData.Translations.Translations
             .Select(translation => new TranslationDto(translation));
