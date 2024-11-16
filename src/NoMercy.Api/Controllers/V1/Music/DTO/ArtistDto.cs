@@ -16,6 +16,7 @@ public record ArtistDto
     [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
     [JsonProperty("origin")] public Guid Origin { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public ArtistDto(AlbumArtist albumArtist, string country)
     {
@@ -36,6 +37,7 @@ public record ArtistDto
         LibraryId = albumArtist.Artist.LibraryId;
         Origin = Info.DeviceId;
         Type = "artists";
+        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
     }
 
     public ArtistDto(ArtistTrack artistTrack, string country)
@@ -58,5 +60,6 @@ public record ArtistDto
         LibraryId = artistTrack.Artist.LibraryId;
         Origin = Info.DeviceId;
         Type = "artists";
+        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
     }
 }

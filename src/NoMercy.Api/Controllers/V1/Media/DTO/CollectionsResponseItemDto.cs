@@ -16,6 +16,7 @@ public record CollectionsResponseItemDto
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
@@ -46,6 +47,7 @@ public record CollectionsResponseItemDto
             .FirstOrDefault(media => media.Type == "logo")
             ?.FilePath;
         MediaType = "collectionMovie";
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Year = collectionMovie.Movie.ReleaseDate.ParseYear();
         ColorPalette = collectionMovie.Movie.ColorPalette;
         Poster = collectionMovie.Movie.Poster;
@@ -76,7 +78,7 @@ public record CollectionsResponseItemDto
         Backdrop = collection.Backdrop;
         Logo = collection.Images
             .FirstOrDefault(media => media.Type == "logo")?.FilePath;
-
+        Link = new Uri($"/collection/{Id}", UriKind.Relative);
         Year = collection.CollectionMovies
             .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
             ?.Movie.ReleaseDate.ParseYear();

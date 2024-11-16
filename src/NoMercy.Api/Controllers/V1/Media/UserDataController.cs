@@ -104,13 +104,13 @@ public class UserDataController : BaseController
                 userData.CollectionId,
                 userData.TvId,
                 userData.SpecialId
-            });
+            }).ToList();
 
         return Ok(new ContinueWatchingDto
         {
             Data = filteredContinueWatching
                 .Select(item => new ContinueWatchingItemDto(item,
-                    country))
+                    country)),
         });
     }
 

@@ -558,6 +558,12 @@ namespace NoMercy.Database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
                     b.Property<string>("LibraryId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -581,6 +587,12 @@ namespace NoMercy.Database.Migrations
                     b.Property<string>("TitleSort")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("_colorPalette")
                         .IsRequired()
@@ -746,7 +758,7 @@ namespace NoMercy.Database.Migrations
                     b.Property<int?>("MovieId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("PersonId")
+                    b.Property<int>("PersonId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("SeasonId")
@@ -2666,6 +2678,9 @@ namespace NoMercy.Database.Migrations
                     b.Property<int?>("EpisodeId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("GenreId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Homepage")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -2722,6 +2737,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("EpisodeId");
 
+                    b.HasIndex("GenreId");
+
                     b.HasIndex("MovieId");
 
                     b.HasIndex("PersonId");
@@ -2736,6 +2753,9 @@ namespace NoMercy.Database.Migrations
                         .IsUnique();
 
                     b.HasIndex("ArtistId", "Iso31661")
+                        .IsUnique();
+
+                    b.HasIndex("GenreId", "Iso6391")
                         .IsUnique();
 
                     b.HasIndex("ReleaseGroupId", "Iso31661")
@@ -3603,7 +3623,8 @@ namespace NoMercy.Database.Migrations
                     b.HasOne("NoMercy.Database.Models.Person", "Person")
                         .WithMany("Crews")
                         .HasForeignKey("PersonId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("NoMercy.Database.Models.Season", "Season")
                         .WithMany("Crew")
@@ -4386,6 +4407,11 @@ namespace NoMercy.Database.Migrations
                         .HasForeignKey("EpisodeId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("NoMercy.Database.Models.Genre", "Genre")
+                        .WithMany("Translations")
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("NoMercy.Database.Models.Movie", "Movie")
                         .WithMany("Translations")
                         .HasForeignKey("MovieId")
@@ -4418,6 +4444,8 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("Collection");
 
                     b.Navigation("Episode");
+
+                    b.Navigation("Genre");
 
                     b.Navigation("Movie");
 
@@ -4618,6 +4646,8 @@ namespace NoMercy.Database.Migrations
                     b.Navigation("GenreMovies");
 
                     b.Navigation("GenreTvShows");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.Job", b =>

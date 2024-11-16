@@ -32,9 +32,9 @@ public class SpecialsController : BaseController
             .AsNoTracking()
             .ToListAsync();
 
-        return Ok(new SpecialsResponseDto2()
+        return Ok(new SpecialsResponseDto
         {
-            Data = specials.Select(special => new SpecialResponseItemDto(special))
+            Data = specials.Select(special => new SpecialsResponseItemDto(special))
         });
     }
 
@@ -240,59 +240,59 @@ public class SpecialsController : BaseController
         //
         //     List<MediaFolder> folders = new();
         //     MediaScan mediaScan = new();
-        //     
+        //
         //     string[] paths = special.Items
         //         .Select(folderLibrary => folderLibrary.Folder.Path)
         //         .ToArray();
-        //     
+        //
         //     foreach (var path in paths)
         //     {
         //         var list = await mediaScan
         //             .Process(path, 2);
-        //     
+        //
         //         folders.AddRange(list);
         //     }
-        //     
+        //
         //     await mediaScan.DisposeAsync();
-        //     
+        //
         //     foreach (var folder in folders)
         //     {
         //         if (folder.Parsed is null) continue;
-        //     
+        //
         //         switch (special.Type)
         //         {
         //             case "movie":
         //             {
         //                 SearchClient searchClient = new();
-        //     
+        //
         //                 var paginatedMovieResponse = await searchClient.Movie(folder.Parsed.Title!, folder.Parsed.Year!);
-        //     
+        //
         //                 if (paginatedMovieResponse?.Results.Length <= 0) continue;
-        //             
+        //
         //                 // List<Movie> res = Str.SortByMatchPercentage(paginatedMovieResponse.Results, m => m.Title, folder.Parsed.Title);
         //                 List<Movie> res = paginatedMovieResponse?.Results.ToList() ?? [];
         //                 if (res.Count is 0) continue;
-        //             
+        //
         //                 titles.Add(res[0].Title);
-        //     
+        //
         //                 AddMovieJob addMovieJob = new AddMovieJob(id:res[0].Id, specialId:special.Id.ToString());
         //                 JobDispatcher.Dispatch(addMovieJob, "queue", 5);
         //                 break;
         //             }
         //             case "tv":
-        //             {                
+        //             {
         //                 SearchClient searchClient = new();
-        //     
+        //
         //                 var paginatedTvShowResponse = await searchClient.TvShow(folder.Parsed.Title!, folder.Parsed.Year!);
-        //     
+        //
         //                 if (paginatedTvShowResponse?.Results.Length <= 0) continue;
-        //             
+        //
         //                 // List<TvShow> res = Str.SortByMatchPercentage(paginatedTvShowResponse.Results, m => m.Name, folder.Parsed.Title);
         //                 List<TvShow> res = paginatedTvShowResponse?.Results.ToList() ?? [];
         //                 if (res.Count is 0) continue;
-        //     
+        //
         //                 titles.Add(res[0].Name);
-        //     
+        //
         //                 AddShowJob addShowJob = new AddShowJob(id:res[0].Id, specialId:special.Id.ToString());
         //                 JobDispatcher.Dispatch(addShowJob, "queue", 5);
         //                 break;

@@ -167,8 +167,11 @@ public class TmdbMovieClient : TmdbBaseClient, ITmdbMovieClient
         return Get<TmdbMovieCertifications>("certification/movie/list");
     }
 
-    public Task<TmdbGenreMovies?> Genres()
+    public Task<TmdbGenreMovies?> Genres(string language = "en")
     {
-        return Get<TmdbGenreMovies>("genre/movie/list");
+        return Get<TmdbGenreMovies>("genre/movie/list", new Dictionary<string, string>
+        {
+            ["language"] = language
+        });
     }
 }

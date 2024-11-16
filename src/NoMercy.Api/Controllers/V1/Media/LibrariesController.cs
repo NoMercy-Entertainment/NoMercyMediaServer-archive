@@ -1,3 +1,4 @@
+using System.Collections;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,15 +16,12 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/libraries")]
-public class LibrariesController : BaseController
+public class LibrariesController(
+    ILibraryRepository libraryRepository,
+    ICollectionRepository collectionRepository,
+    ISpecialRepository specialRepository)
+    : BaseController
 {
-    private readonly ILibraryRepository _libraryRepository;
-
-    public LibrariesController(ILibraryRepository libraryRepository)
-    {
-        _libraryRepository = libraryRepository;
-    }
-
     [HttpGet]
     public async Task<IActionResult> Libraries()
     {
@@ -31,7 +29,7 @@ public class LibrariesController : BaseController
         if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view libraries");
 
-        IQueryable<Library> libraries = _libraryRepository.GetLibrariesAsync(userId);
+        IQueryable<Library> libraries = libraryRepository.GetLibraries(userId);
 
         List<LibrariesResponseItemDto> response = libraries
             .Select(library => new LibrariesResponseItemDto(library))
@@ -40,6 +38,57 @@ public class LibrariesController : BaseController
         return Ok(new LibrariesDto
         {
             Data = response.OrderBy(library => library.Order)
+        });
+    }
+
+    [HttpGet]
+    [Route("mobile")]
+    public async Task<IActionResult> Mobile()
+    {
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view libraries");
+
+        string language = Language();
+
+        IQueryable<Library> libraries = libraryRepository.GetLibraries(userId);
+
+        List<GenreRowDto<dynamic>> list = [];
+
+        foreach (Library library in libraries)
+        {
+            IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
+            IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
+
+            list.Add(new GenreRowDto<dynamic>
+            {
+                Title = library.Title,
+                MoreLink = $"/libraries/{library.Id}",
+                Items = movies.Select(movie => new LibraryResponseItemDto(movie))
+                    .Concat(shows.Select(tv => new LibraryResponseItemDto(tv)))
+            });
+        }
+
+        IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
+        IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
+
+        list.Add(new GenreRowDto<dynamic>
+        {
+            Title = "Collections",
+            MoreLink = "/collection",
+            Items = collections.Select(collection => new LibraryResponseItemDto(collection))
+        });
+
+        list.Add(new GenreRowDto<dynamic>
+        {
+            Title = "Specials",
+            MoreLink = "/specials",
+            Items = specials.Select(special => new LibraryResponseItemDto(special))
+        });
+
+        return Ok(new HomeResponseDto<dynamic>
+        {
+            Data = list
         });
     }
 
@@ -53,10 +102,10 @@ public class LibrariesController : BaseController
 
         string language = Language();
 
-        IEnumerable<Movie> movies = _libraryRepository
-            .GetLibraryMoviesAsync(userId, libraryId, language, request.Take, request.Page);
-        IEnumerable<Tv> shows = _libraryRepository
-            .GetLibraryShowsAsync(userId, libraryId, language, request.Take, request.Page);
+        IEnumerable<Movie> movies = libraryRepository
+            .GetLibraryMovies(userId, libraryId, language, request.Take, request.Page);
+        IEnumerable<Tv> shows = libraryRepository
+            .GetLibraryShows(userId, libraryId, language, request.Take, request.Page);
 
         if (request.Version != "lolomo")
         {

@@ -1,11 +1,65 @@
 using Newtonsoft.Json;
+using System.ComponentModel.DataAnnotations.Schema;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Controllers.V1.Media.DTO;
-public record ContinueWatchingItemDto
+
+public record Render
+{
+    [JsonProperty("id")] public Ulid Id { get; set; } = Ulid.NewUlid();
+    [JsonProperty("data")] public IEnumerable<object> Data { get; set; } = [];
+}
+
+public record ComponentDto<T>
+{
+    public ComponentDto()
+    {
+        Id = Ulid.NewUlid();
+        Update = new(Id);
+        Update.When = null;
+    }
+
+    [JsonProperty("id")] public Ulid Id { get; set; }
+    [JsonProperty("component")] public string Component { get; set; } = string.Empty;
+    [JsonProperty("props")] public RenderProps<T> Props { get; set; } = new();
+    [JsonProperty("update")] public Update Update { get; set; }
+    [JsonProperty("replacing")] public Ulid Replacing { get; set; }
+}
+
+public record Update
+{
+    [JsonProperty("when")]public string? When { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; } = default!;
+    [JsonProperty("body")] public object Body { get; set; } = new();
+
+    public Update(Ulid ulid)
+    {
+       Body = new
+       {
+           replace_id = ulid
+       };
+    }
+}
+
+public record RenderProps<T>
+{
+    private string _title = string.Empty;
+    [JsonProperty("id")] public Ulid Id { get; set; } = Ulid.NewUlid();
+
+    [JsonProperty("title")] public string Title { get; set; }
+
+    [JsonProperty("more_link")] public string? MoreLink { get; set; }
+    [JsonProperty("more_link_text")] public string? MoreText => !string.IsNullOrEmpty(MoreLink) ? "See all".Localize() : null;
+    [JsonProperty("items")] public IEnumerable<ComponentDto<T>> Items { get; set; } = [];
+    [JsonProperty("data")] public T Data { get; set; } = default!;
+    [JsonProperty("watch")] public bool Watch { get; set; }
+    [JsonProperty("context_menu_items")] public Dictionary<string, object>[]? ContextMenuItems { get; set; }
+}
+
+public record RenderPropsItemDto
 {
     [JsonProperty("id")] public string Id { get; set; }
     [JsonProperty("media_type")] public string? MediaType { get; set; }
@@ -25,10 +79,10 @@ public record ContinueWatchingItemDto
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
-    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; }
-    [JsonProperty("link")] public Uri Link { get; set; }
+    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; } = default!;
+    [JsonProperty("link")] public required Uri Link { get; set; } = default!;
 
-    public ContinueWatchingItemDto(UserData item, string country)
+    public RenderPropsItemDto(UserData item, string country)
     {
         Id = item.MovieId?.ToString() ?? item.TvId?.ToString() ??
             item.SpecialId?.ToString() ?? item.CollectionId.ToString() ?? string.Empty;
@@ -179,3 +233,4 @@ public record ContinueWatchingItemDto
         }
     }
 }
+

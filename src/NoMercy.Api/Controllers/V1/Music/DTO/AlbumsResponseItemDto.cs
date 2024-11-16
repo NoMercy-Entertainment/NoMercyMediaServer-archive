@@ -14,6 +14,7 @@ public record AlbumsResponseItemDto
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("track_id")] public string? TrackId { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("tracks")] public int Tracks { get; set; }
 
@@ -34,6 +35,7 @@ public record AlbumsResponseItemDto
         Id = album.Id;
         Name = album.Name;
         Type = "albums";
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
 
         Tracks = album.AlbumTrack?
             .Select(albumTrack => albumTrack.Track)

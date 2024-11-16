@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using AspNetCore.Swagger.Themes;
+using I18N.DotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http.Connections;
@@ -11,11 +12,13 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using NoMercy.Api.Constraints;
 using NoMercy.Api.Controllers.Socket;
+using NoMercy.Api.Controllers.V1.Media;
 using NoMercy.Api.Middleware;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
@@ -30,6 +33,7 @@ using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.NmSystem;
 using NoMercy.Queue;
+using NoMercy.Server.app.Helper;
 using NoMercy.Server.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
@@ -77,6 +81,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
         services.AddScoped<IGenreRepository, GenreRepository>();
         services.AddScoped<IMovieRepository, MovieRepository>();
         services.AddScoped<ITvShowRepository, TvShowRepository>();
+        services.AddScoped<ISpecialRepository, SpecialRepository>();
 
         // Add Managers
         // services.AddScoped<IEncoderManager, EncoderManager>();
@@ -87,6 +92,18 @@ public class Startup(IApiVersionDescriptionProvider provider)
         services.AddScoped<ISeasonManager, SeasonManager>();
         services.AddScoped<IEpisodeManager, EpisodeManager>();
         services.AddScoped<IPersonManager, PersonManager>();
+
+        services.AddScoped<HomeController>();
+
+        services.AddLocalization(options => options.ResourcesPath = "Resources");
+        services.AddScoped<ILocalizer, Localizer>();
+        services.Configure<RequestLocalizationOptions>(options =>
+        {
+            var supportedCultures = new[] { "en", "nl" };
+            options.SetDefaultCulture(supportedCultures[0])
+                .AddSupportedCultures(supportedCultures)
+                .AddSupportedUICultures(supportedCultures);
+        });
 
         // Add Controllers and JSON Options
         services.AddControllers()
@@ -218,6 +235,17 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        var supportedCultures = new[] { "en-US", "nl-NL" }; // Add other supported locales
+        var localizationOptions = new RequestLocalizationOptions()
+            .SetDefaultCulture(supportedCultures[0])
+            .AddSupportedCultures(supportedCultures)
+            .AddSupportedUICultures(supportedCultures);
+
+        localizationOptions.FallBackToParentCultures = true;
+        localizationOptions.FallBackToParentUICultures = true;
+
+        app.UseRequestLocalization(localizationOptions);
+
         app.UseRouting();
         app.UseCors("AllowNoMercyOrigins");
 

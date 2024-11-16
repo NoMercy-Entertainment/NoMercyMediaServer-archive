@@ -25,9 +25,10 @@ public class Seed : IDisposable, IAsyncDisposable
     private static Folder[] _folders = [];
     private static User[] _users = [];
     private static bool ShouldSeedMarvel { get; set; }
+    private static Language[] _languages = [];
 
     public static async Task Init(bool shouldSeedMarvel)
-    { 
+    {
         ShouldSeedMarvel = shouldSeedMarvel;
         await CreateDatabase();
         await SeedDatabase();
@@ -55,10 +56,10 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         try
         {
-            await AddGenres();
-            await AddCertifications();
             await AddLanguages();
             await AddCountries();
+            await AddGenres();
+            await AddCertifications();
             await AddMusicGenres();
             await AddFolderRoots();
             await AddEncoderProfiles();
@@ -80,7 +81,7 @@ public class Seed : IDisposable, IAsyncDisposable
     private static async Task Users()
     {
         Logger.Setup("Adding Users");
-        
+
         HttpClient client = new();
         client.BaseAddress = new Uri(Config.ApiServerBaseUrl);
         client.DefaultRequestHeaders.Add("Accept", "application/json");
@@ -98,7 +99,7 @@ public class Seed : IDisposable, IAsyncDisposable
         if (content == null) throw new Exception("Failed to get Server info");
 
         ServerUserDto[] serverUsers = content.FromJson<ServerUserDto[]>() ?? [];
-        
+
         Logger.Setup($"Found {serverUsers.Length} users");
 
         _users = serverUsers.Select(serverUser => new User
@@ -164,30 +165,27 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasGenres = await MediaContext.Genres.AnyAsync();
         if (hasGenres) return;
-        
+
         Logger.Setup("Adding Genres");
 
         List<Genre> genres = [];
-
-        genres.AddRange(
-            (await TmdbMovieClient.Genres())?
-            .Genres.ToList()
-            .ConvertAll<Genre>(genre => new Genre
+        List<Genre>? movieGenres = (await TmdbMovieClient.Genres())?
+            .Genres.Select(genre => new Genre
             {
                 Id = genre.Id,
-                Name = genre.Name
-            }).ToArray() ?? []
-        );
+                Name = genre.Name ?? string.Empty,
+            })
+            .ToList();
+        genres.AddRange(movieGenres ?? []);
 
-        genres.AddRange(
-            (await TmdbTvClient.Genres())?
-            .Genres.ToList()
-            .ConvertAll<Genre>(genre => new Genre
+        List<Genre>? tvGenres = (await TmdbTvClient.Genres())?
+            .Genres.Select(genre => new Genre
             {
                 Id = genre.Id,
-                Name = genre.Name
-            }).ToArray() ?? []
-        );
+                Name = genre.Name ?? string.Empty,
+            })
+            .ToList();
+        genres.AddRange(tvGenres ?? []);
 
         await MediaContext.Genres.UpsertRange(genres)
             .On(v => new { v.Id })
@@ -197,13 +195,57 @@ public class Seed : IDisposable, IAsyncDisposable
                 Name = v.Name
             })
             .RunAsync();
+
+        List<Translation> translations = [];
+
+        await Parallel.ForEachAsync(_languages.Where(g => g.Iso6391 != "en"), async (language, _) =>
+        {
+            Logger.Setup($"Adding Genres for {language.Name}");
+
+            List<Translation>? mg = (await TmdbMovieClient.Genres(language.Iso6391))?.Genres
+                .Where(g => g.Name != null)
+                .Select(genre => new Translation
+                {
+                    GenreId = genre.Id,
+                    Name = genre.Name ?? string.Empty,
+                    Iso6391 = language.Iso6391,
+                })
+                .ToList();
+
+            Logger.Setup(mg);
+            translations.AddRange(mg ?? []);
+
+            List<Translation>? tg = (await TmdbTvClient.Genres(language.Iso6391))?.Genres
+                .Where(g => g.Name != null)
+                .Select(genre => new Translation
+                {
+                    GenreId = genre.Id,
+                    Name = genre.Name ?? string.Empty,
+                    Iso6391 = language.Iso6391,
+                })
+                .ToList();
+            Logger.Setup(mg);
+            translations.AddRange(tg ?? []);
+        });
+
+        Logger.Setup($"Adding {translations.Count} genre translations");
+
+        await MediaContext.Translations.UpsertRange(translations.Where(genre => genre.Name != null))
+            .On(v => new { v.GenreId, v.Iso6391 })
+            .WhenMatched(v => new Translation
+            {
+                GenreId = v.GenreId,
+                Name = v.Name,
+                Iso6391 = v.Iso6391
+            })
+            .RunAsync();
     }
 
     private static async Task AddCertifications()
     {
         bool hasCertifications = await MediaContext.Certifications.AnyAsync();
         if (hasCertifications) return;
-        
+
         Logger.Setup("Adding Certifications");
 
         List<Certification> certifications = [];
@@ -246,10 +288,10 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasLanguages = await MediaContext.Languages.AnyAsync();
         if (hasLanguages) return;
-        
+
         Logger.Setup("Adding Languages");
 
-        Language[] languages = (await TmdbConfigClient.Languages())?.ToList()
+        _languages = (await TmdbConfigClient.Languages())?.ToList()
             .ConvertAll<Language>(language => new Language
             {
                 Iso6391 = language.Iso6391,
@@ -257,7 +299,7 @@ public class Seed : IDisposable, IAsyncDisposable
                 Name = language.Name
             }).ToArray() ?? [];
 
-        await MediaContext.Languages.UpsertRange(languages)
+        await MediaContext.Languages.UpsertRange(_languages)
             .On(v => new { v.Iso6391 })
             .WhenMatched(v => new Language
             {
@@ -272,7 +314,7 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasCountries = await MediaContext.Countries.AnyAsync();
         if (hasCountries) return;
-        
+
         Logger.Setup("Adding Countries");
 
         Country[] countries = (await TmdbConfigClient.Countries())?.ToList()
@@ -298,7 +340,7 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         bool hasMusicGenres = await MediaContext.MusicGenres.AnyAsync();
         if (hasMusicGenres) return;
-        
+
         Logger.Setup("Adding Music Genres");
 
         MusicBrainzGenreClient musicBrainzGenreClient = new();
@@ -381,7 +423,7 @@ public class Seed : IDisposable, IAsyncDisposable
         try
         {
             if (!File.Exists(AppFiles.FolderRootsSeedFile)) return;
-            
+
             Logger.Setup("Adding Folder Roots");
 
             _folders = File.ReadAllTextAsync(AppFiles.FolderRootsSeedFile)
@@ -407,7 +449,7 @@ public class Seed : IDisposable, IAsyncDisposable
         try
         {
             if (!File.Exists(AppFiles.LibrariesSeedFile)) return;
-            
+
             Logger.Setup("Adding Libraries");
 
             LibrarySeedDto[] librarySeed = File.ReadAllTextAsync(AppFiles.LibrariesSeedFile)

@@ -15,6 +15,7 @@ public record ReleaseGroupDto
     [JsonProperty("origin")] public Guid Origin { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("year")] public int Year { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public ReleaseGroupDto(AlbumReleaseGroup artistReleaseGroup, string country)
     {
@@ -34,5 +35,6 @@ public record ReleaseGroupDto
         Origin = Info.DeviceId;
         Type = "release_groups";
         Year = artistReleaseGroup.ReleaseGroup.Year;
+        Link = new Uri($"/music/release_groups/{Id}", UriKind.Relative);
     }
 }

@@ -26,6 +26,7 @@ public record PersonResponseItemDto
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("created_at")] public DateTime CreatedAt { get; set; }
     [JsonProperty("updated_at")] public DateTime UpdatedAt { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("combined_credits")] public Credits CombinedCredits { get; set; }
 
@@ -61,6 +62,7 @@ public record PersonResponseItemDto
         UpdatedAt = person.UpdatedAt;
         ExternalIds = person.ExternalIds;
         Gender = person.Gender;
+        Link = new Uri($"/person/{Id}", UriKind.Relative);
 
         Images = new Images
         {
@@ -133,6 +135,7 @@ public record PersonResponseItemDto
         ColorPalette = new IColorPalettes();
         ExternalIds = tmdbPersonAppends.ExternalIds;
         Gender = Enum.Parse<TmdbGender>(tmdbPersonAppends.TmdbGender.ToString(), true).ToString();
+        Link = new Uri($"/person/{Id}", UriKind.Relative);
 
         Images = new Images
         {

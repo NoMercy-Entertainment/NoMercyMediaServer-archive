@@ -1,7 +1,9 @@
+using I18N.DotNet;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Controllers;
 
@@ -11,7 +13,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Unauthenticated.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status401Unauthorized,
             type: "/docs/errors/unauthenticated");
@@ -21,7 +23,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Unauthorized.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status403Forbidden,
             type: "/docs/errors/forbidden");
@@ -31,7 +33,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Not Found.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status404NotFound,
             type: "/docs/errors/not-found");
@@ -41,7 +43,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Bad Request.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status400BadRequest,
             type: "/docs/errors/bad-request");
@@ -51,7 +53,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Internal Server Error.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status500InternalServerError,
             type: "/docs/errors/internal-server-error");
@@ -61,7 +63,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Conflict.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status409Conflict,
             type: "/docs/errors/conflict");
@@ -71,7 +73,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Not Implemented.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status501NotImplemented,
             type: "/docs/errors/not-implemented");
@@ -81,7 +83,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Service Unavailable.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status503ServiceUnavailable,
             type: "/docs/errors/service-unavailable");
@@ -91,7 +93,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Gateway Timeout.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status504GatewayTimeout,
             type: "/docs/errors/gateway-timeout");
@@ -101,7 +103,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Unprocessable Entity.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status422UnprocessableEntity,
             type: "/docs/errors/unprocessable-entity");
@@ -111,7 +113,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Too Many Requests.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status429TooManyRequests,
             type: "/docs/errors/too-many-requests");
@@ -121,7 +123,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Gone.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status410Gone,
             type: "/docs/errors/gone");
@@ -131,7 +133,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Payment Required.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status402PaymentRequired,
             type: "/docs/errors/payment-required");
@@ -141,7 +143,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Length Required.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status411LengthRequired,
             type: "/docs/errors/length-required");
@@ -151,7 +153,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Precondition Failed.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status412PreconditionFailed,
             type: "/docs/errors/precondition-failed");
@@ -161,7 +163,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Request Entity Too Large.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status413RequestEntityTooLarge,
             type: "/docs/errors/request-entity-too-large");
@@ -171,7 +173,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Request-URI Too Long.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status414RequestUriTooLong,
             type: "/docs/errors/request-uri-too-long");
@@ -181,7 +183,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Unsupported Media Type.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status415UnsupportedMediaType,
             type: "/docs/errors/unsupported-media-type");
@@ -191,7 +193,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Requested Range Not Satisfiable.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status416RequestedRangeNotSatisfiable,
             type: "/docs/errors/requested-range-not-satisfiable");
@@ -201,7 +203,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Expectation Failed.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status417ExpectationFailed,
             type: "/docs/errors/expectation-failed");
@@ -211,7 +213,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Misdirected Request.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status421MisdirectedRequest,
             type: "/docs/errors/misdirected-request");
@@ -221,7 +223,7 @@ public class BaseController : Controller
     {
         return Problem(
             title: "Unavailable For Legal Reasons.",
-            detail: detail,
+            detail: detail.Localize(),
             instance: HttpContext.Request.Path,
             statusCode: StatusCodes.Status451UnavailableForLegalReasons,
             type: "/docs/errors/unavailable-for-legal-reasons");

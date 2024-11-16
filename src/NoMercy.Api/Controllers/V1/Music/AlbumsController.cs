@@ -13,11 +13,12 @@ namespace NoMercy.Api.Controllers.V1.Music;
 [ApiController]
 [Tags("Music Albums")]
 [Authorize]
-[Route("api/v{version:apiVersion}/music/albums")]
+[Route("api/v{version:apiVersion}/music/album")]
 public class AlbumsController : BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> Index([FromQuery] FilterRequest request)
+    [Route("/api/v{version:apiVersion}/music/albums/{letter}")]
+    public async Task<IActionResult> Index(string letter)
     {
         List<AlbumsResponseItemDto> albums = [];
         Guid userId = User.UserId();
@@ -27,7 +28,7 @@ public class AlbumsController : BaseController
         string language = Language();
 
         await using MediaContext mediaContext = new();
-        await foreach (Album album in AlbumsResponseDto.GetAlbums(mediaContext, userId, request.Letter ?? "_"))
+        await foreach (Album album in AlbumsResponseDto.GetAlbums(mediaContext, userId, letter))
             albums.Add(new AlbumsResponseItemDto(album, language));
 
         List<AlbumTrack> tracks = mediaContext.AlbumTrack

@@ -24,12 +24,9 @@ public record GenreRowItemDto
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
-
-    public GenreRowItemDto()
-    {
-    }
 
     public GenreRowItemDto(Movie movie, string country)
     {
@@ -51,7 +48,7 @@ public record GenreRowItemDto
 
         MediaType = "movie";
         Type = "movie";
-
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         NumberOfItems = 1;
         HaveItems = movie.VideoFiles.Count(v => v.Folder != null);
 
@@ -59,7 +56,6 @@ public record GenreRowItemDto
 
         ColorPalette = movie.ColorPalette;
         Videos = movie.Media
-            .Where(media => media.Site == "YouTube")
             .Select(media => new VideoDto(media))
             .ToArray();
 
@@ -96,14 +92,13 @@ public record GenreRowItemDto
 
         MediaType = "tv";
         Type = "tv";
-
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
         NumberOfItems = tv.NumberOfEpisodes;
         HaveItems = tv.Episodes
             .Count(episode => episode.VideoFiles.Any(v => v.Folder != null));
 
         ColorPalette = tv.ColorPalette;
         Videos = tv.Media
-            .Where(media => media.Site == "YouTube")
             .Select(media => new VideoDto(media))
             .ToArray();
 
@@ -115,5 +110,10 @@ public record GenreRowItemDto
                 Rating = certificationTv.Certification.Rating,
                 Iso31661 = certificationTv.Certification.Iso31661
             });
+    }
+
+    public GenreRowItemDto()
+    {
+        
     }
 }

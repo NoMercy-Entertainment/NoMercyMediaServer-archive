@@ -20,8 +20,9 @@ public record SpecialItemsDto
     [JsonProperty("title")] public string? Title { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("year")] public long Year { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
-    [JsonProperty("genres")] public GenreDto[] Genres { get; set; }
+    [JsonProperty("genres")] public IEnumerable<GenreDto> Genres { get; set; }
     [JsonProperty("backdrops")] public IEnumerable<ImageDto> Backdrops { get; set; }
     [JsonProperty("posters")] public IEnumerable<ImageDto> Posters { get; set; }
 
@@ -35,11 +36,6 @@ public record SpecialItemsDto
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int HaveItems { get; set; }
     [JsonProperty("duration")] public int Duration { get; set; }
-
-    public SpecialItemsDto()
-    {
-        //
-    }
 
     public SpecialItemsDto(Movie movie)
     {
@@ -76,12 +72,12 @@ public record SpecialItemsDto
         ColorPalette = movie.ColorPalette;
         Poster = movie.Poster;
         Type = "movie";
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Year = movie.ReleaseDate.ParseYear();
         Duration = movie.Runtime * 60 ?? 0;
 
         Genres = movie.GenreMovies
-            .Select(genreMovie => new GenreDto(genreMovie.Genre))
-            .ToArray();
+            .Select(genreMovie => new GenreDto(genreMovie.Genre));
 
         Rating = movie.CertificationMovies
             .Select(certificationMovie => certificationMovie.Certification)
@@ -139,18 +135,19 @@ public record SpecialItemsDto
         ColorPalette = tv.ColorPalette;
         Poster = tv.Poster;
         Type = "tv";
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
         Year = tv.FirstAirDate.ParseYear();
 
         Genres = tv.GenreTvs
-            .Select(genreTv => new GenreDto(genreTv.Genre))
-            .ToArray();
+            .Select(genreTv => new GenreDto(genreTv.Genre));
 
         Rating = tv.CertificationTvs
             .Select(certificationTv => certificationTv.Certification)
             .FirstOrDefault() ?? new Certification();
 
         NumberOfItems = tv.Episodes?.Where(e => e.SeasonNumber > 0).Count() ?? 0;
-        int have = tv.Episodes?.Where(e => e.SeasonNumber > 0).Count(episode => episode.VideoFiles.Any()) ?? 0;
+        int have = tv.Episodes?.Where(e => e.SeasonNumber > 0)
+            .Count(episode => episode.VideoFiles.Any()) ?? 0;
 
         HaveItems = have;
 

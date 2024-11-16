@@ -16,6 +16,7 @@ public record TracksResponseItemDto
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("year")] public int? Year { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("artists")] public List<ArtistDto> Artists { get; set; }
     [JsonProperty("albums")] public List<AlbumDto> Albums { get; set; }
@@ -23,6 +24,7 @@ public record TracksResponseItemDto
 
     public TracksResponseItemDto()
     {
+        //
     }
 
     public TracksResponseItemDto(Track track, string country)
@@ -35,6 +37,7 @@ public record TracksResponseItemDto
         LibraryId = track.AlbumTrack.First().Album.LibraryId;
         Name = track.Name;
         Type = "favorites";
+        Link = new Uri($"/music/tracks/{track.Id}", UriKind.Relative);
 
         Artists = track.ArtistTrack
             .Select(trackArtist => new ArtistDto(trackArtist, country))

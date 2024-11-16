@@ -31,9 +31,6 @@ public class PeopleController : BaseController
         List<PeopleResponseItemDto> people = await PeopleResponseDto
             .GetPeople(userId, language, request.Take, request.Page);
 
-        if (people.Count == 0)
-            return NotFoundResponse("People not found");
-
         return GetPaginatedResponse(people, request);
     }
 

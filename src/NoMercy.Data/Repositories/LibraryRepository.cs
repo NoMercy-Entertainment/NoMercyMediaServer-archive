@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -6,7 +7,7 @@ namespace NoMercy.Data.Repositories;
 
 public class LibraryRepository(MediaContext context) : ILibraryRepository
 {
-    public IQueryable<Library> GetLibrariesAsync(Guid userId)
+    public IQueryable<Library> GetLibraries(Guid userId)
     {
         return context.Libraries
             .Where(library => library.LibraryUsers
@@ -79,9 +80,9 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
             .FirstAsync();
     }
 
-    public IQueryable<Movie> GetLibraryMoviesAsync(Guid userId, Ulid libraryId, string language, int take, int page)
+    public IQueryable<Movie> GetLibraryMovies(Guid userId, Ulid libraryId, string language, int take, int page, Expression<Func<Movie, object>>? orderByExpression = null, string? direction = null)
     {
-        return context.Movies
+        var x =  context.Movies
             .AsNoTracking()
             .Where(movie => movie.Library.Id == libraryId)
             .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId == userId))
@@ -101,15 +102,29 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
                 .Where(translation => translation.Iso6391 == language || translation.Iso6391 == "en")
             )
             .Include(movie => movie.CertificationMovies)
-            .ThenInclude(certificationMovie => certificationMovie.Certification)
-            .OrderBy(library => library.TitleSort)
+            .ThenInclude(certificationMovie => certificationMovie.Certification);
+
+        if (orderByExpression is not null && direction == "desc")
+        {
+            return x.OrderByDescending(orderByExpression)
+                .Skip(page * take)
+                .Take(take);
+        }
+        if (orderByExpression is not null)
+        {
+            return x.OrderBy(orderByExpression)
+                .Skip(page * take)
+                .Take(take);
+        }
+
+        return x.OrderBy(movie => movie.TitleSort)
             .Skip(page * take)
             .Take(take);
     }
 
-    public IQueryable<Tv> GetLibraryShowsAsync(Guid userId, Ulid libraryId, string language, int take, int page)
+    public IQueryable<Tv> GetLibraryShows(Guid userId, Ulid libraryId, string language, int take, int page, Expression<Func<Tv, object>>? orderByExpression = null, string? direction = null)
     {
-        return context.Tvs
+        var x = context.Tvs
             .AsNoTracking()
             .Where(tv => tv.Library.Id == libraryId)
             .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId == userId))
@@ -133,10 +148,25 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
                 .Where(translation => translation.Iso6391 == language || translation.Iso6391 == "en")
             )
             .Include(tv => tv.CertificationTvs)
-            .ThenInclude(certificationTv => certificationTv.Certification)
-            .OrderBy(library => library.TitleSort)
+            .ThenInclude(certificationTv => certificationTv.Certification);
+
+        if (orderByExpression is not null && direction == "desc")
+        {
+            return x.OrderByDescending(orderByExpression)
+                .Skip(page * take)
+                .Take(take);
+        }
+        if (orderByExpression is not null)
+        {
+            return x.OrderBy(orderByExpression)
+                .Skip(page * take)
+                .Take(take);
+        }
+
+        return x.OrderBy(tv => tv.TitleSort)
             .Skip(page * take)
             .Take(take);
+
     }
 
     public IOrderedQueryable<Library> GetDashboardLibrariesAsync(Guid userId)

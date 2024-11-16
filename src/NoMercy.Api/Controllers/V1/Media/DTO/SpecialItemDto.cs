@@ -18,8 +18,9 @@ public record SpecialItemDto
     [JsonProperty("title")] public string? Title { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("year")] public long Year { get; set; }
-    [JsonProperty("genres")] public GenreDto[] Genres { get; set; }
+    [JsonProperty("genres")] public IEnumerable<GenreDto> Genres { get; set; }
     [JsonProperty("duration")] public int Duration { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("rating")] public Certification? Rating { get; set; }
 
@@ -47,5 +48,6 @@ public record SpecialItemDto
         HaveItems = item.HaveItems;
         VideoId = item.VideoId;
         Duration = item.Duration;
+        Link = new Uri($"/{item.MediaType}/{item.Id}", UriKind.Relative);
     }
 }

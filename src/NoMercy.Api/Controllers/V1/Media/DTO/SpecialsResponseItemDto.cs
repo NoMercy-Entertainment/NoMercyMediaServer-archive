@@ -16,6 +16,7 @@ public record SpecialsResponseItemDto
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
@@ -55,6 +56,7 @@ public record SpecialsResponseItemDto
         Poster = item.Movie.Poster;
         TitleSort = item.Movie.Title.TitleSort(item.Movie.ReleaseDate);
         Type = "item";
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Genres = item.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();
@@ -75,6 +77,7 @@ public record SpecialsResponseItemDto
         //     .FirstOrDefault(media => media.Type == "logo")?.FilePath;
 
         MediaType = "specials";
+        Link = new Uri($"/specials/{Id}", UriKind.Relative);
         Year = special.CreatedAt.ParseYear();
 
         ColorPalette = special.ColorPalette;

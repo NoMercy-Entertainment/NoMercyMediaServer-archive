@@ -14,6 +14,7 @@ public record PlaylistResponseItemDto
     [JsonProperty("updated_at")] public DateTime UpdatedAt { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("tracks")] public ICollection<PlaylistTrack> Tracks { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public PlaylistResponseItemDto(Playlist playlist)
     {
@@ -26,5 +27,6 @@ public record PlaylistResponseItemDto
         UpdatedAt = playlist.UpdatedAt;
         Tracks = playlist.Tracks;
         Type = "playlists";
+        Link = new Uri($"/music/playlists/{Id}", UriKind.Relative);
     }
 }

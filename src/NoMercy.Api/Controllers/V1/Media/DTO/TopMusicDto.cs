@@ -10,6 +10,7 @@ public record TopMusicDto
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("type")] public string Type { get; set; } = "albums";
     [JsonProperty("cover")] public string? Cover { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public TopMusicDto()
     {
@@ -21,6 +22,7 @@ public record TopMusicDto
         Name = musicPlay.Playlist.Name;
         ColorPalette = musicPlay.Playlist.ColorPalette;
         Type = "playlists";
+        Link = new Uri($"/playlist/{Id}", UriKind.Relative);
         Cover = musicPlay.Playlist.Cover;
     }
 
@@ -30,6 +32,7 @@ public record TopMusicDto
         Name = albumTrack.Album.Name;
         ColorPalette = albumTrack.Album.ColorPalette;
         Type = "albums";
+        Link = new Uri($"/album/{Id}", UriKind.Relative);
         Cover = albumTrack.Album.Cover;
     }
 
@@ -39,6 +42,7 @@ public record TopMusicDto
         Name = artistTrack.Artist.Name;
         ColorPalette = artistTrack.Artist.ColorPalette;
         Type = "artists";
+        Link = new Uri($"/artist/{Id}", UriKind.Relative);
         Cover = artistTrack.Artist.Cover;
     }
 }
