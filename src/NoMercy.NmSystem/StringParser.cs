@@ -41,7 +41,6 @@ public static class StringParser
         name = Regex.Replace(name, "\"", "");
         name = Regex.Replace(name, "u,", ".");
         name = Regex.Replace(name, "\"", "'");
-        name = Regex.Replace(name, "\\. {2,}", ".");
         name = Regex.Replace(name, "\\s", ".");
         name = Regex.Replace(name, "&", "and");
         name = Regex.Replace(name, "#", ".");
@@ -69,7 +68,7 @@ public static class StringParser
     }
 
     // public static string? TitleCase<T>(this T? self)
-    // {        
+    // {
     //     return self?.ToString()?.Split("")[0].ToUpper() + self?.ToString()?.Substring(1).ToLower() ?? "";
     // }
 

@@ -225,6 +225,15 @@ public class HomeController(MediaContext mediaContext) : BaseController
                     }
                 },
 
+                new ComponentDto<Dictionary<string, object>>
+                {
+                    Component = "NMServerComponent",
+                    Props =
+                    {
+                        Url = new Uri("MyDynamicComponent.js", UriKind.Relative),
+                    }
+                },
+
                 new ComponentDto<ContinueWatchingItemDto>
                 {
                     Component = "NMCarousel",

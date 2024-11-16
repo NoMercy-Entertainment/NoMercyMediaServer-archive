@@ -16,6 +16,7 @@ public class Progress : ProgressMeta
     [JsonProperty("remaining_split")] public string[] RemainingSplit { get; set; }
     [JsonProperty("current_time")] public double CurrentTime { get; set; }
     [JsonProperty("thumbnails")] public string Thumbnail { get; set; }
+    [JsonProperty("process_id")] public int ProgressId { get; set; }
 
     public Progress()
     {
