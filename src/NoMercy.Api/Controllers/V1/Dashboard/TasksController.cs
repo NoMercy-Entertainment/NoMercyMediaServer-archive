@@ -9,6 +9,7 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Music;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Encoder;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 
@@ -85,29 +86,27 @@ public class TasksController : BaseController
     }
 
     [HttpPost]
-    [Route("pause")]
-    public IActionResult PauseTask()
+    [Route("pause/{id:int}")]
+    public async Task<IActionResult> PauseTask(int id)
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to pause tasks");
 
-        return Ok(new PlaceholderResponse
-        {
-            Data = []
-        });
+        var status = await FfMpeg.Pause(id);
+
+        return Ok(status);
     }
 
     [HttpPost]
-    [Route("resume")]
-    public IActionResult ResumeTask()
+    [Route("resume/{id:int}")]
+    public async Task<IActionResult> ResumeTask(int id)
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to resume tasks");
 
-        return Ok(new PlaceholderResponse
-        {
-            Data = []
-        });
+        var status = await FfMpeg.Resume(id);
+
+        return Ok(status);
     }
 
     [HttpGet]

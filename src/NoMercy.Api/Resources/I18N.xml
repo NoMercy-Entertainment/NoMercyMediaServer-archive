@@ -64,4 +64,8 @@
     <Key>People not found</Key>
     <Value lang="nl">People not found</Value>
   </Entry>
+  <Entry>
+    <Key>Playback recorded</Key>
+    <Value lang="nl">Playback recorded</Value>
+  </Entry>
 </I18N>
