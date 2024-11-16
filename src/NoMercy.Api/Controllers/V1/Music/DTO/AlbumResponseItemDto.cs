@@ -19,6 +19,7 @@ public record AlbumResponseItemDto
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("year")] public int? Year { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("artists")] public IEnumerable<ArtistDto> Artists { get; set; }
     [JsonProperty("tracks")] public IEnumerable<AlbumTrackDto> Tracks { get; set; }
@@ -37,6 +38,7 @@ public record AlbumResponseItemDto
         LibraryId = album.LibraryId;
         Name = album.Name;
         Type = "albums";
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
 
         // using MediaContext mediaContext = new();
         // List<AlbumTrack> artists = mediaContext.AlbumTrack

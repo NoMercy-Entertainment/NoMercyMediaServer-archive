@@ -19,6 +19,7 @@ public record PeopleDto
     [JsonProperty("deathday")] public DateTime? DeathDay { get; set; }
     [JsonProperty("translations")] public TranslationDto[] Translations { get; set; }
     [JsonProperty("order")] public int? Order { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
@@ -33,6 +34,7 @@ public record PeopleDto
         DeathDay = cast.Person.DeathDay;
         Gender = cast.Person.Gender;
         Order = cast.Role.Order;
+        Link = new Uri($"/person/{cast.Person.Id}", UriKind.Relative);
         Translations = [];
     }
 
@@ -46,6 +48,7 @@ public record PeopleDto
         ColorPalette = new IColorPalettes();
         Gender = Enum.Parse<TmdbGender>(tmdbCast.Gender.ToString(), true).ToString();
         Order = tmdbCast.Order;
+        Link = new Uri($"/person/{tmdbCast.Id}", UriKind.Relative);
         Translations = [];
     }
 
@@ -60,6 +63,7 @@ public record PeopleDto
         DeathDay = crew.Person.DeathDay;
         Gender = crew.Person.Gender;
         Order = crew.Job.Order;
+        Link = new Uri($"/person/{crew.Person.Id}", UriKind.Relative);
         Translations = [];
     }
 
@@ -73,6 +77,7 @@ public record PeopleDto
         ColorPalette = new IColorPalettes();
         Gender = Enum.Parse<TmdbGender>(tmdbCrew.Gender.ToString(), true).ToString();
         Order = tmdbCrew.Order;
+        Link = new Uri($"/person/{tmdbCrew.Id}", UriKind.Relative);
         Translations = [];
     }
 
@@ -84,6 +89,7 @@ public record PeopleDto
         Name = crew.Name;
         ColorPalette = new IColorPalettes();
         Gender = Enum.Parse<TmdbGender>(crew.Gender.ToString(), true).ToString();
+        Link = new Uri($"/person/{crew.Id}", UriKind.Relative);
         Translations = [];
     }
 
@@ -97,6 +103,7 @@ public record PeopleDto
         ColorPalette = creator.Person.ColorPalette;
         DeathDay = creator.Person.DeathDay;
         Gender = creator.Person.Gender;
+        Link = new Uri($"/person/{creator.Person.Id}", UriKind.Relative);
         Translations = [];
     }
 }

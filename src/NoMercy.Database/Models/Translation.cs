@@ -15,6 +15,7 @@ namespace NoMercy.Database.Models;
 [Index(nameof(ReleaseGroupId), nameof(Iso31661), IsUnique = true)]
 [Index(nameof(ArtistId), nameof(Iso31661), IsUnique = true)]
 [Index(nameof(AlbumId), nameof(Iso31661), IsUnique = true)]
+[Index(nameof(GenreId), nameof(Iso6391), IsUnique = true)]
 [Index(nameof(TvId))]
 [Index(nameof(SeasonId))]
 [Index(nameof(EpisodeId))]
@@ -24,13 +25,14 @@ namespace NoMercy.Database.Models;
 [Index(nameof(ReleaseGroupId))]
 [Index(nameof(ArtistId))]
 [Index(nameof(AlbumId))]
+[Index(nameof(GenreId))]
 public class Translation : Timestamps
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [JsonProperty("id")]
     public int Id { get; set; }
 
-    [JsonProperty("iso_3166_1")] public string Iso31661 { get; set; }
+    [JsonProperty("iso_3166_1")] public string? Iso31661 { get; set; }
     [JsonProperty("iso_639_1")] public string? Iso6391 { get; set; }
     [JsonProperty("name")] public string? Name { get; set; }
     [JsonProperty("english_name")] public string? EnglishName { get; set; }
@@ -66,6 +68,9 @@ public class Translation : Timestamps
 
     [JsonProperty("release_id")] public Guid? AlbumId { get; set; }
     public Album Album { get; set; }
+
+    [JsonProperty("genre_id")] public int? GenreId { get; set; }
+    public Genre Genre { get; set; }
 
     public Translation()
     {

@@ -73,8 +73,7 @@ public record PlaylistResponseDto
         Progress = userData?.UpdatedAt is not null
             ? new ProgressDto
             {
-                Percentage =
-                    (int)Math.Round((double)(100 * (userData.Time ?? 0)) / (videoFile.Duration?.ToSeconds() ?? 0)),
+                Time = userData.Time ?? 0,
                 Date = userData.UpdatedAt
             }
             : null;
@@ -141,8 +140,7 @@ public record PlaylistResponseDto
         Progress = userData?.UpdatedAt is not null
             ? new ProgressDto
             {
-                Percentage =
-                    (int)Math.Round((double)(100 * (userData.Time ?? 0)) / (videoFile.Duration?.ToSeconds() ?? 0)),
+                Time = userData.Time ?? 0,
                 Date = userData.UpdatedAt
             }
             : null;

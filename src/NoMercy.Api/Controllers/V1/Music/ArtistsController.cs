@@ -15,11 +15,12 @@ namespace NoMercy.Api.Controllers.V1.Music;
 [ApiVersion(1.0)]
 [Tags("Music Artists")]
 [Authorize]
-[Route("api/v{version:apiVersion}/music/artists")]
+[Route("api/v{version:apiVersion}/music/artist")]
 public class ArtistsController : BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> Index([FromQuery] FilterRequest request)
+    [Route("/api/v{version:apiVersion}/music/artists/{letter}")]
+    public async Task<IActionResult> Index(string letter)
     {
         Guid userId = User.UserId();
         if (!User.IsAllowed())
@@ -28,7 +29,7 @@ public class ArtistsController : BaseController
         List<ArtistsResponseItemDto> artists = [];
 
         await using MediaContext mediaContext = new();
-        await foreach (Artist artist in ArtistsResponseDto.GetArtists(mediaContext, userId, request.Letter ?? "_"))
+        await foreach (Artist artist in ArtistsResponseDto.GetArtists(mediaContext, userId, letter))
             artists.Add(new ArtistsResponseItemDto(artist));
 
         List<ArtistTrack> tracks = mediaContext.ArtistTrack

@@ -24,6 +24,7 @@ public record AlbumTrackDto
     [JsonProperty("track")] public int? Track { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("lyrics")] public Lyric[]? Lyrics { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("artist_track")] public IEnumerable<ArtistDto> Artist { get; set; }
     [JsonProperty("album_track")] public IEnumerable<AlbumDto> Album { get; set; }
@@ -48,6 +49,7 @@ public record AlbumTrackDto
         Track = albumTrack.Track.TrackNumber;
         Lyrics = albumTrack.Track.Lyrics;
         Type = "tracks";
+        Link = new Uri($"/music/tracks/{Id}", UriKind.Relative);
 
         using MediaContext mediaContext = new();
         List<ArtistTrack> artists = mediaContext.ArtistTrack

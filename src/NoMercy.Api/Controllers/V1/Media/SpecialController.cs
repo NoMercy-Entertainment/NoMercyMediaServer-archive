@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Networking;
@@ -16,7 +17,7 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/specials")]
-public class SpecialController : BaseController
+public class SpecialController(ISpecialRepository specialRepository) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] PageRequestDto request)
@@ -25,22 +26,15 @@ public class SpecialController : BaseController
         if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view specials");
 
-        List<SpecialsResponseItemDto> specials = [];
-
         string language = Language();
 
-        await using MediaContext mediaContext = new();
-        await foreach (SpecialsResponseItemDto special in SpecialsResponseDto.GetSpecials(mediaContext, userId,
-                           language)) specials.Add(special);
-
-        if (specials.Count == 0)
-            return NotFoundResponse("Specials not found");
+        List<Special> specials = await specialRepository.GetSpecialsAsync(userId, language, request.Take, request.Page);
 
         if (request.Version != "lolomo")
             return Ok(new SpecialsResponseDto
             {
                 Data = specials
-                    .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
+                    .Select(special => new SpecialsResponseItemDto(special))
             });
 
         string[] numbers = ["*", "#", "'", "\"", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"];
@@ -60,6 +54,7 @@ public class SpecialController : BaseController
                 Items = specials.Where(special => genre == "#"
                         ? numbers.Any(p => special.Title.StartsWith(p))
                         : special.Title.StartsWith(genre))
+                    .Select(special => new SpecialsResponseItemDto(special))
                     .OrderBy(libraryResponseDto => libraryResponseDto.TitleSort)
             })
         });
@@ -91,11 +86,13 @@ public class SpecialController : BaseController
             .Select(item => item.EpisodeId ?? 0);
 
         List<SpecialItemsDto> items = [];
-        await foreach (Movie movie in SpecialResponseDto.GetSpecialMovies(mediaContext, userId, movieIds, language,
-                           country))
+
+        IAsyncEnumerable<Movie> specialMovies = SpecialResponseDto.GetSpecialMovies(mediaContext, userId, movieIds, language, country);
+        await foreach (Movie movie in specialMovies)
             items.Add(new SpecialItemsDto(movie));
 
-        await foreach (Tv tv in SpecialResponseDto.GetSpecialTvs(mediaContext, userId, episodeIds, language, country))
+        IAsyncEnumerable<Tv> specialTvs = SpecialResponseDto.GetSpecialTvs(mediaContext, userId, episodeIds, language, country);
+        await foreach (Tv tv in specialTvs)
             items.Add(new SpecialItemsDto(tv));
 
         return Ok(new DataResponseDto<SpecialResponseItemDto>

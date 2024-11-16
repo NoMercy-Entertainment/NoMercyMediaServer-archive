@@ -29,20 +29,20 @@ public class UserData : Timestamps
     [JsonProperty("type")] public string Type { get; set; }
 
     [JsonProperty("user_id")] public Guid UserId { get; set; }
-    public User User { get; set; }
+    public User? User { get; set; }
 
     [JsonProperty("movie_id")] public int? MovieId { get; set; }
-    public Movie Movie { get; set; }
+    public Movie? Movie { get; set; }
 
     [JsonProperty("episode_id")] public int? TvId { get; set; }
-    public Tv Tv { get; set; }
+    public Tv? Tv { get; set; }
 
     [JsonProperty("collection_id")] public int? CollectionId { get; set; }
-    public Collection Collection { get; set; }
+    public Collection? Collection { get; set; }
 
     [JsonProperty("special_id")] public Ulid? SpecialId { get; set; }
-    public Special Special { get; set; }
+    public Special? Special { get; set; }
 
     [JsonProperty("video_file_id")] public Ulid? VideoFileId { get; set; }
-    public VideoFile VideoFile { get; set; }
+    public VideoFile? VideoFile { get; set; }
 }

@@ -22,6 +22,7 @@ public record SpecialResponseItemDto
     [JsonProperty("favorite")] public bool Favorite { get; set; }
     [JsonProperty("genres")] public IEnumerable<GenreDto> Genres { get; set; }
     [JsonProperty("total_duration")] public int TotalDuration { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("cast")] public IEnumerable<PeopleDto> Cast { get; set; }
     [JsonProperty("crew")] public IEnumerable<PeopleDto> Crew { get; set; }
@@ -88,6 +89,7 @@ public record SpecialResponseItemDto
         TitleSort = special.Title.TitleSort();
         Type = "specials";
         MediaType = "specials";
+        Link = new Uri($"/specials/{Id}", UriKind.Relative);
         ColorPalette = special.ColorPalette;
         Backdrops = backdrops;
         Posters = posters;
@@ -123,6 +125,7 @@ public record SpecialResponseItemDto
         TitleSort = special.Title.TitleSort();
         Type = "specials";
         MediaType = "specials";
+        Link = new Uri($"/specials/{Id}", UriKind.Relative);
         ColorPalette = special.ColorPalette;
         Favorite = special.SpecialUser?.Count != 0;
         NumberOfItems = special.Items.Count;

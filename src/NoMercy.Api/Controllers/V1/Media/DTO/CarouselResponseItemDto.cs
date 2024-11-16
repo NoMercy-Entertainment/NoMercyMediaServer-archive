@@ -17,6 +17,7 @@ public record CarouselResponseItemDto
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("track_id")] public string? TrackId { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("tracks")] public int Tracks { get; set; }
 
@@ -137,6 +138,7 @@ public record CarouselResponseItemDto
         LibraryId = artist.LibraryId ?? Ulid.Empty;
         Name = artist.Name;
         Type = "artists";
+        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
 
         Tracks = artist.ArtistTrack
             .Where(artistTrack => artistTrack.Track.Duration != null)
@@ -155,6 +157,7 @@ public record CarouselResponseItemDto
         LibraryId = album.LibraryId ?? Ulid.Empty;
         Name = album.Name;
         Type = "albums";
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
 
         Tracks = album.AlbumTrack
             .Where(albumTrack => albumTrack.Track.Duration != null)
@@ -174,6 +177,7 @@ public record CarouselResponseItemDto
         LibraryId = playlist.Artist.LibraryId ?? Ulid.Empty;
         Name = playlist.Artist.Name;
         Type = "artists";
+        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
 
         Tracks = playlist.Artist.ArtistTrack
             .Where(artistTrack => artistTrack.Track.Duration != null)
@@ -192,6 +196,7 @@ public record CarouselResponseItemDto
         LibraryId = playlist.Album.LibraryId ?? Ulid.Empty;
         Name = playlist.Album.Name;
         Type = "albums";
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
 
         Tracks = playlist.Album.AlbumTrack
             .Where(albumTrack => albumTrack.Track.Duration != null)
@@ -207,6 +212,7 @@ public record CarouselResponseItemDto
         Id = playlist.Id.ToString();
         Name = playlist.Name;
         Type = "playlists";
+        Link = new Uri($"/music/playlist/{Id}", UriKind.Relative);
 
         Tracks = playlist.Tracks
             .Where(playlistTrack => playlistTrack.Track.Duration != null)

@@ -21,6 +21,7 @@ public record ArtistResponseItemDto
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("year")] public int? Year { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("playlists")] public IEnumerable<AlbumDto> Playlists { get; set; }
     [JsonProperty("tracks")] public IEnumerable<ArtistTrackDto> Tracks { get; set; }
@@ -42,18 +43,19 @@ public record ArtistResponseItemDto
         LibraryId = artist.LibraryId;
         Name = artist.Name;
         Type = "artists";
+        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
 
         Genres = artist.ArtistMusicGenre
             .Select(artistMusicGenre => new GenreDto(artistMusicGenre));
 
         Images = artist.Images.Select(image => new ImageDto(image));
-        
+
         Albums = artist.AlbumArtist
             .Select(album => new AlbumDto(album, country!))
             .GroupBy(album => album.Id)
             .Select(album => album.First())
             .OrderBy(artistTrack => artistTrack.Year);
-        
+
         Featured = artist.ArtistTrack
             .Select(artistTrack => artistTrack.Track.AlbumTrack.First().Album)
             .GroupBy(album => album.Name.RemoveNonAlphaNumericCharacters())
@@ -63,7 +65,7 @@ public record ArtistResponseItemDto
             .Select(album => new AlbumDto(album, country!))
             .OrderBy(artistTrack => artistTrack.Year)
             .ToList();
-        
+
         Playlists = artist.AlbumArtist
             .DistinctBy(albumArtist => albumArtist.AlbumId)
             .Where(album => album.Album.AlbumUser.Any(user => user.UserId == userId))
@@ -85,15 +87,15 @@ public record ArtistResponseItemDto
             .Where(musicPlay => musicPlay.UserId == userId)
             .Where(musicPlay => musicPlay.Track.ArtistTrack
                 .Any(artistTrack => artistTrack.ArtistId == artist.Id))
-            
+
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.TrackUser)
-            
+
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Album)
             .ThenInclude(albumTrack => albumTrack.Translations)
-            
+
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.ArtistTrack)
             .ThenInclude(albumTrack => albumTrack.Artist)

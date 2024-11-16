@@ -24,6 +24,7 @@ public record PlaylistTrackDto
     [JsonProperty("track")] public int? Track { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("lyrics")] public Lyric[]? Lyrics { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("album_track")] public IEnumerable<AlbumDto> Album { get; set; }
     [JsonProperty("artist_track")] public IEnumerable<ArtistDto> Artist { get; set; }
@@ -48,6 +49,7 @@ public record PlaylistTrackDto
         Track = artistTrack.Track.TrackNumber;
         Lyrics = artistTrack.Track.Lyrics;
         Type = "tracks";
+        Link = new Uri($"/music/tracks/{Id}", UriKind.Relative);
 
         Album = artistTrack.Track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)

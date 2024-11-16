@@ -44,7 +44,7 @@ public class LibrariesController : BaseController
         Guid userId = User.UserId();
         if (!User.IsAllowed())
             return Task.FromResult(UnauthorizedResponse("You do not have permission to view libraries"));
-        IQueryable<Library> libraries = _libraryRepository.GetLibrariesAsync(userId);
+        IQueryable<Library> libraries = _libraryRepository.GetLibraries(userId);
         return Task.FromResult<IActionResult>(Ok(new LibrariesDto
         {
             Data = libraries.Select(library => new LibrariesResponseItemDto(library))

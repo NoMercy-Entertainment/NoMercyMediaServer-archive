@@ -17,6 +17,7 @@ public record RelatedDto
     [JsonProperty("media_type")] public string MediaType { get; set; }
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
 
@@ -30,6 +31,7 @@ public record RelatedDto
         TitleSort = recommendation.TitleSort;
         MediaType = type;
         ColorPalette = recommendation.ColorPalette;
+        Link = new Uri($"/{type}/{recommendation.MediaId}", UriKind.Relative);
         NumberOfItems = type == "tv"
             ? recommendations?.FirstOrDefault(t => t.Id == recommendation.MediaId)?.NumberOfEpisodes
             : null;
@@ -51,6 +53,7 @@ public record RelatedDto
         TitleSort = similar.TitleSort;
         MediaType = type;
         ColorPalette = similar.ColorPalette;
+        Link = new Uri($"/{type}/{similar.MediaId}", UriKind.Relative);
         NumberOfItems = type == "tv" ? similars?.FirstOrDefault(s => s.Id == similar.MediaId)?.NumberOfEpisodes : null;
         HaveItems = type == "tv"
             ? similars?.FirstOrDefault(t => t.Id == similar.MediaId)?.Episodes
@@ -69,6 +72,7 @@ public record RelatedDto
         Title = tmdbSimilar.Title;
         TitleSort = tmdbSimilar.Title.TitleSort(tmdbSimilar.ReleaseDate);
         MediaType = type;
+        Link = new Uri($"/{type}/{tmdbSimilar.Id}", UriKind.Relative);
         ColorPalette = new IColorPalettes();
         NumberOfItems = 0;
         HaveItems = 0;
@@ -83,6 +87,7 @@ public record RelatedDto
         Title = recommendation.Name;
         TitleSort = recommendation.Name.TitleSort();
         MediaType = type;
+        Link = new Uri($"/{type}/{recommendation.Id}", UriKind.Relative);
         ColorPalette = new IColorPalettes();
         NumberOfItems = 0;
         HaveItems = 0;

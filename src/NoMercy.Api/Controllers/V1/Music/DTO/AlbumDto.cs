@@ -19,6 +19,7 @@ public record AlbumDto
     [JsonProperty("tracks")] public int Tracks { get; set; }
     [JsonProperty("year")] public int? Year { get; set; }
     [JsonProperty("album_artist")] public Guid? AlbumArtist { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public AlbumDto(AlbumArtist albumArtist, string country)
     {
@@ -41,6 +42,7 @@ public record AlbumDto
         Type = "albums";
         Tracks = albumArtist.Album.AlbumTrack?.Count ?? 0;
         Year = albumArtist.Album.Year;
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
 
         AlbumArtist = albumArtist.ArtistId;
     }
@@ -66,6 +68,7 @@ public record AlbumDto
         Year = albumTrack.Album.Year;
         Origin = NmSystem.Info.DeviceId;
         Type = "albums";
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
 
         using MediaContext mediaContext = new();
         int? tracks = mediaContext.Albums
@@ -100,6 +103,7 @@ public record AlbumDto
         Year = album.Year;
         Origin = NmSystem.Info.DeviceId;
         Type = "albums";
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
 
         List<IGrouping<Guid, AlbumArtist>> artists = album.AlbumArtist
             .GroupBy(albumArtist => albumArtist.ArtistId)

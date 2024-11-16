@@ -173,8 +173,11 @@ public class TmdbTvClient : TmdbBaseClient
         return Get<TvShowCertifications>("certification/tv/list");
     }
 
-    public Task<TmdbGenreTv?> Genres()
+    public Task<TmdbGenreTv?> Genres(string language = "en")
     {
-        return Get<TmdbGenreTv>("genre/tv/list");
+        return Get<TmdbGenreTv>("genre/tv/list", new Dictionary<string, string>
+        {
+            ["language"] = language
+        });
     }
 }
