@@ -189,8 +189,9 @@ public class CollectionManager(
         foreach (TmdbMovieAppends movie in movies)
         {
             await movieManager.Add(movie.Id, library);
-            await collectionRepository.LinkToMovies(collectionAppends);
         };
+
+        await collectionRepository.LinkToMovies(collectionAppends);
 
         Logger.MovieDb($"Collection: {collectionAppends.Name}: Movies added", LogEventLevel.Debug);
     }

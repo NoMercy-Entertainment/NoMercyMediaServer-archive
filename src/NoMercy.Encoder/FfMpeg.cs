@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using FFMpegCore;
@@ -13,6 +14,8 @@ public class FfMpeg : Classes
 {
     internal string FfProbePath { get; set; } = AppFiles.FfProbePath;
     internal string FfmpegPath { get; set; } = AppFiles.FfmpegPath;
+
+    private static readonly Dictionary<int,Process> FfmpegProcess = new();
 
     internal MediaAnalysis? MediaAnalysis;
 
@@ -74,8 +77,8 @@ public class FfMpeg : Classes
 
     public class FolderAndFile
     {
-        public string HostFolder { get; set; }
-        public string Filename { get; set; }
+        public string HostFolder { get; set; } = string.Empty;
+        public string Filename { get; set; } = string.Empty;
     }
 
     public VideoAudioFile Open(FolderAndFile? videoFile)
@@ -87,6 +90,7 @@ public class FfMpeg : Classes
     public static async Task<string> Exec(string args, string? cwd = null, string? executable = null)
     {
         Process ffmpeg = new();
+
         ffmpeg.StartInfo = new ProcessStartInfo
         {
             WindowStyle = ProcessWindowStyle.Hidden,
@@ -103,9 +107,11 @@ public class FfMpeg : Classes
         // Logger.Encoder(ffmpeg.StartInfo.WorkingDirectory  + " " + ffmpeg.StartInfo.FileName + " " + ffmpeg.StartInfo.Arguments);
 
         ffmpeg.Start();
+        FfmpegProcess.Add(ffmpeg.Id, ffmpeg);
 
         string error = await ffmpeg.StandardError.ReadToEndAsync();
 
+        FfmpegProcess.Remove(ffmpeg.Id);
         ffmpeg.Close();
 
         return error;
@@ -139,10 +145,12 @@ public class FfMpeg : Classes
     public static async Task<string> Run(string args, string cwd, ProgressMeta meta)
     {
         Process ffmpeg = new();
+
         ffmpeg.StartInfo = new ProcessStartInfo
         {
             WindowStyle = ProcessWindowStyle.Hidden,
             FileName = AppFiles.FfmpegPath,
+
             WorkingDirectory = cwd,
             Arguments = args,
             RedirectStandardOutput = true,
@@ -155,8 +163,11 @@ public class FfMpeg : Classes
         // Logger.Encoder(ffmpeg.StartInfo.WorkingDirectory  + " " + ffmpeg.StartInfo.FileName + " " + ffmpeg.StartInfo.Arguments);
 
         ffmpeg.Start();
+        FfmpegProcess.Add(ffmpeg.Id, ffmpeg);
+
         ffmpeg.BeginOutputReadLine();
         ffmpeg.BeginErrorReadLine();
+
         StringBuilder output = new();
 
         TimeSpan totalDuration = TimeSpan.Zero;
@@ -165,7 +176,7 @@ public class FfMpeg : Classes
         TimeSpan currentTime = TimeSpan.Zero;
 
         StringBuilder output2 = new();
-        ffmpeg.ErrorDataReceived += (sender, e) =>
+        ffmpeg.ErrorDataReceived += (_, e) =>
         {
             if (e.Data != null)
                 if (!durationFound)
@@ -188,7 +199,7 @@ public class FfMpeg : Classes
                 }
         };
 
-        ffmpeg.OutputDataReceived += (sender, e) =>
+        ffmpeg.OutputDataReceived += (_, e) =>
         {
             try
             {
@@ -273,7 +284,8 @@ public class FfMpeg : Classes
                             Thumbnail = $"{meta.ShareBasePath}/{thumbnailFolder}/{thumbnail}",
                             Title = meta.Title,
                             Id = meta.Id,
-                            Message = "Encoding video"
+                            Message = "Encoding video",
+                            ProgressId = ffmpeg.Id
                         };
 
                         progress.RemainingSplit = progress.RemainingHms
@@ -294,6 +306,7 @@ public class FfMpeg : Classes
 
         await ffmpeg.WaitForExitAsync();
 
+        FfmpegProcess.Remove(ffmpeg.Id);
         ffmpeg.Close();
 
         Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
@@ -303,5 +316,85 @@ public class FfMpeg : Classes
         });
 
         return output.ToString();
+    }
+
+    public static async Task<bool> Pause(int id)
+    {
+        if (FfmpegProcess.TryGetValue(id, out var process))
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                await SuspendProcessOnWindows(process);
+            }
+            else{
+                Process.Start("kill", $"-STOP {process.Id}");
+                await Task.Delay(0);
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    public static async Task<bool> Resume(int id)
+    {
+        if (FfmpegProcess.TryGetValue(id, out var process))
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                await ResumeProcessOnWindows(process);
+            }
+            else
+            {
+                Process.Start("kill", $"-CONT {process.Id}");
+                await Task.Delay(0);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr OpenThread(int dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool SuspendThread(IntPtr hThread);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool ResumeThread(IntPtr hThread);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    private const int ThreadSuspendResume = 0x0002;
+
+    private static async Task SuspendProcessOnWindows(Process process)
+    {
+        foreach (ProcessThread thread in process.Threads)
+        {
+            IntPtr threadHandle = OpenThread(ThreadSuspendResume, false, (uint)thread.Id);
+            if (threadHandle != IntPtr.Zero)
+            {
+                SuspendThread(threadHandle);
+                CloseHandle(threadHandle);
+            }
+        }
+        await Task.CompletedTask;
+    }
+
+    private static async Task ResumeProcessOnWindows(Process process)
+    {
+        foreach (ProcessThread thread in process.Threads)
+        {
+            IntPtr threadHandle = OpenThread(ThreadSuspendResume, false, (uint)thread.Id);
+            if (threadHandle != IntPtr.Zero)
+            {
+                ResumeThread(threadHandle);
+                CloseHandle(threadHandle);
+            }
+        }
+        await Task.CompletedTask;
     }
 }

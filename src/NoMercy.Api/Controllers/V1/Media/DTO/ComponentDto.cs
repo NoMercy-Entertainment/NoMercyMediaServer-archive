@@ -57,6 +57,7 @@ public record RenderProps<T>
     [JsonProperty("data")] public T Data { get; set; } = default!;
     [JsonProperty("watch")] public bool Watch { get; set; }
     [JsonProperty("context_menu_items")] public Dictionary<string, object>[]? ContextMenuItems { get; set; }
+    [JsonProperty("url")] public Uri? Url { get; set; }
 }
 
 public record RenderPropsItemDto
