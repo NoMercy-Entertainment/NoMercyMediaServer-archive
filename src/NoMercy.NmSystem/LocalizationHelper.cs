@@ -11,7 +11,7 @@ public static class LocalizationHelper
     public static string Localize(this string key)
     {
         string localized = GlobalLocalizer.Localize(key);
-        if (key == localized)
+        if (key == localized && Config.IsDev)
         {
             AppendMissingLocalization(key);
             return key;
