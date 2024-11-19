@@ -44,7 +44,7 @@ public record AlbumsResponseTrackDto
         Quality = artistTrack.Track.Quality;
         Track = artistTrack.Track.TrackNumber;
         Type = "track";
-        Link = new Uri($"/music/tracks/{Id}", UriKind.Relative);
+        Link = new Uri($"/music/album/{artistTrack.AlbumId}", UriKind.Relative);
 
         Album = artistTrack.Track.AlbumTrack
             .Select(albumTrack => new AlbumDto(albumTrack, country))

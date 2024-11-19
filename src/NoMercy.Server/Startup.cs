@@ -1,8 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using System.Security.Claims;
-using System.Text.Json.Serialization;
+﻿using Asp.Versioning.ApiExplorer;
 using Asp.Versioning;
-using Asp.Versioning.ApiExplorer;
 using AspNetCore.Swagger.Themes;
 using I18N.DotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -12,7 +9,6 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -21,11 +17,10 @@ using NoMercy.Api.Controllers.Socket;
 using NoMercy.Api.Controllers.V1.Media;
 using NoMercy.Api.Middleware;
 using NoMercy.Data.Repositories;
-using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Database;
 using NoMercy.MediaProcessing.Collections;
 using NoMercy.MediaProcessing.Episodes;
-using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Libraries;
 using NoMercy.MediaProcessing.Movies;
 using NoMercy.MediaProcessing.People;
@@ -33,9 +28,10 @@ using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
 using NoMercy.NmSystem;
 using NoMercy.Queue;
-using NoMercy.Server.app.Helper;
 using NoMercy.Server.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using System.Security.Claims;
+using System.Text.Json.Serialization;
 using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
 using ICollectionRepository = NoMercy.Data.Repositories.ICollectionRepository;
 using ILibraryRepository = NoMercy.Data.Repositories.ILibraryRepository;
@@ -97,13 +93,13 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         services.AddScoped<ILocalizer, Localizer>();
-        services.Configure<RequestLocalizationOptions>(options =>
-        {
-            var supportedCultures = new[] { "en", "nl" };
-            options.SetDefaultCulture(supportedCultures[0])
-                .AddSupportedCultures(supportedCultures)
-                .AddSupportedUICultures(supportedCultures);
-        });
+        // services.Configure<RequestLocalizationOptions>(options =>
+        // {
+        //     var supportedCultures = new[] {  "en-US", "nl-NL"  };
+        //     options.SetDefaultCulture(supportedCultures[0])
+        //         .AddSupportedCultures(supportedCultures)
+        //         .AddSupportedUICultures(supportedCultures);
+        // });
 
         // Add Controllers and JSON Options
         services.AddControllers()
