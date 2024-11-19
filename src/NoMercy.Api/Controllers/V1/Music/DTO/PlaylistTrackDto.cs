@@ -49,7 +49,7 @@ public record PlaylistTrackDto
         Track = artistTrack.Track.TrackNumber;
         Lyrics = artistTrack.Track.Lyrics;
         Type = "tracks";
-        Link = new Uri($"/music/tracks/{Id}", UriKind.Relative);
+        Link = new Uri($"/music/artist/{artistTrack.ArtistId}", UriKind.Relative);
 
         Album = artistTrack.Track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)

@@ -49,7 +49,7 @@ public record AlbumTrackDto
         Track = albumTrack.Track.TrackNumber;
         Lyrics = albumTrack.Track.Lyrics;
         Type = "tracks";
-        Link = new Uri($"/music/tracks/{Id}", UriKind.Relative);
+        Link = new Uri($"/music/album/{albumTrack.Album.Id}", UriKind.Relative);
 
         using MediaContext mediaContext = new();
         List<ArtistTrack> artists = mediaContext.ArtistTrack

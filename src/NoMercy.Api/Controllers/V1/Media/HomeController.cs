@@ -221,16 +221,10 @@ public class HomeController(MediaContext mediaContext) : BaseController
                     Props =
                     {
                         Data = genres.Randomize().FirstOrDefault()
-                            ?.Items.Randomize().FirstOrDefault() ?? new GenreRowItemDto(),
-                    }
-                },
-
-                new ComponentDto<Dictionary<string, object>>
-                {
-                    Component = "NMServerComponent",
-                    Props =
-                    {
-                        Url = new Uri("MyDynamicComponent.js", UriKind.Relative),
+                            ?.Items.Randomize().FirstOrDefault()
+                               ?? genres.Randomize().FirstOrDefault()
+                            ?.Items.Randomize().FirstOrDefault()
+                               ?? new GenreRowItemDto(),
                     }
                 },
 
@@ -290,7 +284,17 @@ public class HomeController(MediaContext mediaContext) : BaseController
                             }
                         })
                     }
-                })
+                }),
+
+                new ComponentDto<Dictionary<string, object>>
+                {
+                    Component = "NMServerComponent",
+                    Props =
+                    {
+                        Url = new Uri("MyDynamicComponent.js", UriKind.Relative),
+                    }
+                },
+
             ]
         });
     }
@@ -337,7 +341,8 @@ public class HomeController(MediaContext mediaContext) : BaseController
                     },
                     Props =
                     {
-                        Data = genres.Randomize().First(),
+                        Data = genres.Where(g =>  g.Title != "")
+                            .Randomize().First(),
                     }
                 },
             ]
@@ -399,6 +404,194 @@ public class HomeController(MediaContext mediaContext) : BaseController
                             })
                     }
                 },
+            ]
+        });
+    }
+
+    [HttpGet]
+    [Route("home/tv")]
+    public async Task<IActionResult> HomeTv()
+    {
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
+            return Unauthorized(new StatusResponseDto<string>
+            {
+                Status = "error",
+                Message = "You do not have permission to view continue watching"
+            });
+
+        string language = Language();
+        string country = Country();
+
+        IEnumerable<UserData> continueWatching = Queries
+            .GetContinueWatching(mediaContext, userId, language, country);
+
+        List<GenreRowDto<GenreRowItemDto>> genres = [];
+
+        List<int> movieIds = [];
+        List<int> tvIds = [];
+
+        HashSet<Genre> genreItems = Queries
+            .GetHome(mediaContext, userId, language, 300);
+
+        foreach (Genre genre in genreItems)
+        {
+            IEnumerable<HomeSourceDto> movies = genre
+                .GenreMovies.Select(movie => new HomeSourceDto(movie.MovieId, "movie"));
+
+            IEnumerable<HomeSourceDto> tvs = genre
+                .GenreTvShows.Select(tv => new HomeSourceDto(tv.TvId, "tv"));
+
+            string? name = genre.Translations.FirstOrDefault()?.Name ?? genre.Name;
+            GenreRowDto<GenreRowItemDto> genreRowDto = new()
+            {
+                Title = name,
+                MoreLink = $"/genres/{genre.Id}",
+                Id = genre.Id.ToString(),
+                Source = movies
+                    .Concat(tvs)
+                    .Randomize()
+                    .Take(28)
+            };
+
+            tvIds.AddRange(genreRowDto.Source
+                .Where(source => source.MediaType == "tv")
+                .Select(source => source.Id));
+
+            movieIds.AddRange(genreRowDto.Source
+                .Where(source => source.MediaType == "movie")
+                .Select(source => source.Id));
+
+            genres.Add(genreRowDto);
+        }
+
+        List<Tv> tvData = [];
+        await foreach (Tv tv in Queries.GetHomeTvs(mediaContext, tvIds, language))
+        {
+            tvData.Add(tv);
+        }
+
+        List<Movie> movieData = [];
+        await foreach (Movie movie in Queries.GetHomeMovies(mediaContext, movieIds, language))
+        {
+            movieData.Add(movie);
+        }
+
+        foreach (GenreRowDto<GenreRowItemDto> genre in genres)
+            genre.Items = genre.Source
+                .Select(source =>
+                {
+                    switch (source.MediaType)
+                    {
+                        case "tv":
+                        {
+                            Tv? tv = tvData.FirstOrDefault(tv => tv.Id == source.Id);
+                            return tv?.Id == null
+                                ? null
+                                : new GenreRowItemDto(tv, language);
+                        }
+                        case "movie":
+                        {
+                            Movie? movie = movieData.FirstOrDefault(movie => movie.Id == source.Id);
+                            return movie?.Id == null
+                                ? null
+                                : new GenreRowItemDto(movie, language);
+                        }
+                        default:
+                        {
+                            return null;
+                        }
+                    }
+                })
+                .Where(genreRow => genreRow != null);
+
+        return Ok(new  Render
+        {
+            Data = [
+
+                new ComponentDto<GenreRowItemDto>
+                {
+                    Component = "NMHomeCard",
+                    Update =
+                    {
+                        When = "pageLoad",
+                        Link = new Uri("/home/card", UriKind.Relative),
+                    },
+                    Props =
+                    {
+                        Data = genres.Where(g =>  g.Title != "")
+                            .Randomize().FirstOrDefault()
+                            ?.Items.Randomize().FirstOrDefault() ?? new GenreRowItemDto(),
+                    }
+                },
+
+                new ComponentDto<ContinueWatchingItemDto>
+                {
+                    Component = "NMCarousel",
+                    Update =
+                    {
+                        When = "pageLoad",
+                        Link = new Uri("/home/continue", UriKind.Relative),
+                    },
+                    Props =
+                    {
+                        Title = "Continue watching".Localize(),
+                        MoreLink = null,
+                        Items = continueWatching
+                            .Select(item => new ComponentDto<ContinueWatchingItemDto>
+                            {
+                                Component = "NMCard",
+                                Props =
+                                {
+                                    Data = new ContinueWatchingItemDto(item, country),
+                                    Watch = true,
+                                    ContextMenuItems =
+                                    [
+                                        new Dictionary<string, object>
+                                        {
+                                            {"label", "Remove from watchlist".Localize()},
+                                            {"icon", "mooooom-trash"},
+                                            {"method", "DELETE"},
+                                            {"confirm", "Are you sure you want to remove this from continue watching?".Localize()},
+                                            {"args", new Dictionary<string, object>
+                                            {
+                                                {"url", new Uri($"/userdata/continue", UriKind.Relative)},
+                                            }}
+                                        }
+                                    ]
+                                }
+                            })
+                    }
+                },
+
+                ..genres.Select(genre => new ComponentDto<GenreRowItemDto>
+                {
+                    Component = "NMCarousel",
+                    Props =
+                    {
+                        Title = genre.Title,
+                        MoreLink = genre.MoreLink,
+                        Items = genre.Items.Select(item => new ComponentDto<GenreRowItemDto>
+                        {
+                            Component = "NMCard",
+                            Props =
+                            {
+                                Data = item ?? new GenreRowItemDto(),
+                                Watch = true,
+                            }
+                        })
+                    }
+                }),
+
+                new ComponentDto<Dictionary<string, object>>
+                {
+                    Component = "NMServerComponent",
+                    Props =
+                    {
+                        Url = new Uri("MyDynamicComponent.js", UriKind.Relative),
+                    }
+                },
+
             ]
         });
     }

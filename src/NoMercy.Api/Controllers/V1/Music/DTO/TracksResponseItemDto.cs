@@ -37,7 +37,7 @@ public record TracksResponseItemDto
         LibraryId = track.AlbumTrack.First().Album.LibraryId;
         Name = track.Name;
         Type = "favorites";
-        Link = new Uri($"/music/tracks/{track.Id}", UriKind.Relative);
+        Link = new Uri($"/music/track/{track.Id}", UriKind.Relative);
 
         Artists = track.ArtistTrack
             .Select(trackArtist => new ArtistDto(trackArtist, country))

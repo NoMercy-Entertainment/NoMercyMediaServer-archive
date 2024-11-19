@@ -10,6 +10,7 @@ using NoMercy.Api.Controllers.V1.Music;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Encoder;
+using NoMercy.Encoder.Core;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 
@@ -174,6 +175,19 @@ public class TasksController : BaseController
                 InputFile = j.InputFile,
                 Profile = folders.FirstOrDefault(f => f.Id == j.FolderId)?.EncoderProfileFolder.FirstOrDefault()?.EncoderProfile.Name
             }).ToArray();
+
+        var runningJobs = encoderJobs.Where(j => j.Status == "running");
+
+        foreach (EncodeVideoJob job in runningJobs)
+        {
+            Networking.Networking.SendToAll("encoder-progress", "dashboardHub",  new Progress
+            {
+                Id = job.Id,
+                Status = "running",
+                Title = GetTitle(folders, job),
+                Message = "Encoding video",
+            });
+        }
 
         return Ok(new DataResponseDto<QueueJobDto[]>
         {
