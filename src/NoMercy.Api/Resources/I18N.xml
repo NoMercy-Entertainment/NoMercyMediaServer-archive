@@ -68,4 +68,20 @@
     <Key>Playback recorded</Key>
     <Value lang="nl">Playback recorded</Value>
   </Entry>
+  <Entry>
+    <Key>Genre not found</Key>
+    <Value lang="nl">Genre not found</Value>
+  </Entry>
+  <Entry>
+    <Key>An error occurred while saving the entity changes. See the inner exception for details.</Key>
+    <Value lang="nl">An error occurred while saving the entity changes. See the inner exception for details.</Value>
+  </Entry>
+  <Entry>
+    <Key>Album not found</Key>
+    <Value lang="nl">Album not found</Value>
+  </Entry>
+  <Entry>
+    <Key>Artist not found</Key>
+    <Value lang="nl">Artist not found</Value>
+  </Entry>
 </I18N>
