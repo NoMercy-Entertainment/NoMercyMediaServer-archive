@@ -22,7 +22,7 @@ public record TopMusicDto
         Name = musicPlay.Playlist.Name;
         ColorPalette = musicPlay.Playlist.ColorPalette;
         Type = "playlists";
-        Link = new Uri($"/playlist/{Id}", UriKind.Relative);
+        Link = new Uri($"/music/playlist/{Id}", UriKind.Relative);
         Cover = musicPlay.Playlist.Cover;
     }
 
@@ -32,7 +32,7 @@ public record TopMusicDto
         Name = albumTrack.Album.Name;
         ColorPalette = albumTrack.Album.ColorPalette;
         Type = "albums";
-        Link = new Uri($"/album/{Id}", UriKind.Relative);
+        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
         Cover = albumTrack.Album.Cover;
     }
 
@@ -42,7 +42,7 @@ public record TopMusicDto
         Name = artistTrack.Artist.Name;
         ColorPalette = artistTrack.Artist.ColorPalette;
         Type = "artists";
-        Link = new Uri($"/artist/{Id}", UriKind.Relative);
+        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
         Cover = artistTrack.Artist.Cover;
     }
 }
