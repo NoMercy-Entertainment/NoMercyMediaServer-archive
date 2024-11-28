@@ -197,7 +197,7 @@ public class SpecialController(ISpecialRepository specialRepository) : BaseContr
         else
         {
             SpecialUser? collectionUser = await mediaContext.SpecialUser
-                .Where(collectionUser => collectionUser.SpecialId == collection.Id && collectionUser.UserId == userId)
+                .Where(collectionUser => collectionUser.SpecialId == collection.Id && collectionUser.UserId.Equals(userId))
                 .FirstOrDefaultAsync();
 
             if (collectionUser is not null) mediaContext.SpecialUser.Remove(collectionUser);

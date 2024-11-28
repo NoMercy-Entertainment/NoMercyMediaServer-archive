@@ -10,7 +10,7 @@ public static class Queries
     public static readonly Func<MediaContext, Guid, string, Task<Tv?>> GetRandomTvShow =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string language) =>
             mediaContext.Tvs.AsNoTracking()
-                .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId == userId))
+                .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
                 .Include(tv => tv.Translations
                     .Where(translation => translation.Iso6391 == language))
                 .Include(tv => tv.Images.Where(image => image.Type == "logo" && image.Iso6391 == "en"))
@@ -28,7 +28,7 @@ public static class Queries
     public static readonly Func<MediaContext, Guid, string, Task<Movie?>> GetRandomMovie =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, string language) =>
             mediaContext.Movies.AsNoTracking()
-                .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId == userId))
+                .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
                 .Include(tv => tv.Translations
                     .Where(translation => translation.Iso6391 == language))
                 .Include(movie => movie.Media
@@ -83,7 +83,8 @@ public static class Queries
     public static readonly Func<MediaContext, Guid, string, string, HashSet<UserData>> GetContinueWatching =
     (mediaContext, userId, _, country) =>
         mediaContext.UserData.AsNoTracking()
-            .Where(user => user.UserId == userId)
+            .Where(user => user.UserId.Equals(userId))
+            .Where(user => user.MovieId != null || user.TvId != null || user.CollectionId != null || user.SpecialId != null)
             .Include(userData => userData.Movie)
             .ThenInclude(movie => movie!.Media.Where(media => media.Site == "Youtube"))
             .Include(userData => userData.Movie)
@@ -127,8 +128,8 @@ public static class Queries
     public static readonly Func<MediaContext, Guid, HashSet<Image>> GetScreensaverImages =
         (mediaContext, userId) =>
             mediaContext.Images.AsNoTracking()
-                .Where(image => image.Movie.Library.LibraryUsers.Any(u => u.UserId == userId) ||
-                                image.Tv.Library.LibraryUsers.Any(u => u.UserId == userId))
+                .Where(image => image.Movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)) ||
+                                image.Tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
                 .Where(image => image.Height > 1080)
                 .Where(image => image.Width > image.Height)
                 .Where(image => image._colorPalette != "")
@@ -143,8 +144,8 @@ public static class Queries
         IOrderedQueryable<Genre> query = mediaContext.Genres.AsNoTracking()
             .OrderBy(genre => genre.Name)
             .Include(tv => tv.Translations.Where(translation => translation.Iso6391 == language))
-            .Where(genre => genre.GenreMovies.Any(g => g.Movie.Library.LibraryUsers.FirstOrDefault(u => u.UserId == userId) != null) ||
-                            genre.GenreTvShows.Any(g => g.Tv.Library.LibraryUsers.FirstOrDefault(u => u.UserId == userId) != null))
+            .Where(genre => genre.GenreMovies.Any(g => g.Movie.Library.LibraryUsers.FirstOrDefault(u => u.UserId.Equals(userId)) != null) ||
+                            genre.GenreTvShows.Any(g => g.Tv.Library.LibraryUsers.FirstOrDefault(u => u.UserId.Equals(userId)) != null))
             .Include(genre => genre.GenreMovies.Where(genreTv => genreTv.Movie.VideoFiles.Any(videoFile => videoFile.Folder != null) == true))
             .Include(genre => genre.GenreTvShows.Where(genreTv => genreTv.Tv.Episodes.Any(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null)) == true))
             .OrderBy(genre => genre.Name);

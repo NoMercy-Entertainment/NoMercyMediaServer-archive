@@ -102,7 +102,7 @@ public class ArtistsController : BaseController
         else
         {
             ArtistUser? tvUser = await mediaContext.ArtistUser
-                .Where(tvUser => tvUser.ArtistId == artist.Id && tvUser.UserId == userId)
+                .Where(tvUser => tvUser.ArtistId == artist.Id && tvUser.UserId.Equals(userId))
                 .FirstOrDefaultAsync();
 
             if (tvUser is not null) mediaContext.ArtistUser.Remove(tvUser);

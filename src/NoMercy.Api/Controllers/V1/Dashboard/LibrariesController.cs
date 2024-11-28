@@ -109,7 +109,7 @@ public class LibrariesController : BaseController
             library.SpecialSeasonName = request.SpecialSeasonName;
             library.Type = request.Type;
             library.LanguageLibraries.Clear();
-            
+
             List<Language> languages = await _languageRepository.GetLanguagesAsync();
             foreach (string subtitle in request.Subtitles)
             {
@@ -220,7 +220,7 @@ public class LibrariesController : BaseController
         {
             return Ok(new StatusResponseDto<string>
             {
-                Status = "error", Message = "Something went wrong deleting the library: {0}", Args = [e.Message]
+                Status = "error", Message = "Something went wrong deleting the library: {0}", Args = [e.InnerException?.Message ?? e.Message]
             });
         }
     }
@@ -259,7 +259,7 @@ public class LibrariesController : BaseController
                 statusCode: StatusCodes.Status403Forbidden, type: "/docs/errors/internal-server-error");
         }
     }
-    
+
     [HttpPost]
     [Route("rescan")]
     public async Task<IActionResult> Rescan()
@@ -277,7 +277,7 @@ public class LibrariesController : BaseController
 
         await using MediaContext mediaContext = new();
         JobDispatcher jobDispatcher = new();
-        
+
         foreach (Library library in librariesList)
         {
             foreach (var movie in library.LibraryMovies)
@@ -286,7 +286,7 @@ public class LibrariesController : BaseController
                 FileManager fileManager = new(fileRepository, jobDispatcher);
                 await fileManager.FindFiles(movie.MovieId, library);
             }
-            
+
             foreach (var show in library.LibraryTvs)
             {
                 FileRepository fileRepository = new(mediaContext);
@@ -301,7 +301,7 @@ public class LibrariesController : BaseController
         });
 
     }
-    
+
     [HttpPost]
     [Route("{id:ulid}/rescan")]
     public async Task<IActionResult> Rescan(Ulid id)
@@ -312,17 +312,17 @@ public class LibrariesController : BaseController
         Library? library = await _libraryRepository.GetLibraryByIdAsync(id);
         if (library is null)
             return NotFound(new StatusResponseDto<string> { Status = "error", Data = "Library not found" });
-        
+
         await using MediaContext mediaContext = new();
         JobDispatcher jobDispatcher = new();
-        
+
         foreach (var movie in library.LibraryMovies)
         {
             FileRepository fileRepository = new(mediaContext);
             FileManager fileManager = new(fileRepository, jobDispatcher);
             await fileManager.FindFiles(movie.MovieId, library);
         }
-        
+
         foreach (var show in library.LibraryTvs)
         {
             FileRepository fileRepository = new(mediaContext);
@@ -379,7 +379,7 @@ public class LibrariesController : BaseController
             Status = "ok", Message = "Rescanning {0} library.", Args = [id]
         });
     }
-    
+
     [HttpPost]
     [Route("{id:ulid}/folders")]
     public async Task<IActionResult> AddFolder(Ulid id, [FromBody] FolderRequest request)

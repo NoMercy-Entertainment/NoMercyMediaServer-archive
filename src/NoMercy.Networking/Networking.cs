@@ -169,7 +169,7 @@ public class Networking
     private static bool SendTo(string name, string endpoint, Guid userId, object? data = null)
     {
         foreach ((string _, Client client) in SocketClients.Where(client =>
-                     client.Value.Sub == userId && client.Value.Endpoint == "/" + endpoint))
+                     client.Value.Sub.Equals(userId) && client.Value.Endpoint == "/" + endpoint))
             try
             {
                 if (data != null)
@@ -190,7 +190,7 @@ public class Networking
         Guid userId = Guid.Parse(context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
         foreach ((string _, Client client) in SocketClients.Where(client =>
-                     client.Value.Sub == userId && client.Value.Endpoint == "/" + endpoint))
+                     client.Value.Sub.Equals(userId) && client.Value.Endpoint == "/" + endpoint))
             try
             {
                 if (data != null)

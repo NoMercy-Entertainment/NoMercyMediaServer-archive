@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Providers.MusicBrainz.Models;
 
 namespace NoMercy.MediaProcessing.MusicGenres;
 
@@ -30,9 +31,9 @@ public class MusicGenreRepository(MediaContext context) : IMusicGenreRepository
             .RunAsync();
     }
 
-    public Task LinkToArtist(ArtistMusicGenre genreArtist)
+    public Task LinkToArtist(IEnumerable<ArtistMusicGenre> genreArtists)
     {
-        return context.ArtistMusicGenre.Upsert(genreArtist)
+        return context.ArtistMusicGenre.UpsertRange(genreArtists)
             .On(e => new { e.MusicGenreId, e.ArtistId })
             .WhenMatched((s, i) => new ArtistMusicGenre
             {
@@ -42,9 +43,9 @@ public class MusicGenreRepository(MediaContext context) : IMusicGenreRepository
             .RunAsync();
     }
 
-    public Task LinkToRelease(AlbumMusicGenre genreRelease)
+    public Task LinkToRelease(IEnumerable<AlbumMusicGenre> genreReleases)
     {
-        return context.AlbumMusicGenre.Upsert(genreRelease)
+        return context.AlbumMusicGenre.UpsertRange(genreReleases)
             .On(e => new { e.MusicGenreId, e.AlbumId })
             .WhenMatched((s, i) => new AlbumMusicGenre
             {
@@ -54,9 +55,9 @@ public class MusicGenreRepository(MediaContext context) : IMusicGenreRepository
             .RunAsync();
     }
 
-    public Task LinkToRecording(MusicGenreTrack genreRecording)
+    public Task LinkToRecording(IEnumerable<MusicGenreTrack> genreRecordings)
     {
-        return context.MusicGenreTrack.Upsert(genreRecording)
+        return context.MusicGenreTrack.UpsertRange(genreRecordings)
             .On(e => new { e.GenreId, e.TrackId })
             .WhenMatched((s, i) => new MusicGenreTrack
             {

@@ -2,6 +2,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
+using NoMercy.MediaProcessing.MusicGenres;
 using NoMercy.NmSystem;
 using NoMercy.Providers.MusicBrainz.Models;
 using Serilog.Events;
@@ -10,6 +11,7 @@ namespace NoMercy.MediaProcessing.Artists;
 
 public class ArtistManager(
     IArtistRepository artistRepository,
+    IMusicGenreRepository musicGenreRepository,
     JobDispatcher jobDispatcher
 ) : BaseManager, IArtistManager
 {
@@ -42,6 +44,14 @@ public class ArtistManager(
         
         await LinkToLibrary(artistCredit.MusicBrainzArtist, library);
         await LinkToRelease(artistCredit.MusicBrainzArtist, releaseAppends);
+
+        List<ArtistMusicGenre> genres = artistCredit.MusicBrainzArtist.Genres?.Select(genre => new ArtistMusicGenre()
+        {
+            ArtistId = artistCredit.MusicBrainzArtist.Id,
+            MusicGenreId = genre.Id,
+        }).ToList() ?? [];
+
+        await musicGenreRepository.LinkToArtist(genres);
         
         jobDispatcher.DispatchJob<ProcessFanartArtistImagesJob>(artistCredit.MusicBrainzArtist.Id);
     }

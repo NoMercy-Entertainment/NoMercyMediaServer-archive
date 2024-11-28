@@ -12,7 +12,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
         IOrderedQueryable<Collection> query = context.Collections
             .AsNoTracking()
             // .Where(collection => collection.Library.LibraryUsers
-            //     .Any(u => u.UserId == userId)
+            //     .Any(u => u.UserId.Equals(userId))
             // )
             .Where(collection => collection.CollectionMovies
                 .Any(collectionMovie => collectionMovie.Movie.VideoFiles.Count != 0)
@@ -46,9 +46,9 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
             .AsNoTracking()
             .Where(collection => collection.Id == id)
             .Where(collection => collection.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Include(collection => collection.CollectionUser
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId.Equals(userId))
             )
             .Include(collection => collection.Library)
             .ThenInclude(library => library.LibraryUsers)
@@ -62,7 +62,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
             .Include(collection => collection.CollectionMovies)
             .ThenInclude(movie => movie.Movie)
             .ThenInclude(movie => movie.MovieUser
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId.Equals(userId))
             )
             .Include(collection => collection.CollectionMovies)
             .ThenInclude(movie => movie.Movie)
@@ -121,12 +121,12 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
         var x = context.Collections
             .AsNoTracking()
             .Where(collection => collection.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Where(collection => collection.CollectionMovies
                 .Any(collectionMovie => collectionMovie.Movie.VideoFiles.Count != 0)
             )
             .Include(collection => collection.CollectionUser
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId.Equals(userId))
             )
             .Include(collection => collection.Library)
             .ThenInclude(library => library.LibraryUsers)
@@ -140,7 +140,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
             .Include(collection => collection.CollectionMovies)
             .ThenInclude(movie => movie.Movie)
             .ThenInclude(movie => movie.MovieUser
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId.Equals(userId))
             )
             .Include(collection => collection.CollectionMovies)
             .ThenInclude(movie => movie.Movie)
@@ -213,7 +213,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
             .AsNoTracking()
             .Where(collection => collection.Id == id)
             .Where(collection => collection.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Include(movie => movie.CollectionMovies)
             .Where(collectionMovie => collectionMovie.CollectionMovies
                 .Any(movie => movie.Movie.VideoFiles.Any()))
@@ -221,7 +221,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
             .ThenInclude(collectionMovie => collectionMovie.Movie)
             .ThenInclude(movie => movie.VideoFiles)
             .ThenInclude(file => file.UserData
-                .Where(movieUser => movieUser.UserId == userId))
+                .Where(movieUser => movieUser.UserId.Equals(userId)))
             .FirstOrDefaultAsync();
     }
 
@@ -235,7 +235,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
             .ThenInclude(collectionMovie => collectionMovie.Movie)
             .ThenInclude(movie => movie.Library.LibraryUsers)
             .Where(collection => collection.Library.LibraryUsers
-                .FirstOrDefault(libraryUser => libraryUser.UserId == userId) != null)
+                .FirstOrDefault(libraryUser => libraryUser.UserId.Equals(userId)) != null)
             .Include(collection => collection.CollectionMovies)
             .ThenInclude(collectionMovie => collectionMovie.Movie)
             .ThenInclude(movie => movie.Media
@@ -257,7 +257,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
             .ThenInclude(collectionMovie => collectionMovie.Movie)
             .ThenInclude(movie => movie.VideoFiles)
             .ThenInclude(file => file.UserData
-                .Where(movieUser => movieUser.UserId == userId))
+                .Where(movieUser => movieUser.UserId.Equals(userId)))
             .FirstOrDefaultAsync();
     }
 
@@ -285,7 +285,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
         {
             CollectionUser? collectionUser = await context.CollectionUser
                 .Where(collectionUser =>
-                    collectionUser.CollectionId == collection.Id && collectionUser.UserId == userId)
+                    collectionUser.CollectionId == collection.Id && collectionUser.UserId.Equals(userId))
                 .FirstOrDefaultAsync();
 
             if (collectionUser is not null) context.CollectionUser.Remove(collectionUser);

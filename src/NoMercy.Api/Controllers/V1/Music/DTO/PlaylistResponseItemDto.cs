@@ -5,7 +5,7 @@ using NoMercy.Database.Models;
 namespace NoMercy.Api.Controllers.V1.Music.DTO;
 public record PlaylistResponseItemDto
 {
-    [JsonProperty("id")] public Ulid Id { get; set; }
+    [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("description")] public string? Description { get; set; }
     [JsonProperty("cover")] public string? Cover { get; set; }

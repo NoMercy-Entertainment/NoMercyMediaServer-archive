@@ -11,7 +11,7 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
     {
         return context.Libraries
             .Where(library => library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null
             )
             .Include(library => library.FolderLibraries)
                 .ThenInclude(folderLibrary => folderLibrary.Folder)
@@ -27,7 +27,7 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
             .AsNoTracking()
             .Where(library => library.Id == libraryId)
             .Where(library => library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null
             )
             .Include(library => library.LibraryMovies
                 .Where(libraryMovie => libraryMovie.Movie.VideoFiles
@@ -85,7 +85,7 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
         var x =  context.Movies
             .AsNoTracking()
             .Where(movie => movie.Library.Id == libraryId)
-            .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId == userId))
+            .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
             .Where(libraryMovie => libraryMovie.VideoFiles
                 .Any(videoFile => videoFile.Folder != null) == true
             )
@@ -101,6 +101,8 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
             .Include(movie => movie.Translations
                 .Where(translation => translation.Iso6391 == language || translation.Iso6391 == "en")
             )
+            .Include(movie => movie.KeywordMovies)
+            .ThenInclude(keywordMovie => keywordMovie.Keyword)
             .Include(movie => movie.CertificationMovies)
             .ThenInclude(certificationMovie => certificationMovie.Certification);
 
@@ -127,7 +129,7 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
         var x = context.Tvs
             .AsNoTracking()
             .Where(tv => tv.Library.Id == libraryId)
-            .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId == userId))
+            .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
             .Where(libraryTv => libraryTv.Episodes
                 .Any(episode => episode.VideoFiles
                     .Any(videoFile => videoFile.Folder != null) == true
@@ -147,6 +149,8 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
             .Include(tv => tv.Translations
                 .Where(translation => translation.Iso6391 == language || translation.Iso6391 == "en")
             )
+            .Include(tv => tv.KeywordTvs)
+            .ThenInclude(keywordTv => keywordTv.Keyword)
             .Include(tv => tv.CertificationTvs)
             .ThenInclude(certificationTv => certificationTv.Certification);
 
@@ -191,7 +195,7 @@ public class LibraryRepository(MediaContext context) : ILibraryRepository
             .Include(library => library.LanguageLibraries)
             .ThenInclude(languageLibrary => languageLibrary.Language)
             .Where(library => library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .OrderBy(library => library.Order);
     }
 

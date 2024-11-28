@@ -36,6 +36,8 @@ public record KnownFor
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("episode_count")] public int? EpisodeCount { get; set; }
+    
+    [JsonProperty("link")] public Uri Link { get; set; }
 
     public KnownFor(Cast cast)
     {
@@ -53,6 +55,7 @@ public record KnownFor
         ReleaseDate = cast.Movie?.ReleaseDate ?? cast.Tv?.FirstAirDate;
         VoteAverage = cast.Movie?.VoteAverage ?? cast.Tv?.VoteAverage ?? 0;
         VoteCount = cast.Movie?.VoteCount ?? cast.Tv?.VoteCount ?? 0;
+        Link = new Uri($"/{MediaType}/{Id}", UriKind.Relative);
         HasItem = cast.Movie?.VideoFiles.Count != 0 || (cast.Tv?.Episodes.Any(e => e.VideoFiles.Count != 0) ?? false);
         NumberOfItems = cast.Movie?.VideoFiles.Count + cast.Tv?.Episodes.Count(e => e.VideoFiles.Count != 0);
         HaveItems = cast.Movie?.VideoFiles.Count != 0 ? 1 : cast.Tv?.Episodes.Count(e => e.VideoFiles.Count != 0) ?? 0;
@@ -74,6 +77,7 @@ public record KnownFor
         VoteAverage = crew.Movie?.VoteAverage ?? crew.Tv!.VoteAverage ?? 0;
         VoteCount = crew.Movie?.VoteCount ?? crew.Tv!.VoteCount ?? 0;
         Job = crew.Job.Task ?? string.Empty;
+        Link = new Uri($"/{MediaType}/{Id}", UriKind.Relative);
         HasItem = crew.Movie?.VideoFiles.Count != 0 || (crew.Tv?.Episodes.Any(e => e.VideoFiles.Count != 0) ?? false);
         NumberOfItems = crew.Movie?.VideoFiles.Count + crew.Tv?.Episodes.Count(e => e.VideoFiles.Count > 0);
         HaveItems = crew.Movie?.VideoFiles.Count != 0 ? 1 : crew.Tv?.Episodes.Count(e => e.VideoFiles.Count > 0) ?? 0;
@@ -105,6 +109,7 @@ public record KnownFor
         VoteCount = crew.VoteCount;
         Job = crew.Job;
         EpisodeCount = crew.EpisodeCount;
+        Link = new Uri($"/{crew.MediaType}/{Id}", UriKind.Relative);
 
         NumberOfItems = person?.Casts
             .Where(c => c.MovieId == crew.Id || c.TvId == crew.Id || c.SeasonId == crew.Id || c.EpisodeId == crew.Id)
@@ -145,6 +150,7 @@ public record KnownFor
         VoteCount = crew.VoteCount;
         Job = crew.Job;
         EpisodeCount = crew.EpisodeCount;
+        Link = new Uri($"/{crew.MediaType}/{Id}", UriKind.Relative);
 
         HasItem = person?.Crews.Any(c =>
             (c.MovieId == crew.Id || c.TvId == crew.Id || c.SeasonId == crew.Id || c.EpisodeId == crew.Id) &&

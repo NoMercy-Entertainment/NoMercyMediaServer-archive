@@ -66,7 +66,7 @@ public class TracksController : BaseController
             .Include(track => track.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Album)
             .Include(track => track.TrackUser
-                .Where(trackUser => trackUser.UserId == userId))
+                .Where(trackUser => trackUser.UserId.Equals(userId)))
             .FirstOrDefaultAsync();
 
         if (track is null)
@@ -90,7 +90,7 @@ public class TracksController : BaseController
         else
         {
             TrackUser? tvUser = await mediaContext.TrackUser
-                .Where(tvUser => tvUser.TrackId == track.Id && tvUser.UserId == userId)
+                .Where(tvUser => tvUser.TrackId == track.Id && tvUser.UserId.Equals(userId))
                 .FirstOrDefaultAsync();
 
             if (tvUser is not null) mediaContext.TrackUser.Remove(tvUser);
@@ -169,6 +169,31 @@ public class TracksController : BaseController
                 subtitles = lyrics?.Message?.Body?.MacroCalls?.TrackLyricsGet?.Message?.Body?.Lyrics?.LyricsBody;
                 if (subtitles is not null)
                     subtitles = Regex.Replace(input: subtitles, pattern: "^\"|\"$", replacement: "");
+            }
+
+            if (subtitles is null)
+            {
+                parameters = new()
+                {
+                    // Album = track.AlbumTrack.FirstOrDefault()?.Album.Name ?? "",
+                    Artist = track.ArtistTrack.FirstOrDefault()?.Artist.Name ?? "",
+                    // Artists = track.ArtistTrack.Select(artistTrack => artistTrack.Artist.Name).ToArray(),
+                    Title = track.Name,
+                    Duration = track.Duration?.ToSeconds().ToString(),
+                    Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc
+                };
+
+                 lyrics = await client.SongSearch(parameters);
+
+                subtitles = lyrics?.Message?.Body?.MacroCalls?
+                    .TrackSubtitlesGet?.Message?.Body?.SubtitleList.FirstOrDefault()?.Subtitle?.SubtitleBody;
+
+                if (subtitles is null)
+                {
+                    subtitles = lyrics?.Message?.Body?.MacroCalls?.TrackLyricsGet?.Message?.Body?.Lyrics?.LyricsBody;
+                    if (subtitles is not null)
+                        subtitles = Regex.Replace(input: subtitles, pattern: "^\"|\"$", replacement: "");
+                }
             }
 
             if (subtitles is null)

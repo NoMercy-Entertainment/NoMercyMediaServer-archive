@@ -12,7 +12,7 @@ public class MusicBrainzRelease
 
     [JsonProperty("disambiguation")] public string? Disambiguation { get; set; }
 
-    // [JsonProperty("genres")] public object[] Genres { get; set; }
+    [JsonProperty("genres")] public MusicBrainzGenreDetails[] Genres { get; set; }
     [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("media")] public MusicBrainzMedia[] Media { get; set; }
     [JsonProperty("packaging")] public string Packaging { get; set; }

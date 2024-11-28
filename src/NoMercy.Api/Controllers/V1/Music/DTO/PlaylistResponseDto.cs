@@ -12,15 +12,15 @@ public record PlaylistResponseDto
     public static readonly Func<MediaContext, Guid, IAsyncEnumerable<Playlist>> GetPlaylists =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId) => mediaContext.Playlists
             .AsNoTracking()
-            .Where(u => u.UserId == userId)
+            .Where(u => u.UserId.Equals(userId))
             .Include(playlist => playlist.Tracks)
         );
 
-    public static readonly Func<MediaContext, Guid, Ulid, Task<Playlist?>> GetPlaylist =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, Ulid id) => mediaContext.Playlists
+    public static readonly Func<MediaContext, Guid, Guid, Task<Playlist?>> GetPlaylist =
+        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, Guid id) => mediaContext.Playlists
             .AsNoTracking()
             .Where(u => u.Id == id)
-            .Where(u => u.UserId == userId)
+            .Where(u => u.UserId.Equals(userId))
             .Include(playlist => playlist.Tracks)
             .ThenInclude(trackUser => trackUser.Track)
             .ThenInclude(track => track.AlbumTrack)
