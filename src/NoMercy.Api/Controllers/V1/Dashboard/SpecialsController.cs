@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -7,6 +8,7 @@ using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Logic;
+using NoMercy.Data.Logic.Seeds;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -341,6 +343,28 @@ public class SpecialsController : BaseController
         });
     }
 
+    [HttpPost]
+    [Route("addmarvel")]
+    public async Task<IActionResult> AddMarvel()
+    {
+        if (!User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to rescan all specials");
+
+        Thread thread = new(() =>
+        {
+            using MediaContext mediaContext = new();
+            SpecialSeed.AddSpecial(mediaContext).Wait();
+        });
+        thread.Start();
+
+        return Ok(new StatusResponseDto<string>()
+        {
+            Status = "ok",
+            Message = "Rescanning all specials."
+        });
+    }
+
+    [NotMapped]
     public class SpecialUpdateRequest
     {
         [JsonProperty("id")] public Ulid Id { get; set; }

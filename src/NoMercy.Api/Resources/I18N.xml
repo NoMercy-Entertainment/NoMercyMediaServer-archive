@@ -84,4 +84,84 @@
     <Key>Artist not found</Key>
     <Value lang="nl">Artist not found</Value>
   </Entry>
+  <Entry>
+    <Key>Tracks not found</Key>
+    <Value lang="nl">Tracks not found</Value>
+  </Entry>
+  <Entry>
+    <Key>Playlist not found</Key>
+    <Value lang="nl">Playlist not found</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to access the dashboard</Key>
+    <Value lang="nl">You do not have permission to access the dashboard</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view configuration</Key>
+    <Value lang="nl">You do not have permission to view configuration</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view task workers</Key>
+    <Value lang="nl">You do not have permission to view task workers</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view server information</Key>
+    <Value lang="nl">You do not have permission to view server information</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view server paths</Key>
+    <Value lang="nl">You do not have permission to view server paths</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view activity</Key>
+    <Value lang="nl">You do not have permission to view activity</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view devices</Key>
+    <Value lang="nl">You do not have permission to view devices</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view encoder profiles</Key>
+    <Value lang="nl">You do not have permission to view encoder profiles</Value>
+  </Entry>
+  <Entry>
+    <Key>Successfully created a new library.</Key>
+    <Value lang="nl">Successfully created a new library.</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view encoder queue</Key>
+    <Value lang="nl">You do not have permission to view encoder queue</Value>
+  </Entry>
+  <Entry>
+    <Key>Something went wrong deleting the library: {0}</Key>
+    <Value lang="nl">Something went wrong deleting the library: {0}</Value>
+  </Entry>
+  <Entry>
+    <Key>Successfully deleted {0} library.</Key>
+    <Value lang="nl">Successfully deleted {0} library.</Value>
+  </Entry>
+  <Entry>
+    <Key>No results found</Key>
+    <Value lang="nl">No results found</Value>
+  </Entry>
+  <Entry>
+    <Key>User already exists</Key>
+    <Value lang="nl">User already exists</Value>
+  </Entry>
+  <Entry>
+    <Key>User updated</Key>
+    <Value lang="nl">User updated</Value>
+  </Entry>
+  <Entry>
+    <Key>Rescanning all specials.</Key>
+    <Value lang="nl">Rescanning all specials.</Value>
+  </Entry>
+  <Entry>
+    <Key>Rescanning {0} for files</Key>
+    <Value lang="nl">Rescanning {0} for files</Value>
+  </Entry>
+  <Entry>
+    <Key>Item removed</Key>
+    <Value lang="nl">Item removed</Value>
+  </Entry>
 </I18N>

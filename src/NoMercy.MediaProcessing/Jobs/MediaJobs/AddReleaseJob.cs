@@ -7,6 +7,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Artists;
 using NoMercy.MediaProcessing.Images;
+using NoMercy.MediaProcessing.MusicGenres;
 using NoMercy.MediaProcessing.Recordings;
 using NoMercy.MediaProcessing.ReleaseGroups;
 using NoMercy.MediaProcessing.Releases;
@@ -38,7 +39,8 @@ public class AddReleaseJob : AbstractReleaseJob
         ReleaseManager releaseManager = new(releaseRepository, jobDispatcher);
 
         ArtistRepository artistRepository = new(context);
-        ArtistManager artistManager = new(artistRepository, jobDispatcher);
+        MusicGenreRepository musicGenreRepository = new(context);
+        ArtistManager artistManager = new(artistRepository, musicGenreRepository, jobDispatcher);
         
         RecordingRepository recordingRepository = new(context);
         RecordingManager recordingManager = new(recordingRepository, jobDispatcher);

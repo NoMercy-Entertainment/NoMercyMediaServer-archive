@@ -68,7 +68,7 @@ public record ArtistResponseItemDto
 
         Playlists = artist.AlbumArtist
             .DistinctBy(albumArtist => albumArtist.AlbumId)
-            .Where(album => album.Album.AlbumUser.Any(user => user.UserId == userId))
+            .Where(album => album.Album.AlbumUser.Any(user => user.UserId.Equals(userId)))
             .Select(trackAlbum => new AlbumDto(trackAlbum, country!))
             .OrderBy(album => album.Year);
 
@@ -84,7 +84,7 @@ public record ArtistResponseItemDto
         MediaContext context = new();
         List<ArtistTrackDto> favorites = context.MusicPlays
             .AsNoTracking()
-            .Where(musicPlay => musicPlay.UserId == userId)
+            .Where(musicPlay => musicPlay.UserId.Equals(userId))
             .Where(musicPlay => musicPlay.Track.ArtistTrack
                 .Any(artistTrack => artistTrack.ArtistId == artist.Id))
 

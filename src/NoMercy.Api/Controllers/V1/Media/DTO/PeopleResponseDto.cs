@@ -22,9 +22,9 @@ public record PeopleResponseDto
             .Where(person =>
                 person.Casts
                     .Any(cast => cast.Tv != null && cast.Tv.Library.LibraryUsers
-                        .FirstOrDefault(u => u.UserId == userId) != null) ||
+                        .FirstOrDefault(u => u.UserId.Equals(userId)) != null) ||
                 person.Casts.Any(cast => cast.Movie != null && cast.Movie.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null)
+                    .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             )
             .Include(person => person.Translations
                 .Where(translation => translation.Iso6391 == language));

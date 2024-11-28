@@ -23,7 +23,7 @@ public class VideoHub : ConnectionHub
     {
         Guid userId = Guid.Parse(Context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
-        User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
+        User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id.Equals(userId));
 
         if (user is null) return;
 
@@ -62,7 +62,7 @@ public class VideoHub : ConnectionHub
     {
         Guid userId = Guid.Parse(Context.User?.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
 
-        User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
+        User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id.Equals(userId));
 
         if (user is null) return;
 

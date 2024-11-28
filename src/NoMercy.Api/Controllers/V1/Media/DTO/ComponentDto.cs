@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations.Schema;
 using NoMercy.Api.Controllers.V1.DTO;
+using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
@@ -51,13 +52,14 @@ public record RenderProps<T>
 
     [JsonProperty("title")] public string Title { get; set; }
 
-    [JsonProperty("more_link")] public string? MoreLink { get; set; }
-    [JsonProperty("more_link_text")] public string? MoreText => !string.IsNullOrEmpty(MoreLink) ? "See all".Localize() : null;
-    [JsonProperty("items")] public IEnumerable<ComponentDto<T>> Items { get; set; } = [];
-    [JsonProperty("data")] public T Data { get; set; } = default!;
+    [JsonProperty("more_link")] public Uri? MoreLink { get; set; }
+    [JsonProperty("more_link_text")] public string? MoreText => MoreLink is not null ? "See all".Localize() : null;
+    [JsonProperty("items")] public IEnumerable<ComponentDto<T>>? Items { get; set; } = [];
+    [JsonProperty("data")] public T? Data { get; set; }
     [JsonProperty("watch")] public bool Watch { get; set; }
     [JsonProperty("context_menu_items")] public Dictionary<string, object>[]? ContextMenuItems { get; set; }
     [JsonProperty("url")] public Uri? Url { get; set; }
+    [JsonProperty("displayList")] public IEnumerable<ArtistTrackDto>? DisplayList { get; set; }
 }
 
 public record RenderPropsItemDto

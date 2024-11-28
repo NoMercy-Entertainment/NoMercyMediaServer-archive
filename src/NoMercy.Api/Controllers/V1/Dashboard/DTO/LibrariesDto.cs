@@ -14,7 +14,7 @@ public record LibrariesDto
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId) =>
             mediaContext.Libraries.AsNoTracking()
                 .Where(library => library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null
+                    .FirstOrDefault(u => u.UserId.Equals(userId)) != null
                 )
                 .Include(library => library.FolderLibraries)
                 .ThenInclude(folderLibrary => folderLibrary.Folder)

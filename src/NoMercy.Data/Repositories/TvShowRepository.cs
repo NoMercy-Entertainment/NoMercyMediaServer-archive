@@ -13,7 +13,7 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
         return context.Tvs.AsNoTracking()
             .Where(tv => tv.Id == id)
             .Where(tv => tv.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Include(tv => tv.TvUser)
             .Include(tv => tv.Library)
             .ThenInclude(library => library.LibraryUsers)
@@ -61,12 +61,12 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
             .ThenInclude(season => season.Episodes)
             .ThenInclude(episode => episode.VideoFiles)
             .ThenInclude(file => file.UserData.Where(
-                userData => userData.UserId == userId)
+                userData => userData.UserId.Equals(userId))
             )
             .Include(tv => tv.Episodes)
             .ThenInclude(episode => episode.VideoFiles)
             .ThenInclude(file => file.UserData.Where(
-                userData => userData.UserId == userId))
+                userData => userData.UserId.Equals(userId)))
             .Include(tv => tv.RecommendationFrom)
             .Include(tv => tv.SimilarFrom)
             .Include(tv => tv.Episodes)
@@ -88,7 +88,7 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
     {
         return context.Tvs.AsNoTracking()
             .Where(tv => tv.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Where(tv => tv.Id == id)
             .Include(tv => tv.Episodes)
             .ThenInclude(tv => tv.VideoFiles)
@@ -101,7 +101,7 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
         return await context.Tvs.AsNoTracking()
             .Where(tv => tv.Id == id)
             .Where(tv => tv.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Include(tv => tv.Seasons.OrderBy(season => season.SeasonNumber))
             .ThenInclude(season => season.Episodes.OrderBy(episode => episode.EpisodeNumber))
             .Include(tv => tv.Translations
@@ -125,7 +125,7 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
             .ThenInclude(season => season.Episodes)
             .ThenInclude(tv => tv.VideoFiles)
             .ThenInclude(file => file.UserData.Where(
-                userData => userData.UserId == userId))
+                userData => userData.UserId.Equals(userId)))
             .Include(tv => tv.Seasons)
             .ThenInclude(season => season.Translations
                 .Where(translation => translation.Iso6391 == language))
@@ -140,7 +140,7 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
     public async Task<bool> LikeTvAsync(int id, Guid userId, bool like)
     {
         TvUser? tvUser = await context.TvUser
-            .FirstOrDefaultAsync(tu => tu.TvId == id && tu.UserId == userId);
+            .FirstOrDefaultAsync(tu => tu.TvId == id && tu.UserId.Equals(userId));
 
         if (tvUser == null) return false;
 

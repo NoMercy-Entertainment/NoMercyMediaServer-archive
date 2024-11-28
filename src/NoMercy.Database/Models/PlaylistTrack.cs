@@ -9,7 +9,7 @@ namespace NoMercy.Database.Models;
 [Index(nameof(TrackId))]
 public class PlaylistTrack
 {
-    [JsonProperty("playlist_id")] public Ulid PlaylistId { get; set; }
+    [JsonProperty("playlist_id")] public Guid PlaylistId { get; set; }
     public Playlist Playlist { get; set; }
 
     [JsonProperty("track_id")] public Guid TrackId { get; set; }
@@ -19,7 +19,7 @@ public class PlaylistTrack
     {
     }
 
-    public PlaylistTrack(Ulid playlistId, Guid trackId)
+    public PlaylistTrack(Guid playlistId, Guid trackId)
     {
         PlaylistId = playlistId;
         TrackId = trackId;

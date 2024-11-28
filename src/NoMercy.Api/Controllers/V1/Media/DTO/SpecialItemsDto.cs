@@ -155,7 +155,7 @@ public record SpecialItemsDto
 
         // Watched = tv.Episodes
         //     .SelectMany(episode => episode!.VideoFiles
-        //         .Where(videoFile => videoFile.UserData.Any(userData => userData.UserId == userId)))
+        //         .Where(videoFile => videoFile.UserData.Any(userData => userData.UserId.Equals(userId)))
         //     .Count();
 
         VideoId = tv.Trailer;

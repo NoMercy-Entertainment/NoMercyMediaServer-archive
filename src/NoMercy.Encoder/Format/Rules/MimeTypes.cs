@@ -57,6 +57,7 @@ public static class MimeTypes
 
         ".vtt" => "text/vtt",
         ".srt" => "text/srt",
+        ".ass" => "text/x-ass",
         ".ttf" => "application/x-truetype-font",
         ".otf" => "font/otf",
         ".woff" => "font/woff",

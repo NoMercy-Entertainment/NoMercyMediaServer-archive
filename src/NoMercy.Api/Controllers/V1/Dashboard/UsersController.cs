@@ -46,7 +46,7 @@ public class UsersController : BaseController
         await using MediaContext mediaContext = new();
 
         Guid userId = User.UserId();
-        User? hasPermission = mediaContext.Users.FirstOrDefault(user => user.Id == userId);
+        User? hasPermission = mediaContext.Users.FirstOrDefault(user => user.Id.Equals(userId));
 
         if (hasPermission is null || hasPermission.Owner is false)
             return NotFoundResponse("You do not have permission to create a user");
@@ -152,11 +152,11 @@ public class UsersController : BaseController
 
         await using MediaContext mediaContext = new();
         User? user = await mediaContext.Users
-            .Where(user => user.Id == userId)
+            .Where(user => user.Id.Equals(userId))
             .Include(user => user.LibraryUser)
             .Include(user => user.NotificationUser)
             .ThenInclude(notificationUser => notificationUser.Notification)
-            .FirstOrDefaultAsync(user => user.Id == userId);
+            .FirstOrDefaultAsync(user => user.Id.Equals(userId));
 
         if (user == null)
             return NotFoundResponse("User not found");
@@ -251,11 +251,11 @@ public class UsersController : BaseController
 
         await using MediaContext mediaContext = new();
         User? user = await mediaContext.Users
-            .Where(user => user.Id == userId)
+            .Where(user => user.Id.Equals(userId))
             .Include(user => user.LibraryUser)
             .Include(user => user.NotificationUser)
             .ThenInclude(notificationUser => notificationUser.Notification)
-            .FirstOrDefaultAsync(user => user.Id == userId);
+            .FirstOrDefaultAsync(user => user.Id.Equals(userId));
 
         if (user == null)
             return NotFoundResponse("User not found");

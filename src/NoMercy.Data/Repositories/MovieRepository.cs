@@ -14,9 +14,9 @@ public class MovieRepository(MediaContext context) : IMovieRepository
         return context.Movies.AsNoTracking()
             .Where(movie => movie.Id == id)
             .Where(tv => tv.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Include(movie => movie.MovieUser
-                .Where(movieUser => movieUser.UserId == userId)
+                .Where(movieUser => movieUser.UserId.Equals(userId))
             )
             .Include(movie => movie.Cast)
             .ThenInclude(castMovie => castMovie.Person)
@@ -50,7 +50,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
             .Include(movie => movie.SimilarFrom)
             .Include(movie => movie.VideoFiles)
             .ThenInclude(file => file.UserData.Where(
-                userData => userData.UserId == userId))
+                userData => userData.UserId.Equals(userId)))
             .FirstOrDefaultAsync();
     }
 
@@ -58,7 +58,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
     {
         return context.Movies.AsNoTracking()
             .Where(movie => movie.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId == userId) != null)
+                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
             .Where(movie => movie.Id == id)
             .Include(movie => movie.VideoFiles)
             .AnyAsync();
@@ -69,7 +69,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
         return context.Movies.AsNoTracking()
             .Where(movie => movie.Id == id)
             .Where(movie => movie.Library.LibraryUsers
-                .FirstOrDefault(libraryUser => libraryUser.UserId == userId) != null)
+                .FirstOrDefault(libraryUser => libraryUser.UserId.Equals(userId)) != null)
             .Include(movie => movie.Media
                 .Where(media => media.Type == "video"))
             .Include(movie => movie.Images
@@ -78,7 +78,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
                 .Where(translation => translation.Iso6391 == language))
             .Include(movie => movie.VideoFiles)
             .ThenInclude(file => file.UserData.Where(
-                userData => userData.UserId == userId));
+                userData => userData.UserId.Equals(userId)));
     }
 
     public async Task<bool> LikeMovieAsync(int id, Guid userId, bool like)
@@ -86,7 +86,7 @@ public class MovieRepository(MediaContext context) : IMovieRepository
         try
         {
             MovieUser? movieUser = await context.MovieUser
-                .FirstOrDefaultAsync(mu => mu.MovieId == id && mu.UserId == userId);
+                .FirstOrDefaultAsync(mu => mu.MovieId == id && mu.UserId.Equals(userId));
 
             if (like)
             {

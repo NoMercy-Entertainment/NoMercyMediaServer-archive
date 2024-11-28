@@ -21,7 +21,7 @@ public record LibraryResponseDto
         IIncludableQueryable<Movie, Certification> query = mediaContext.Movies
                 .AsNoTracking()
                 .Where(movie => movie.Library.Id == libraryId)
-                .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId == userId))
+                .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
                 .Where(libraryMovie => libraryMovie.VideoFiles
                     .Any(videoFile => videoFile.Folder != null) == true
                 )
@@ -57,7 +57,7 @@ public record LibraryResponseDto
 
         IIncludableQueryable<Tv, Certification> query = mediaContext.Tvs.AsNoTracking()
                 .Where(tv => tv.Library.Id == libraryId)
-                .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId == userId))
+                .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
                 .Where(libraryTv => libraryTv.Episodes
                     .Any(episode => episode.VideoFiles
                         .Any(videoFile => videoFile.Folder != null) == true
@@ -96,7 +96,7 @@ public record LibraryResponseDto
                 mediaContext.Libraries.AsNoTracking()
                     .Where(library => library.Id == id)
                     .Where(library => library.LibraryUsers
-                        .FirstOrDefault(u => u.UserId == userId) != null
+                        .FirstOrDefault(u => u.UserId.Equals(userId)) != null
                     )
                     .Take(take)
                     .Skip(page * take)

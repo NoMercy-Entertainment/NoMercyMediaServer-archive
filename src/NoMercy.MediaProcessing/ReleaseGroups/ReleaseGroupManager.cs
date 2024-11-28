@@ -40,16 +40,4 @@ public class ReleaseGroupManager(
         Logger.MusicBrainz($"Release Group {releaseGroup.Title} stored", LogEventLevel.Verbose);
     }
     
-    // public Task LinkToLibrary(MusicBrainzReleaseGroup releaseGroup, Library library)
-    // {
-    //     Logger.MusicBrainz($"Linking Release Group: {releaseGroup.Title} to Library: {library.Name}", LogEventLevel.Verbose);
-    //     
-    //     LibraryReleaseGroup insert = new()
-    //     {
-    //         ReleaseGroupId = releaseGroup.Id,
-    //         LibraryId = library.Id,
-    //     };
-    //     
-    //     return releaseGroupRepository.LinkToLibrary(insert);
-    // }
 }

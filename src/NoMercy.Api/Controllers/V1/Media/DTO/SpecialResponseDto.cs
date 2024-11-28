@@ -26,7 +26,7 @@ public record SpecialResponseDto
                 .ThenInclude(specialItem => specialItem.Movie)
                 .ThenInclude(movie => movie!.VideoFiles)
                 .ThenInclude(file => file.UserData
-                    .Where(userData => userData.UserId == userId)
+                    .Where(userData => userData.UserId.Equals(userId))
                 )
                 .Include(special => special.Items
                     .OrderBy(specialItem => specialItem.Order)
@@ -34,10 +34,10 @@ public record SpecialResponseDto
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(movie => movie!.VideoFiles)
                 .ThenInclude(file => file.UserData
-                    .Where(userData => userData.UserId == userId)
+                    .Where(userData => userData.UserId.Equals(userId))
                 )
                 .Include(special => special.SpecialUser
-                    .Where(specialUser => specialUser.UserId == userId)
+                    .Where(specialUser => specialUser.UserId.Equals(userId))
                 )
                 .FirstOrDefault());
 
@@ -55,7 +55,7 @@ public record SpecialResponseDto
                         .Where(translation => translation.Iso6391 == language)
                     )
                     .Include(movie => movie.MovieUser
-                        .Where(movieUser => movieUser.UserId == userId)
+                        .Where(movieUser => movieUser.UserId.Equals(userId))
                     )
                     .Include(movie => movie.CertificationMovies
                         .Where(certification => certification.Certification.Iso31661 == country ||
@@ -64,7 +64,7 @@ public record SpecialResponseDto
                     .ThenInclude(certificationMovie => certificationMovie.Certification)
                     .Include(movie => movie.VideoFiles)
                     .ThenInclude(file => file.UserData
-                        .Where(userData => userData.UserId == userId)
+                        .Where(userData => userData.UserId.Equals(userId))
                     )
                     .Include(movie => movie.GenreMovies)
                     .ThenInclude(genreMovie => genreMovie.Genre)
@@ -104,7 +104,7 @@ public record SpecialResponseDto
                         .Where(translation => translation.Iso6391 == language)
                     )
                     .Include(tv => tv.TvUser
-                        .Where(tvUser => tvUser.UserId == userId)
+                        .Where(tvUser => tvUser.UserId.Equals(userId))
                     )
                     .Include(tv => tv.GenreTvs)
                     .ThenInclude(genreTv => genreTv.Genre)
@@ -136,7 +136,7 @@ public record SpecialResponseDto
                     .Include(tv => tv.Episodes)
                     .ThenInclude(episode => episode.VideoFiles)
                     .ThenInclude(file => file.UserData
-                        .Where(userData => userData.UserId == userId))
+                        .Where(userData => userData.UserId.Equals(userId)))
             );
 
     #endregion
@@ -172,7 +172,7 @@ public record SpecialResponseDto
                 .ThenInclude(specialItem => specialItem.Movie)
                 .ThenInclude(movie => movie!.VideoFiles)
                 .ThenInclude(file => file.UserData
-                    .Where(userData => userData.UserId == userId)
+                    .Where(userData => userData.UserId.Equals(userId))
                 )
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Movie)
@@ -190,7 +190,7 @@ public record SpecialResponseDto
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Movie)
                 .ThenInclude(movie => movie!.MovieUser
-                    .Where(movieUser => movieUser.UserId == userId)
+                    .Where(movieUser => movieUser.UserId.Equals(userId))
                 )
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Movie)
@@ -201,7 +201,7 @@ public record SpecialResponseDto
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(episode => episode!.VideoFiles)
                 .ThenInclude(file => file.UserData
-                    .Where(userData => userData.UserId == userId)
+                    .Where(userData => userData.UserId.Equals(userId))
                 )
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Episode)
@@ -253,7 +253,7 @@ public record SpecialResponseDto
                 .ThenInclude(specialItem => specialItem.Episode)
                 .ThenInclude(episode => episode!.Tv)
                 .ThenInclude(episode => episode.TvUser
-                    .Where(tvUser => tvUser.UserId == userId)
+                    .Where(tvUser => tvUser.UserId.Equals(userId))
                 )
                 .FirstOrDefault());
 
