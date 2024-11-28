@@ -72,7 +72,7 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
             .ThenInclude(folder => folder.EncoderProfileFolder)
             .ThenInclude(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
             .Include(library => library.LibraryUsers
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId.Equals(userId))
             )
             .ThenInclude(libraryUser => libraryUser.User)
             .ToListAsync();

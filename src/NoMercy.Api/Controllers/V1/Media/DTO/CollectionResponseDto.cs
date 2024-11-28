@@ -17,9 +17,9 @@ public record CollectionResponseDto
             mediaContext.Collections.AsNoTracking()
                 .Where(collection => collection.Id == id)
                 .Where(collection => collection.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null)
+                    .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
                 .Include(collection => collection.CollectionUser
-                    .Where(x => x.UserId == userId)
+                    .Where(x => x.UserId.Equals(userId))
                 )
                 .Include(collection => collection.Library)
                 .ThenInclude(library => library.LibraryUsers)
@@ -33,7 +33,7 @@ public record CollectionResponseDto
                 .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)
                 .ThenInclude(movie => movie.MovieUser
-                    .Where(x => x.UserId == userId)
+                    .Where(x => x.UserId.Equals(userId))
                 )
                 .Include(collection => collection.CollectionMovies)
                 .ThenInclude(movie => movie.Movie)

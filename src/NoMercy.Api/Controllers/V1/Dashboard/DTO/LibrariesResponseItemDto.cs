@@ -63,7 +63,7 @@ public record LibrariesResponseItemDto
                     Id = folderLibrary.Folder.Id,
                     Path = folderLibrary.Folder.Path,
                     EncoderProfiles = folderLibrary.Folder.EncoderProfileFolder
-                        .Select(encoderProfileFolder => encoderProfileFolder.EncoderProfile.Id)
+                        .Select(encoderProfileFolder => encoderProfileFolder.EncoderProfile)
                         .ToArray()
                 }
             })

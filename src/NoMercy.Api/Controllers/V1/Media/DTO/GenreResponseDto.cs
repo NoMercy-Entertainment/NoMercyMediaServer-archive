@@ -17,7 +17,7 @@ public record GenreResponseDto
             mediaContext.Genres.AsNoTracking()
                 .Where(genre => genre.Id == id)
                 // .Where(genre => genre.GenresUsers
-                //     .FirstOrDefault(u => u.UserId == userId) != null
+                //     .FirstOrDefault(u => u.UserId.Equals(userId) != null
                 // )
                 .Take(take)
                 .Skip(page * take)

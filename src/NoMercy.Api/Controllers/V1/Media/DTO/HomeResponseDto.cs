@@ -21,10 +21,10 @@ public abstract record HomeResponseDto
             .Where(genre =>
                 genre.GenreMovies
                     .Any(g => g.Movie.Library.LibraryUsers
-                        .FirstOrDefault(u => u.UserId == userId) != null) ||
+                        .FirstOrDefault(u => u.UserId.Equals(userId)) != null) ||
                 genre.GenreTvShows
                     .Any(g => g.Tv.Library.LibraryUsers
-                        .FirstOrDefault(u => u.UserId == userId) != null))
+                        .FirstOrDefault(u => u.UserId.Equals(userId)) != null))
             .Include(genre => genre.GenreMovies
                 .Where(genreTv => genreTv.Movie.VideoFiles
                     .Any(videoFile => videoFile.Folder != null) == true

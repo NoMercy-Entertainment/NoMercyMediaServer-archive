@@ -114,6 +114,89 @@ public record GenreRowItemDto
 
     public GenreRowItemDto()
     {
-        
+
+    }
+
+    public GenreRowItemDto(Collection collection, string country)
+    {
+        string? title = collection.Translations.FirstOrDefault()?.Title;
+        string? overview = collection.Translations.FirstOrDefault()?.Overview;
+
+        Id = collection.Id;
+        Title = !string.IsNullOrEmpty(title)
+            ? title
+            : collection.Title;
+        Overview = !string.IsNullOrEmpty(overview)
+            ? overview
+            : collection.Overview;
+        Poster = collection.Poster;
+        Backdrop = collection.Backdrop;
+        Logo = collection.Images.FirstOrDefault(image => image.Type == "logo")?.FilePath;
+        TitleSort = collection.Title.TitleSort(collection.CollectionMovies.MinBy(movie => movie.Movie.ReleaseDate)?.Movie.ReleaseDate);
+        Type = "collection";
+        Year = collection.CollectionMovies.MinBy(movie => movie.Movie.ReleaseDate)?.Movie.ReleaseDate.ParseYear();
+
+        MediaType = "tv";
+        Type = "tv";
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+        NumberOfItems = collection.CollectionMovies.Count;
+        HaveItems = collection.CollectionMovies
+            .Count(movie => movie.Movie.VideoFiles.Any(v => v.Folder != null));
+
+        ColorPalette = collection.ColorPalette;
+
+        ContentRatings = collection.CollectionMovies
+            .SelectMany(collectionMovie => collectionMovie.Movie.CertificationMovies)
+            .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                || certificationMovie.Certification.Iso31661 == country)
+            .Select(certificationMovie => new ContentRating
+            {
+                Rating = certificationMovie.Certification.Rating,
+                Iso31661 = certificationMovie.Certification.Iso31661
+            });
+
+    }
+
+    public GenreRowItemDto(Special special, string country)
+    {
+        Id = new Random().Next();
+        Title = special.Title;
+        Overview = special.Overview;
+        Poster = special.Poster;
+        Backdrop = special.Backdrop;
+        Logo = special.Logo;
+        TitleSort = special.Title.TitleSort();
+        Type = "collection";
+        Year = special.Items.MinBy(movie => movie.Movie?.ReleaseDate)?.Movie?.ReleaseDate.ParseYear()
+               ?? special.Items?.Select(tv => tv.Episode?.Tv)?.FirstOrDefault()?.FirstAirDate.ParseYear();
+
+        MediaType = "tv";
+        Type = "tv";
+        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+
+        NumberOfItems = special.Items?.Count;
+
+        int haveMovies = special.Items
+            .Select(item => item.Movie)
+            .Count(movie => movie is not null && movie.VideoFiles.Any());
+
+        int haveEpisodes = special.Items
+            .Select(item => item.Episode)
+            .Count(movie => movie is not null && movie.VideoFiles.Any());
+
+        HaveItems = haveMovies + haveEpisodes;
+
+        ColorPalette = special.ColorPalette;
+
+        ContentRatings = special.Items
+            .SelectMany(item => item.Movie?.CertificationMovies ?? Enumerable.Empty<CertificationMovie>())
+            .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
+                || certificationMovie.Certification.Iso31661 == country)
+            .Select(certificationMovie => new ContentRating
+            {
+                Rating = certificationMovie.Certification.Rating,
+                Iso31661 = certificationMovie.Certification.Iso31661
+            });
+
     }
 }

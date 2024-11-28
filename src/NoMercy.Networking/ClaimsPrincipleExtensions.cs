@@ -79,7 +79,7 @@ public static class ClaimsPrincipleExtensions
 
     public static bool IsSelf(this ClaimsPrincipal? principal, Guid userId)
     {
-        return principal.UserId() == userId;
+        return principal.UserId().Equals(userId);
     }
 
     public static User? User(this ClaimsPrincipal? principal)

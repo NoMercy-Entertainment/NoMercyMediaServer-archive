@@ -52,7 +52,7 @@ public class UserDataController : BaseController
         await using MediaContext mediaContext = new();
         List<UserData> continueWatching = await mediaContext.UserData
             .AsNoTracking()
-            .Where(user => user.UserId == userId)
+            .Where(user => user.UserId.Equals(userId))
             .Include(userData => userData.Movie)
             .ThenInclude(movie => movie.Media
                 .Where(media => media.Site == "Youtube")
@@ -132,22 +132,22 @@ public class UserDataController : BaseController
         {
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.MovieId == int.Parse(body.Id))
                 .ToListAsync(),
             "tv" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.TvId == int.Parse(body.Id))
                 .ToListAsync(),
             "special" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.SpecialId == Ulid.Parse(body.Id))
                 .ToListAsync(),
             "collection" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.CollectionId == int.Parse(body.Id))
                 .ToListAsync(),
             _ => null
@@ -188,22 +188,22 @@ public class UserDataController : BaseController
         {
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.MovieId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "tv" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.TvId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "special" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.SpecialId == Ulid.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "collection" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.CollectionId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             _ => null
@@ -243,22 +243,22 @@ public class UserDataController : BaseController
         {
             "movie" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.MovieId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "tv" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.TvId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "special" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.SpecialId == Ulid.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             "collection" => await mediaContext.UserData
                 .AsNoTracking()
-                .Where(data => data.UserId == userId)
+                .Where(data => data.UserId.Equals(userId))
                 .Where(data => data.CollectionId == int.Parse(body.Id))
                 .FirstOrDefaultAsync(),
             _ => null

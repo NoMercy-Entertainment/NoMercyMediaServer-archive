@@ -23,7 +23,7 @@ public record CarouselResponseItemDto
 
     public static readonly Func<MediaContext, Guid, Task<List<CarouselResponseItemDto>>> GetPlaylists =
         (mediaContext, userId) => mediaContext.Playlists
-            .Where(playlist => playlist.UserId == userId)
+            .Where(playlist => playlist.UserId.Equals(userId))
             .Where(playlist => playlist.Tracks
                 .Any(artistTrack => artistTrack.Track.Duration != null))
             .Select(playlist => new CarouselResponseItemDto(playlist))
@@ -60,7 +60,7 @@ public record CarouselResponseItemDto
 
     public static readonly Func<MediaContext, Guid, Task<List<CarouselResponseItemDto>>> GetFavoriteArtists =
         (mediaContext, userId) => mediaContext.ArtistUser
-            .Where(artistUser => artistUser.UserId == userId)
+            .Where(artistUser => artistUser.UserId.Equals(userId))
             .Include(albumUser => albumUser.Artist)
             .ThenInclude(artist => artist.ArtistTrack)
             .ThenInclude(artistTrack => artistTrack.Track)
@@ -75,7 +75,7 @@ public record CarouselResponseItemDto
 
     public static readonly Func<MediaContext, Guid, Task<List<CarouselResponseItemDto>>> GetFavoriteAlbums =
         (mediaContext, userId) => mediaContext.AlbumUser
-            .Where(albumUser => albumUser.UserId == userId)
+            .Where(albumUser => albumUser.UserId.Equals(userId))
             .Include(albumUser => albumUser.Album)
             .ThenInclude(album => album.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Track)
@@ -85,7 +85,7 @@ public record CarouselResponseItemDto
 
     public static readonly Func<MediaContext, Guid, TopMusicDto?> GetFavoriteArtist =
         (mediaContext, userId) => mediaContext.MusicPlays
-            .Where(musicPlay => musicPlay.UserId == userId)
+            .Where(musicPlay => musicPlay.UserId.Equals(userId))
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.ArtistTrack)
             .ThenInclude(artistTrack => artistTrack.Artist)
@@ -102,7 +102,7 @@ public record CarouselResponseItemDto
 
     public static readonly Func<MediaContext, Guid, TopMusicDto?> GetFavoriteAlbum =
         (mediaContext, userId) => mediaContext.MusicPlays
-            .Where(musicPlay => musicPlay.UserId == userId)
+            .Where(musicPlay => musicPlay.UserId.Equals(userId))
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.AlbumTrack)
             .ThenInclude(artistTrack => artistTrack.Album)
@@ -115,7 +115,7 @@ public record CarouselResponseItemDto
 
     public static readonly Func<MediaContext, Guid, TopMusicDto?> GetFavoritePlaylist =
         (mediaContext, userId) => mediaContext.MusicPlays
-            .Where(musicPlay => musicPlay.UserId == userId)
+            .Where(musicPlay => musicPlay.UserId.Equals(userId))
             .Include(musicPlay => musicPlay.Track)
             .ThenInclude(track => track.PlaylistTrack)
             .ThenInclude(artistTrack => artistTrack.Playlist)
@@ -129,8 +129,7 @@ public record CarouselResponseItemDto
     public CarouselResponseItemDto(Artist artist)
     {
         ColorPalette = artist.ColorPalette;
-        Cover = artist.Cover ?? artist.Images
-            .FirstOrDefault()?.FilePath;
+        Cover = artist.Cover;
         Disambiguation = artist.Disambiguation;
         Description = artist.Description;
         Folder = artist.Folder ?? "";
@@ -218,5 +217,16 @@ public record CarouselResponseItemDto
             .Where(playlistTrack => playlistTrack.Track.Duration != null)
             .DistinctBy(playlistTrack => playlistTrack.Track.Name.ToLower())
             .Count();
+    }
+
+    public CarouselResponseItemDto(Track track)
+    {
+        ColorPalette = track.ColorPalette;
+        Cover = track.Cover;
+        Folder = track.Folder ?? "";
+        Id = track.Id.ToString();
+        Name = track.Name;
+        Type = "tracks";
+        Link = new Uri($"/music/track/{Id}", UriKind.Relative);
     }
 }

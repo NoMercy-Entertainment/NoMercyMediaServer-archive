@@ -14,10 +14,10 @@ public record AlbumResponseDto
             .AsNoTracking()
             .Where(album => album.Id == id)
             .Where(album => album.Library.LibraryUsers
-                .FirstOrDefault(libraryUser => libraryUser.UserId == userId) != null)
+                .FirstOrDefault(libraryUser => libraryUser.UserId.Equals(userId)) != null)
             .Include(album => album.Library)
             .Include(album => album.AlbumUser
-                .Where(albumUser => albumUser.UserId == userId)
+                .Where(albumUser => albumUser.UserId.Equals(userId))
             )
             .Include(album => album.AlbumArtist)
             .ThenInclude(albumArtist => albumArtist.Artist)
@@ -30,7 +30,7 @@ public record AlbumResponseDto
             .Include(album => album.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Track)
             .ThenInclude(track => track.TrackUser
-                .Where(albumUser => albumUser.UserId == userId)
+                .Where(albumUser => albumUser.UserId.Equals(userId))
             )
             .Include(album => album.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Track)

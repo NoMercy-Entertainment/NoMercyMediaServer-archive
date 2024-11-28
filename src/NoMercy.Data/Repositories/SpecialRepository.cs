@@ -41,7 +41,7 @@ public class SpecialRepository(MediaContext context): ISpecialRepository
             .ThenInclude(specialItem => specialItem.Movie)
             .ThenInclude(movie => movie!.VideoFiles)
             .ThenInclude(file => file.UserData
-                .Where(userData => userData.UserId == userId)
+                .Where(userData => userData.UserId.Equals(userId))
             )
             .Include(special => special.Items
                 .OrderBy(specialItem => specialItem.Order)
@@ -49,10 +49,10 @@ public class SpecialRepository(MediaContext context): ISpecialRepository
             .ThenInclude(specialItem => specialItem.Episode)
             .ThenInclude(movie => movie!.VideoFiles)
             .ThenInclude(file => file.UserData
-                .Where(userData => userData.UserId == userId)
+                .Where(userData => userData.UserId.Equals(userId))
             )
             .Include(special => special.SpecialUser
-                .Where(specialUser => specialUser.UserId == userId)
+                .Where(specialUser => specialUser.UserId.Equals(userId))
             )
             .FirstOrDefault());
     }
@@ -69,7 +69,7 @@ public class SpecialRepository(MediaContext context): ISpecialRepository
             .ThenInclude(specialItem => specialItem.Movie)
             .ThenInclude(movie => movie!.VideoFiles)
             .ThenInclude(file => file.UserData
-                .Where(userData => userData.UserId == userId)
+                .Where(userData => userData.UserId.Equals(userId))
             )
             .Include(special => special.Items
                 .OrderBy(specialItem => specialItem.Order)
@@ -78,11 +78,11 @@ public class SpecialRepository(MediaContext context): ISpecialRepository
             .ThenInclude(specialItem => specialItem.Episode)
             .ThenInclude(movie => movie!.VideoFiles)
             .ThenInclude(file => file.UserData
-                .Where(userData => userData.UserId == userId)
+                .Where(userData => userData.UserId.Equals(userId))
             )
 
             .Include(special => special.SpecialUser
-                .Where(specialUser => specialUser.UserId == userId)
+                .Where(specialUser => specialUser.UserId.Equals(userId))
             );
 
         if (orderByExpression is not null && direction == "desc")

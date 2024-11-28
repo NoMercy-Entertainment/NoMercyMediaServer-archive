@@ -12,7 +12,7 @@ public record TracksResponseDto
     public static readonly Func<MediaContext, Guid, IAsyncEnumerable<TrackUser>> GetTracks =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId) => mediaContext.TrackUser
             .AsNoTracking()
-            .Where(u => u.UserId == userId)
+            .Where(u => u.UserId.Equals(userId))
             .Include(trackUser => trackUser.Track)
             .ThenInclude(track => track.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Album)

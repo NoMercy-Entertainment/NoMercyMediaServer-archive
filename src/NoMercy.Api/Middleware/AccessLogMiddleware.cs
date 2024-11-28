@@ -18,7 +18,8 @@ public class AccessLogMiddleware
         "/index",
         "/oauth2",
         "/styles",
-        "/scripts"
+        "/scripts",
+        "/favicon",
     ];
 
     private readonly string[] _ignoreExact =
@@ -71,7 +72,8 @@ public class AccessLogMiddleware
             }
 
             Logger.Http($"Unknown: {context.Connection.RemoteIpAddress}: {path}");
-            await _next(context);
+            context.Response.StatusCode = 401;
+            // await context.Response.WriteAsync("Unauthorized");
             return;
         }
 
@@ -86,7 +88,8 @@ public class AccessLogMiddleware
             }
 
             Logger.Http($"Unknown: {context.Connection.RemoteIpAddress}: {path}");
-            await _next(context);
+            context.Response.StatusCode = 401;
+            // await context.Response.WriteAsync("Unauthorized");
             return;
         }
 
@@ -105,9 +108,16 @@ public class AccessLogMiddleware
             return;
         }
 
-        User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
+        User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id.Equals(userId));
+        if (user is null)
+        {
+            Logger.Http($"Unknown: {context.Connection.RemoteIpAddress}: {path}");
+            context.Response.StatusCode = 401;
+            // await context.Response.WriteAsync("Unauthorized");
+            return;
+        }
 
-        Logger.Http($"{user?.Name ?? $"Unknown: {context.Connection.RemoteIpAddress}:"}: {path}");
+        Logger.Http($"{user?.Name ?? $": {context.Connection.RemoteIpAddress}:"}: {path}");
 
         await _next(context);
     }

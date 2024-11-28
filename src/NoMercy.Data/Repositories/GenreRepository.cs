@@ -55,8 +55,8 @@ public class GenreRepository(MediaContext context) : IGenreRepository
         return context.Genres
             .AsNoTracking()
             .Where(genre =>
-                genre.GenreMovies.Any(g => g.Movie.Library.LibraryUsers.Any(u => u.UserId == userId)) ||
-                genre.GenreTvShows.Any(g => g.Tv.Library.LibraryUsers.Any(u => u.UserId == userId)))
+                genre.GenreMovies.Any(g => g.Movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId))) ||
+                genre.GenreTvShows.Any(g => g.Tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId))))
             .Select(genre => new Genre
             {
                 Id = genre.Id,

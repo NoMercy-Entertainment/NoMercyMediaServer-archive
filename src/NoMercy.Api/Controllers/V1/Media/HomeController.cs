@@ -3,6 +3,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
@@ -44,7 +45,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
             GenreRowDto<GenreRowItemDto> genreRowDto = new()
             {
                 Title = name,
-                MoreLink = $"/genres/{genre.Id}",
+                MoreLink = new Uri($"/genres/{genre.Id}", UriKind.Relative),
                 Id = genre.Id.ToString(),
 
                 Source = genre.GenreMovies.Select(movie => new HomeSourceDto(movie.MovieId, "movie"))
@@ -147,7 +148,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
             GenreRowDto<GenreRowItemDto> genreRowDto = new()
             {
                 Title = name,
-                MoreLink = $"/genres/{genre.Id}",
+                MoreLink = new Uri($"/genres/{genre.Id}", UriKind.Relative),
                 Id = genre.Id.ToString(),
                 Source = movies
                     .Concat(tvs)
@@ -206,6 +207,10 @@ public class HomeController(MediaContext mediaContext) : BaseController
                 })
                 .Where(genreRow => genreRow != null);
 
+        GenreRowItemDto? homeCardItem = genres.Where(g => g.Title != "")
+            .Randomize().FirstOrDefault()
+            ?.Items.Randomize().FirstOrDefault();
+
         return Ok(new  Render
         {
             Data = [
@@ -220,11 +225,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
                     },
                     Props =
                     {
-                        Data = genres.Randomize().FirstOrDefault()
-                            ?.Items.Randomize().FirstOrDefault()
-                               ?? genres.Randomize().FirstOrDefault()
-                            ?.Items.Randomize().FirstOrDefault()
-                               ?? new GenreRowItemDto(),
+                        Data = homeCardItem
                     }
                 },
 
@@ -254,7 +255,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
                                         {
                                             {"label", "Remove from watchlist".Localize()},
                                             {"icon", "mooooom-trash"},
-                                            {"method", "DELETE"},
+                                            {"command", "DELETE"},
                                             {"confirm", "Are you sure you want to remove this from continue watching?".Localize()},
                                             {"args", new Dictionary<string, object>
                                             {
@@ -286,15 +287,6 @@ public class HomeController(MediaContext mediaContext) : BaseController
                     }
                 }),
 
-                new ComponentDto<Dictionary<string, object>>
-                {
-                    Component = "NMServerComponent",
-                    Props =
-                    {
-                        Url = new Uri("MyDynamicComponent.js", UriKind.Relative),
-                    }
-                },
-
             ]
         });
     }
@@ -315,9 +307,29 @@ public class HomeController(MediaContext mediaContext) : BaseController
 
         string language = Language();
 
-        Tv? tv = await Queries.GetRandomTvShow(mediaContext, userId, language);
+        Tv? tv = await mediaContext.Tvs
+            .AsNoTracking()
+            .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
+            .Include(tv => tv.Translations.Where(translation => translation.Iso6391 == language))
+            .Include(tv => tv.Images.Where(image => image.Type == "logo" && image.Iso6391 == "en"))
+            .Include(tv => tv.Media.Where(media => media.Site == "YouTube"))
+            .Include(tv => tv.KeywordTvs).ThenInclude(keywordTv => keywordTv.Keyword)
+            .Include(tv => tv.Episodes.Where(episode => episode.SeasonNumber > 0 && episode.VideoFiles.Count != 0))
+            .ThenInclude(episode => episode.VideoFiles)
+            .Include(tv => tv.CertificationTvs).ThenInclude(certificationTv => certificationTv.Certification)
+            .OrderBy(tv => EF.Functions.Random())
+            .FirstOrDefaultAsync();
 
-        Movie? movie = await Queries.GetRandomMovie(mediaContext, userId, language);
+        Movie? movie = await mediaContext.Movies
+            .AsNoTracking()
+            .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
+            .Include(movie => movie.Translations.Where(translation => translation.Iso6391 == language))
+            .Include(movie => movie.Images.Where(image => image.Type == "logo" && image.Iso6391 == "en"))
+            .Include(movie => movie.Media.Where(media => media.Site == "YouTube"))
+            .Include(movie => movie.KeywordMovies).ThenInclude(keywordMovie => keywordMovie.Keyword)
+            .Include(movie => movie.CertificationMovies).ThenInclude(certificationMovie => certificationMovie.Certification)
+            .OrderBy(movie => EF.Functions.Random())
+            .FirstOrDefaultAsync();
 
         List<GenreRowItemDto> genres = [];
         if (tv != null)
@@ -325,6 +337,9 @@ public class HomeController(MediaContext mediaContext) : BaseController
 
         if (movie != null)
             genres.Add(new GenreRowItemDto(movie, language));
+
+        GenreRowItemDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
+            .Randomize().FirstOrDefault();
 
         return Ok(new  Render
         {
@@ -341,8 +356,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
                     },
                     Props =
                     {
-                        Data = genres.Where(g =>  g.Title != "")
-                            .Randomize().First(),
+                        Data = homeCardItem
                     }
                 },
             ]
@@ -446,7 +460,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
             GenreRowDto<GenreRowItemDto> genreRowDto = new()
             {
                 Title = name,
-                MoreLink = $"/genres/{genre.Id}",
+                MoreLink = new Uri($"/genres/{genre.Id}", UriKind.Relative),
                 Id = genre.Id.ToString(),
                 Source = movies
                     .Concat(tvs)
@@ -505,6 +519,10 @@ public class HomeController(MediaContext mediaContext) : BaseController
                 })
                 .Where(genreRow => genreRow != null);
 
+        GenreRowItemDto? genreRowItemDto = genres.Where(g => g.Title != "")
+            .Randomize().FirstOrDefault()
+            ?.Items.Randomize().FirstOrDefault();
+
         return Ok(new  Render
         {
             Data = [
@@ -519,9 +537,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
                     },
                     Props =
                     {
-                        Data = genres.Where(g =>  g.Title != "")
-                            .Randomize().FirstOrDefault()
-                            ?.Items.Randomize().FirstOrDefault() ?? new GenreRowItemDto(),
+                        Data = genreRowItemDto
                     }
                 },
 

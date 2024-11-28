@@ -6,7 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using NoMercy.Api.Controllers.V1.Dashboard.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
+using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.Networking;
 
 namespace NoMercy.Api.Controllers.V1.Media;
@@ -50,6 +52,7 @@ public class LibrariesController(
             return UnauthorizedResponse("You do not have permission to view libraries");
 
         string language = Language();
+        string country = Country();
 
         IQueryable<Library> libraries = libraryRepository.GetLibraries(userId);
 
@@ -63,9 +66,9 @@ public class LibrariesController(
             list.Add(new GenreRowDto<dynamic>
             {
                 Title = library.Title,
-                MoreLink = $"/libraries/{library.Id}",
-                Items = movies.Select(movie => new LibraryResponseItemDto(movie))
-                    .Concat(shows.Select(tv => new LibraryResponseItemDto(tv)))
+                MoreLink = new Uri($"/libraries/{library.Id}", UriKind.Relative),
+                Items = movies.Select(movie => new GenreRowItemDto(movie, country))
+                    .Concat(shows.Select(tv => new GenreRowItemDto(tv, country)))
             });
         }
 
@@ -75,20 +78,160 @@ public class LibrariesController(
         list.Add(new GenreRowDto<dynamic>
         {
             Title = "Collections",
-            MoreLink = "/collection",
-            Items = collections.Select(collection => new LibraryResponseItemDto(collection))
+            MoreLink = new Uri("/collection", UriKind.Relative),
+            Items = collections.Select(collection => new GenreRowItemDto(collection, country))
         });
 
         list.Add(new GenreRowDto<dynamic>
         {
             Title = "Specials",
-            MoreLink = "/specials",
-            Items = specials.Select(special => new LibraryResponseItemDto(special))
+            MoreLink = new Uri("/specials", UriKind.Relative),
+            Items = specials.Select(special => new GenreRowItemDto(special, country))
         });
 
-        return Ok(new HomeResponseDto<dynamic>
+        await using MediaContext mediaContext = new();
+
+        Tv? tv = await Queries.GetRandomTvShow(mediaContext, userId, language);
+
+        Movie? movie = await Queries.GetRandomMovie(mediaContext, userId, language);
+
+        List<GenreRowItemDto> genres = [];
+        if (tv != null)
+            genres.Add(new GenreRowItemDto(tv, language));
+
+        if (movie != null)
+            genres.Add(new GenreRowItemDto(movie, language));
+
+        GenreRowItemDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
+            .Randomize().FirstOrDefault();
+
+        return Ok(new  Render
         {
-            Data = list
+            Data = [
+
+                new ComponentDto<GenreRowItemDto>
+                {
+                    Component = "NMHomeCard",
+                    Update =
+                    {
+                        When = "pageLoad",
+                        Link = new Uri("/home/card", UriKind.Relative),
+                    },
+                    Props =
+                    {
+                        Data = homeCardItem
+                    }
+                },
+
+                ..list.Select(genre => new ComponentDto<GenreRowItemDto>
+                {
+                    Component = "NMCarousel",
+                    Props =
+                    {
+                        Title = genre.Title,
+                        MoreLink = genre.MoreLink,
+                        Items = genre.Items.Select(item => new ComponentDto<GenreRowItemDto>
+                        {
+                            Component = "NMCard",
+                            Props =
+                            {
+                                Data = item,
+                                Watch = true,
+                            }
+                        })
+                    }
+                }),
+            ]
+        });
+    }
+
+    [HttpGet]
+    [Route("tv")]
+    public async Task<IActionResult> Tv()
+    {
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to view libraries");
+
+        string language = Language();
+        string country = Country();
+
+        IQueryable<Library> libraries = libraryRepository.GetLibraries(userId);
+
+        List<GenreRowDto<dynamic>> list = [];
+
+        foreach (Library library in libraries)
+        {
+            IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
+            IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
+
+            list.Add(new GenreRowDto<dynamic>
+            {
+                Title = library.Title,
+                MoreLink = new Uri($"/libraries/{library.Id}", UriKind.Relative),
+                Items = movies.Select(movie => new GenreRowItemDto(movie, country))
+                    .Concat(shows.Select(tv => new GenreRowItemDto(tv, country)))
+            });
+        }
+
+        IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
+        IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
+
+        list.Add(new GenreRowDto<dynamic>
+        {
+            Title = "Collections",
+            MoreLink = new Uri("/collection", UriKind.Relative),
+            Items = collections.Select(collection => new GenreRowItemDto(collection, country))
+        });
+
+        list.Add(new GenreRowDto<dynamic>
+        {
+            Title = "Specials",
+            MoreLink = new Uri("/specials", UriKind.Relative),
+            Items = specials.Select(special => new GenreRowItemDto(special, country))
+        });
+
+        GenreRowItemDto? genreRowItemDto = list.Where(g => !string.IsNullOrWhiteSpace(g.Title))
+            .Randomize().FirstOrDefault()
+            ?.Items.Randomize().FirstOrDefault();
+
+        return Ok(new  Render
+        {
+            Data = [
+
+                new ComponentDto<GenreRowItemDto>
+                {
+                    Component = "NMHomeCard",
+                    Update =
+                    {
+                        When = "pageLoad",
+                        Link = new Uri("/home/card", UriKind.Relative),
+                    },
+                    Props =
+                    {
+                        Data = genreRowItemDto
+                    }
+                },
+
+                ..list.Select(genre => new ComponentDto<GenreRowItemDto>
+                {
+                    Component = "NMCarousel",
+                    Props =
+                    {
+                        Title = genre.Title,
+                        MoreLink = genre.MoreLink,
+                        Items = genre.Items.Select(item => new ComponentDto<GenreRowItemDto>
+                        {
+                            Component = "NMCard",
+                            Props =
+                            {
+                                Data = item ?? new GenreRowItemDto(),
+                                Watch = true,
+                            }
+                        })
+                    }
+                }),
+            ]
         });
     }
 

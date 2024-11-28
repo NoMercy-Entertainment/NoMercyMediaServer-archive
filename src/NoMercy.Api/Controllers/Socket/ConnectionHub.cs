@@ -123,7 +123,7 @@
 //     protected User? User()
 //     {
 //         var userId = Context.User.UserId();
-//         return TokenParamAuthMiddleware.Users.FirstOrDefault(x => x.Id == userId);
+//         return TokenParamAuthMiddleware.Users.FirstOrDefault(x => x.Id.Equals(userId);
 //     }
 //
 //     public override async Task OnDisconnectedAsync(Exception? exception)

@@ -47,7 +47,7 @@ public class TokenParamAuthMiddleware(RequestDelegate next)
                 return;
             }
 
-            User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id == userId);
+            User? user = ClaimsPrincipleExtensions.Users.FirstOrDefault(x => x.Id.Equals(userId));
 
             if (user is null)
             {

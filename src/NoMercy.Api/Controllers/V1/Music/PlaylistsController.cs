@@ -37,8 +37,8 @@ public class PlaylistsController : BaseController
     }
 
     [HttpGet]
-    [Route("{id:ulid}")]
-    public async Task<IActionResult> Show(Ulid id)
+    [Route("{id:guid}")]
+    public async Task<IActionResult> Show(Guid id)
     {
         Guid userId = User.UserId();
         if (!User.IsAllowed())
@@ -56,6 +56,7 @@ public class PlaylistsController : BaseController
         {
             Data = new TracksResponseItemDto
             {
+                Id = playlist.Id,
                 Name = playlist.Name,
                 Cover = playlist.Cover,
                 Description = playlist.Description,

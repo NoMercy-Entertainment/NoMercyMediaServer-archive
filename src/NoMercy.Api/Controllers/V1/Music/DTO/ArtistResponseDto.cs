@@ -15,25 +15,25 @@ public record ArtistResponseDto
                 .AsNoTracking()
                 .Where(album => album.Id == id)
                 .Where(artist => artist.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId == userId) != null)
-                
+                    .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
+
                 .Include(artist => artist.Library)
-                
+
                 .Include(artist => artist.ArtistUser
-                    .Where(artistUser => artistUser.UserId == userId)
+                    .Where(artistUser => artistUser.UserId.Equals(userId))
                 )
                 .ThenInclude(artistUser => artistUser.User)
                 .ThenInclude(user => user.TrackUser)
                 .ThenInclude(trackUser => trackUser.Track)
-                
+
                 .Include(artist => artist.AlbumArtist)
                 .ThenInclude(albumArtist => albumArtist.Album)
                 .ThenInclude(albumArtist => albumArtist.AlbumUser)
-                
+
                 .Include(artist => artist.AlbumArtist)
                 .ThenInclude(albumArtist => albumArtist.Album)
                 .ThenInclude(artist => artist.Translations)
-                
+
                 .Include(artist => artist.ArtistTrack
                     .OrderBy(artistTrack => artistTrack.Track.TrackNumber)
                     .ThenBy(artistTrack => artistTrack.Track.DiscNumber)
@@ -43,46 +43,46 @@ public record ArtistResponseDto
                 .ThenInclude(track => track.AlbumTrack)
                 .ThenInclude(albumTrack => albumTrack.Album)
                 .ThenInclude(album => album.AlbumArtist)
-                
+
                 .Include(artist => artist.ArtistTrack)
                 .ThenInclude(artistTrack => artistTrack.Track)
                 .ThenInclude(track => track.AlbumTrack)
                 .ThenInclude(albumTrack => albumTrack.Album)
                 .ThenInclude(album => album.AlbumUser
-                    .Where(albumUser => albumUser.UserId == userId)
+                    .Where(albumUser => albumUser.UserId.Equals(userId))
                 )
-                
+
                 .Include(artist => artist.ArtistTrack)
                 .ThenInclude(artistTrack => artistTrack.Track)
                 .ThenInclude(track => track.AlbumTrack)
                 .ThenInclude(albumTrack => albumTrack.Album)
                 .ThenInclude(artist => artist.Translations)
-                
+
                 .Include(artist => artist.ArtistTrack)
                 .ThenInclude(artistTrack => artistTrack.Track)
                 .ThenInclude(track => track.TrackUser
-                    .Where(trackUser => trackUser.UserId == userId)
+                    .Where(trackUser => trackUser.UserId.Equals(userId))
                 )
                 .ThenInclude(trackUser => trackUser.User)
-                
+
                 .Include(artist => artist.ArtistReleaseGroup)
                 .ThenInclude(artistReleaseGroup => artistReleaseGroup.ReleaseGroup)
                 .ThenInclude(releaseGroup => releaseGroup.AlbumReleaseGroup)
                 .ThenInclude(albumReleaseGroup => albumReleaseGroup.Album)
                 .ThenInclude(artist => artist.Translations)
-                
+
                 .Include(artist => artist.ArtistReleaseGroup)
                 .ThenInclude(artistReleaseGroup => artistReleaseGroup.ReleaseGroup)
                 .ThenInclude(releaseGroup => releaseGroup.AlbumReleaseGroup)
                 .ThenInclude(albumReleaseGroup => albumReleaseGroup.Album)
                 .ThenInclude(album => album.AlbumArtist)
-                
+
                 .Include(artist => artist.Images)
-                
+
                 .Include(artist => artist.Translations)
-                
+
                 .Include(artist => artist.ArtistMusicGenre)
                 .ThenInclude(artistMusicGenre => artistMusicGenre.MusicGenre)
-                
+
                 .FirstOrDefault());
 }
