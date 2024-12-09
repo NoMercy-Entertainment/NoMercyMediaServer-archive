@@ -111,7 +111,7 @@ public class Info
             ManagementObjectSearcher searcher = new("select Version from Win32_OperatingSystem");
             foreach (ManagementBaseObject? o in searcher.Get())
             {
-                var item = (ManagementObject)o;
+                ManagementObject? item = (ManagementObject)o;
                 return item["Version"].ToString();
             }
         }

@@ -13,7 +13,6 @@ public class Special : ColorPaletteTimeStamps
     public required Ulid Id { get; set; } = Ulid.NewUlid();
 
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
-    [JsonProperty("description")] public string? Description { get; set; }
     [JsonProperty("poster")] public string? Poster { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
     [JsonProperty("title")] public string Title { get; set; }

@@ -308,7 +308,7 @@ public class MusicController : BaseController
         //     {"width", "33.33333%"}
         // };
 
-        var songResults = songs
+        List<ArtistTrackDto>? songResults = songs
             .Take(6)
             .Select(track => new ArtistTrackDto(track, country))
             .ToList();

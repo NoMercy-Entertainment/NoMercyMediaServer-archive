@@ -25,9 +25,40 @@ public class FileRepository(MediaContext context) : IFileRepository
                 Quality = vi.Quality,
                 Subtitles = vi.Subtitles,
                 _tracks = vi._tracks,
-                UpdatedAt = vi.UpdatedAt
+                UpdatedAt = vi.UpdatedAt,
+                MetadataId = vi.MetadataId,
             })
             .RunAsync();
+    }
+
+    public async Task<Ulid> StoreMetadata(Metadata metadata)
+    {
+        await context.Metadata.Upsert(metadata)
+            .On(mf => new { mf.Filename, mf.HostFolder })
+            .WhenMatched((ms, mi) => new Metadata
+            {
+                AudioTrackId = mi.AudioTrackId,
+                Duration = mi.Duration,
+                Filename = mi.Filename,
+                Folder = mi.Folder,
+                FolderSize = mi.FolderSize,
+                HostFolder = mi.HostFolder,
+                Type = mi.Type,
+                _audio = mi._audio,
+                _chapters_file = mi._chapters_file,
+                _fonts = mi._fonts,
+                _fonts_file = mi._fonts_file,
+                _previews = mi._previews,
+                _subtitles = mi._subtitles,
+                _video = mi._video,
+            })
+            .RunAsync();
+        
+        return context.Metadata
+            .Where(m => m.Filename == metadata.Filename)
+            .Where(m => m.HostFolder == metadata.HostFolder)
+            .Select(m => m.Id)
+            .FirstOrDefault();
     }
 
     public async Task<Episode?> GetEpisode(int? showId, MediaFile item)

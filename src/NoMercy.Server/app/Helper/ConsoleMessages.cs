@@ -56,18 +56,44 @@ public abstract class ConsoleMessages
 
         return string.Join(" ", spacing);
     }
+    
+    private static bool IsXmasTime()
+    {
+        DateTime today = DateTime.Today;
+        int currentYear = today.Year;
+
+        DateTime xmasBeginDate;
+        DateTime xmasEndDate;
+
+        if (today >= new DateTime(currentYear, 6, 1))
+        {
+            xmasBeginDate = new DateTime(currentYear, 12, 7);
+            xmasEndDate = new DateTime(currentYear + 1, 1, 5);
+        }
+        else
+        {
+            xmasBeginDate = new DateTime(currentYear - 1, 12, 7);
+            xmasEndDate = new DateTime(currentYear, 1, 5);
+        }
+
+        return today >= xmasBeginDate && today <= xmasEndDate;
+    }
 
     public static Task Logo()
     {
         StringBuilder builder = new();
         string outputString = "║  NoMercy MediaServer  ║";
         int totalWidth = 0;
+        
+        Dictionary<string, List<string>> letters = IsXmasTime() 
+            ? ConsoleLetters.ColossalXmas 
+            : ConsoleLetters.Colossal;
 
-        for (int i = 0; i < ConsoleLetters.Colossal.FirstOrDefault().Value.Count - 1; i++)
+        for (int i = 0; i < letters.FirstOrDefault().Value.Count - 1; i++)
         {
             foreach (char letter in outputString)
             {
-                string? text = ConsoleLetters.Colossal[letter.ToString()][i];
+                string? text = letters[letter.ToString()][i];
 
                 text = letter switch
                 {
@@ -78,7 +104,7 @@ public abstract class ConsoleMessages
 
                 builder.Append(text);
 
-                if (i == 5) totalWidth += ConsoleLetters.Colossal[letter.ToString()][i].Length;
+                if (i == 5) totalWidth += letters[letter.ToString()][i].Length;
             }
 
             if (i == 9) continue;
@@ -92,9 +118,9 @@ public abstract class ConsoleMessages
 
         Console.WriteLine(builder.ToString());
 
-        Console.WriteLine($"{_()}{Repeat(" ", 63)}{ConsoleLetters.Colossal["y"][10].Pastel(Colors[2])}" +
-                          CreateQuote(Quote, 0, 4) + $"{ConsoleLetters.Colossal["║"][0].Pastel(Colors[0])}");
-        // Console.WriteLine($"{_()}" + CreateQuote(Quote, totalWidth, 4) + $"{ConsoleLetters.Colossal["║"][0].Pastel(Colors[0])}");        
+        Console.WriteLine($"{_()}{Repeat(" ", 63)}{letters["y"][10].Pastel(Colors[2])}" +
+                          CreateQuote(Quote, 0, 4) + $"{letters["║"][0].Pastel(Colors[0])}");
+        // Console.WriteLine($"{_()}" + CreateQuote(Quote, totalWidth, 4) + $"{(isXmas() ? ConsoleLetters.ColossalXmas : ConsoleLetters.Colossal)["║"][0].Pastel(Colors[0])}");        
         Console.WriteLine($"{("╚" + Repeat("═", magicSpacer) + "╝").Pastel(Colors[0])}");
 
         return Task.CompletedTask;

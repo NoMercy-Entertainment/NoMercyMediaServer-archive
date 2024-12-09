@@ -42,7 +42,7 @@ public static class SpecialSeed
                 Backdrop = Mcu.Special.Backdrop,
                 Poster = Mcu.Special.Poster,
                 Logo = Mcu.Special.Logo,
-                Description = Mcu.Special.Description,
+                Overview = Mcu.Special.Description,
                 Creator = Mcu.Special.Creator,
                 _colorPalette = await NoMercyImageManager
                     .MultiColorPalette(new[]
@@ -62,7 +62,7 @@ public static class SpecialSeed
                     Backdrop = su.Backdrop,
                     Poster = su.Poster,
                     Logo = su.Logo,
-                    Description = su.Description,
+                    Overview = su.Overview,
                     Creator = su.Creator,
                     _colorPalette = su._colorPalette
                 })

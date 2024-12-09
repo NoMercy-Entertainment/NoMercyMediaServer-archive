@@ -13,6 +13,7 @@ using MovieFileLibrary;
 using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.Dashboard.DTO;
 using NoMercy.Api.Controllers.V1.DTO;
+using NoMercy.Data.Jobs;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers.Monitoring;
@@ -20,8 +21,6 @@ using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
-using NoMercy.Providers.MusicBrainz.Client;
-using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -30,10 +29,7 @@ using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Queue;
 using Serilog.Events;
 using AppFiles = NoMercy.NmSystem.AppFiles;
-using JobDispatcher = NoMercy.MediaProcessing.Jobs.JobDispatcher;
 using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
-
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
 
@@ -42,7 +38,7 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/dashboard/server", Order = 10)]
-public class ServerController(IHostApplicationLifetime appLifetime) : BaseController
+public class ServerController(IHostApplicationLifetime appLifetime, MediaContext context) : BaseController
 {
     private IHostApplicationLifetime ApplicationLifetime { get; } = appLifetime;
 
@@ -169,16 +165,15 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
             return UnauthorizedResponse("You do not have permission to add files");
 
         await using MediaContext mediaContext = new();
-        JobDispatcher jobDispatcher = new();
 
         foreach (AddFile file in request.Files)
         {
-            jobDispatcher.DispatchJob(new EncodeVideoJob
+            JobDispatcher.Dispatch(new EncodeVideoJob
             {
                 FolderId = request.FolderId,
                 Id = file.Id,
                 InputFile = file.Path,
-            });
+            }, "encoder");
         }
 
         return Ok(request);
@@ -225,7 +220,9 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
         try
         {
             string[] directories = Directory.GetDirectories(folder);
-            array = directories.Select(d => CreateDirectoryTreeDto(folder, d)).ToList();
+            array = directories.Select(d => CreateDirectoryTreeDto(folder, d))
+                .OrderBy(file => file.Path)
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -758,5 +755,18 @@ public class ServerController(IHostApplicationLifetime appLifetime) : BaseContro
             return Ok($"{worker} worker count set to {count}");
 
         return BadRequestResponse($"{worker} worker count could not be set to {count}");
+    }
+    
+    [HttpGet]
+    [Route("storage")]
+    public IActionResult Storage()
+    {
+        if (!User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to view server paths");
+        
+        StorageJob storageJob = new(StorageMonitor.Storage);
+        JobDispatcher.Dispatch(storageJob, "data", 1000);
+        
+        return Ok(StorageMonitor.Storage);
     }
 }

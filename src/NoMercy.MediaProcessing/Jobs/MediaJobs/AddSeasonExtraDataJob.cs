@@ -39,6 +39,6 @@ public class AddSeasonExtraDataJob : AbstractShowExtraDataJob<TmdbSeasonAppends,
             await seasonManager.StoreTranslations(Name, season);
         }
 
-        Logger.MovieDb($"Show: {Name}: Seasons: Images and Translations stored", LogEventLevel.Verbose);
+        Logger.MovieDb($"Show {Name}: Seasons: Images and Translations stored", LogEventLevel.Verbose);
     }
 }

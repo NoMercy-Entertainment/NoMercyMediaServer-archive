@@ -229,4 +229,20 @@ public class TvShowsController : BaseController
             }
         });
     }
+
+    [HttpPost]
+    [Route("add")]
+    public async Task<IActionResult> Add(int id)
+    {
+        if (!User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to add tv shows");
+
+        await _tvShowRepository.AddTvShowAsync(id);
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = "Added to library",
+        });
+    }
 }

@@ -31,6 +31,11 @@ public partial class ApiInfo
         client.Timeout = TimeSpan.FromSeconds(120);
         client.BaseAddress = new Uri(Config.ApiBaseUrl);
         HttpResponseMessage response = await client.GetAsync("v1/info");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("The NoMercy API is not available");
+        }
+        
         string? content = await response.Content.ReadAsStringAsync();
 
         if (content == null) throw new Exception("Failed to get server info");

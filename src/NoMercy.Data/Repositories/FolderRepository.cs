@@ -8,9 +8,12 @@ public class FolderRepository(MediaContext context) : IFolderRepository
 {
     public async Task<Folder?> GetFolderByIdAsync(Ulid folderId)
     {
-        return await context.Folders.FindAsync(folderId);
+        return await context.Folders.Where(folder => folder.Id == folderId)
+            .Include(folder => folder.FolderLibraries)
+            .ThenInclude(folderLibrary => folderLibrary.Library)
+            .FirstOrDefaultAsync();
     }
-
+    
     public Task<Folder?> GetFolderByPathAsync(string requestPath)
     {
         return context.Folders.FirstOrDefaultAsync(folder => folder.Path == requestPath);
@@ -21,6 +24,11 @@ public class FolderRepository(MediaContext context) : IFolderRepository
         return context.Folders
             .Where(folder => folderLibraries.Select(f => f.FolderId).Contains(folder.Id))
             .ToListAsync();
+    }
+
+    public Task GetFolderLibraryByIdAsync(int id, FolderLibrary folderLibrary)
+    {
+        throw new NotImplementedException();
     }
 
     public Task<List<Folder>> GetFoldersByLibraryIdAsync(Ulid libraryId)

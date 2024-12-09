@@ -19,10 +19,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Models\"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <PackageReference Include="Castle.Core" Version="5.1.1" />
         <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

@@ -280,14 +280,14 @@ public class LibrariesController : BaseController
 
         foreach (Library library in librariesList)
         {
-            foreach (var movie in library.LibraryMovies)
+            foreach (LibraryMovie movie in library.LibraryMovies)
             {
                 FileRepository fileRepository = new(mediaContext);
                 FileManager fileManager = new(fileRepository, jobDispatcher);
                 await fileManager.FindFiles(movie.MovieId, library);
             }
 
-            foreach (var show in library.LibraryTvs)
+            foreach (LibraryTv show in library.LibraryTvs)
             {
                 FileRepository fileRepository = new(mediaContext);
                 FileManager fileManager = new(fileRepository, jobDispatcher);
@@ -316,14 +316,14 @@ public class LibrariesController : BaseController
         await using MediaContext mediaContext = new();
         JobDispatcher jobDispatcher = new();
 
-        foreach (var movie in library.LibraryMovies)
+        foreach (LibraryMovie movie in library.LibraryMovies)
         {
             FileRepository fileRepository = new(mediaContext);
             FileManager fileManager = new(fileRepository, jobDispatcher);
             await fileManager.FindFiles(movie.MovieId, library);
         }
 
-        foreach (var show in library.LibraryTvs)
+        foreach (LibraryTv show in library.LibraryTvs)
         {
             FileRepository fileRepository = new(mediaContext);
             FileManager fileManager = new(fileRepository, jobDispatcher);
@@ -557,6 +557,43 @@ public class LibrariesController : BaseController
             {
                 Status = "error",
                 Message = "Something went wrong deleting the encoder profile: {0}",
+                Args = [e.Message]
+            });
+        }
+    }
+
+    [HttpPost]
+    [Route("move")]
+    public async Task<IActionResult> Move([FromBody] MoveRequest request)
+    {
+        if (!User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to move the library");
+        
+        Folder? folder = await _folderRepository.GetFolderByIdAsync(request.FolderId);
+        if (folder is null)
+            return NotFound(new StatusResponseDto<string> { Status = "error", Data = "Folder not found" });
+
+        try
+        {
+            await using MediaContext mediaContext = new();
+            JobDispatcher jobDispatcher = new();
+            
+            FileRepository fileRepository = new(mediaContext);
+            FileManager fileManager = new(fileRepository, jobDispatcher);
+            
+            await fileManager.MoveToLibraryFolder(request.Id, folder);
+            
+            return Ok(new StatusResponseDto<string>
+            {
+                Status = "ok", Message = "Successfully moved item {0}.", Args = [request.Id.ToString()]
+            });
+        }
+        catch (Exception e)
+        {
+            return UnprocessableEntity(new StatusResponseDto<string>
+            {
+                Status = "error",
+                Message = "Something went wrong moving the item: {0}",
                 Args = [e.Message]
             });
         }

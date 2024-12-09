@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NoMercy.Database;
 
@@ -10,9 +11,11 @@ using NoMercy.Database;
 namespace NoMercy.Database.Migrations
 {
     [DbContext(typeof(MediaContext))]
-    partial class MediaContextModelSnapshot : ModelSnapshot
+    [Migration("20241206163354_Test2")]
+    partial class Test2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.8");
@@ -101,9 +104,6 @@ namespace NoMercy.Database.Migrations
                     b.Property<string>("LibraryId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("MetadataId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -132,8 +132,6 @@ namespace NoMercy.Database.Migrations
                     b.HasIndex("FolderId");
 
                     b.HasIndex("LibraryId");
-
-                    b.HasIndex("MetadataId");
 
                     b.ToTable("Albums");
                 });
@@ -3237,16 +3235,9 @@ namespace NoMercy.Database.Migrations
                         .HasForeignKey("LibraryId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("NoMercy.Database.Models.Metadata", "Metadata")
-                        .WithMany()
-                        .HasForeignKey("MetadataId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.Navigation("Library");
 
                     b.Navigation("LibraryFolder");
-
-                    b.Navigation("Metadata");
                 });
 
             modelBuilder.Entity("NoMercy.Database.Models.AlbumArtist", b =>

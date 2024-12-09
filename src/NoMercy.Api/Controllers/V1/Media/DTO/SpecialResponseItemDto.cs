@@ -83,7 +83,7 @@ public record SpecialResponseItemDto
 
         Id = special.Id;
         Title = special.Title;
-        Overview = special.Description;
+        Overview = special.Overview;
         Backdrop = special.Backdrop?.Replace("https://storage.nomercy.tv/laravel", "");
         Poster = special.Poster;
         TitleSort = special.Title.TitleSort();
@@ -119,7 +119,7 @@ public record SpecialResponseItemDto
     {
         Id = special.Id;
         Title = special.Title;
-        Overview = special.Description;
+        Overview = special.Overview;
         Backdrop = special.Backdrop?.Replace("https://storage.nomercy.tv/laravel", "");
         Poster = special.Poster;
         TitleSort = special.Title.TitleSort();

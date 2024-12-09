@@ -12,6 +12,7 @@ using NoMercy.Data.Logic.Seeds;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.MediaProcessing.Images;
 using NoMercy.Networking;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
@@ -122,9 +123,37 @@ public class SpecialsController : BaseController
 
         try
         {
-            special.Title = request.Title;
-
+            if ((request.Poster is not null && special.Poster != request.Poster) 
+                || (request.Backdrop is not null && special.Backdrop != request.Backdrop) 
+                || (request.Logo is not null && special.Logo != request.Logo))
+            {
+                special.Poster = request.Poster;
+                
+                special._colorPalette = await MovieDbImageManager
+                    .MultiColorPalette([
+                        new BaseImageManager.MultiStringType("poster", request.Poster),
+                        new BaseImageManager.MultiStringType("backdrop", request.Backdrop),
+                        new BaseImageManager.MultiStringType("logo", request.Logo)
+                    ]);
+            }
+            
+            if (request.Title is not null)
+                special.Title = request.Title;
+            
+            if (request.Overview is not null)
+                special.Overview = request.Overview;
+            
+            if (request.Poster is not null)
+                special.Poster = request.Poster;
+            
+            if (request.Backdrop is not null)
+                special.Backdrop = request.Backdrop;
+            
+            if (request.Logo is not null)
+                special.Logo = request.Logo;
+            
             await mediaContext.SaveChangesAsync();
+
         }
         catch (Exception e)
         {
@@ -368,6 +397,11 @@ public class SpecialsController : BaseController
     public class SpecialUpdateRequest
     {
         [JsonProperty("id")] public Ulid Id { get; set; }
-        [JsonProperty("title")] public string Title { get; set; } = null!;
+        [JsonProperty("title")] public string? Title { get; set; }
+        [JsonProperty("overview")] public string? Overview { get; set; }
+        [JsonProperty("poster")] public string? Poster { get; set; }
+        [JsonProperty("backdrop")] public string? Backdrop { get; set; }
+        [JsonProperty("logo")] public string? Logo { get; set; }
+        
     }
 }

@@ -212,7 +212,6 @@ public class Seed : IDisposable, IAsyncDisposable
                 })
                 .ToList();
 
-            Logger.Setup(mg);
             translations.AddRange(mg ?? []);
 
             List<Translation>? tg = (await TmdbTvClient.Genres(language.Iso6391))?.Genres
@@ -224,7 +223,7 @@ public class Seed : IDisposable, IAsyncDisposable
                     Iso6391 = language.Iso6391,
                 })
                 .ToList();
-            Logger.Setup(mg);
+            
             translations.AddRange(tg ?? []);
         });
 
@@ -397,7 +396,7 @@ public class Seed : IDisposable, IAsyncDisposable
             .RunAsync();
 
         List<EncoderProfileFolder> encoderProfileFolders = [];
-        foreach (var encoderProfile in encoderProfiles)
+        foreach (EncoderProfile? encoderProfile in encoderProfiles)
         {
             encoderProfileFolders.AddRange(encoderProfile.EncoderProfileFolder.ToList()
                 .Select(encoderProfileFolder => new EncoderProfileFolder

@@ -37,12 +37,11 @@ public class Episode : ColorPalettes
     [JsonProperty("crews")] public ICollection<Crew> Crew { get; set; }
     [JsonProperty("special_items")] public ICollection<SpecialItem> SpecialItems { get; set; }
 
-    [JsonProperty("video_files")] public ICollection<VideoFile> VideoFiles { get; set; } = new HashSet<VideoFile>();
+    [JsonProperty("video_files")] public ICollection<VideoFile> VideoFiles { get; set; }
 
     [JsonProperty("medias")] public ICollection<Media> Media { get; set; }
     [JsonProperty("images")] public ICollection<Image> Images { get; set; }
     [JsonProperty("guest_stars")] public ICollection<GuestStar> GuestStars { get; set; }
-    [JsonProperty("files")] public ICollection<File> Files { get; set; }
     [JsonProperty("translations")] public ICollection<Translation> Translations { get; set; }
 
     public Episode()

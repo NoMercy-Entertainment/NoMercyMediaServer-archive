@@ -45,7 +45,7 @@ public class EpisodeManager(
             });
 
         await episodeRepository.StoreEpisodes(episodes);
-        Logger.MovieDb($"Show: {show.Name}, Season {season.SeasonNumber} Episodes stored", LogEventLevel.Debug);
+        Logger.MovieDb($"Show {show.Name}: Season {season.SeasonNumber} Episodes stored", LogEventLevel.Debug);
 
         jobDispatcher.DispatchJob<AddEpisodeExtraDataJob, TmdbEpisodeAppends>(episodeAppends, show.Name);
     }
@@ -93,7 +93,7 @@ public class EpisodeManager(
         await episodeRepository.StoreEpisodeTranslations(translations);
 
         Logger.MovieDb(
-            $"Show: {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Translations stored");
+            $"Show {showName}: Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Translations stored");
     }
 
     internal async Task StoreImages(string showName, TmdbEpisodeAppends episode)
@@ -116,7 +116,7 @@ public class EpisodeManager(
 
         await episodeRepository.StoreEpisodeImages(stills);
         Logger.MovieDb(
-            $"Show: {showName}, Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Images stored",
+            $"Show {showName}: Season {episode.SeasonNumber} Episode {episode.EpisodeNumber}: Images stored",
             LogEventLevel.Debug);
 
         IEnumerable<Image> posterJobItems = stills
