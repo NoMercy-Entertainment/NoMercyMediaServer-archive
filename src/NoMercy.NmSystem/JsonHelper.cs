@@ -35,9 +35,10 @@ public static class JsonHelper
         Converters =
         {
             new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }, // Convert dates to ISO format
+            new LongConverter(), // Custom converter for long values
             new ParseNumbersAsInt32Converter(), // Custom converter for parsing numbers as int
             new StringEnumConverter(), // Convert enums to strings
-            new DoubleConverter() // Custom converter for double values
+            new DoubleConverter(), // Custom converter for double values
         }
     };
 

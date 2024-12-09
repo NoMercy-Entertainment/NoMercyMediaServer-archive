@@ -62,7 +62,7 @@ public abstract class BaseVideo : Classes
         FrameSizes._4k, FrameSizes._8k
     ];
 
-    internal string _hlsPlaylistType = "event";
+    internal string _hlsPlaylistType = "vod";
 
     private string _hlsSegmentFilename = "";
 
@@ -343,7 +343,7 @@ public abstract class BaseVideo : Classes
         commandDictionary["-flags:s"] = "+bitexact";
 
         commandDictionary["-movflags"] = "faststart";
-        commandDictionary["-metadata"] = $"title=\"{Title}\"";
+        commandDictionary["-metadata"] = $"title=\"{Title.Replace("\"", "\\\"")}\"";
 
         foreach (KeyValuePair<string, dynamic> extraParameter in _extraParameters)
             commandDictionary[extraParameter.Key] = extraParameter.Value;

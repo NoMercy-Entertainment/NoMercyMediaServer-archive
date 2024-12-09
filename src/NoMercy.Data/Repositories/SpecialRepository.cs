@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 
@@ -60,7 +61,7 @@ public class SpecialRepository(MediaContext context): ISpecialRepository
     public IQueryable<Special> GetSpecialItems(Guid userId, string? language, int take = 1, int page = 1,
         Expression<Func<Special, object>>? orderByExpression = null, string? direction = null)
     {
-        var x =  context.Specials
+        IIncludableQueryable<Special, IEnumerable<SpecialUser>>? x =  context.Specials
             .AsNoTracking()
             .Include(special => special.Items
                 .OrderBy(specialItem => specialItem.Order)

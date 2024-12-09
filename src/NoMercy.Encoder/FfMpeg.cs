@@ -320,7 +320,7 @@ public class FfMpeg : Classes
 
     public static async Task<bool> Pause(int id)
     {
-        if (FfmpegProcess.TryGetValue(id, out var process))
+        if (FfmpegProcess.TryGetValue(id, out Process? process))
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -338,7 +338,7 @@ public class FfMpeg : Classes
 
     public static async Task<bool> Resume(int id)
     {
-        if (FfmpegProcess.TryGetValue(id, out var process))
+        if (FfmpegProcess.TryGetValue(id, out Process? process))
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {

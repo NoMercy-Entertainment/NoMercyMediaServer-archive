@@ -105,7 +105,7 @@ public record ContinueWatchingItemDto
             Backdrop = item.Special.Backdrop;
             Title = item.Special.Title;
             TitleSort = item.Special.Title.TitleSort();
-            Overview = item.Special.Overview ?? item.Special.Description;
+            Overview = item.Special.Overview;
 
             MediaType = "specials";
             Type = "specials";

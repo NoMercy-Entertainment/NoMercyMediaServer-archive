@@ -23,7 +23,7 @@ public class Classes
 
     internal string HlsFlags { get; set; } = "independent_segments";
     internal int HlsListSize { get; set; }
-    internal string HlsPlaylistType { get; set; } = "event";
+    internal string HlsPlaylistType { get; set; } = "vod";
     protected int HlsTime { get; set; } = 4;
 
     public static bool HasGpu => CheckGpu();

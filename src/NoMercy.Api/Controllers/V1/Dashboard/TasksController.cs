@@ -93,7 +93,7 @@ public class TasksController : BaseController
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to pause tasks");
 
-        var status = await FfMpeg.Pause(id);
+        bool status = await FfMpeg.Pause(id);
 
         return Ok(status);
     }
@@ -105,7 +105,7 @@ public class TasksController : BaseController
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to resume tasks");
 
-        var status = await FfMpeg.Resume(id);
+        bool status = await FfMpeg.Resume(id);
 
         return Ok(status);
     }
@@ -176,7 +176,7 @@ public class TasksController : BaseController
                 Profile = folders.FirstOrDefault(f => f.Id == j.FolderId)?.EncoderProfileFolder.FirstOrDefault()?.EncoderProfile.Name
             }).ToArray();
 
-        var runningJobs = encoderJobs.Where(j => j.Status == "running");
+        IEnumerable<EncodeVideoJob>? runningJobs = encoderJobs.Where(j => j.Status == "running");
 
         foreach (EncodeVideoJob job in runningJobs)
         {

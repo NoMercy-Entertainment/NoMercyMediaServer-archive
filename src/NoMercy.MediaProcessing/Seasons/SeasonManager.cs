@@ -58,7 +58,7 @@ public class SeasonManager(
             });
 
         await seasonRepository.StoreAsync(seasons);
-        Logger.MovieDb($"Show: {show.Name}: Seasons stored", LogEventLevel.Debug);
+        Logger.MovieDb($"Show {show.Name}: Seasons stored", LogEventLevel.Debug);
 
         jobDispatcher.DispatchJob<AddSeasonExtraDataJob, TmdbSeasonAppends>(seasonAppends, show.Name);
 
@@ -73,7 +73,7 @@ public class SeasonManager(
     public async Task RemoveSeasonAsync(string showName, TmdbSeasonAppends season)
     {
         await seasonRepository.RemoveSeasonAsync(season.Id);
-        Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Removed", LogEventLevel.Debug);
+        Logger.MovieDb($"Show {showName}: Season {season.SeasonNumber}: Removed", LogEventLevel.Debug);
     }
 
     internal async Task StoreTranslations(string showName, TmdbSeasonAppends season)
@@ -93,7 +93,7 @@ public class SeasonManager(
             });
 
         await seasonRepository.StoreTranslationsAsync(translations);
-        Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Translations stored", LogEventLevel.Debug);
+        Logger.MovieDb($"Show {showName}: Season {season.SeasonNumber}: Translations stored", LogEventLevel.Debug);
     }
 
     internal async Task StoreImages(string showName, TmdbSeasonAppends season)
@@ -115,7 +115,7 @@ public class SeasonManager(
             .ToList();
 
         await seasonRepository.StoreImagesAsync(posters);
-        Logger.MovieDb($"Show: {showName}, Season {season.SeasonNumber}: Images stored", LogEventLevel.Debug);
+        Logger.MovieDb($"Show {showName}: Season {season.SeasonNumber}: Images stored", LogEventLevel.Debug);
 
         IEnumerable<Image> posterJobItems = posters
             .Select(x => new Image { FilePath = x.FilePath })

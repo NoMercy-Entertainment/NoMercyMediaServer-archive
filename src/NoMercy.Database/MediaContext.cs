@@ -1,9 +1,7 @@
-﻿// ReSharper disable InconsistentNaming
-
+﻿
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
-using File = NoMercy.Database.Models.File;
 
 namespace NoMercy.Database;
 
@@ -83,9 +81,6 @@ public class MediaContext : DbContext
     public virtual DbSet<EncoderProfileFolder> EncoderProfileFolder { get; init; }
     public virtual DbSet<EncoderProfile> EncoderProfiles { get; init; }
     public virtual DbSet<Episode> Episodes { get; init; }
-    public virtual DbSet<FileLibrary> FileLibrary { get; init; }
-    public virtual DbSet<FileMovie> FileMovie { get; init; }
-    public virtual DbSet<File> Files { get; init; }
     public virtual DbSet<FolderLibrary> FolderLibrary { get; init; }
     public virtual DbSet<Folder> Folders { get; init; }
     public virtual DbSet<GenreMovie> GenreMovie { get; init; }

@@ -27,7 +27,7 @@ public class EncodeVideoJob : AbstractEncoderJob
         await using QueueContext queueContext = new();
         JobDispatcher jobDispatcher = new();
 
-        using LibraryRepository libraryRepository = new(context);
+        await using LibraryRepository libraryRepository = new(context);
         FileRepository fileRepository = new(context);
         FileManager fileManager = new(fileRepository, jobDispatcher);
 
@@ -72,7 +72,7 @@ public class EncodeVideoJob : AbstractEncoderJob
             string fullCommand = ffmpeg.GetFullCommand();
             Logger.Encoder(fullCommand);
 
-            var progressMeta = new ProgressMeta
+            ProgressMeta progressMeta = new()
             {
                 Id = Id,
                 Title = fileMetadata.Title,
@@ -115,8 +115,10 @@ public class EncodeVideoJob : AbstractEncoderJob
 
             Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
             {
+                Id = Id,
                 Status = "completed",
-                Id = Id
+                Title = fileMetadata.Title,
+                Message = "Done",
             });
         }
     }

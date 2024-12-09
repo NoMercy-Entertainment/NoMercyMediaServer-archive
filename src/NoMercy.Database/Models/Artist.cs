@@ -21,7 +21,7 @@ public class Artist : ColorPaletteTimeStamps
     [JsonProperty("year")] public int? Year { get; set; }
 
     [JsonProperty("folder")] public string? Folder { get; set; }
-    [JsonProperty("host_folder")] public string? HostFolder { get; set; }
+    [JsonProperty("host_folder")] public string HostFolder { get; set; }
 
     [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
     public Library Library { get; set; }
