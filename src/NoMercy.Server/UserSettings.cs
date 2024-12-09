@@ -30,7 +30,7 @@ namespace NoMercy.Server
 
         public static void ApplySettings(Dictionary<string, string> settings)
         {
-            foreach (var setting in settings)
+            foreach (KeyValuePair<string, string> setting in settings)
             {
                 Logger.App($"Configuration: {setting.Key} = {setting.Value}");
                 switch (setting.Key)

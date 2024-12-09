@@ -206,11 +206,11 @@ public class BaseAudio : Classes
 
         foreach (string allowedLanguage in AllowedLanguages.Append("und"))
         {
-            foreach (var stream in AudioStreams.Where(audioStream => audioStream.Language == allowedLanguage))
+            foreach (AudioStream stream in AudioStreams.Where(audioStream => audioStream.Language == allowedLanguage))
             {
                 BaseAudio newStream = (BaseAudio)MemberwiseClone();
 
-                newStream.Language = newStream.Language == "und" ? "eng" : newStream.Language;
+                newStream.Language = stream.Language == "und" ? "eng" : stream.Language;
 
                 newStream.IsAudio = true;
 

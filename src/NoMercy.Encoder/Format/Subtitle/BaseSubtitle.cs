@@ -142,7 +142,7 @@ public class BaseSubtitle : Classes
         {
             if (SubtitleStreams.All(stream => stream.Language != allowedLanguage)) continue;
 
-            foreach (var stream in SubtitleStreams.Where(stream => stream.Language == allowedLanguage))
+            foreach (SubtitleStream? stream in SubtitleStreams.Where(stream => stream.Language == allowedLanguage))
             {
                 BaseSubtitle newStream = (BaseSubtitle)MemberwiseClone();
 
@@ -169,7 +169,7 @@ public class BaseSubtitle : Classes
 
     private string GetVariant(BaseSubtitle stream)
     {
-        var variant = "full";
+        string? variant = "full";
 
         string? description = "";
         if(stream.SubtitleStream!.Tags?.TryGetValue("title", out description) is false) return variant;
@@ -193,7 +193,7 @@ public class BaseSubtitle : Classes
     internal static string GetExtension(BaseSubtitle stream)
     {
         stream.SubtitleCodec = SubtitleCodecs.Webvtt;
-        var extension = "vtt";
+        string? extension = "vtt";
             
         if (stream.SubtitleStream!.CodecName == "hdmv_pgs_subtitle" || stream.SubtitleStream.CodecName == "dvd_subtitle")
         {

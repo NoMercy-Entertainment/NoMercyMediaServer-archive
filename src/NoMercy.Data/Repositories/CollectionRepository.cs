@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 
@@ -118,7 +119,7 @@ public class CollectionRepository(MediaContext context) : ICollectionRepository
     public IQueryable<Collection> GetCollectionItems(Guid userId, string? language, int take = 1, int page = 1,
         Expression<Func<Collection, object>>? orderByExpression = null, string? direction = null)
     {
-        var x = context.Collections
+        IIncludableQueryable<Collection, IEnumerable<Image>>? x = context.Collections
             .AsNoTracking()
             .Where(collection => collection.Library.LibraryUsers
                 .FirstOrDefault(u => u.UserId.Equals(userId)) != null)

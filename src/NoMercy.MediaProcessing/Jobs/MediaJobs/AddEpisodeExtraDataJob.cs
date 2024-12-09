@@ -42,7 +42,7 @@ public class AddEpisodeExtraDataJob : AbstractShowExtraDataJob<TmdbEpisodeAppend
         ;
 
         Logger.MovieDb(
-            $"Show: {Name}, Season {Storage.FirstOrDefault()?.SeasonNumber} Episodes: Images and Translations stored",
+            $"Show {Name}: Season {Storage.FirstOrDefault()?.SeasonNumber} Episodes: Images and Translations stored",
             LogEventLevel.Debug);
     }
 }

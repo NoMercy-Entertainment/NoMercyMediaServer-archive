@@ -130,7 +130,7 @@ public static class HlsPlaylistGenerator
         string output = RunProcess(AppFiles.FfProbePath,
             $"-v error -select_streams 0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoPath}\"");
         
-        var x = output.Trim().Replace("N/A", "0");
+        string? x = output.Trim().Replace("N/A", "0");
         if (x == "")
         {
             return 0;

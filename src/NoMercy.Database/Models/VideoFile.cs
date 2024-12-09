@@ -29,6 +29,9 @@ public class VideoFile : VideoTracks
 
     [JsonProperty("movie_id")] public int? MovieId { get; set; }
     public Movie Movie { get; init; } = null!;
+    
+    [JsonProperty("metadata_id")] public Ulid? MetadataId { get; set; }
+    public Metadata? Metadata { get; init; }
 
     [JsonProperty("user_data")] public ICollection<UserData> UserData { get; set; } = [];
 }

@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using Moq;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
@@ -11,7 +10,6 @@ using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.Tests.MediaProcessing.Movies;
 
-[TestSubject(typeof(MovieManagerTests))]
 public class MovieManagerTests
 {
     private readonly Mock<IMovieRepository> _movieRepositoryMock;

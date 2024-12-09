@@ -164,4 +164,72 @@
     <Key>Item removed</Key>
     <Value lang="nl">Item removed</Value>
   </Entry>
+  <Entry>
+    <Key>Successfully updated {0} special.</Key>
+    <Value lang="nl">Successfully updated {0} special.</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property Audio</Key>
+    <Value lang="nl">Unknown property Audio</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property AudioTrack</Key>
+    <Value lang="nl">Unknown property AudioTrack</Value>
+  </Entry>
+  <Entry>
+    <Key>SQLite Error 1: 'ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint'.</Key>
+    <Value lang="nl">SQLite Error 1: 'ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint'.</Value>
+  </Entry>
+  <Entry>
+    <Key>SQLite Error 19: 'NOT NULL constraint failed: Metadata.AudioTrackId'.</Key>
+    <Value lang="nl">SQLite Error 19: 'NOT NULL constraint failed: Metadata.AudioTrackId'.</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property Chapters</Key>
+    <Value lang="nl">Unknown property Chapters</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property Fonts</Key>
+    <Value lang="nl">Unknown property Fonts</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property FontsFile</Key>
+    <Value lang="nl">Unknown property FontsFile</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property Previews</Key>
+    <Value lang="nl">Unknown property Previews</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property Subtitles</Key>
+    <Value lang="nl">Unknown property Subtitles</Value>
+  </Entry>
+  <Entry>
+    <Key>Unknown property Video</Key>
+    <Value lang="nl">Unknown property Video</Value>
+  </Entry>
+  <Entry>
+    <Key>updater must be an Initialiser of the TEntity type (Parameter 'updater')</Key>
+    <Value lang="nl">updater must be an Initialiser of the TEntity type (Parameter 'updater')</Value>
+  </Entry>
+  <Entry>
+    <Key>Could not find file '\\192.168.2.120\mnt\vault\Media\Anime\Anime\No.Game.No.Life.(2014)\No.Game.No.Life.S00E01\No.Game.No.Life.S00E01.Special.1.Wild.Fancy.NoMercy.eng.full.ass'.</Key>
+    <Value lang="nl">Could not find file '\\192.168.2.120\mnt\vault\Media\Anime\Anime\No.Game.No.Life.(2014)\No.Game.No.Life.S00E01\No.Game.No.Life.S00E01.Special.1.Wild.Fancy.NoMercy.eng.full.ass'.</Value>
+  </Entry>
+  <Entry>
+    <Key>Rescanning {0} library.</Key>
+    <Value lang="nl">Rescanning {0} library.</Value>
+  </Entry>
+  <Entry>
+    <Key>Successfully moved item {0}.</Key>
+    <Value lang="nl">Successfully moved item {0}.</Value>
+  </Entry>
+  <Entry>
+    <Key>Something went wrong moving the item: {0}</Key>
+    <Value lang="nl">Something went wrong moving the item: {0}</Value>
+  </Entry>
+  <Entry>
+    <Key>Added to library</Key>
+    <Value lang="nl">Added to library</Value>
+  </Entry>
 </I18N>

@@ -21,13 +21,16 @@ public class Album : ColorPaletteTimeStamps
     [JsonProperty("tracks")] public int Tracks { get; set; }
 
     [JsonProperty("folder")] public string? Folder { get; set; }
-    [JsonProperty("host_folder")] public string? HostFolder { get; set; }
+    [JsonProperty("host_folder")] public string HostFolder { get; set; }
 
     [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
     public Library Library { get; set; }
 
     [JsonProperty("folder_id")] public Ulid? FolderId { get; set; }
     public Folder LibraryFolder { get; set; }
+    
+    [JsonProperty("metadata_id")] public Ulid? MetadataId { get; set; }
+    public Metadata? Metadata { get; init; }
 
     [JsonProperty("album_track")] public ICollection<AlbumTrack> AlbumTrack { get; set; }
     [JsonProperty("album_artist")] public ICollection<AlbumArtist> AlbumArtist { get; set; }

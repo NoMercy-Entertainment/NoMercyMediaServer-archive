@@ -5,8 +5,10 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CommandLine;
 using Microsoft.AspNetCore;
+using NoMercy.Data.Jobs;
 using NoMercy.Data.Logic;
 using NoMercy.Database;
+using NoMercy.Helpers.Monitoring;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
@@ -109,7 +111,7 @@ public static class Program
             Scheme = Uri.UriSchemeHttps
         };
 
-        var urls = new List<string>
+        List<string>? urls = new List<string>
         {
             localhostIPv4Url.ToString()
         };
@@ -139,7 +141,7 @@ public static class Program
     {
         await ApiInfo.RequestInfo();
 
-        if (UserSettings.TryGetUserSettings(out var settings))
+        if (UserSettings.TryGetUserSettings(out Dictionary<string, string>? settings))
         {
             UserSettings.ApplySettings(settings);
         }
@@ -154,7 +156,8 @@ public static class Program
             new (Register.Init),
             new (Binaries.DownloadAll),
             // new (AniDbBaseClient.Init),
-            new (TrayIcon.Make)
+            new (TrayIcon.Make),
+            new (StorageMonitor.UpdateStorage),
         ];
 
         // AppDomain.CurrentDomain.ProcessExit += (_, _) => { AniDbBaseClient.Dispose(); };
@@ -176,6 +179,19 @@ public static class Program
             IsBackground = true
         };
         fileWatcher.Start();
+        
+        Thread storageWatcher = new(new Task(() =>
+        {
+            StorageJob storageJob = new(StorageMonitor.Storage);
+            // storageJob.Handle().Wait();
+            JobDispatcher.Dispatch(storageJob, "data", 1000);
+        }).Start)
+        {
+            Name = "Storage Watcher",
+            Priority = ThreadPriority.Lowest,
+            IsBackground = true
+        };
+        storageWatcher.Start();
     }
 
     private static async Task RunStartup(List<TaskDelegate> startupTasks)

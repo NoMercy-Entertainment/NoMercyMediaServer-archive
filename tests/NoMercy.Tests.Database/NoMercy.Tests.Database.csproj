@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -14,13 +14,13 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="xunit" Version="2.9.0" />
     </ItemGroup>
-
+    
     <ItemGroup>
         <Using Include="Xunit"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\NoMercy.Data\NoMercy.Data.csproj" />
+      <ProjectReference Include="..\..\src\NoMercy.Database\NoMercy.Database.csproj" />
     </ItemGroup>
 
 </Project>

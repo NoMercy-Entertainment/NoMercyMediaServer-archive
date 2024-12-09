@@ -32,6 +32,7 @@ using NoMercy.Server.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using NoMercy.Helpers.Monitoring;
 using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
 using ICollectionRepository = NoMercy.Data.Repositories.ICollectionRepository;
 using ILibraryRepository = NoMercy.Data.Repositories.ILibraryRepository;
@@ -52,6 +53,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
         services.AddSingleton<JobQueue>();
         services.AddSingleton<Helpers.Monitoring.ResourceMonitor>();
         services.AddSingleton<Networking.Networking>();
+        services.AddSingleton<StorageMonitor>();
 
         // Add DbContexts
         services.AddDbContext<QueueContext>(optionsAction =>
@@ -231,8 +233,8 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        var supportedCultures = new[] { "en-US", "nl-NL" }; // Add other supported locales
-        var localizationOptions = new RequestLocalizationOptions()
+        string[]? supportedCultures = new[] { "en-US", "nl-NL" }; // Add other supported locales
+        RequestLocalizationOptions? localizationOptions = new RequestLocalizationOptions()
             .SetDefaultCulture(supportedCultures[0])
             .AddSupportedCultures(supportedCultures)
             .AddSupportedUICultures(supportedCultures);

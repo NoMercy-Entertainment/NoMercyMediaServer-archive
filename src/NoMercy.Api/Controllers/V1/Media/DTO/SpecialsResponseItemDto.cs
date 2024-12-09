@@ -71,10 +71,9 @@ public record SpecialsResponseItemDto
     {
         Id = special.Id.ToString();
         Title = special.Title;
-        Overview = special.Description;
+        Overview = special.Overview;
         Backdrop = special.Backdrop;
-        // Logo = special.Images
-        //     .FirstOrDefault(media => media.Type == "logo")?.FilePath;
+        Logo = special.Logo;
 
         MediaType = "specials";
         Link = new Uri($"/specials/{Id}", UriKind.Relative);

@@ -297,7 +297,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 catch (Exception e)
                 {
                     Logger.App(e.Message, LogEventLevel.Fatal);
-                    return;
+                    // return;
                 }
 
                 MediaFile res = new()

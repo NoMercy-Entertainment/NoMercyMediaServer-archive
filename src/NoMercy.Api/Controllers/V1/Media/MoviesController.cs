@@ -147,7 +147,7 @@ public class MoviesController : BaseController
 
     [HttpPost]
     [Route("rescan")]
-    public async Task<IActionResult> Like(int id)
+    public async Task<IActionResult> Rescan(int id)
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan movies");
@@ -222,6 +222,22 @@ public class MoviesController : BaseController
             {
                 movie.Title
             }
+        });
+    }
+    
+    [HttpPost]
+    [Route("add")]
+    public async Task<IActionResult> Add(int id)
+    {
+        if (!User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to add tv shows");
+
+        await _movieRepository.AddMovieAsync(id);
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = "Added to library",
         });
     }
 }
