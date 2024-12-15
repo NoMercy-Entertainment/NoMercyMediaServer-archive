@@ -54,7 +54,7 @@ public record CollectionMovieDto
         Poster = movie.Poster;
         Type = "movie";
         Year = movie.ReleaseDate.ParseYear();
-        Link = new Uri($"/movies/{Id}", UriKind.Relative);
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Genres = movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie.Genre))
             .ToArray();

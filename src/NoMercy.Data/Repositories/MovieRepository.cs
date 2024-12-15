@@ -7,7 +7,7 @@ using NoMercy.MediaProcessing.Jobs.MediaJobs;
 
 namespace NoMercy.Data.Repositories;
 
-public class MovieRepository(MediaContext context) : IMovieRepository
+public class MovieRepository(MediaContext context)
 {
     public Task<Movie?> GetMovieAsync(Guid userId, int id, string language)
     {

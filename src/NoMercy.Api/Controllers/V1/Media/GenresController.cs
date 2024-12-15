@@ -17,9 +17,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [Route("api/v{version:apiVersion}/genres")]
 public class GenresController : BaseController
 {
-    private readonly IGenreRepository _genreRepository;
+    private readonly GenreRepository _genreRepository;
 
-    public GenresController(IGenreRepository genreRepository)
+    public GenresController(GenreRepository genreRepository)
     {
         _genreRepository = genreRepository;
     }

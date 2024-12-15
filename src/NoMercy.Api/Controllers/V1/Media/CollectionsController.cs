@@ -17,7 +17,7 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/collection")] // match themoviedb.org API
-public class CollectionsController(ICollectionRepository collectionRepository) : BaseController
+public class CollectionsController(CollectionRepository collectionRepository) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Collections([FromQuery] PageRequestDto request)

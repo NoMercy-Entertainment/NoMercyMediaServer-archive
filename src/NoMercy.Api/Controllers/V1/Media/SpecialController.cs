@@ -17,7 +17,7 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/specials")]
-public class SpecialController(ISpecialRepository specialRepository) : BaseController
+public class SpecialController(SpecialRepository specialRepository) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Index([FromQuery] PageRequestDto request)

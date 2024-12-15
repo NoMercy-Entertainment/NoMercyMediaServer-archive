@@ -180,18 +180,18 @@ public static class Program
         };
         fileWatcher.Start();
         
-        Thread storageWatcher = new(new Task(() =>
+        Thread storageMonitor = new(new Task(() =>
         {
             StorageJob storageJob = new(StorageMonitor.Storage);
-            // storageJob.Handle().Wait();
-            JobDispatcher.Dispatch(storageJob, "data", 1000);
+            storageJob.Handle().Wait();
+            // JobDispatcher.Dispatch(storageJob, "data", 1000);
         }).Start)
         {
             Name = "Storage Watcher",
             Priority = ThreadPriority.Lowest,
             IsBackground = true
         };
-        storageWatcher.Start();
+        storageMonitor.Start();
     }
 
     private static async Task RunStartup(List<TaskDelegate> startupTasks)

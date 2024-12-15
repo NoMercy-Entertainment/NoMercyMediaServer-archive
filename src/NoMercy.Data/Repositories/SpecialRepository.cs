@@ -6,7 +6,7 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.Data.Repositories;
 
-public class SpecialRepository(MediaContext context): ISpecialRepository
+public class SpecialRepository(MediaContext context)
 {
     public async Task<List<Special>> GetSpecialsAsync(Guid userId, string language, int take, int page)
     {

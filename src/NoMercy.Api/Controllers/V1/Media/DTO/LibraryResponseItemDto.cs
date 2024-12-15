@@ -48,7 +48,7 @@ public record LibraryResponseItemDto
         TitleSort = movie.Movie.Title
             .TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
-        Link = new Uri($"/movies/{Id}", UriKind.Relative);
+        Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();

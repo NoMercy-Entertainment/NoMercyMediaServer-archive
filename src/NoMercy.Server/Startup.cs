@@ -34,9 +34,6 @@ using System.Security.Claims;
 using System.Text.Json.Serialization;
 using NoMercy.Helpers.Monitoring;
 using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
-using ICollectionRepository = NoMercy.Data.Repositories.ICollectionRepository;
-using ILibraryRepository = NoMercy.Data.Repositories.ILibraryRepository;
-using IMovieRepository = NoMercy.Data.Repositories.IMovieRepository;
 using LibraryRepository = NoMercy.Data.Repositories.LibraryRepository;
 using MovieRepository = NoMercy.Data.Repositories.MovieRepository;
 
@@ -70,26 +67,26 @@ public class Startup(IApiVersionDescriptionProvider provider)
         services.AddTransient<MediaContext>();
 
         // Add Repositories
-        services.AddScoped<IEncoderRepository, EncoderRepository>();
-        services.AddScoped<ILibraryRepository, LibraryRepository>();
-        services.AddScoped<IDeviceRepository, DeviceRepository>();
-        services.AddScoped<IFolderRepository, FolderRepository>();
-        services.AddScoped<ILanguageRepository, LanguageRepository>();
-        services.AddScoped<ICollectionRepository, CollectionRepository>();
-        services.AddScoped<IGenreRepository, GenreRepository>();
-        services.AddScoped<IMovieRepository, MovieRepository>();
-        services.AddScoped<ITvShowRepository, TvShowRepository>();
-        services.AddScoped<ISpecialRepository, SpecialRepository>();
+        services.AddScoped<EncoderRepository>();
+        services.AddScoped<LibraryRepository>();
+        services.AddScoped<DeviceRepository>();
+        services.AddScoped<FolderRepository>();
+        services.AddScoped<LanguageRepository>();
+        services.AddScoped<CollectionRepository>();
+        services.AddScoped<GenreRepository>();
+        services.AddScoped<MovieRepository>();
+        services.AddScoped<TvShowRepository>();
+        services.AddScoped<SpecialRepository>();
 
         // Add Managers
-        // services.AddScoped<IEncoderManager, EncoderManager>();
-        services.AddScoped<ILibraryManager, LibraryManager>();
-        services.AddScoped<IMovieManager, MovieManager>();
-        services.AddScoped<ICollectionManager, CollectionManager>();
-        services.AddScoped<IShowManager, ShowManager>();
-        services.AddScoped<ISeasonManager, SeasonManager>();
-        services.AddScoped<IEpisodeManager, EpisodeManager>();
-        services.AddScoped<IPersonManager, PersonManager>();
+        // services.AddScoped<EncoderManager>();
+        services.AddScoped<LibraryManager>();
+        services.AddScoped<MovieManager>();
+        services.AddScoped<CollectionManager>();
+        services.AddScoped<ShowManager>();
+        services.AddScoped<SeasonManager>();
+        services.AddScoped<EpisodeManager>();
+        services.AddScoped<PersonManager>();
 
         services.AddScoped<HomeController>();
 
@@ -233,7 +230,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        string[]? supportedCultures = new[] { "en-US", "nl-NL" }; // Add other supported locales
+        string[] supportedCultures = ["en-US", "nl-NL"]; // Add other supported locales
         RequestLocalizationOptions? localizationOptions = new RequestLocalizationOptions()
             .SetDefaultCulture(supportedCultures[0])
             .AddSupportedCultures(supportedCultures)

@@ -22,9 +22,9 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 [Route("api/v{version:apiVersion}/dashboard/encoderprofiles", Order = 10)]
 public class EncoderController : BaseController
 {
-    private readonly IEncoderRepository _encoderRepository;
+    private readonly EncoderRepository _encoderRepository;
 
-    public EncoderController(IEncoderRepository encoderRepository)
+    public EncoderController(EncoderRepository encoderRepository)
     {
         _encoderRepository = encoderRepository;
     }

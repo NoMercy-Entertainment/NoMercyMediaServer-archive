@@ -6,7 +6,7 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.Data.Repositories;
 
-public class LibraryRepository(MediaContext context) : ILibraryRepository
+public class LibraryRepository(MediaContext context)
 {
     public IQueryable<Library> GetLibraries(Guid userId)
     {
