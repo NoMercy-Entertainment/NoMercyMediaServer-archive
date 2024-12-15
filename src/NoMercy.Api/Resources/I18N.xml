@@ -232,4 +232,16 @@
     <Key>Added to library</Key>
     <Value lang="nl">Added to library</Value>
   </Entry>
+  <Entry>
+    <Key>Wallpaper set successfully</Key>
+    <Value lang="nl">Wallpaper set successfully</Value>
+  </Entry>
+  <Entry>
+    <Key>{1}</Key>
+    <Value lang="nl">{1}</Value>
+  </Entry>
+  <Entry>
+    <Key>Wallpaper not found</Key>
+    <Value lang="nl">Wallpaper not found</Value>
+  </Entry>
 </I18N>

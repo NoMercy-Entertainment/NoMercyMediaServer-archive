@@ -8,10 +8,10 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Music;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Queue;
+using Configuration = NoMercy.Database.Models.Configuration;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
 
@@ -212,26 +212,4 @@ public class ConfigurationController : BaseController
         }).ToList());
     }
     
-    [HttpPost]
-    [Route("/dashboard/wallpaper")]
-    public async Task<IActionResult> SetWallpaper([FromBody] string path)
-    {
-        if (!User.IsModerator())
-            return UnauthorizedResponse("You do not have permission to set wallpaper");
-
-        await using MediaContext mediaContext = new();
-        Image? wallpaper = await mediaContext.Images
-            .FirstOrDefaultAsync(config => config.FilePath == path);
-        
-        if (wallpaper is null)
-            return NotFoundResponse("Wallpaper not found");
-        
-        Wallpaper.Set(AppFiles.ImagesPath + wallpaper.FilePath, wallpaper.ColorPalette?.Backdrop?.Dominant);
-
-        return Ok(new StatusResponseDto<string>
-        {
-            Status = "ok",
-            Message = "Wallpaper set successfully"
-        });
-    }
 }

@@ -4,7 +4,7 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.Data.Repositories;
 
-public class GenreRepository(MediaContext context) : IGenreRepository
+public class GenreRepository(MediaContext context)
 {
     public async Task<Genre> GetGenreAsync(Guid userId, int id, string language, int take, int page)
     {

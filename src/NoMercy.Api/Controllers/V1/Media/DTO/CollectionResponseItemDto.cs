@@ -107,12 +107,14 @@ public record CollectionResponseItemDto
             .SelectMany(movie => movie.Movie.Cast)
             .Select(cast => new PeopleDto(cast))
             .OrderBy(cast => cast.Order)
+            .DistinctBy(people => people.Id)
             .ToArray();
 
         Crew = collection.CollectionMovies
             .SelectMany(movie => movie.Movie.Crew)
             .Select(crew => new PeopleDto(crew))
             .OrderBy(crew => crew.Order)
+            .DistinctBy(people => people.Id)
             .ToArray();
     }
 
@@ -141,6 +143,10 @@ public record CollectionResponseItemDto
         HaveItems = 0;
         Favorite = false;
         Link = new Uri($"/collection/{Id}", UriKind.Relative);
+
+        Genres = [];
+        Cast = [];
+        Crew = [];
 
         Collection = tmdbCollectionAppends.Parts
             .OrderBy(item => item.TitleSort())

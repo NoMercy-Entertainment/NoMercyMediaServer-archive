@@ -19,9 +19,9 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [Authorize]
 [Route("api/v{version:apiVersion}/libraries")]
 public class LibrariesController(
-    ILibraryRepository libraryRepository,
-    ICollectionRepository collectionRepository,
-    ISpecialRepository specialRepository)
+    LibraryRepository libraryRepository,
+    CollectionRepository collectionRepository,
+    SpecialRepository specialRepository)
     : BaseController
 {
     [HttpGet]
@@ -60,8 +60,8 @@ public class LibrariesController(
 
         foreach (Library library in libraries)
         {
-            IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
-            IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
+            IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc");
+            IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc");
 
             list.Add(new GenreRowDto<dynamic>
             {
@@ -72,8 +72,8 @@ public class LibrariesController(
             });
         }
 
-        IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
-        IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
+        IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
+        IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
 
         list.Add(new GenreRowDto<dynamic>
         {

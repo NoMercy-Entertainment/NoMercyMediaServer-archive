@@ -16,6 +16,7 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Data.Jobs;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.Helpers.Monitoring;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
@@ -28,7 +29,14 @@ using NoMercy.Providers.TMDB.Models.Shared;
 using NoMercy.Providers.TMDB.Models.TV;
 using NoMercy.Queue;
 using Serilog.Events;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Dithering;
+using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using AppFiles = NoMercy.NmSystem.AppFiles;
+using Configuration = NoMercy.Database.Models.Configuration;
+using Image = NoMercy.Database.Models.Image;
 using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
@@ -61,8 +69,8 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                 title: "Unauthorized.",
                 detail: "You do not have permission to access the setup");
 
-        await using MediaContext mediaContext = new();
-        List<Library> libraries = await mediaContext.Libraries
+        await using MediaContext context = new();
+        List<Library> libraries = await context.Libraries
             .Include(library => library.FolderLibraries)
             .ThenInclude(folderLibrary => folderLibrary.Folder)
             .ThenInclude(folder => folder.EncoderProfileFolder)
@@ -163,8 +171,6 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to add files");
-
-        await using MediaContext mediaContext = new();
 
         foreach (AddFile file in request.Files)
         {
@@ -269,10 +275,9 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
     }
 
     [NonAction]
-    private static string DeviceName()
+    private string DeviceName()
     {
-        MediaContext mediaContext = new();
-        Configuration? device = mediaContext.Configuration.FirstOrDefault(device => device.Key == "serverName");
+        Configuration? device = context.Configuration.FirstOrDefault(device => device.Key == "serverName");
         return device?.Value ?? Environment.MachineName;
     }
 
@@ -324,11 +329,11 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
 
             int year = match.Groups["year"].Success ? Convert.ToInt32(match.Groups["year"].Value) : 0;
             string albumName = match.Groups["album"].Success ? match.Groups["album"].Value : Regex.Replace(directoryInfo.Name, @"\[\d{4}\]\s?", "");
-            string artistName = match.Groups["artist"].Success ? match.Groups["artist"].Value : string.Empty;
-            string releaseType = match.Groups["releaseType"].Success ? match.Groups["releaseType"].Value : string.Empty;
-            string libraryFolder = (match.Groups["library_folder"].Success ? match.Groups["library_folder"].Value : null) ?? Regex.Split(directoryPath, pattern)?[0] ?? string.Empty;
+            // string artistName = match.Groups["artist"].Success ? match.Groups["artist"].Value : string.Empty;
+            // string releaseType = match.Groups["releaseType"].Success ? match.Groups["releaseType"].Value : string.Empty;
+            // string libraryFolder = (match.Groups["library_folder"].Success ? match.Groups["library_folder"].Value : null) ?? Regex.Split(directoryPath, pattern)?[0] ?? string.Empty;
 
-            Parallel.ForEach(audioFiles, (file, t) =>
+            Parallel.ForEach(audioFiles, (file) =>
             {
                 fileList.Add(new FileItemDto
                 {
@@ -353,11 +358,11 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
         }
         else if (videoFiles.Length > 0)
         {
-            await Parallel.ForEachAsync(videoFiles, async (file, t) =>
+            foreach (FileInfo file in videoFiles)
             {
                 try
                 {
-                    IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName, cancellationToken: t);
+                    IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName);
 
                     MovieDetector movieDetector = new();
                     MovieFile parsed = movieDetector.GetInfo(Regex.Replace(file.FullName, @"\[.*?\]", ""));
@@ -368,8 +373,6 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
 
                     TmdbSearchClient searchClient = new();
 
-                    await using MediaContext mediaContext = new();
-
                     switch (type)
                     {
                         case "anime" or "tv":
@@ -377,12 +380,12 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                             TmdbPaginatedResponse<TmdbTvShow>? shows =
                                 await searchClient.TvShow(parsed.Title ?? "", parsed.Year);
                             TmdbTvShow? show = shows?.Results.FirstOrDefault();
-                            if (show == null || !parsed.Season.HasValue || !parsed.Episode.HasValue) return;
+                            if (show == null || !parsed.Season.HasValue || !parsed.Episode.HasValue) continue;
 
-                            bool hasShow = mediaContext.Tvs
+                            bool hasShow = context.Tvs
                                 .Any(item => item.Id == show.Id);
 
-                            Ulid libraryId = await mediaContext.Libraries
+                            Ulid libraryId = await context.Libraries
                                 .Where(item => item.Type == type)
                                 .Select(item => item.Id)
                                 .FirstOrDefaultAsync();
@@ -403,7 +406,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                                 await job.Handle();
                             }
 
-                            Episode? episode = mediaContext.Episodes
+                            Episode? episode = context.Episodes
                                 .Where(item => item.TvId == show.Id)
                                 .Where(item => item.SeasonNumber == parsed.Season)
                                 .FirstOrDefault(item => item.EpisodeNumber == parsed.Episode);
@@ -413,13 +416,10 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                                 TmdbEpisodeClient episodeClient =
                                     new(show.Id, parsed.Season.Value, parsed.Episode.Value);
                                 TmdbEpisodeDetails? details = await episodeClient.Details();
-                                if (details == null) return;
+                                if (details == null) continue;
 
-                                Season? season = await mediaContext.Seasons
-                                    .FirstOrDefaultAsync(
-                                        season => season!.TvId == show.Id &&
-                                                  season.SeasonNumber == details.SeasonNumber,
-                                        cancellationToken: t);
+                                Season? season = await context.Seasons
+                                    .FirstOrDefaultAsync(season => season.TvId == show.Id && season.SeasonNumber == details.SeasonNumber);
 
                                 episode = new Episode
                                 {
@@ -437,8 +437,8 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                                     _colorPalette = await MovieDbImageManager.ColorPalette("still", details.StillPath)
                                 };
 
-                                mediaContext.Episodes.Add(episode);
-                                await mediaContext.SaveChangesAsync(t);
+                                context.Episodes.Add(episode);
+                                await context.SaveChangesAsync();
                             }
 
                             match = new MovieOrEpisodeDto
@@ -460,24 +460,24 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                             TmdbPaginatedResponse<TmdbMovie>? movies =
                                 await searchClient.Movie(parsed.Title ?? "", parsed.Year);
                             TmdbMovie? movie = movies?.Results.FirstOrDefault();
-                            if (movie == null) return;
+                            if (movie == null) continue;
 
-                            Movie? movieItem = mediaContext.Movies
+                            Movie? movieItem = context.Movies
                                 .FirstOrDefault(item => item.Id == movie.Id);
 
                             if (movieItem == null)
                             {
                                 TmdbMovieClient movieClient = new(movie.Id);
                                 TmdbMovieDetails? details = await movieClient.Details();
-                                if (details == null) return;
+                                if (details == null) continue;
 
-                                bool hasMovie = mediaContext.Movies
+                                bool hasMovie = context.Movies
                                     .Any(item => item.Id == movie.Id);
 
-                                Ulid libraryId = await mediaContext.Libraries
+                                Ulid libraryId = await context.Libraries
                                     .Where(item => item.Type == type)
                                     .Select(item => item.Id)
-                                    .FirstOrDefaultAsync(cancellationToken: t);
+                                    .FirstOrDefaultAsync();
 
                                 if (!hasMovie)
                                 {
@@ -558,7 +558,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                 {
                     Logger.App(e.Message, LogEventLevel.Error);
                 }
-            });
+            }
         }
 
         return fileList.OrderBy(file => file.Name).ToList();
@@ -619,8 +619,8 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update server information");
 
-        await using MediaContext mediaContext = new();
-        Configuration? configuration = await mediaContext.Configuration
+        await using MediaContext context = new();
+        Configuration? configuration = await context.Configuration
             .AsTracking()
             .FirstOrDefaultAsync(configuration => configuration.Key == "serverName");
 
@@ -634,7 +634,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                     Value = request.Name,
                     ModifiedBy = userId
                 };
-                await mediaContext.Configuration.AddAsync(configuration);
+                await context.Configuration.AddAsync(configuration);
             }
             else
             {
@@ -642,7 +642,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                 configuration.ModifiedBy = userId;
             }
 
-            await mediaContext.SaveChangesAsync();
+            await context.SaveChangesAsync();
 
             HttpClient client = new();
             client.BaseAddress = new Uri(Config.ApiServerBaseUrl);
@@ -729,7 +729,6 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
     [Route("/files/${depth:int}/${path:required}")]
     public async Task<IActionResult> Files(string path, int depth)
     {
-        Guid userId = User.UserId();
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to view files");
 
@@ -741,7 +740,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
 
         await mediaScan.DisposeAsync();
 
-        return Ok();
+        return Ok(folders);
     }
 
     [HttpPatch]
@@ -768,5 +767,67 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
         JobDispatcher.Dispatch(storageJob, "data", 1000);
         
         return Ok(StorageMonitor.Storage);
+    }
+    
+    [HttpPost]
+    [Route("wallpaper")]
+    public async Task<IActionResult> SetWallpaper([FromBody] WallpaperRequest request)
+    {
+        if (!User.IsOwner())
+            return UnauthorizedResponse("You do not have permission to set wallpaper");
+        
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return BadRequestResponse("Wallpaper setting is only supported on Windows");
+        }
+
+        await using MediaContext mediaContext = new();
+        Image? wallpaper = await mediaContext.Images
+            .FirstOrDefaultAsync(config => config.FilePath == request.Path);
+        
+        if (wallpaper?.FilePath is null)
+            return NotFoundResponse("Wallpaper not found");
+
+        string path = Path.Combine(AppFiles.ImagesPath, "original", wallpaper.FilePath.Replace("/", ""));
+        
+        string color = GetDominantColor(path);
+        #pragma warning disable CA1416
+            Wallpaper.SilentSet(path, request.Style, request.Color ?? color);
+        #pragma warning restore CA1416
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = "Wallpaper set successfully"
+        });
+    }
+
+    private static string GetDominantColor(string path)
+    {
+        using Image<Rgb24> image = SixLabors.ImageSharp.Image.Load<Rgb24>(path);
+        image.Mutate(
+            x => x
+                // Scale the image down preserving the aspect ratio. This will speed up quantization.
+                // We use nearest neighbor as it will be the fastest approach.
+                .Resize(new ResizeOptions()
+                {
+                    Sampler = KnownResamplers.NearestNeighbor,
+                    Size = new SixLabors.ImageSharp.Size(100, 0)
+                })
+                // Reduce the color palette to 1 color without dithering.
+                .Quantize(new OctreeQuantizer()
+                {
+                    Options =
+                    {
+                        MaxColors = 1,
+                        Dither = new OrderedDither(1),
+                        DitherScale = 1
+                    }
+                }));
+
+        Rgb24 dominant = image[0, 0];
+
+        return dominant.ToHexString();
+
     }
 }

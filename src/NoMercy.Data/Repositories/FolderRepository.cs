@@ -4,7 +4,7 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.Data.Repositories;
 
-public class FolderRepository(MediaContext context) : IFolderRepository
+public class FolderRepository(MediaContext context)
 {
     public async Task<Folder?> GetFolderByIdAsync(Ulid folderId)
     {
