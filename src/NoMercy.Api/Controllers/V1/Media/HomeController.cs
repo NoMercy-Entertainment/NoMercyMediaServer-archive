@@ -209,6 +209,12 @@ public class HomeController(MediaContext mediaContext) : BaseController
 
         GenreRowItemDto? homeCardItem = genres.Where(g => g.Title != "")
             .Randomize().FirstOrDefault()
+            ?.Items.Randomize().FirstOrDefault() ?? genres.Where(g => g.Title != "")
+            .Randomize().FirstOrDefault()
+            ?.Items.Randomize().FirstOrDefault() ?? genres.Where(g => g.Title != "")
+            .Randomize().FirstOrDefault()
+            ?.Items.Randomize().FirstOrDefault() ?? genres.Where(g => g.Title != "")
+            .Randomize().FirstOrDefault()
             ?.Items.Randomize().FirstOrDefault();
 
         return Ok(new  Render

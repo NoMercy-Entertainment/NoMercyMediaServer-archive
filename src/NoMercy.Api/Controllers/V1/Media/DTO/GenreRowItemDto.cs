@@ -7,7 +7,7 @@ using NoMercy.NmSystem;
 namespace NoMercy.Api.Controllers.V1.Media.DTO;
 public record GenreRowItemDto
 {
-    [JsonProperty("id")] public int? Id { get; set; }
+    [JsonProperty("id")] public dynamic? Id { get; set; }
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
     [JsonProperty("title")] public string? Title { get; set; }
@@ -114,7 +114,7 @@ public record GenreRowItemDto
 
     public GenreRowItemDto()
     {
-
+        //
     }
 
     public GenreRowItemDto(Collection collection, string country)
@@ -138,10 +138,12 @@ public record GenreRowItemDto
 
         MediaType = "tv";
         Type = "tv";
-        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+        Link = new Uri($"/collection/{Id}", UriKind.Relative);
         NumberOfItems = collection.CollectionMovies.Count;
         HaveItems = collection.CollectionMovies
             .Count(movie => movie.Movie.VideoFiles.Any(v => v.Folder != null));
+
+        Tags = [];
 
         ColorPalette = collection.ColorPalette;
 
@@ -159,7 +161,7 @@ public record GenreRowItemDto
 
     public GenreRowItemDto(Special special, string country)
     {
-        Id = new Random().Next();
+        Id = special.Id;
         Title = special.Title;
         Overview = special.Overview;
         Poster = special.Poster;
@@ -172,9 +174,11 @@ public record GenreRowItemDto
 
         MediaType = "tv";
         Type = "tv";
-        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+        Link = new Uri($"/specials/{Id}", UriKind.Relative);
 
         NumberOfItems = special.Items?.Count;
+        
+        Tags = [];
 
         int haveMovies = special.Items
             .Select(item => item.Movie)

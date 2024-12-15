@@ -6,7 +6,7 @@ using NoMercy.MediaProcessing.Jobs.MediaJobs;
 
 namespace NoMercy.Data.Repositories;
 
-public class TvShowRepository(MediaContext context) : ITvShowRepository
+public class TvShowRepository(MediaContext context)
 {
     public Task<Tv?> GetTvAsync(Guid userId, int id, string language)
     {
@@ -141,9 +141,7 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
     {
         TvUser? tvUser = await context.TvUser
             .FirstOrDefaultAsync(tu => tu.TvId == id && tu.UserId.Equals(userId));
-
-        if (tvUser == null) return false;
-
+        
         if (like)
         {
             await context.TvUser.Upsert(new TvUser(id, userId))
@@ -155,7 +153,7 @@ public class TvShowRepository(MediaContext context) : ITvShowRepository
                 })
                 .RunAsync();
         }
-        else
+        else if (tvUser != null)
         {
             context.TvUser.Remove(tvUser);
 

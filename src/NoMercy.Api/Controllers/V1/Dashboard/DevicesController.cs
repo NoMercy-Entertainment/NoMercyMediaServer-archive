@@ -19,9 +19,9 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 [Route("api/v{version:apiVersion}/dashboard/devices", Order = 10)]
 public class DevicesController : BaseController
 {
-    private readonly IDeviceRepository _deviceRepository;
+    private readonly DeviceRepository _deviceRepository;
 
-    public DevicesController(IDeviceRepository deviceRepository)
+    public DevicesController(DeviceRepository deviceRepository)
     {
         _deviceRepository = deviceRepository;
     }

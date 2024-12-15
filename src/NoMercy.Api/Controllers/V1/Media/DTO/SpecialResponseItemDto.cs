@@ -54,10 +54,12 @@ public record SpecialResponseItemDto
 
         IEnumerable<PeopleDto> cast = items
             .SelectMany(tv => tv.Cast)
+            .DistinctBy(people => people.Id)
             .ToList();
 
         IEnumerable<PeopleDto> crew = items
             .SelectMany(item => item.Crew)
+            .DistinctBy(people => people.Id)
             .ToList();
 
         IEnumerable<ImageDto> posters = items
@@ -70,6 +72,7 @@ public record SpecialResponseItemDto
 
         IEnumerable<GenreDto> genres = items
             .SelectMany(item => item.Genres)
+            .DistinctBy(genre => genre.Id)
             .ToList();
 
         foreach (SpecialItemsDto item in items)
@@ -95,7 +98,7 @@ public record SpecialResponseItemDto
         Posters = posters;
         Cast = cast;
         Crew = crew;
-        Genres = genres.DistinctBy(genre => genre.Id);
+        Genres = genres;
 
         Favorite = special.SpecialUser.Count != 0;
 
@@ -132,6 +135,12 @@ public record SpecialResponseItemDto
 
         int movies = special.Items.Count(item => item.MovieId is not null && (bool)item.Movie?.VideoFiles.Any());
         int episodes = special.Items.Count(item => item.EpisodeId is not null && (bool)item.Episode?.VideoFiles.Any());
+
+        Cast = [];
+        Crew = [];
+        Backdrops = [];
+        Posters = [];
+        Genres = [];
 
         HaveItems = movies + episodes;
 

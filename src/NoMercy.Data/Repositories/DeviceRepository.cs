@@ -5,7 +5,7 @@ using NoMercy.Database.Models;
 
 namespace NoMercy.Data.Repositories;
 
-public class DeviceRepository(MediaContext context) : IDeviceRepository
+public class DeviceRepository(MediaContext context)
 {
     public IIncludableQueryable<Device, ICollection<ActivityLog>> GetDevicesAsync()
     {
