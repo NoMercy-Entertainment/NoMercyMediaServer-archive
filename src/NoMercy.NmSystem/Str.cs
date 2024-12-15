@@ -165,4 +165,9 @@ public static partial class Str
     {
         return str + ((parameters is not null && parameters.Count > 0) ? "?" + string.Join("&", parameters.Select(pair => $"{pair.Key}={pair.Value}")) : string.Empty);
     }
+    
+    public static string EscapeQuotes(this string str)
+    {
+        return Regex.Replace(str, "\"", $"'");
+    }
 }
