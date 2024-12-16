@@ -7,7 +7,7 @@ internal class FileTimestampEnricher : ILogEventEnricher
 {
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
-        string timestamp = DateTime.UtcNow.ToString(CultureInfo.InvariantCulture);
+        DateTime timestamp = DateTime.UtcNow;
 
         logEvent.RemovePropertyIfPresent("@t");
         logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(

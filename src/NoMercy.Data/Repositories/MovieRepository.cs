@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 
@@ -9,50 +8,51 @@ namespace NoMercy.Data.Repositories;
 
 public class MovieRepository(MediaContext context)
 {
-    public Task<Movie?> GetMovieAsync(Guid userId, int id, string language)
-    {
-        return context.Movies.AsNoTracking()
-            .Where(movie => movie.Id == id)
-            .Where(tv => tv.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
-            .Include(movie => movie.MovieUser
-                .Where(movieUser => movieUser.UserId.Equals(userId))
-            )
-            .Include(movie => movie.Cast)
-            .ThenInclude(castMovie => castMovie.Person)
-            .Include(movie => movie.Cast)
-            .ThenInclude(castMovie => castMovie.Role)
-            .Include(movie => movie.Crew)
-            .ThenInclude(crewMovie => crewMovie.Person)
-            .Include(movie => movie.Crew)
-            .ThenInclude(crewMovie => crewMovie.Job)
-            .Include(movie => movie.Library)
-            .ThenInclude(library => library.LibraryUsers)
-            .Include(movie => movie.Media)
-            .Include(movie => movie.AlternativeTitles)
-            .Include(movie => movie.Translations
-                .Where(translation => translation.Iso6391 == language))
-            .Include(movie => movie.Images
-                .Where(image =>
-                    (image.Type == "logo" && image.Iso6391 == "en")
-                    || ((image.Type == "backdrop" || image.Type == "poster") &&
-                        (image.Iso6391 == "en" || image.Iso6391 == null))
+    public readonly Func<MediaContext, Guid, int, string, string, Task<Movie?>> GetMovieAsync =
+        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language, string country) =>
+            mediaContext.Movies.AsNoTracking()
+                .Where(movie => movie.Id == id)
+                .Where(tv => tv.Library.LibraryUsers
+                    .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
+                .Include(movie => movie.MovieUser
+                    .Where(movieUser => movieUser.UserId.Equals(userId))
                 )
-                .OrderByDescending(image => image.VoteAverage)
-            )
-            .Include(movie => movie.CertificationMovies)
-            .ThenInclude(certificationMovie => certificationMovie.Certification)
-            .Include(movie => movie.GenreMovies)
-            .ThenInclude(genreMovie => genreMovie.Genre)
-            .Include(movie => movie.KeywordMovies)
-            .ThenInclude(keywordMovie => keywordMovie.Keyword)
-            .Include(movie => movie.RecommendationFrom)
-            .Include(movie => movie.SimilarFrom)
-            .Include(movie => movie.VideoFiles)
-            .ThenInclude(file => file.UserData.Where(
-                userData => userData.UserId.Equals(userId)))
-            .FirstOrDefaultAsync();
-    }
+                .Include(movie => movie.Cast)
+                .ThenInclude(castMovie => castMovie.Person)
+                .Include(movie => movie.Cast)
+                .ThenInclude(castMovie => castMovie.Role)
+                .Include(movie => movie.Crew)
+                .ThenInclude(crewMovie => crewMovie.Person)
+                .Include(movie => movie.Crew)
+                .ThenInclude(crewMovie => crewMovie.Job)
+                .Include(movie => movie.Library)
+                .ThenInclude(library => library.LibraryUsers)
+                .Include(movie => movie.Media)
+                .Include(movie => movie.AlternativeTitles)
+                .Include(movie => movie.Translations
+                    .Where(translation => translation.Iso6391 == language))
+                .Include(movie => movie.Images
+                    .Where(image =>
+                        (image.Type == "logo" && image.Iso6391 == "en")
+                        || ((image.Type == "backdrop" || image.Type == "poster") &&
+                            (image.Iso6391 == "en" || image.Iso6391 == null))
+                    )
+                    .OrderByDescending(image => image.VoteAverage)
+                )
+                .Include(movie => movie.CertificationMovies
+                    .Where(certification => certification.Certification.Iso31661 == country ||
+                                            certification.Certification.Iso31661 == "US"))
+                .ThenInclude(certificationMovie => certificationMovie.Certification)
+                .Include(movie => movie.GenreMovies)
+                .ThenInclude(genreMovie => genreMovie.Genre)
+                .Include(movie => movie.KeywordMovies)
+                .ThenInclude(keywordMovie => keywordMovie.Keyword)
+                .Include(movie => movie.RecommendationFrom)
+                .Include(movie => movie.SimilarFrom)
+                .Include(movie => movie.VideoFiles)
+                .ThenInclude(file => file.UserData.Where(
+                    userData => userData.UserId.Equals(userId)))
+                .FirstOrDefault());
 
     public Task<bool> GetMovieAvailableAsync(Guid userId, int id)
     {

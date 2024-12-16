@@ -36,23 +36,17 @@ public record SpecialItemsDto
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int HaveItems { get; set; }
     [JsonProperty("duration")] public int Duration { get; set; }
+    
+    [JsonProperty("total_duration")] public int TotalDuration { get; set; }
 
     public SpecialItemsDto(Movie movie)
     {
-        string? title = movie.Translations.FirstOrDefault()?.Title;
-        string? overview = movie.Translations.FirstOrDefault()?.Overview;
-
         Id = movie.Id;
         EpisodeIds = [];
-        Title = !string.IsNullOrEmpty(title)
-            ? title
-            : movie.Title;
-        Overview = !string.IsNullOrEmpty(overview)
-            ? overview
-            : movie.Overview;
+        Title = movie.Title;
+        Overview =  movie.Overview;
 
         Backdrop = movie.Backdrop;
-        Favorite = movie.MovieUser.Count != 0;
         // Watched = movie.Watched;
         Logo = movie.Images
             .FirstOrDefault(media => media.Type == "logo")
@@ -75,7 +69,9 @@ public record SpecialItemsDto
         Link = new Uri($"/movie/{Id}", UriKind.Relative);
         Year = movie.ReleaseDate.ParseYear();
         Duration = movie.Runtime * 60 ?? 0;
-
+        
+        TotalDuration = movie.Runtime * 60 ?? 0;
+        
         Genres = movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie.Genre));
 
@@ -99,23 +95,15 @@ public record SpecialItemsDto
 
     public SpecialItemsDto(Tv tv)
     {
-        string? title = tv.Translations.FirstOrDefault()?.Title;
-        string? overview = tv.Translations.FirstOrDefault()?.Overview;
-
         Id = tv.Id;
         EpisodeIds = tv.Episodes?
             .Select(episode => episode.Id)
             .ToArray() ?? [];
 
-        Title = !string.IsNullOrEmpty(title)
-            ? title
-            : tv.Title;
-        Overview = !string.IsNullOrEmpty(overview)
-            ? overview
-            : tv.Overview;
+        Title = tv.Title;
+        Overview = tv.Overview;
 
         Backdrop = tv.Backdrop;
-        Favorite = tv.TvUser.Count != 0;
         // Watched = tv.Watched;
         Logo = tv.Images
             .FirstOrDefault(media => media.Type == "logo")
@@ -152,6 +140,8 @@ public record SpecialItemsDto
         HaveItems = have;
 
         Duration = tv.Duration * have * 60 ?? 0;
+        
+        TotalDuration = tv.Episodes?.Sum(item => item.Tv.Duration * 60 ?? 0) ?? 0;
 
         // Watched = tv.Episodes
         //     .SelectMany(episode => episode!.VideoFiles
@@ -168,4 +158,5 @@ public record SpecialItemsDto
             .Take(15)
             .Select(crew => new PeopleDto(crew));
     }
+
 }
