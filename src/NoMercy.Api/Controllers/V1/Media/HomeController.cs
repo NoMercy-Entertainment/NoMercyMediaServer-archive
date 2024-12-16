@@ -315,7 +315,9 @@ public class HomeController(MediaContext mediaContext) : BaseController
 
         Tv? tv = await mediaContext.Tvs
             .AsNoTracking()
-            .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
+            .Where(tv => 
+                tv.Library.LibraryUsers.Any(u => u.UserId.Equals(userId))
+                && tv.Episodes.Any(episode => episode.SeasonNumber > 0 && episode.VideoFiles.Count != 0))
             .Include(tv => tv.Translations.Where(translation => translation.Iso6391 == language))
             .Include(tv => tv.Images.Where(image => image.Type == "logo" && image.Iso6391 == "en"))
             .Include(tv => tv.Media.Where(media => media.Site == "YouTube"))
@@ -328,7 +330,8 @@ public class HomeController(MediaContext mediaContext) : BaseController
 
         Movie? movie = await mediaContext.Movies
             .AsNoTracking()
-            .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId)))
+            .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId.Equals(userId))
+                && movie.VideoFiles.Count != 0)
             .Include(movie => movie.Translations.Where(translation => translation.Iso6391 == language))
             .Include(movie => movie.Images.Where(image => image.Type == "logo" && image.Iso6391 == "en"))
             .Include(movie => movie.Media.Where(media => media.Site == "YouTube"))

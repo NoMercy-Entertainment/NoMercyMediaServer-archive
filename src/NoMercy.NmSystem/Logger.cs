@@ -365,6 +365,7 @@ public static class Logger
                 break;
         }
 
+        // TODO: Find a way to make emitting to the dashboard working without circular dependency on Networking
         // Networking.Networking.SendToAll("NewLog", "dashboardHub", new LogEntry
         // {
         //     Color = ToHexString(color),

@@ -23,19 +23,11 @@ public record SpecialResponseDto
                 .Include(special => special.Items
                     .OrderBy(specialItem => specialItem.Order)
                 )
-                .ThenInclude(specialItem => specialItem.Movie)
-                .ThenInclude(movie => movie!.VideoFiles)
-                .ThenInclude(file => file.UserData
-                    .Where(userData => userData.UserId.Equals(userId))
-                )
                 .Include(special => special.Items
                     .OrderBy(specialItem => specialItem.Order)
                 )
                 .ThenInclude(specialItem => specialItem.Episode)
-                .ThenInclude(movie => movie!.VideoFiles)
-                .ThenInclude(file => file.UserData
-                    .Where(userData => userData.UserId.Equals(userId))
-                )
+                    .ThenInclude(ep => ep!.Tv)
                 .Include(special => special.SpecialUser
                     .Where(specialUser => specialUser.UserId.Equals(userId))
                 )
@@ -51,12 +43,6 @@ public record SpecialResponseDto
                     string country) =>
                 mediaContext.Movies.AsNoTracking()
                     .Where(movie => ids.Contains(movie.Id))
-                    .Include(movie => movie.Translations
-                        .Where(translation => translation.Iso6391 == language)
-                    )
-                    .Include(movie => movie.MovieUser
-                        .Where(movieUser => movieUser.UserId.Equals(userId))
-                    )
                     .Include(movie => movie.CertificationMovies
                         .Where(certification => certification.Certification.Iso31661 == country ||
                                                 certification.Certification.Iso31661 == "US")
@@ -87,6 +73,7 @@ public record SpecialResponseDto
                                 (image.Iso6391 == "en" || image.Iso6391 == null))
                         )
                         .OrderByDescending(image => image.VoteAverage)
+                        .Take(2)
                     )
             );
 
@@ -99,10 +86,7 @@ public record SpecialResponseDto
             EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, IEnumerable<int> ids, string language,
                     string country) =>
                 mediaContext.Tvs.AsNoTracking()
-                    .Where(tv => tv.Episodes.Any(e => ids.Contains(e.Id)))
-                    .Include(tv => tv.Translations
-                        .Where(translation => translation.Iso6391 == language)
-                    )
+                    .Where(tv => ids.Contains(tv.Id))
                     .Include(tv => tv.TvUser
                         .Where(tvUser => tvUser.UserId.Equals(userId))
                     )
@@ -132,11 +116,10 @@ public record SpecialResponseDto
                                 (image.Iso6391 == "en" || image.Iso6391 == null))
                         )
                         .OrderByDescending(image => image.VoteAverage)
+                        .Take(2)
                     )
                     .Include(tv => tv.Episodes)
                     .ThenInclude(episode => episode.VideoFiles)
-                    .ThenInclude(file => file.UserData
-                        .Where(userData => userData.UserId.Equals(userId)))
             );
 
     #endregion

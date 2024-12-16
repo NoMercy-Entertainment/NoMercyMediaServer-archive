@@ -24,7 +24,7 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/tv/{id:int}")] // match themoviedb.org API
-public class TvShowsController(TvShowRepository tvShowRepository) : BaseController
+public class TvShowsController(TvShowRepository tvShowRepository, MediaContext mediaContext) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Tv(int id)
@@ -34,8 +34,9 @@ public class TvShowsController(TvShowRepository tvShowRepository) : BaseControll
             return UnauthorizedResponse("You do not have permission to view tv shows");
 
         string language = Language();
-
-        Tv? tv = await tvShowRepository.GetTvAsync(userId, id, language);
+        string country = Country();
+        
+        Tv? tv = await tvShowRepository.GetTvAsync(mediaContext, userId, id, language, country);
 
         if (tv is not null)
             return Ok(new InfoResponseDto
