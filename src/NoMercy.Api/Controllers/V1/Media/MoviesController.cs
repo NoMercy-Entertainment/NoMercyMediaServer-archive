@@ -24,7 +24,7 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/movie/{id:int}")] // match themoviedb.org API
-public class MoviesController(MovieRepository movieRepository) : BaseController
+public class MoviesController(MovieRepository movieRepository, MediaContext mediaContext) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> Movie(int id)
@@ -35,8 +35,8 @@ public class MoviesController(MovieRepository movieRepository) : BaseController
 
         string language = Language();
         string country = Country();
-
-        Movie? movie = await movieRepository.GetMovieAsync(userId, id, language);
+        
+        Movie? movie = await movieRepository.GetMovieAsync(mediaContext, userId, id, language, country);
 
         if (movie is not null)
             return Ok(new InfoResponseDto

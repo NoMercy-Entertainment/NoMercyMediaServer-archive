@@ -81,20 +81,22 @@ public class SpecialController(SpecialRepository specialRepository) : BaseContro
             .Where(item => item.MovieId is not null)
             .Select(item => item.MovieId ?? 0);
 
-        IEnumerable<int> episodeIds = special.Items
+        IEnumerable<int> tvIds = special.Items
             .Where(item => item.EpisodeId is not null)
-            .Select(item => item.EpisodeId ?? 0);
+            .Select(item => item.Episode)
+            .Select(episode => episode!.Tv)
+            .Select(tv => tv.Id);
 
         List<SpecialItemsDto> items = [];
-
+        
         IAsyncEnumerable<Movie> specialMovies = SpecialResponseDto.GetSpecialMovies(mediaContext, userId, movieIds, language, country);
         await foreach (Movie movie in specialMovies)
             items.Add(new SpecialItemsDto(movie));
-
-        IAsyncEnumerable<Tv> specialTvs = SpecialResponseDto.GetSpecialTvs(mediaContext, userId, episodeIds, language, country);
+        
+        IAsyncEnumerable<Tv> specialTvs = SpecialResponseDto.GetSpecialTvs(mediaContext, userId, tvIds, language, country);
         await foreach (Tv tv in specialTvs)
             items.Add(new SpecialItemsDto(tv));
-
+        
         return Ok(new DataResponseDto<SpecialResponseItemDto>
         {
             Data = new SpecialResponseItemDto(special, items)

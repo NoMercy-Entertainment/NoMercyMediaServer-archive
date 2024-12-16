@@ -105,11 +105,13 @@ public record SpecialResponseItemDto
         NumberOfItems = special.Items.Count;
 
         int movies = special.Items.Count(item => item.MovieId is not null && item.Movie?.VideoFiles.Count != 0);
-        int episodes = special.Items.Count(item => item.EpisodeId is not null && item.Episode?.VideoFiles.Count != 0);
+        int episodes = special.Items
+            .Where(item => item.EpisodeId is not null)
+            .Count(item => item.Episode?.VideoFiles?.Count != 0);
 
         HaveItems = movies + episodes;
 
-        TotalDuration = items.Sum(item => item.Duration);
+        TotalDuration = items.Sum(item => item.TotalDuration);
 
         ContentRatings = items
             .Select(specialItem => specialItem.Rating)
