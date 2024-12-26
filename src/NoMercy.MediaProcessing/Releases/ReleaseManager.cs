@@ -3,6 +3,7 @@ using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
+using NoMercy.MediaProcessing.MusicGenres;
 using NoMercy.NmSystem;
 using NoMercy.Providers.CoverArt.Client;
 using NoMercy.Providers.MusicBrainz.Models;
@@ -13,6 +14,7 @@ namespace NoMercy.MediaProcessing.Releases;
 
 public class ReleaseManager(
     IReleaseRepository releaseRepository,
+    IMusicGenreRepository musicGenreRepository,
     JobDispatcher jobDispatcher
 ) : BaseManager, IReleaseManager
 {
@@ -70,6 +72,14 @@ public class ReleaseManager(
             await releaseRepository.Store(release);
             
             await LinkToLibrary(releaseAppends, library);
+            
+            List<AlbumMusicGenre> genres = releaseAppends.Genres.Select(genre => new AlbumMusicGenre()
+            {
+                AlbumId = releaseAppends.Id,
+                MusicGenreId = genre.Id,
+            }).ToList();
+
+            await musicGenreRepository.LinkToRelease(genres);
             
             Logger.MusicBrainz($"Release {releaseAppends.Title} stored", LogEventLevel.Verbose);
             

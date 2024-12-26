@@ -328,7 +328,7 @@ public class LibraryRepository(MediaContext context)
                 Id = folder.Id,
                 Path = folder.Path,
                 EncoderProfiles = folder.EncoderProfileFolder
-                    .Select(epf => epf.EncoderProfileId)
+                    .Select(e => e.EncoderProfile)
                     .ToArray()
             })
             .ToList();

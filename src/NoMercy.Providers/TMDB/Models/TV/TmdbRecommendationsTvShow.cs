@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
 namespace NoMercy.Providers.TMDB.Models.TV;
-public class RecommendationsTmdbTvShow : TmdbTvShow
+public class TmdbRecommendationsTvShow : TmdbTvShow
 {
     [JsonProperty("adult")] public bool Adult { get; set; }
 }

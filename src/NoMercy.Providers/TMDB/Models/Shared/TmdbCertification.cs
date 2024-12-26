@@ -2,7 +2,7 @@
 
 namespace NoMercy.Providers.TMDB.Models.Shared;
 
-public class Certification
+public class TmdbCertification
 {
     [JsonProperty("certifications")] public TmdbCertificationList TmdbCertifications { get; set; } = new();
 
