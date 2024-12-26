@@ -43,7 +43,9 @@ public record GenresResponseItemDto
         Title = movie.Movie.Title;
         TitleSort = movie.Movie.Title
             .TitleSort(movie.Movie.ReleaseDate);
-
+        HaveItems = movie.Movie.VideoFiles
+            .Count(videoFile => videoFile.Folder != null);
+        NumberOfItems = movie.Movie.VideoFiles.Count;
         Type = "movie";
         MediaType = "movie";
         Link = new Uri($"/movie/{Id}", UriKind.Relative);
@@ -105,6 +107,9 @@ public record GenresResponseItemDto
             .TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
         Link = new Uri($"/movie/{Id}", UriKind.Relative);
+        HaveItems = movie.Movie.VideoFiles
+            .Count(videoFile => videoFile.Folder != null);
+        NumberOfItems = movie.Movie.VideoFiles.Count;
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();

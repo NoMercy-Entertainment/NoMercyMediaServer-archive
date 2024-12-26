@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using NoMercy.Providers.TMDB.Models.Shared;
 
 namespace NoMercy.Providers.TMDB.Models.TV;
-public class ValueClass
+public class TmdbValueClass
 {
     [JsonProperty("season_id")] public int? SeasonId { get; set; }
     [JsonProperty("season_number")] public int? SeasonNumber { get; set; }

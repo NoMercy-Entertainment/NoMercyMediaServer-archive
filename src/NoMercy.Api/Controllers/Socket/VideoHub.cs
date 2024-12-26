@@ -30,15 +30,15 @@ public class VideoHub : ConnectionHub
         UserData userdata = new()
         {
             UserId = user.Id,
-            Type = request.PlaylistType,
+            Type = request.VideoType,
             Time = request.Time,
             Audio = request.Audio,
             Subtitle = request.Subtitle,
             SubtitleType = request.SubtitleType,
             VideoFileId = Ulid.Parse(request.VideoId),
-            MovieId = request.PlaylistType == "movie" ? request.TmdbId : null,
-            TvId = request.PlaylistType == "tv" ? request.TmdbId : null,
-            CollectionId = request.PlaylistType == "collection" ? request.TmdbId : null,
+            MovieId = request.VideoType == "movie" ? request.TmdbId : null,
+            TvId = request.VideoType == "tv" ? request.TmdbId : null,
+            CollectionId = request.VideoType == "collection" ? request.TmdbId : null,
             SpecialId = request.SpecialId
         };
 
@@ -48,6 +48,11 @@ public class VideoHub : ConnectionHub
             .WhenMatched((uds, udi) => new UserData
             {
                 Id = uds.Id,
+                Type = udi.Type,
+                MovieId = udi.MovieId,
+                TvId = udi.TvId,
+                CollectionId = udi.CollectionId,
+                SpecialId = udi.SpecialId,
                 Time = udi.Time,
                 Audio = udi.Audio,
                 Subtitle = udi.Subtitle,

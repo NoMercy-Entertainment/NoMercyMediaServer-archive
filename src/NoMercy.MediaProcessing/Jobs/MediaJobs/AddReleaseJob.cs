@@ -34,12 +34,13 @@ public class AddReleaseJob : AbstractReleaseJob
 
         ReleaseGroupRepository releaseGroupRepository = new(context);
         ReleaseGroupManager releaseGroupManager = new(releaseGroupRepository, jobDispatcher);
+        
+        MusicGenreRepository musicGenreRepository = new(context);
 
         ReleaseRepository releaseRepository = new(context);
-        ReleaseManager releaseManager = new(releaseRepository, jobDispatcher);
+        ReleaseManager releaseManager = new(releaseRepository, musicGenreRepository, jobDispatcher);
 
         ArtistRepository artistRepository = new(context);
-        MusicGenreRepository musicGenreRepository = new(context);
         ArtistManager artistManager = new(artistRepository, musicGenreRepository, jobDispatcher);
         
         RecordingRepository recordingRepository = new(context);
@@ -85,7 +86,7 @@ public class AddReleaseJob : AbstractReleaseJob
         
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
-            QueryKey = ["album", Id.ToString()]
+            QueryKey = ["music", "album", Id.ToString()]
         });
     }
 }
