@@ -2,7 +2,7 @@
 
 namespace NoMercy.Providers.TMDB.Models.TV;
 
-public class TmdbTvRecommendations : TmdbPaginatedResponse<RecommendationsTmdbTvShow>
+public class TmdbTvRecommendations : TmdbPaginatedResponse<TmdbRecommendationsTvShow>
 {
     //
 }

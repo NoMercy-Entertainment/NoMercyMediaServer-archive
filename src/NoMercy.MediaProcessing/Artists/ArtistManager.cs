@@ -44,14 +44,21 @@ public class ArtistManager(
         
         await LinkToLibrary(artistCredit.MusicBrainzArtist, library);
         await LinkToRelease(artistCredit.MusicBrainzArtist, releaseAppends);
-
-        List<ArtistMusicGenre> genres = artistCredit.MusicBrainzArtist.Genres?.Select(genre => new ArtistMusicGenre()
+        
+        try
         {
-            ArtistId = artistCredit.MusicBrainzArtist.Id,
-            MusicGenreId = genre.Id,
-        }).ToList() ?? [];
+            List<ArtistMusicGenre> genres = artistCredit.MusicBrainzArtist.Genres?.Select(genre => new ArtistMusicGenre()
+            {
+                ArtistId = artistCredit.MusicBrainzArtist.Id,
+                MusicGenreId = genre.Id,
+            }).ToList() ?? [];
 
-        await musicGenreRepository.LinkToArtist(genres);
+            await musicGenreRepository.LinkToArtist(genres);
+        }
+        catch (Exception e)
+        {
+            //
+        }
         
         jobDispatcher.DispatchJob<ProcessFanartArtistImagesJob>(artistCredit.MusicBrainzArtist.Id);
     }

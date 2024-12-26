@@ -164,7 +164,7 @@ public class LibrariesController(
 
             foreach (Data.Repositories.FolderDto folder in folders)
                 encoderProfileFolders.AddRange(folder.EncoderProfiles.Select(profile =>
-                    new EncoderProfileFolder { FolderId = folder.Id, EncoderProfileId = profile }));
+                    new EncoderProfileFolder { FolderId = folder.Id, EncoderProfileId = profile.Id }));
 
             await libraryRepository.AddEncoderProfileFolderAsync(encoderProfileFolders);
         }

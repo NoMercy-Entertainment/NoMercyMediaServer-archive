@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 
 namespace NoMercy.Providers.TMDB.Models.TV;
-public class EpisodeGroupsResultNetwork
+public class TmdbEpisodeGroupsResultNetwork
 {
     [JsonProperty("id")] public int Id { get; set; }
     [JsonProperty("logo_path")] public string LogoPath { get; set; } = string.Empty;

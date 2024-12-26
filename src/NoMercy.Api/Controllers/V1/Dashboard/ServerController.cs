@@ -373,6 +373,19 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
 
                     TmdbSearchClient searchClient = new();
 
+                    if (parsed.Title == null) continue;
+
+                    Regex regex = new(@"\d+");
+                    Match match2 = regex.Match(parsed.Title);
+
+                    if (match2.Success)
+                    {
+                        parsed.Season = 1;
+                        parsed.Episode = int.Parse(match2.Value);
+
+                        parsed.Title = regex.Replace(parsed.Title, "").Trim();
+                    }
+
                     switch (type)
                     {
                         case "anime" or "tv":
