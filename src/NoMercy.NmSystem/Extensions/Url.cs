@@ -1,4 +1,4 @@
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.Extensions;
 
 public static class Url
 {

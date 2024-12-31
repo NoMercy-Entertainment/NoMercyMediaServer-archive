@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Providers.MusicBrainz.Models;
 public class MusicBrainzTrack

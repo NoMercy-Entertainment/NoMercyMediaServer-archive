@@ -25,7 +25,7 @@ public class JobDispatcher
         }
         catch (Exception e)
         {
-            Logger.Queue(e, LogEventLevel.Error);
+            Logger.Queue(e.Message, LogEventLevel.Error);
         }
     }
 }

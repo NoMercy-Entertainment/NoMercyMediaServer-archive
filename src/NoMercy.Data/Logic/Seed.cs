@@ -439,7 +439,7 @@ public class Seed : IDisposable, IAsyncDisposable
         }
         catch (Exception e)
         {
-            Logger.Setup(e, LogEventLevel.Error);
+            Logger.Setup(e.Message, LogEventLevel.Error);
         }
     }
 

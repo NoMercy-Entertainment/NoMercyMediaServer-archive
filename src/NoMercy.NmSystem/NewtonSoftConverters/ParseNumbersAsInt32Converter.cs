@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.NewtonSoftConverters;
+
 public class ParseNumbersAsInt32Converter : JsonConverter
 {
     public override bool CanConvert(Type objectType)

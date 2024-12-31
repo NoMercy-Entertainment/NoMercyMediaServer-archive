@@ -189,7 +189,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
         }
         catch (Exception e)
         {
-            Logger.App(e, LogEventLevel.Error);
+            Logger.App(e.Message, LogEventLevel.Error);
         }
     }
 

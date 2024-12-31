@@ -395,7 +395,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         foreach (BaseSubtitle? subtitle in subtitles)
         {
             string input = Path.Combine(BasePath, $"{subtitle.HlsPlaylistFilename}.{subtitle.Extension}");
-            string arg = $" /convert \"{input}\" WebVtt";;
+            string arg = $"  /lang:{IsoLanguageMapper.IsoToLanguage[subtitle.Language]} /convert \"{input}\" WebVtt";;
 
             Networking.Networking.SendToAll("encoder-progress", "dashboardHub",  new Progress
             {

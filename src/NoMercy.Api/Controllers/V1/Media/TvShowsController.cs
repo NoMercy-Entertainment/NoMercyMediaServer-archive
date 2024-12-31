@@ -178,7 +178,7 @@ public class TvShowsController(TvShowRepository tvShowRepository, MediaContext m
         }
         catch (Exception e)
         {
-            Logger.Encoder(e, LogEventLevel.Error);
+            Logger.Encoder(e.Message, LogEventLevel.Error);
             return InternalServerErrorResponse(e.Message);
         }
 

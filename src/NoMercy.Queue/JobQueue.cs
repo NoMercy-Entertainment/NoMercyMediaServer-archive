@@ -78,7 +78,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
         }
         catch (Exception e)
         {
-            Logger.Queue(e, LogEventLevel.Error);
+            Logger.Queue(e.Message, LogEventLevel.Error);
             if (attempt < 10)
             {
                 Thread.Sleep(2000);
@@ -121,7 +121,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
         }
         catch (Exception e)
         {
-            Logger.Queue(e, LogEventLevel.Error);
+            Logger.Queue(e.Message, LogEventLevel.Error);
             if (attempt < 10)
             {
                 Thread.Sleep(2000);
@@ -161,7 +161,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             // }
             // else
             // {
-            //     Logger.Queue(e, LogEventLevel.Error);
+            //     Logger.Queue(e.Message, LogEventLevel.Error);
             // }
         }
     }
@@ -199,7 +199,7 @@ public class JobQueue(QueueContext context, byte maxAttempts = 3)
             }
             else
             {
-                Logger.Queue(e, LogEventLevel.Error);
+                Logger.Queue(e.Message, LogEventLevel.Error);
             }
         }
     }

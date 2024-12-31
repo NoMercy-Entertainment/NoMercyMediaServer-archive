@@ -1,6 +1,7 @@
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Server
 {

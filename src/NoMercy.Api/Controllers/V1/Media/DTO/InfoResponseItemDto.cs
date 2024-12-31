@@ -4,6 +4,7 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.TV;
 
@@ -66,7 +67,7 @@ public record InfoResponseItemDto
         TitleSort = movie.Title.TitleSort(movie.ReleaseDate);
 
         Duration = movie.VideoFiles.Count != 0
-            ? movie.VideoFiles.Select(videoFile => videoFile.Duration?.ToSeconds() ?? 0).Average() / 60
+            ? movie.VideoFiles.Select(videoFile => videoFile.Duration?.ToSeconds() ?? 0).Average() 
             : movie.Duration ?? 0;
 
         Year = movie.ReleaseDate.ParseYear();
@@ -276,12 +277,11 @@ public record InfoResponseItemDto
         Translations = tv.Translations
             .Select(translation => new TranslationDto(translation));
 
-        Duration = tv.Episodes.Any(episode => episode.VideoFiles.Count > 0)
-            ? tv.Episodes
-                .SelectMany(episode => episode.VideoFiles)
-                .Select(videoFile => (videoFile.Duration?.ToSeconds() ?? 0) / 60).Average()
-            : tv.Duration ?? 0;
-
+        Duration = tv.Episodes
+            .Where(episode => episode.EpisodeNumber > 0)
+            .SelectMany(episode => episode.VideoFiles)
+            .Select(file => file.Duration?.ToSeconds() ?? 0)
+            .Sum();
 
         NumberOfItems = tv.NumberOfEpisodes;
         HaveItems = tv.Episodes.Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null));
@@ -426,7 +426,7 @@ public record InfoResponseItemDto
             .Select(translation => new TranslationDto(translation));
 
         Duration = tmdbTv.EpisodeRunTime?.Length > 0
-            ? tmdbTv.EpisodeRunTime.Average()
+            ? tmdbTv.EpisodeRunTime.Average() * tmdbTv.NumberOfEpisodes
             : 0;
 
         NumberOfItems = tmdbTv.NumberOfEpisodes;
@@ -539,6 +539,11 @@ public record InfoResponseItemDto
                 .MinBy(collectionMovie => collectionMovie.Movie.ReleaseDate)
                 ?.Movie.ReleaseDate
                 .ParseYear());
+        
+        Duration = collection.CollectionMovies
+            .SelectMany(collectionMovie => collectionMovie.Movie.VideoFiles)
+            .Select(videoFile => videoFile.Duration?.ToSeconds() ?? 0)
+            .Sum();
 
         Translations = collection.Translations
             .Select(translation => new TranslationDto(translation));

@@ -8,6 +8,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.AcoustId.Client;
 using NoMercy.Providers.AcoustId.Models;
 using NoMercy.Providers.MusicBrainz.Client;

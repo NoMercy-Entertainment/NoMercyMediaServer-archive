@@ -39,7 +39,7 @@ public class SeasonManager(
             }
             catch (Exception e)
             {
-                Logger.MovieDb(e, LogEventLevel.Error);
+                Logger.MovieDb(e.Message, LogEventLevel.Error);
             }
         });
 

@@ -1,5 +1,6 @@
 using CommandLine;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using Serilog.Events;
 
 namespace NoMercy.Server;

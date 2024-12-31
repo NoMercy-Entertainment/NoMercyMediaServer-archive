@@ -63,7 +63,7 @@ public class ImageController : Controller
         }
         catch (Exception e)
         {
-            Logger.Error(e, LogEventLevel.Error);
+            Logger.Error(e.Message, LogEventLevel.Error);
             return NotFound();
         }
     }

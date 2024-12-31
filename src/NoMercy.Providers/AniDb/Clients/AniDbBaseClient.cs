@@ -75,7 +75,7 @@ public class AniDbBaseClient
             }
             catch (Exception e)
             {
-                Logger.AniDb(e, LogEventLevel.Fatal);
+                Logger.AniDb(e.Message, LogEventLevel.Fatal);
                 throw;
             }
         });

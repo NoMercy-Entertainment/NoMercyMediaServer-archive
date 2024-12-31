@@ -22,6 +22,7 @@ using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -362,11 +363,12 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
             {
                 try
                 {
+                    string title = file.FullName.Replace("v2", "");
                     IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName);
 
                     MovieDetector movieDetector = new();
-                    MovieFile parsed = movieDetector.GetInfo(Regex.Replace(file.FullName, @"\[.*?\]", ""));
-                    parsed.Year ??= Str.MatchYearRegex().Match(file.FullName)
+                    MovieFile parsed = movieDetector.GetInfo(Regex.Replace(title, @"\[.*?\]", ""));
+                    parsed.Year ??= Str.MatchYearRegex().Match(title)
                         .Value;
 
                     MovieOrEpisodeDto match = new();

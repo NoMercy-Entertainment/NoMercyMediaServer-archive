@@ -91,7 +91,7 @@ public static class SpecialSeed
         }
         catch (Exception e)
         {
-            Logger.Setup(e, LogEventLevel.Error);
+            Logger.Setup(e.Message, LogEventLevel.Error);
             throw;
         }
     }
@@ -116,7 +116,7 @@ public static class SpecialSeed
         }
         catch (Exception e)
         {
-            Logger.Setup(e, LogEventLevel.Fatal);
+            Logger.Setup(e.Message, LogEventLevel.Fatal);
         }
 
         specialItems.Add(new SpecialItem
@@ -147,7 +147,7 @@ public static class SpecialSeed
         }
         catch (Exception e)
         {
-            Logger.Setup(e, LogEventLevel.Fatal);
+            Logger.Setup(e.Message, LogEventLevel.Fatal);
         }
 
       if (item.episodes.Length == 0)
