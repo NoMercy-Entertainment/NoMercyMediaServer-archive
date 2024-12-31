@@ -7,6 +7,7 @@ using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using Ass = NoMercy.Encoder.Format.Container.Ass;
 using Flac = NoMercy.Encoder.Format.Container.Flac;
 using Mp3 = NoMercy.Encoder.Format.Container.Mp3;
@@ -71,6 +72,7 @@ public class VideoCodecDto: Classes.CodecDto {
     [JsonProperty("color_spaces")] public LabelValueDto[]  AvailableVideoColorSpaces { get; set; }
     [JsonProperty("tunes")] public LabelValueDto[]  AvailableVideoTunes { get; set; }
     [JsonProperty("profiles")] public LabelValueDto[] AvailableVideoProfiles { get; set; }
+    [JsonProperty("presets")] public LabelValueDto[] AvailablePresets { get; set; }
 
     public VideoCodecDto(Classes.CodecDto codecDto)
     {
@@ -93,6 +95,7 @@ public class VideoCodecDto: Classes.CodecDto {
         AvailableVideoColorSpaces = codecData.AvailableColorSpaces.Select(p => new LabelValueDto(p)).ToArray();
         AvailableVideoProfiles = codecData.AvailableProfiles.Select(p => new LabelValueDto(p)).ToArray();
         AvailableVideoTunes = codecData.AvailableTune.Select(t => new LabelValueDto(t)).ToArray();
+        AvailablePresets = codecData.AvailablePresets.Select(p => new LabelValueDto(p)).ToArray();
     }
 
 }

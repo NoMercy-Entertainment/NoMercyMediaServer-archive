@@ -10,6 +10,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.MusixMatch.Client;
 using NoMercy.Providers.MusixMatch.Models;
 

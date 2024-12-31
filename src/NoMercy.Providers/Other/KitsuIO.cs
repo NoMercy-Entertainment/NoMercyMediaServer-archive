@@ -36,7 +36,7 @@ public static class KitsuIo
         }
         catch (Exception e)
         {
-            Logger.AniDb(e, LogEventLevel.Fatal);
+            Logger.AniDb(e.Message, LogEventLevel.Fatal);
         }
 
         return isAnime;

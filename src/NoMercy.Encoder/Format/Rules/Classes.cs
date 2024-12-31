@@ -84,7 +84,7 @@ public class Classes
             }
             catch (Exception e)
             {
-                Logger.Encoder(e, LogEventLevel.Error);
+                Logger.Encoder(e.Message, LogEventLevel.Error);
                 Logger.Encoder($"Error parsing scale value {ScaleValue}");
                 throw;
             }

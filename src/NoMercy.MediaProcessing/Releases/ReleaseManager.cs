@@ -5,6 +5,7 @@ using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.MediaProcessing.MusicGenres;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.CoverArt.Client;
 using NoMercy.Providers.MusicBrainz.Models;
 using NoMercy.Providers.MusicBrainz.Client;
@@ -87,7 +88,7 @@ public class ReleaseManager(
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.MusicBrainz(e.Message, LogEventLevel.Error);
         }
     }
     

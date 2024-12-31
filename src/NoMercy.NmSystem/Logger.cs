@@ -1,6 +1,7 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using NoMercy.NmSystem.LogEnrichers;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;

@@ -8,10 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.AcoustId.Client;
 using NoMercy.Providers.AcoustId.Models;
 using NoMercy.Providers.MusicBrainz.Client;
 using NoMercy.Providers.MusicBrainz.Models;
+using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 
@@ -375,7 +377,7 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
         {
             if (retry == 3)
             {
-                Logger.App("Fingerprint Error: " + e.Message);
+                Logger.Fingerprint(e.Message, LogEventLevel.Error);
                 return matchedReleases;
             }
             await Task.Delay(200);
@@ -385,7 +387,7 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
 
         if (fingerprint is null)
         {
-            Logger.App("Fingerprint Error: " + file.Path);
+            Logger.Fingerprint("No fingerprint found for: " + file.Path);
             return matchedReleases;
         }
 
@@ -433,7 +435,7 @@ public partial class ProcessReleaseFolderJob : AbstractMusicFolderJob
         {
             if (retry == 3)
             {
-                Logger.App("Fingerprint Error: " + e.Message);
+                Logger.Fingerprint(e.Message, LogEventLevel.Error);
                 return null;
             }
             await Task.Delay(200);

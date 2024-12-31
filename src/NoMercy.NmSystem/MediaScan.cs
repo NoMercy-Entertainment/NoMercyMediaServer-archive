@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using FFMpegCore;
 using MovieFileLibrary;
+using NoMercy.NmSystem.Extensions;
 using Serilog.Events;
 
 namespace NoMercy.NmSystem;
@@ -71,7 +72,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         ConcurrentBag<MediaFile> files = Files(folderPath);
 
         MovieFile movieFile1 = _movieDetector.GetInfo(folderPath);
-        movieFile1.Year ??= Str.MatchYearRegex().Match(folderPath)
+        movieFile1.Year ??= Extensions.Str.MatchYearRegex().Match(folderPath)
             .Value;
 
         folders.Add(new MediaFolderExtend
@@ -118,7 +119,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 ConcurrentBag<MediaFile> files2 = depth - 1 > 0 ? Files(directory) : [];
 
                 MovieFile movieFile = _movieDetector.GetInfo(directory);
-                movieFile.Year ??= Str.MatchYearRegex()
+                movieFile.Year ??= Extensions.Str.MatchYearRegex()
                     .Match(directory).Value;
 
                 folders.Add(new MediaFolderExtend
@@ -195,7 +196,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                 MovieFile movieFile = _movieDetector.GetInfo(directory);
 
-                movieFile.Year ??= Str.MatchYearRegex()
+                movieFile.Year ??= Extensions.Str.MatchYearRegex()
                     .Match(directory).Value;
 
                 folders.Add(new MediaFolderExtend

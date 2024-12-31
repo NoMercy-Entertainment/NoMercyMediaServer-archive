@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Providers.Helpers;
 

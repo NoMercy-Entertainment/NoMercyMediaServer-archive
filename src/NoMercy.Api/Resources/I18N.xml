@@ -244,4 +244,8 @@
     <Key>Wallpaper not found</Key>
     <Value lang="nl">Wallpaper not found</Value>
   </Entry>
+  <Entry>
+    <Key>Could not find a part of the path '\\192.168.2.120\mnt\vault\Media\Anime\Anime\By.the.Grace.of.the.Gods.(2020)\By.the.Grace.of.the.Gods.S02E02'.</Key>
+    <Value lang="nl">Could not find a part of the path '\\192.168.2.120\mnt\vault\Media\Anime\Anime\By.the.Grace.of.the.Gods.(2020)\By.the.Grace.of.the.Gods.S02E02'.</Value>
+  </Entry>
 </I18N>

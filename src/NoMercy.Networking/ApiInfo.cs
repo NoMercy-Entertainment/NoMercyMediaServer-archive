@@ -65,7 +65,7 @@ public partial class ApiInfo
         catch (Exception e)
         {
             Logger.Setup(content, LogEventLevel.Error);
-            // Logger.Setup(e, LogEventLevel.Error);
+            Logger.Setup(e.Message, LogEventLevel.Error);
             throw;
         }
     }

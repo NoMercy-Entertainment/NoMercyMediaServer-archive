@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.Helpers;
 using Serilog.Events;
 

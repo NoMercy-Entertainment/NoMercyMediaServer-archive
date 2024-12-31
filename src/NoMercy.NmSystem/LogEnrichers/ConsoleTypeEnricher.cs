@@ -1,10 +1,10 @@
+using System.Drawing;
+using System.Text;
 using Pastel;
 using Serilog.Core;
 using Serilog.Events;
-using System.Drawing;
-using System.Text;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.LogEnrichers;
 internal class ConsoleTypeEnricher : ILogEventEnricher
 {
     private static string SpacerEnd(string text, int padding)

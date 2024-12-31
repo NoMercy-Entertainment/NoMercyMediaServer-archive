@@ -44,7 +44,7 @@ public class AddReleaseJob : AbstractReleaseJob
         ArtistManager artistManager = new(artistRepository, musicGenreRepository, jobDispatcher);
         
         RecordingRepository recordingRepository = new(context);
-        RecordingManager recordingManager = new(recordingRepository, jobDispatcher);
+        RecordingManager recordingManager = new(recordingRepository, musicGenreRepository, jobDispatcher);
 
         Library albumLibrary = await context.Libraries
             .Where(f => f.Id == LibraryId)

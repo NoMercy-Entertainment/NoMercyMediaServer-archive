@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using static NoMercy.Encoder.Core.IsoLanguageMapper;
 
 namespace NoMercy.Encoder.Core;
@@ -138,7 +139,7 @@ public static class HlsPlaylistGenerator
         return double.Parse(x, CultureInfo.InvariantCulture);
     }
 
-    private static string RunProcess(string command, string arguments, string? cwd = null)
+    public static string RunProcess(string command, string arguments, string? cwd = null)
     {
         Process process = new()
         {

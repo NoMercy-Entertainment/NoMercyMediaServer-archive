@@ -39,7 +39,7 @@ public class ProcessFanartReleaseImagesJob : AbstractFanArtDataJob
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
     }
 }

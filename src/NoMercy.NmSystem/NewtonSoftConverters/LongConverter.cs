@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.NewtonSoftConverters;
+
 public class LongConverter : JsonConverter
 {
     public override bool CanConvert(Type objectType)
@@ -23,21 +24,15 @@ public class LongConverter : JsonConverter
     public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue,
         JsonSerializer serializer)
     {
-        if (reader.TokenType == JsonToken.Null)
-        {
-            return null;
-        }
 
-        if (reader.TokenType == JsonToken.Integer)
-        {
-            return Convert.ToInt64(reader.Value);
-        }
+        if (reader.Value is null) return null;
 
-        if (reader.TokenType == JsonToken.String && long.TryParse((string)reader.Value, out long result))
+        return reader.TokenType switch
         {
-            return result;
-        }
-
-        return null;
+            JsonToken.Null => null,
+            JsonToken.Integer => Convert.ToInt64(reader.Value),
+            JsonToken.String when long.TryParse((string)reader.Value, out long result) => result,
+            _ => null
+        };
     }
 }
