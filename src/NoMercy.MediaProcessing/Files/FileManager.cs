@@ -266,7 +266,7 @@ public partial class FileManager(
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.App(e.Message, LogEventLevel.Error);
         }
     }
 

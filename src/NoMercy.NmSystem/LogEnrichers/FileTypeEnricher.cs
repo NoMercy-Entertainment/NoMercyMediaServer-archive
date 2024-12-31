@@ -1,8 +1,8 @@
+using System.Drawing;
 using Serilog.Core;
 using Serilog.Events;
-using System.Drawing;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.LogEnrichers;
 internal class FileTypeEnricher : ILogEventEnricher
 {
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)

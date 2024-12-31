@@ -3,6 +3,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.Other;
 using NoMercy.Providers.TMDB.Models.TV;
 

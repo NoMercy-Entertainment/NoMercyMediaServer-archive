@@ -1,5 +1,6 @@
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.CoverArt.Client;
 using NoMercy.Providers.CoverArt.Models;
 using Serilog.Events;
@@ -55,7 +56,7 @@ public class CoverArtImageManagerManager(
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return null;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
             return null;
         }
     }

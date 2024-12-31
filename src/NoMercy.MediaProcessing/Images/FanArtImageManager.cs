@@ -1,6 +1,7 @@
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.FanArt.Client;
 using NoMercy.Providers.FanArt.Models;
 using Serilog.Events;
@@ -97,7 +98,7 @@ public class FanArtImageManager(
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return  null;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
         
         return null;
@@ -165,7 +166,7 @@ public class FanArtImageManager(
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
     }
 
@@ -216,7 +217,7 @@ public class FanArtImageManager(
           catch (Exception e)
           {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
           }   
     }
 }

@@ -166,7 +166,7 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
         }
         catch (Exception e)
         {
-            Logger.MovieDb(e, LogEventLevel.Error);
+            Logger.MovieDb(e.Message, LogEventLevel.Error);
         }
 
         return Ok(new StatusResponseDto<string>
@@ -203,7 +203,7 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
         }
         catch (Exception e)
         {
-            Logger.Encoder(e, LogEventLevel.Error);
+            Logger.Encoder(e.Message, LogEventLevel.Error);
             return InternalServerErrorResponse(e.Message);
         }
 

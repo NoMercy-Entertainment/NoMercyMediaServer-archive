@@ -25,10 +25,13 @@
         <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0"/>
         <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0"/>
         <PackageReference Include="AspNetCore.SwaggerUI.Themes" Version="1.0.0"/>
+        <PackageReference Include="BDInfo" Version="0.8.0" />
         <PackageReference Include="Castle.Core" Version="5.1.1" />
         <PackageReference Include="FFMpegCore" Version="5.1.0"/>
         <PackageReference Include="H.NotifyIcon" Version="2.1.3"/>
         <PackageReference Include="I18N.DotNet" Version="1.3.1" />
+        <PackageReference Include="MediaBrowser.BdInfo" Version="1.0.1" />
+        <PackageReference Include="MediaBrowser.Model.Signed" Version="3.0.647" />
 <!--        <PackageReference Include="ImageProcessor" Version="2.9.0"/>-->
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8"/>
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.8"/>

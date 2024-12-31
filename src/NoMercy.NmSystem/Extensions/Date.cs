@@ -1,8 +1,8 @@
 using System.Globalization;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.Extensions;
 
-public static class DateTimeParser
+public static class Date
 {
     private static readonly string[] ValidFormats =
     [

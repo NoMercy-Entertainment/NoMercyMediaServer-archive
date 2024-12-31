@@ -64,13 +64,13 @@ public class ProcessFanartArtistImagesJob : AbstractFanArtDataJob
             }
             catch (Exception e)
             {
-                Logger.FanArt(e, LogEventLevel.Warning);
+                Logger.FanArt(e.Message, LogEventLevel.Warning);
             }
         }
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
     }
 }

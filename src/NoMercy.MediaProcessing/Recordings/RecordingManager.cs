@@ -4,7 +4,9 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs;
+using NoMercy.MediaProcessing.MusicGenres;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.MusicBrainz.Models;
 using Serilog.Events;
 
@@ -12,6 +14,7 @@ namespace NoMercy.MediaProcessing.Recordings;
 
 public partial class RecordingManager(
     IRecordingRepository recordingRepository,
+    IMusicGenreRepository musicGenreRepository,
     JobDispatcher jobDispatcher
 ) : BaseManager, IRecordingManager
 {
@@ -62,6 +65,15 @@ public partial class RecordingManager(
                 await recordingRepository.Store(insert);
                 
                 await LinkToRelease(musicBrainzTrack, releaseAppends);
+                
+                List<MusicGenreTrack> genres = musicBrainzTrack.Genres
+                    ?.Select(genre => new MusicGenreTrack
+                    {
+                        TrackId = musicBrainzTrack.Id,
+                        GenreId = genre.Id,
+                    }).ToList() ?? [];
+
+                await musicGenreRepository.LinkToRecording(genres);
                 
                 Logger.MusicBrainz($"Recording {musicBrainzTrack.Title} stored", LogEventLevel.Verbose);
                 

@@ -3,6 +3,7 @@ using FFMpegCore;
 using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Rules;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using Serilog.Events;
 
 namespace NoMercy.Encoder.Format.Image;

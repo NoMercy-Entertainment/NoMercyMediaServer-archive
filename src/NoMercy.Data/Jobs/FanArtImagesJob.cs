@@ -3,6 +3,7 @@ using NoMercy.MediaProcessing.Images;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.FanArt.Client;
 using NoMercy.Providers.FanArt.Models;
 using NoMercy.Providers.MusicBrainz.Models;
@@ -147,7 +148,7 @@ public class FanArtImagesJob : IShouldQueue
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
     }
 
@@ -238,7 +239,7 @@ public class FanArtImagesJob : IShouldQueue
         catch (Exception e)
         {
             if (e.Message.Contains("404")) return;
-            Logger.FanArt(e, LogEventLevel.Verbose);
+            Logger.FanArt(e.Message, LogEventLevel.Verbose);
         }
     }
 }

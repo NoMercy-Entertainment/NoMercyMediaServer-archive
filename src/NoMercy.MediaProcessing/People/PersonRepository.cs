@@ -2,6 +2,8 @@ using FlexLabs.EntityFrameworkCore.Upsert;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.NmSystem;
+using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.People;
 
@@ -154,7 +156,7 @@ public class PersonRepository(MediaContext context) : IPersonRepository
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            Logger.MovieDb(e.Message, LogEventLevel.Error);
         }
     }
 
