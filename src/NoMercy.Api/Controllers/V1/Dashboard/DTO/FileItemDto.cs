@@ -10,6 +10,6 @@ public record FileItemDto
     [JsonProperty("size")] public long Size { get; set; }
     [JsonProperty("parsed")] public MovieFile? Parsed { get; set; }
     [JsonProperty("match")] public MovieOrEpisodeDto Match { get; set; } = new();
-    [JsonProperty("streams")] public StreamsDto StreamsDto { get; set; } = new();
+    [JsonProperty("streams")] public StreamsDto Streams { get; set; } = new();
     [JsonProperty("file")] public string File { get; set; } = string.Empty;
 }

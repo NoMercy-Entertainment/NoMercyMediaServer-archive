@@ -47,7 +47,7 @@ namespace NoMercy.Api.Controllers.V1.Dashboard;
 [ApiVersion(1.0)]
 [Authorize]
 [Route("api/v{version:apiVersion}/dashboard/server", Order = 10)]
-public class ServerController(IHostApplicationLifetime appLifetime, MediaContext context) : BaseController
+public partial class ServerController(IHostApplicationLifetime appLifetime, MediaContext context) : BaseController
 {
     private IHostApplicationLifetime ApplicationLifetime { get; } = appLifetime;
 
@@ -363,21 +363,26 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
             {
                 try
                 {
+                    MovieOrEpisodeDto match = new();
+                    TmdbSearchClient searchClient = new();
+                    MovieDetector movieDetector = new();
+                    
                     string title = file.FullName.Replace("v2", "");
+                    // remove any text in square brackets that may cause year to match incorrectly
+                    title = RemoveBracketedString().Replace(title, string.Empty);
+                    
                     IMediaAnalysis mediaAnalysis = await FFProbe.AnalyseAsync(file.FullName);
 
-                    MovieDetector movieDetector = new();
-                    MovieFile parsed = movieDetector.GetInfo(Regex.Replace(title, @"\[.*?\]", ""));
-                    parsed.Year ??= Str.MatchYearRegex().Match(title)
+                    MovieFile parsed = movieDetector.GetInfo(title);
+                    
+                    parsed.Year ??= Str.MatchYearRegex()
+                        .Match(title)
                         .Value;
 
-                    MovieOrEpisodeDto match = new();
-
-                    TmdbSearchClient searchClient = new();
 
                     if (parsed.Title == null) continue;
 
-                    Regex regex = new(@"\d+");
+                    Regex regex = MatchNumbers();
                     Match match2 = regex.Match(parsed.Title);
 
                     if (match2.Success)
@@ -385,7 +390,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                         parsed.Season = 1;
                         parsed.Episode = int.Parse(match2.Value);
 
-                        parsed.Title = regex.Replace(parsed.Title, "").Trim();
+                        parsed.Title = regex.Split(parsed.Title).FirstOrDefault();
                     }
 
                     switch (type)
@@ -546,7 +551,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                         Parsed = parsed,
                         Match = match,
                         File = file.FullName,
-                        StreamsDto = new StreamsDto
+                        Streams = new StreamsDto
                         {
                             Video = mediaAnalysis.VideoStreams
                                 .Select(video => new VideoDto
@@ -710,27 +715,27 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
 
         List<ServerPathsDto> list =
         [
-            new ServerPathsDto
+            new()
             {
                 Key = "Cache",
                 Value = AppFiles.CachePath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Logs",
                 Value = AppFiles.LogPath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Metadata",
                 Value = AppFiles.MetadataPath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Transcodes",
                 Value = AppFiles.TranscodePath
             },
-            new ServerPathsDto
+            new()
             {
                 Key = "Configs",
                 Value = AppFiles.ConfigPath
@@ -827,7 +832,7 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
                 .Resize(new ResizeOptions()
                 {
                     Sampler = KnownResamplers.NearestNeighbor,
-                    Size = new SixLabors.ImageSharp.Size(100, 0)
+                    Size = new Size(100, 0)
                 })
                 // Reduce the color palette to 1 color without dithering.
                 .Quantize(new OctreeQuantizer()
@@ -845,4 +850,9 @@ public class ServerController(IHostApplicationLifetime appLifetime, MediaContext
         return dominant.ToHexString();
 
     }
+
+    [GeneratedRegex(@"\[.*?\]")]
+    private static partial Regex RemoveBracketedString();
+    [GeneratedRegex(@"\d+")]
+    private static partial Regex MatchNumbers();
 }

@@ -9,9 +9,9 @@ namespace NoMercy.Database.Models;
 public class QueueJob
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public long Id { get; set; }
+    public int Id { get; set; }
 
-    public int? Priority { get; set; }
+    public int Priority { get; set; }
     public string Queue { get; set; }
     public required string Payload { get; set; }
     public byte Attempts { get; set; } = 0;

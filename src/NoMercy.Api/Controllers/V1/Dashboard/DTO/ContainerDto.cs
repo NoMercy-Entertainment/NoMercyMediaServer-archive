@@ -156,7 +156,7 @@ public class SubtitleCodecDto : Classes.CodecDto
             { SimpleValue: "vtt" } => new Encoder.Format.Subtitle.Vtt(),
             { SimpleValue: "srt" } => new Encoder.Format.Subtitle.Srt(),
             { SimpleValue: "ass" } => new Encoder.Format.Subtitle.Ass(),
-            { SimpleValue: "copy" } => new Encoder.Format.Subtitle.Copy(),
+            { SimpleValue: "copy" } => new Copy(),
             _ => throw new ArgumentOutOfRangeException(nameof(codecDto.SimpleValue))
         };
 

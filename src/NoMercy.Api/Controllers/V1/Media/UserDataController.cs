@@ -8,6 +8,7 @@ using NoMercy.Api.Controllers.V1.Music;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Controllers.V1.Media;
 
@@ -160,6 +161,8 @@ public class UserDataController : BaseController
                 Message = "Item not found"
             });
 
+        Logger.Socket(userData);
+        
         mediaContext.UserData.RemoveRange(userData);
         await mediaContext.SaveChangesAsync();
 

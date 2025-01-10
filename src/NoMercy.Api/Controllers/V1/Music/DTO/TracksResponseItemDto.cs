@@ -29,15 +29,15 @@ public record TracksResponseItemDto
 
     public TracksResponseItemDto(Track track, string country)
     {
-        ColorPalette = track.ColorPalette;
-        Cover = track.Cover;
-        Favorite = track.TrackUser.Any();
-        Folder = track.Folder;
         Id = track.Id;
-        LibraryId = track.AlbumTrack.First().Album.LibraryId;
         Name = track.Name;
-        Type = "favorites";
+        Cover = track.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         Link = new Uri($"/music/track/{track.Id}", UriKind.Relative);
+        
+        ColorPalette = track.ColorPalette;
+        Favorite = track.TrackUser.Any();
+        Type = "favorites";
 
         Artists = track.ArtistTrack
             .Select(trackArtist => new ArtistDto(trackArtist, country))

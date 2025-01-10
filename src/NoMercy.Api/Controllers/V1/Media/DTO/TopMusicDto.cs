@@ -24,6 +24,7 @@ public record TopMusicDto
         Type = "playlists";
         Link = new Uri($"/music/playlist/{Id}", UriKind.Relative);
         Cover = musicPlay.Playlist.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
     }
 
     public TopMusicDto(AlbumTrack albumTrack)
@@ -34,6 +35,7 @@ public record TopMusicDto
         Type = "albums";
         Link = new Uri($"/music/album/{Id}", UriKind.Relative);
         Cover = albumTrack.Album.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
     }
 
     public TopMusicDto(ArtistTrack artistTrack)
@@ -44,5 +46,6 @@ public record TopMusicDto
         Type = "artists";
         Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
         Cover = artistTrack.Artist.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
     }
 }

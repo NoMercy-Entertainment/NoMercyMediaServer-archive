@@ -87,7 +87,7 @@ public static class Program
         });
 
         new Thread(() => app.RunAsync()).Start();
-        new Thread(Dev.Run).Start();
+        // new Thread(Dev.Run).Start();
         
         await Task.Delay(-1);
     }
