@@ -22,6 +22,7 @@ public record ArtistsResponseItemDto
         ColorPalette = artist.ColorPalette;
         Cover = artist.Cover ?? artist.Images
             .FirstOrDefault()?.FilePath;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         Disambiguation = artist.Disambiguation;
         Description = artist.Description;
         Id = artist.Id;

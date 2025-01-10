@@ -30,6 +30,7 @@ public record AlbumsResponseTrackDto
     {
         ColorPalette = artistTrack.Track.ColorPalette;
         Cover = artistTrack.Track.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         Date = artistTrack.Track.Date;
         Disc = artistTrack.Track.DiscNumber;
         Duration = artistTrack.Track.Duration;

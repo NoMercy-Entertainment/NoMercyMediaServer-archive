@@ -30,6 +30,7 @@ public record ReleaseGroupDto
         Id = artistReleaseGroup.ReleaseGroupId;
         Title = artistReleaseGroup.ReleaseGroup.Title;
         Cover = artistReleaseGroup.ReleaseGroup.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         ColorPalette = artistReleaseGroup.ReleaseGroup.ColorPalette;
         LibraryId = artistReleaseGroup.ReleaseGroup.LibraryId;
         Origin = Info.DeviceId;

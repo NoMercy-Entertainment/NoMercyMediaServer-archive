@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -13,6 +14,7 @@ using NoMercy.Encoder;
 using NoMercy.Encoder.Core;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.Networking;
+using NoMercy.NmSystem;
 
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
@@ -133,18 +135,15 @@ public class TasksController : BaseController
         await using MediaContext mediaContext = new();
         await using QueueContext queueContext = new();
 
-        List<QueueJob> jobs = await queueContext.QueueJobs
+        ImmutableList<QueueJob> jobs = queueContext.QueueJobs
             .Where(j => j.Queue == "encoder")
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.CreatedAt)
-            .ToListAsync();
+            .ToImmutableList();
 
-        List<EncodeVideoJob> encoderJobs = [];
-        foreach (QueueJob job in jobs)
-        {
-            EncodeVideoJob? encodeJob = JsonConvert.DeserializeObject<EncodeVideoJob>(job.Payload);
-            if (encodeJob is not null) encoderJobs.Add(encodeJob);
-        }
+        List<EncodeVideoJob> encoderJobs = jobs
+            .Select(job => job.Payload.FromJson<EncodeVideoJob>()!)
+            .ToList();
 
         // Load folders into memory first
         List<Folder> folders = await mediaContext.Folders
@@ -162,25 +161,30 @@ public class TasksController : BaseController
             .ToListAsync();
 
         folders = folders
-            .Where(f => encoderJobs.Any(j => j.FolderId == f.Id))
+            .Where(f => encoderJobs.Any(job => job.FolderId == f.Id))
             .ToList();
 
         QueueJobDto[] queueJobs = encoderJobs
             .Select(j => new QueueJobDto
             {
-                Id = j.Id,
+                Id = jobs.ElementAt(encoderJobs.IndexOf(j)).Id,
+                Priority = jobs.ElementAt(encoderJobs.IndexOf(j)).Priority,
+                PayloadId = j.Id,
                 Title = GetTitle(folders, j),
                 Type = j.GetType().Name,
                 Status = j.Status.ToString(),
                 InputFile = j.InputFile,
-                Profile = folders.FirstOrDefault(f => f.Id == j.FolderId)?.EncoderProfileFolder.FirstOrDefault()?.EncoderProfile.Name
+                Profile = folders.FirstOrDefault(f => f.Id == j.FolderId)
+                    ?.EncoderProfileFolder.FirstOrDefault()
+                    ?.EncoderProfile.Name
             }).ToArray();
 
-        IEnumerable<EncodeVideoJob>? runningJobs = encoderJobs.Where(j => j.Status == "running");
+        IEnumerable<EncodeVideoJob>? runningJobs = encoderJobs
+            .Where(j => j.Status == "running");
 
         foreach (EncodeVideoJob job in runningJobs)
         {
-            Networking.Networking.SendToAll("encoder-progress", "dashboardHub",  new Progress
+            Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
             {
                 Id = job.Id,
                 Status = "running",
@@ -197,15 +201,19 @@ public class TasksController : BaseController
 
     private static string GetTitle(List<Folder> folders, EncodeVideoJob j)
     {
-        Movie? movie = folders.FirstOrDefault(f => f.Id == j.FolderId)?.FolderLibraries
-            .FirstOrDefault()?.Library.LibraryMovies.FirstOrDefault(m => m.MovieId == j.Id)?.Movie;
+        Movie? movie = folders.FirstOrDefault(f => f.Id == j.FolderId)
+            ?.FolderLibraries.FirstOrDefault()
+            ?.Library.LibraryMovies.FirstOrDefault(m => m.MovieId == j.Id)?.Movie;
 
-        Tv? tv = folders.FirstOrDefault(f => f.Id == j.FolderId)?.FolderLibraries
-            .FirstOrDefault()?.Library.LibraryTvs.FirstOrDefault(m => m.Tv.Episodes.Any(e => e.Id == j.Id))?.Tv;
+        Tv? tv = folders.FirstOrDefault(f => f.Id == j.FolderId)
+            ?.FolderLibraries.FirstOrDefault()
+            ?.Library.LibraryTvs.FirstOrDefault(m => m.Tv.Episodes.Any(e => e.Id == j.Id))?.Tv;
 
         Episode? episode = tv?.Episodes.FirstOrDefault(e => e.Id == j.Id);
 
-        return movie?.CreateTitle() ?? episode?.CreateTitle() ?? string.Empty;
+        return movie?.CreateTitle() 
+               ?? episode?.CreateTitle() 
+               ?? string.Empty;
     }
 
     [HttpDelete]
@@ -219,16 +227,46 @@ public class TasksController : BaseController
         List<QueueJob> jobs = queueContext.QueueJobs
             .ToList();
 
-        QueueJob? job = jobs.FirstOrDefault(j => JsonConvert.DeserializeObject<EncodeVideoJob>(j.Payload)?.Id == id);
+        QueueJob? job = jobs
+            .FirstOrDefault(j => JsonConvert.DeserializeObject<EncodeVideoJob>(j.Payload)?.Id == id);
+        
         if (job is null)
             return NotFoundResponse("Job not found");
 
         queueContext.QueueJobs.Remove(job);
+        
         await queueContext.SaveChangesAsync();
 
-        return Ok(new PlaceholderResponse
+        return Ok(new StatusResponseDto<string>
         {
-            Data = []
+            Message = "Job removed",
+            Status = "success"
+        });
+    }
+    
+    [HttpPatch]
+    [Route("queue/{id:int}")]
+    public async Task<IActionResult> UpdateTask(int id, [FromBody] PatchQueueItemDto request)
+    {
+        if (!User.IsModerator())
+            return UnauthorizedResponse("You do not have permission to clear encoder queue");
+
+        await using QueueContext queueContext = new();
+        
+        QueueJob? job = queueContext.QueueJobs
+            .FirstOrDefault(job => job.Id == id);
+
+        if (job is null)
+            return NotFoundResponse("Job not found");
+        
+        job.Priority = request.Priority;
+
+        await queueContext.SaveChangesAsync();
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Message = "Priority updated",
+            Status = "success"
         });
     }
 }
@@ -236,9 +274,16 @@ public class TasksController : BaseController
 public class QueueJobDto
 {
     [JsonProperty("id")] public int Id { get; set; }
+    [JsonProperty("payload_id")] public int PayloadId { get; set; }
     [JsonProperty("title")] public string Title { get; set; } = string.Empty;
     [JsonProperty("type")] public string Type { get; set; } = string.Empty;
     [JsonProperty("status")] public string Status { get; set; } = string.Empty;
     [JsonProperty("input_file")] public string InputFile { get; set; } = string.Empty;
     [JsonProperty("profile")] public string? Profile { get; set; }
+    [JsonProperty("priority")] public int Priority { get; set; }
+}
+
+public class PatchQueueItemDto
+{
+    [JsonProperty("priority")] public int Priority { get; set; }
 }

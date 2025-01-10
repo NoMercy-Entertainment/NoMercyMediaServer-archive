@@ -214,6 +214,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
                         .AllowCredentials()
                         .SetIsOriginAllowedToAllowWildcardSubdomains()
                         .WithHeaders("Access-Control-Allow-Private-Network", "true")
+                        .WithHeaders("Access-Control-Allow-Headers", "*")
                         .AllowAnyHeader();
                 });
         });

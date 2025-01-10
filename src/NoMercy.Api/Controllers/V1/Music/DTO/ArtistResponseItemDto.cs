@@ -36,6 +36,7 @@ public record ArtistResponseItemDto
     {
         ColorPalette = artist.ColorPalette;
         Cover = artist.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         Disambiguation = artist.Disambiguation;
         Description = artist.Description;
         Favorite = artist.ArtistUser.Any();
