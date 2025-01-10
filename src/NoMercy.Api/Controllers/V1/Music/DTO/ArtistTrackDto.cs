@@ -6,54 +6,45 @@ using NoMercy.NmSystem;
 namespace NoMercy.Api.Controllers.V1.Music.DTO;
 public record ArtistTrackDto
 {
-    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
+    [JsonProperty("id")] public Guid Id { get; set; }
+    [JsonProperty("name")] public string Name { get; set; }
     [JsonProperty("cover")] public string? Cover { get; set; }
+    [JsonProperty("path")] public string Path { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; }
+    [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("date")] public DateTime? Date { get; set; }
     [JsonProperty("disc")] public int? Disc { get; set; }
     [JsonProperty("duration")] public string? Duration { get; set; }
     [JsonProperty("favorite")] public bool Favorite { get; set; }
-    [JsonProperty("filename")] public string? Filename { get; set; }
-    [JsonProperty("folder")] public string? Folder { get; set; }
-    [JsonProperty("folder_id")] public Ulid? FolderId { get; set; }
-    [JsonProperty("id")] public Guid Id { get; set; }
-    [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
-    [JsonProperty("name")] public string Name { get; set; }
-    [JsonProperty("origin")] public Guid Origin { get; set; }
-    [JsonProperty("path")] public string Path { get; set; }
     [JsonProperty("quality")] public int? Quality { get; set; }
     [JsonProperty("track")] public int? Track { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("lyrics")] public Lyric[]? Lyrics { get; set; }
     [JsonProperty("album_id")] public Guid AlbumId { get; set; }
     [JsonProperty("album_name")] public string AlbumName { get; set; }
-    [JsonProperty("link")] public Uri Link { get; set; }
 
     [JsonProperty("album_track")] public IEnumerable<AlbumDto> Album { get; set; }
     [JsonProperty("artist_track")] public IEnumerable<ArtistDto> Artist { get; set; }
 
     public ArtistTrackDto(ArtistTrack artistTrack, string country)
     {
-        ColorPalette = artistTrack.Track.AlbumTrack.FirstOrDefault()?.Album.ColorPalette;
+        Id = artistTrack.Track.Id;
+        Name = artistTrack.Track.Name;
         Cover = artistTrack.Track.AlbumTrack.FirstOrDefault()?.Album.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
+        Link = new Uri($"/music/track/{artistTrack.ArtistId}", UriKind.Relative);
+        Path = new Uri($"/{artistTrack.Track.FolderId}{artistTrack.Track.Folder}{artistTrack.Track.Filename}", UriKind.Relative).ToString();
+        Type = "tracks";
+        ColorPalette = artistTrack.Track.AlbumTrack.FirstOrDefault()?.Album.ColorPalette;
         Date = artistTrack.Track.Date;
         Disc = artistTrack.Track.DiscNumber;
+        Track = artistTrack.Track.TrackNumber;
+        Duration = artistTrack.Track.Duration;
         AlbumId = artistTrack.Track.AlbumTrack.First().AlbumId;
         AlbumName = artistTrack.Track.AlbumTrack.First().Album.Name;
-        Duration = artistTrack.Track.Duration;
         Favorite = artistTrack.Track.TrackUser.Any();
-        Filename = artistTrack.Track.Filename;
-        Folder = artistTrack.Track.Folder;
-        FolderId = artistTrack.Track.FolderId;
-        Id = artistTrack.Track.Id;
-        LibraryId = artistTrack.Artist.LibraryId;
-        Name = artistTrack.Track.Name;
-        Origin = Info.DeviceId;
-        Path = artistTrack.Track.Folder + "/" + artistTrack.Track.Filename;
         Quality = artistTrack.Track.Quality;
-        Track = artistTrack.Track.TrackNumber;
         Lyrics = artistTrack.Track.Lyrics;
-        Type = "tracks";
-        Link = new Uri($"/music/track/{artistTrack.ArtistId}", UriKind.Relative);
 
         Album = artistTrack.Track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)
@@ -66,23 +57,19 @@ public record ArtistTrackDto
 
     public ArtistTrackDto(Track track, string? country = "US")
     {
+        Id = track.Id;
+        Name = track.Name;
         ColorPalette = track.AlbumTrack.First().Album.ColorPalette ?? track.ArtistTrack.First().Artist.ColorPalette;
         Cover = track.AlbumTrack.First().Album.Cover ?? track.ArtistTrack.First().Artist.Cover;
+        Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
+        Path = new Uri($"/{track.FolderId}{track.Folder}{track.Filename}", UriKind.Relative).ToString();
+        Type = "tracks";
         Date = track.UpdatedAt;
         Disc = track.DiscNumber;
+        Track = track.TrackNumber;
         Duration = track.Duration;
         Favorite = track.TrackUser.Any();
-        Filename = track.Filename;
-        Folder = track.Folder;
-        FolderId = track.FolderId;
-        Id = track.Id;
-        LibraryId = track.AlbumTrack.First().Album.LibraryId;
-        Name = track.Name;
-        Origin = Info.DeviceId;
-        Path = track.Folder + "/" + track.Filename;
         Quality = track.Quality;
-        Track = track.TrackNumber;
-        Type = "tracks";
         AlbumName = track.AlbumTrack.First().Album.Name;
 
         Album = track.AlbumTrack

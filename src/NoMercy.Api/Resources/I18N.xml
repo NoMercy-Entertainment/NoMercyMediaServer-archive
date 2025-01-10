@@ -248,4 +248,12 @@
     <Key>Could not find a part of the path '\\192.168.2.120\mnt\vault\Media\Anime\Anime\By.the.Grace.of.the.Gods.(2020)\By.the.Grace.of.the.Gods.S02E02'.</Key>
     <Value lang="nl">Could not find a part of the path '\\192.168.2.120\mnt\vault\Media\Anime\Anime\By.the.Grace.of.the.Gods.(2020)\By.the.Grace.of.the.Gods.S02E02'.</Value>
   </Entry>
+  <Entry>
+    <Key>Job not found</Key>
+    <Value lang="nl">Job not found</Value>
+  </Entry>
+  <Entry>
+    <Key>Priority updated</Key>
+    <Value lang="nl">Priority updated</Value>
+  </Entry>
 </I18N>
