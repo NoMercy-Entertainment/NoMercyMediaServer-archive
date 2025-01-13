@@ -37,10 +37,21 @@ public class Networking
     public static Task Discover()
     {
         NatUtility.DeviceFound += DeviceFound;
-
+        NatUtility.UnknownDeviceFound += UnknownDeviceFound;
         NatUtility.StartDiscovery();
-
+        
+        if (ExternalIp == "")
+            ExternalIp = GetExternalIp();
+        
+        NatUtility.StopDiscovery();
         return Task.CompletedTask;
+    }
+
+    private static void UnknownDeviceFound(object? sender, DeviceEventUnknownArgs e)
+    {
+        NatUtility.StopDiscovery();
+        if (ExternalIp == "")
+            ExternalIp = GetExternalIp();
     }
 
     private static string? _internalIp;
@@ -123,6 +134,8 @@ public class Networking
             Logger.Setup($"Failed to create port map: {e.Message}");
         }
 
+        NatUtility.StopDiscovery();
+        
         if (ExternalIp == "")
             ExternalIp = GetExternalIp();
 
