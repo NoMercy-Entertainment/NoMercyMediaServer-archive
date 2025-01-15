@@ -50,10 +50,16 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git checkout origin/master
-          git fetch origin origin/dev
-          git merge origin/dev --no-ff --no-commit --allow-unrelated-histories
           
+          # Checkout master branch and ensure it's up-to-date
+          git checkout master
+          git fetch origin master:master
+          git fetch origin dev:dev
+
+          # Merge dev into master
+          git merge dev --no-ff --no-commit --allow-unrelated-histories
+          
+          # Push the changes to master
           git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
