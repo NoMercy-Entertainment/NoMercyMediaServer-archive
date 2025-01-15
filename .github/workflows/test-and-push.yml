@@ -48,13 +48,18 @@ jobs:
       - name: Create Pull Request from Dev to Master
         if: success()
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git checkout dev
-          git fetch origin master
-          git checkout -b pr-to-master
-          git merge origin/master --no-ff --no-commit --allow-unrelated-histories
-          git push --set-upstream origin master
+            git config user.name "GitHub Actions"
+            git config user.email "actions@github.com"
+            git checkout dev
+            git fetch origin master
+            git checkout -b pr-to-master
+            git merge origin/master --no-ff --no-commit --allow-unrelated-histories
+
+            # Resolve conflicts automatically by favoring dev's changes
+            git checkout --ours .
+            git add .
+
+            git push --set-upstream origin pr-to-master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
