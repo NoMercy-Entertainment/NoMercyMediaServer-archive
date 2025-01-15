@@ -1,9 +1,10 @@
 name: Build and Release
 
 on:
-  push:
-    branches:
-      - master
+  workflow_run:
+    workflows: ["Test and Create Pull Request to Master"]
+    types:
+      - completed
   workflow_dispatch:
 
 concurrency:
@@ -44,20 +45,35 @@ jobs:
       # Publish the NoMercy.Server project for the target OS
       - name: Publish NoMercy.Server
         run: |
-            mkdir -p ./output
-            dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=true /p:PublishTrimmed=true --output ./output
+          mkdir -p ./output
+          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=true /p:PublishTrimmed=true --output ./output
 
       # Check if the release already exists
       - name: Check if Release Exists
         id: check_release
         run: |
-          response=$(curl -s -o response.json -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }}/releases/tags/v${{ github.run_number }})
-          echo "Response: $response"
-          if [[ "$response" -eq 200 ]]; then
-            echo "release_exists=true" >> $GITHUB_ENV
-          else
-            echo "release_exists=false" >> $GITHUB_ENV
-          fi
+            if [ "$(uname)" == "Darwin" ] || [ "$(uname)" == "Linux" ]; then
+            # Linux or macOS shell code (bash)
+            response=$(curl -s -o response.json -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/NoMercy-Entertainment/NoMercyMediaServer/releases/tags/v${{ github.run_number }})
+            echo "Response: $response"
+            
+            if [ "$response" -eq 200 ]; then
+                echo "release_exists=true" >> $GITHUB_ENV
+            else
+                echo "release_exists=false" >> $GITHUB_ENV
+            fi
+            elif [ "$(uname)" == "MINGW64_NT" ] || [ "$(uname)" == "MSYS_NT" ]; then
+            # Windows shell code (PowerShell)
+            $response = curl -s -o response.json -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/NoMercy-Entertainment/NoMercyMediaServer/releases/tags/v${{ github.run_number }}
+            Write-Host "Response: $response"
+            
+            if ($response -eq "200") {
+                echo "release_exists=true" >> $env:GITHUB_ENV
+            } else {
+                echo "release_exists=false" >> $env:GITHUB_ENV
+            }
+            fi
+        shell: bash
 
       # Create the GitHub release if it doesn't exist
       - name: Create Release
