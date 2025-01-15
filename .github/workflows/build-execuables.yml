@@ -73,6 +73,8 @@ jobs:
       # Upload Windows Release Asset
       - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer.exe
@@ -82,6 +84,8 @@ jobs:
       # Upload macOS Release Asset
       - name: Upload macOS Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer-macos-x64
@@ -91,6 +95,8 @@ jobs:
       # Upload Linux Release Asset
       - name: Upload Linux Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer-linux-x64
