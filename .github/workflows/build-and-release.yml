@@ -48,6 +48,9 @@ jobs:
         run: |
             mkdir -p ./output
             dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj \
+                --configuration Release \
+                --runtime linux-x64 \
+                --self-contained true \
                 /p:PublishSingleFile=true \
                 /p:IncludeNativeLibrariesForSelfExtract=true \
                 /p:IncludeAllContentForSelfExtract=true \
@@ -56,9 +59,6 @@ jobs:
                 /p:DebugSymbols=false \
                 /p:PublishReadyToRun=true \
                 /p:PublishTrimmed=true \
-                --configuration Release \
-                --runtime linux-x64 \
-                --self-contained true \
                 --output ./output
 
       - name: Debug List Files in Output Directory
