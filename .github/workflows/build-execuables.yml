@@ -46,14 +46,14 @@ jobs:
           mkdir -p ./output
       
           # Publish for Linux
-          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=true /p:PublishTrimmed=true --output ./output
+          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyMediaServer --output ./output
           mv ./output/NoMercyMediaServer ./output/NoMercyMediaServer-linux-x64
       
           # Publish for Windows
-          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=true /p:PublishTrimmed=true --output ./output
+          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyMediaServer --output ./output
       
           # Publish for macOS
-          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=true /p:PublishTrimmed=true --output ./output
+          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyMediaServer --output ./output
           mv ./output/NoMercyMediaServer ./output/NoMercyMediaServer-macos-x64
           
       # Create the GitHub release
@@ -73,6 +73,8 @@ jobs:
       # Upload Windows Release Asset
       - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer.exe
@@ -82,6 +84,8 @@ jobs:
       # Upload macOS Release Asset
       - name: Upload macOS Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer-macos-x64
@@ -91,6 +95,8 @@ jobs:
       # Upload Linux Release Asset
       - name: Upload Linux Release Asset
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer-linux-x64
