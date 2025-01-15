@@ -51,7 +51,7 @@ jobs:
           git checkout dev
           git fetch origin master
           git checkout -b pr-to-master
-          git merge origin/master --no-ff --no-commit
+          git merge origin/master --no-ff --no-commit --allow-unrelated-histories
           git push origin pr-to-master
 
           # Create a pull request from dev branch to master
