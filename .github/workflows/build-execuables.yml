@@ -47,3 +47,10 @@ jobs:
         run: |
           mkdir -p ./output
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=true /p:PublishTrimmed=true --output ./output
+
+      # Upload executables as artifacts
+      - name: Upload Executables as Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: executables
+        path: ./output
