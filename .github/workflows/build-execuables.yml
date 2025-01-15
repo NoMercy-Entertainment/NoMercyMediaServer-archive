@@ -47,10 +47,54 @@ jobs:
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true --output ./output
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime win-x64 --self-contained true /p:PublishSingleFile=true --output ./output
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true --output ./output
+          
+  create_and_upload_release:
+    runs-on: ubuntu-latest
 
-      # Upload executables as artifacts
-      - name: Upload Executables as Artifacts
-        uses: actions/upload-artifact@v4
+    steps:
+      # Create the GitHub release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         with:
-          name: executables
-          path: ./output
+          tag_name: v${{ github.run_number }}
+          release_name: NoMercy MediaServer Release
+          body: |
+            New release for NoMercy MediaServer is ready.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload Windows Release Asset
+      - name: Upload Windows Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyMediaServer.exe
+          asset_name: NoMercyMediaServer.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+
+      # Upload macOS Release Asset
+      - name: Upload macOS Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyMediaServer.dmg
+          asset_name: NoMercyMediaServer.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      # Upload Linux Release Asset
+      - name: Upload Linux Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyMediaServer
+          asset_name: NoMercyMediaServer
+          asset_content_type: application/x-executable
