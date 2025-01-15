@@ -74,8 +74,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/NoMercyMediaserver.exe
-          asset_name: NoMercyMediaserver.exe
+          asset_path: ./output/NoMercyMediaServer.exe
+          asset_name: NoMercyMediaServer.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
       - name: Upload macOS Release Asset
@@ -85,8 +85,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/NoMercyMediaserver.dmg
-          asset_name: NoMercyMediaserver.dmg
+          asset_path: ./output/NoMercyMediaServer.dmg
+          asset_name: NoMercyMediaServer.dmg
           asset_content_type: application/x-apple-diskimage
 
       - name: Upload Linux Release Asset
@@ -96,6 +96,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/NoMercyMediaserver
-          asset_name: NoMercyMediaserver
+          asset_path: ./output/NoMercyMediaServer
+          asset_name: NoMercyMediaServer
           asset_content_type: application/x-executable
