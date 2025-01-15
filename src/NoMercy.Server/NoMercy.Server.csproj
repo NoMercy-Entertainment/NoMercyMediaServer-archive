@@ -19,6 +19,15 @@
     <PropertyGroup>
         <IsTestProject>false</IsTestProject>
     </PropertyGroup>
+    <PropertyGroup>
+        <TargetName>NoMercyMediaServer</TargetName>  
+        <AssemblyName>NoMercyMediaServer</AssemblyName>
+        <PublishSingleFile>true</PublishSingleFile>
+        <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+        <DebugType>None</DebugType>
+        <DebugSymbols>false</DebugSymbols>
+    </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Asp.Versioning.Http" Version="8.1.0"/>
@@ -75,5 +84,10 @@
         <ProjectReference Include="..\NoMercy.MediaProcessing\NoMercy.MediaProcessing.csproj"/>
         <ProjectReference Include="..\NoMercy.Networking\NoMercy.Networking.csproj"/>
         <ProjectReference Include="..\NoMercy.Providers\NoMercy.Providers.csproj"/>
+    </ItemGroup>
+    
+    <ItemGroup>
+        <None Update="appsettings.json" CopyToOutputDirectory="Never" />
+        <None Update="appsettings.Development.json" CopyToOutputDirectory="Never" />
     </ItemGroup>
 </Project>

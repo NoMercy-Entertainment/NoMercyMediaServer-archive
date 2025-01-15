@@ -527,3 +527,5 @@ fabric.properties
 .idea/**/azureSettings.xml
 
 !NoMercy.MediaProcessing/Releases
+
+output/
