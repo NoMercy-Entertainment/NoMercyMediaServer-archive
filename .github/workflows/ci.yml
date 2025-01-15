@@ -1,8 +1,13 @@
 name: CI
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - dev
   pull_request:
+    branches:
+      - dev
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -32,6 +37,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore NoMercy.Server.sln
 
+      # Run tests
       - name: Test
         run: >
           dotnet test NoMercy.Server.sln 
@@ -39,6 +45,15 @@ jobs:
           --collect:"XPlat Code Coverage"
           --settings tests/coverletArgs.runsettings
           --verbosity minimal
+
+      # Push to master if tests pass
+      - name: Push to master
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git checkout master
+          git merge dev
+          git push origin master
 
       # Build the NoMercy.Server project
       - name: Build NoMercy.Server
