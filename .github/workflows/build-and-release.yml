@@ -60,7 +60,7 @@ jobs:
             else
               echo "release_exists=false" >> $GITHUB_ENV
             fi
-          shell: bash
+        shell: bash
         
       - name: Check if Release Exists on Windows
         if: matrix.os == 'windows-latest'
@@ -74,7 +74,7 @@ jobs:
             } else {
                 echo "release_exists=false" >> $env:GITHUB_ENV
             }
-            shell: pwsh
+        shell: pwsh
 
       # Create the GitHub release if it doesn't exist
       - name: Create Release
