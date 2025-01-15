@@ -51,10 +51,10 @@ jobs:
           git checkout dev
           git fetch origin master
           git checkout -b pr-to-master
-          git merge master
-          git push origin dev
+          git merge origin/master --no-ff --no-commit
+          git push origin pr-to-master
 
-          # Create a pull request from the dev branch to the master branch
-          gh pr create --base master --head dev --title "Merge dev into master" --body "Automated pull request from dev to master after successful tests."
+          # Create a pull request from dev branch to master
+          gh pr create --base master --head pr-to-master --title "Merge dev into master" --body "Automated pull request from dev to master after successful tests."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
