@@ -54,7 +54,7 @@ jobs:
           git fetch origin master
           git checkout -b pr-to-master
           git merge origin/master --no-ff --no-commit --allow-unrelated-histories
-          git push --set-upstream origin pr-to-master
+          git push --set-upstream origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
