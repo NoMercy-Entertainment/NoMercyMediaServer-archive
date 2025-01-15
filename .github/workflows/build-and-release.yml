@@ -39,9 +39,7 @@ jobs:
       # Build the NoMercy.Server project
       - name: Build NoMercy.Server
         run: |
-          dotnet build ./src/NoMercy.Server/NoMercy.Server.csproj \
-          --configuration Release \
-          --runtime ${{ matrix.os == 'windows-latest' && 'win-x64' || matrix.os == 'macos-latest' && 'osx-x64' || 'linux-x64' }}
+          dotnet build ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime ${{ matrix.os == 'windows-latest' && 'win-x64' || matrix.os == 'macos-latest' && 'osx-x64' || 'linux-x64' }}
 
       # Publish the NoMercy.Server project for the target OS
       - name: Publish NoMercy.Server
