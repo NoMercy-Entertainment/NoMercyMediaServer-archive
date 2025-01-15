@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using H.NotifyIcon.Core;
@@ -7,19 +8,27 @@ namespace NoMercy.Server;
 
 public class TrayIcon
 {
-    private static readonly string IconStream = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
-
 #pragma warning disable CA1416
-    private static readonly Icon Icon = new(IconStream);
-#pragma warning restore CA1416
+    private static Icon LoadIcon()
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        string resourceName = "NoMercy.Server.Assets.icon.ico";
 
-#pragma warning disable CA1416
+        using Stream stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+        {
+            throw new FileNotFoundException("Icon resource not found.");
+        }
+        return new Icon(stream);
+    }
+    
+    private static readonly Icon Icon = LoadIcon();
+
     private readonly TrayIconWithContextMenu _trayIcon = new()
     {
         Icon = Icon.Handle,
         ToolTip = "NoMercy MediaServer C#"
     };
-#pragma warning restore CA1416
 
     [SupportedOSPlatform("windows10.0.18362")]
     private TrayIcon()
@@ -53,9 +62,7 @@ public class TrayIcon
 
     private void Shutdown()
     {
-#pragma warning disable CA1416
         _trayIcon.Dispose();
-#pragma warning restore CA1416
         Environment.Exit(0);
     }
 
@@ -69,4 +76,6 @@ public class TrayIcon
 
         return Task.CompletedTask;
     }
+    
+#pragma warning disable CA1416
 }
