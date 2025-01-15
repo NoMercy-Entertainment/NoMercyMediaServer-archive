@@ -17,6 +17,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Download the uploaded executables artifact
+      - name: Download Executables Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: executables
+
       # Create the GitHub release
       - name: Create Release
         id: create_release
