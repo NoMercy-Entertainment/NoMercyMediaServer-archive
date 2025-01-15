@@ -50,8 +50,8 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git checkout master
-          git fetch origin dev
+          git checkout origin/master
+          git fetch origin origin/dev
           git merge origin/dev --no-ff --no-commit --allow-unrelated-histories
           
           git push origin master
