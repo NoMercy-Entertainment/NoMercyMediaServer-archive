@@ -52,6 +52,11 @@ jobs:
             --runtime ${{ matrix.os == 'windows-latest' && 'win-x64' || matrix.os == 'macos-latest' && 'osx-x64' || 'linux-x64' }} \
             --output ./output
 
+      - name: Debug: List Files in Output Directory
+        run: |
+            echo "Checking output directory:"
+            ls -al ./output
+
       # Create the GitHub release
       - name: Create Release
         id: create_release
