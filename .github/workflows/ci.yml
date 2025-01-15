@@ -12,20 +12,23 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  build_and_release:
     strategy:
       matrix:
         os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        
+    runs-on: ${{ matrix.os }}  
 
-    runs-on: "${{ matrix.os }}"  
     steps:
       - uses: actions/checkout@v4
 
+      # Setup .NET SDK for the NoMercy.Server project
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-          
+
+      # Restore dependencies for the NoMercy.Server project
       - name: Restore dependencies
         run: dotnet restore NoMercy.Server.sln
 
@@ -36,3 +39,66 @@ jobs:
           --collect:"XPlat Code Coverage"
           --settings tests/coverletArgs.runsettings
           --verbosity minimal
+
+      # Build the NoMercy.Server project
+      - name: Build NoMercy.Server
+        run: |
+          dotnet build NoMercy.Server.sln \
+          --configuration Release \
+          --runtime ${{ matrix.os == 'windows-latest' && 'win-x64' || matrix.os == 'macos-latest' && 'osx-x64' || 'linux-x64' }}
+
+      # Publish the NoMercy.Server project for the target OS
+      - name: Publish NoMercy.Server
+        run: |
+          dotnet publish NoMercy.Server.sln \
+          --configuration Release \
+          --runtime ${{ matrix.os == 'windows-latest' && 'win-x64' || matrix.os == 'macos-latest' && 'osx-x64' || 'linux-x64' }} \
+          --output ./output
+
+      # Create the GitHub release
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: NoMercy MediaServer Release
+          body: |
+            New release for NoMercy MediaServer is ready.
+          draft: false
+          prerelease: false
+
+      # Upload the executable to the release based on the OS
+      - name: Upload Windows Release Asset
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyMediaserver.exe
+          asset_name: NoMercyMediaserver.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+
+      - name: Upload macOS Release Asset
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyMediaserver.dmg
+          asset_name: NoMercyMediaserver.dmg
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload Linux Release Asset
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyMediaserver
+          asset_name: NoMercyMediaserver
+          asset_content_type: application/x-executable
