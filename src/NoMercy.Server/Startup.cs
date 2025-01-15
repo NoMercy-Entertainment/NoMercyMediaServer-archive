@@ -65,6 +65,10 @@ public class Startup(IApiVersionDescriptionProvider provider)
                 o => o.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
         });
         services.AddTransient<MediaContext>();
+        
+        using(MediaContext context = new()){
+            context.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
+        }
 
         // Add Repositories
         services.AddScoped<EncoderRepository>();
@@ -208,6 +212,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
                         .WithOrigins("https://*.nomercy.tv")
                         .WithOrigins("https://hlsjs.video-dev.org")
                         .WithOrigins("http://192.168.2.201:5501")
+                        .WithOrigins("http://192.168.2.201:*")
                         .WithOrigins("http://localhost")
                         .WithOrigins("https://localhost")
                         .AllowAnyMethod()
