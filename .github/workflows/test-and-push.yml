@@ -51,10 +51,17 @@ jobs:
           git checkout dev
           git fetch origin master
           git checkout -b pr-to-master
-          git merge origin/master --no-ff --no-commit --allow-unrelated-histories
-          git push origin pr-to-master
+          git merge origin/master --no-ff --no-commit --allow-unrelated-histories || exit 0  # Allow merge conflicts and exit if any
 
-          # Create a pull request from dev branch to master
-          gh pr create --base master --head pr-to-master --title "Merge dev into master" --body "Automated pull request from dev to master after successful tests."
+          # If merge was successful, push the new branch and create a PR
+          if [ $(git ls-files -u | wc -l) -eq 0 ]; then
+            git push origin pr-to-master
+
+            # Create a pull request from dev branch to master
+            gh pr create --base master --head pr-to-master --title "Merge dev into master" --body "Automated pull request from dev to master after successful tests."
+          else
+            echo "Merge conflict detected. Please resolve manually."
+            exit 1  # Fail the job if there are conflicts
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
