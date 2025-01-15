@@ -47,13 +47,13 @@ jobs:
           --verbosity minimal
 
       # Push to master if tests pass
-      - name: Push to master
+      - name: Push to master (or main)
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git checkout master
+          git checkout ${{ github.ref == 'refs/heads/dev' && 'main' || 'master' }}
           git merge dev
-          git push origin master
+          git push origin ${{ github.ref == 'refs/heads/dev' && 'main' || 'master' }}
 
       # Build the NoMercy.Server project
       - name: Build NoMercy.Server
