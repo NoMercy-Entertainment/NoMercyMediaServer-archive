@@ -1,0 +1,49 @@
+name: Build Executables
+
+on:
+  workflow_run:
+    workflows: ["Test and Create Pull Request to Master"]
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  id-token: write
+  pull-requests: write
+
+jobs:
+  build_executables:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Setup .NET SDK for the NoMercy.Server project
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      # Restore dependencies for the NoMercy.Server project
+      - name: Restore dependencies
+        run: dotnet restore NoMercy.Server.sln
+
+      # Build the NoMercy.Server project
+      - name: Build NoMercy.Server
+        run: |
+          dotnet build ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime ${{ matrix.os == 'windows-latest' && 'win-x64' || matrix.os == 'macos-latest' && 'osx-x64' || 'linux-x64' }}
+
+      # Publish the NoMercy.Server project for the target OS
+      - name: Publish NoMercy.Server
+        run: |
+          mkdir -p ./output
+          dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=true /p:PublishTrimmed=true --output ./output
