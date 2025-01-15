@@ -44,38 +44,20 @@ jobs:
           --settings tests/coverletArgs.runsettings
           --verbosity minimal
 
-      # Create a Pull Request to master (or main)
-      - name: Create Pull Request from Dev to Master
-        if: success()
-        run: |
-            git config user.name "GitHub Actions"
-            git config user.email "actions@github.com"
-            git checkout dev
-            git fetch origin master
-            git checkout -b pr-to-master
-            git merge origin/master --no-ff --no-commit --allow-unrelated-histories
-
-            # Resolve conflicts automatically by favoring dev's changes
-            git checkout --ours .
-            git add .
-
-            git push --set-upstream origin pr-to-master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Merge the Pull Request after creation
-      - name: Merge Pull Request
-        if: success()
-        run: |
-          PR_ID=$(curl -s \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -X POST \
-            -d '{"title":"Merge Dev into Master","head":"dev","base":"master"}' \
-            https://api.github.com/repos/${{ github.repository }}/pulls | jq -r '.number')
-          curl -s \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -X PUT \
-            -d '{"commit_title":"Merging Dev into Master","merge_method":"merge"}' \
-            https://api.github.com/repos/${{ github.repository }}/pulls/$PR_ID/merge
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: create pull request
+        id: open-pr
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          destination_branch: ${{ github.event.repository.default_branch }}
+          pr_title: "[Automated] Merge ${{ github.ref_name }} into ${{ github.event.repository.default_branch }}"
+          pr_body: "Automated Pull Request"
+          
+      - name: enable automerge
+        if: steps.open-pr.outputs.pr_number != ''
+        uses: peter-evans/enable-pull-request-automerge@v2
+        with:
+            token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+            pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
+            merge-method: merge
