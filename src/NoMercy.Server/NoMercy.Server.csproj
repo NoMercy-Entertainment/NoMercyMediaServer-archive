@@ -64,15 +64,12 @@
         </None>
     </ItemGroup>
     <ItemGroup>
+        <EmbeddedResource Include="Assets\icon.ico" />
+    </ItemGroup>
+    <ItemGroup>
         <Reference Include="AniDB">
             <HintPath>..\NoMercy.Providers\AniDb\core\AniDB.dll</HintPath>
         </Reference>
-    </ItemGroup>
-    <ItemGroup>
-        <None Remove="Assets\icon.ico"/>
-        <EmbeddedResource Include="Assets\icon.ico">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </EmbeddedResource>
     </ItemGroup>
     
     <ItemGroup>
