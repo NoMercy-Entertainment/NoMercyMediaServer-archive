@@ -54,9 +54,7 @@ jobs:
           git remote update
           git fetch
           git checkout master
-          
-          git merge dev --no-ff --no-commit --allow-unrelated-histories
-          
+          git merge dev
           git push -u origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
