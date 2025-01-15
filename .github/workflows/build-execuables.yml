@@ -50,7 +50,7 @@ jobs:
 
       # Upload executables as artifacts
       - name: Upload Executables as Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: executables
-        path: ./output
+        uses: actions/upload-artifact@v2
+        with:
+          name: executables
+          path: ./output
