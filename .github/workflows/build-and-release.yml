@@ -48,9 +48,18 @@ jobs:
         run: |
             mkdir -p ./output
             dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj \
-            --configuration Release \
-            --runtime ${{ matrix.os == 'windows-latest' && 'win-x64' || matrix.os == 'macos-latest' && 'osx-x64' || 'linux-x64' }} \
-            --output ./output
+                /p:PublishSingleFile=true \
+                /p:IncludeNativeLibrariesForSelfExtract=true \
+                /p:IncludeAllContentForSelfExtract=true \
+                /p:EnableCompressionInSingleFile=true \
+                /p:DebugType=None \
+                /p:DebugSymbols=false \
+                /p:PublishReadyToRun=true \
+                /p:PublishTrimmed=true \
+                --configuration Release \
+                --runtime linux-x64 \
+                --self-contained true \
+                --output ./output
 
       - name: Debug List Files in Output Directory
         run: |
