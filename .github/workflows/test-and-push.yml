@@ -50,13 +50,14 @@ jobs:
         run: |
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
-
+            
             git remote update
-            git fetch origin master
-            git fetch origin dev
-            git switch --detach
-            git checkout origin/master -B master
+            git fetch origin
+            
+            git checkout -b master origin/master
+        
             git merge origin/dev --allow-unrelated-histories -X theirs
-            git push -u origin master
+        
+            git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
