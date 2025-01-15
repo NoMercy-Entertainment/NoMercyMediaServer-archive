@@ -48,11 +48,6 @@ jobs:
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime win-x64 --self-contained true /p:PublishSingleFile=true --output ./output
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true --output ./output
           
-  create_and_upload_release:
-    runs-on: ubuntu-latest
-    needs: build_executables
-
-    steps:
       # Create the GitHub release
       - name: Create Release
         id: create_release
