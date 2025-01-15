@@ -51,17 +51,12 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           
-          # Checkout master branch and ensure it's up-to-date
           git remote update
           git fetch
           git checkout master
-          git fetch origin master:master
-          git fetch origin dev:dev
-
-          # Merge dev into master
+          
           git merge dev --no-ff --no-commit --allow-unrelated-histories
           
-          # Push the changes to master
-          git push origin master
+          git push -u origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
