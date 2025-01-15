@@ -1,0 +1,60 @@
+name: Test and Create Pull Request to Master
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  test_and_create_pr:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Setup .NET SDK for the NoMercy.Server project
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # Restore dependencies for the NoMercy.Server project
+      - name: Restore dependencies
+        run: dotnet restore NoMercy.Server.sln
+
+      # Run tests
+      - name: Test
+        run: >
+          dotnet test NoMercy.Server.sln 
+          --configuration Release
+          --collect:"XPlat Code Coverage"
+          --settings tests/coverletArgs.runsettings
+          --verbosity minimal
+
+      # Create a Pull Request to master (or main)
+      - name: Create Pull Request to Master (or main)
+        if: success()
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git checkout dev
+          git fetch origin master
+          git checkout -b pr-to-master
+          git merge master
+          git push origin pr-to-master
+
+          # Create a pull request from the dev branch to the master branch
+          gh pr create --base master --head pr-to-master --title "Merge dev into master" --body "Automated pull request from dev to master after successful tests."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
