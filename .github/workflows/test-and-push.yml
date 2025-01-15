@@ -43,7 +43,7 @@ jobs:
           --verbosity minimal
 
       # Create a Pull Request to master (or main)
-      - name: Create Pull Request to Master (or main)
+      - name: Create Pull Request from Dev to Master
         if: success()
         run: |
           git config user.name "GitHub Actions"
@@ -52,9 +52,9 @@ jobs:
           git fetch origin master
           git checkout -b pr-to-master
           git merge master
-          git push origin pr-to-master
+          git push origin dev
 
           # Create a pull request from the dev branch to the master branch
-          gh pr create --base master --head pr-to-master --title "Merge dev into master" --body "Automated pull request from dev to master after successful tests."
+          gh pr create --base master --head dev --title "Merge dev into master" --body "Automated pull request from dev to master after successful tests."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
