@@ -223,7 +223,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
         services.AddTransient<DynamicStaticFilesMiddleware>();
 
-        services.AddSingleton(LibraryFileWatcher.Instance);
+        // services.AddSingleton(LibraryFileWatcher.Instance);
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -312,6 +312,12 @@ public class Startup(IApiVersionDescriptionProvider provider)
                 });
 
                 endpoints.MapHub<DashboardHub>("/dashboardHub", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets;
+                    options.CloseOnAuthenticationExpiration = true;
+                });
+
+                endpoints.MapHub<CastHub>("/castHub", options =>
                 {
                     options.Transports = HttpTransportType.WebSockets;
                     options.CloseOnAuthenticationExpiration = true;
