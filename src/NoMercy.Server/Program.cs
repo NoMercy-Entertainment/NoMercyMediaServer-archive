@@ -179,8 +179,8 @@ public static class Program
             new (() => Seed.Init(ShouldSeedMarvel)),
             new (Register.Init),
             new (Binaries.DownloadAll),
-            // new (Dev.Run),
-            // new (ChromeCast.Init),
+            new (Dev.Run),
+            new (ChromeCast.Init),
             // new (AniDbBaseClient.Init),
             new (delegate
             {
@@ -204,13 +204,13 @@ public static class Program
         };
         queues.Start();
         
-        // Thread fileWatcher = new(new Task(() => _ = new LibraryFileWatcher()).Start)
-        // {
-        //     Name = "Library File Watcher",
-        //     Priority = ThreadPriority.Lowest,
-        //     IsBackground = true
-        // };
-        // fileWatcher.Start();
+        Thread fileWatcher = new(new Task(() => _ = new LibraryFileWatcher()).Start)
+        {
+            Name = "Library File Watcher",
+            Priority = ThreadPriority.Lowest,
+            IsBackground = true
+        };
+        fileWatcher.Start();
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 18362))
         {
