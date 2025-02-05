@@ -36,8 +36,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="NoMercyUpdater">
-        <HintPath>..\NoMercy.Server\bin\Debug\net9.0\NoMercyUpdater.dll</HintPath>
-      </Reference>
+      <ProjectReference Include="..\NoMercy.Updater\NoMercy.Updater.csproj" />
     </ItemGroup>
 </Project>
