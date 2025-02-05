@@ -34,4 +34,10 @@
     <ItemGroup>
       <EmbeddedResource Include="Resources\I18N.xml" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="NoMercyUpdater">
+        <HintPath>..\NoMercy.Server\bin\Debug\net9.0\NoMercyUpdater.dll</HintPath>
+      </Reference>
+    </ItemGroup>
 </Project>
