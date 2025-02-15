@@ -2,7 +2,7 @@
 
 namespace NoMercy.NmSystem.Information;
 
-public class Info
+public static class Info
 {
     public static string DeviceName { get; set; } = Environment.MachineName;
     public static readonly Guid DeviceId = Software.GetDeviceId();

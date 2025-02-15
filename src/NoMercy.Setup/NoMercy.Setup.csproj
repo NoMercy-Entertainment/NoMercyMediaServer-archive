@@ -38,4 +38,16 @@
       </Reference>
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="Assets\icon.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Assets\icon.icns">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Assets\icon.ico" />
+    </ItemGroup>
+
 </Project>
