@@ -77,7 +77,7 @@ public class StorageJob : IShouldQueue
                 
                 if (movieMetaData.Count > 0)
                 {
-                    foreach (Metadata? metadata in movieMetaData.Where(metadata => (bool)metadata?.HostFolder.StartsWith(folderLibraries.Folder.Path.Replace("\\", "/"))))
+                    foreach (Metadata? metadata in movieMetaData.Where(metadata => metadata?.HostFolder.StartsWith(folderLibraries.Folder.Path.Replace("\\", "/")) ?? false))
                     {
                         storage.Data.Movies += metadata?.MovieSize ?? 0;
                         storage.Data.Other += metadata?.OtherSize ?? 0;
@@ -87,7 +87,7 @@ public class StorageJob : IShouldQueue
             
                 if (tvMetaData.Count > 0)
                 {
-                    foreach (Metadata? metadata in tvMetaData.Where(metadata => (bool)metadata?.HostFolder.StartsWith(folderLibraries.Folder.Path.Replace("\\", "/"))))
+                    foreach (Metadata? metadata in tvMetaData.Where(metadata => metadata?.HostFolder.StartsWith(folderLibraries.Folder.Path.Replace("\\", "/")) ?? false))
                     {
                         storage.Data.Shows += metadata?.TvSize ?? 0;
                         storage.Data.Other += metadata?.OtherSize ?? 0;
@@ -97,7 +97,7 @@ public class StorageJob : IShouldQueue
             
                 if (albumMetaData.Count > 0)
                 {
-                    foreach (Metadata? metadata in albumMetaData.Where(metadata => (bool)metadata?.HostFolder.StartsWith(folderLibraries.Folder.Path.Replace("\\", "/"))))
+                    foreach (Metadata? metadata in albumMetaData.Where(metadata => metadata?.HostFolder.StartsWith(folderLibraries.Folder.Path.Replace("\\", "/")) ?? false))
                     {
                         storage.Data.Music += metadata?.MusicSize ?? 0;
                         storage.Data.Other += metadata?.OtherSize ?? 0;

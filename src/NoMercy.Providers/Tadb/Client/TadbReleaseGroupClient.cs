@@ -14,7 +14,7 @@ public class TadbReleaseGroupClient : TadbBaseClient
         try
         {
             return Get<TadbAlbumResponse>("album-mb.php", queryParams, priority)
-                .Result?.Albums?.FirstOrDefault();
+                .Result?.Albums.FirstOrDefault();
         }
         catch (Exception)
         {

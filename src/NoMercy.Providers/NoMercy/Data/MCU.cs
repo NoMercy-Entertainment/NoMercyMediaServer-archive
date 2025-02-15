@@ -16,7 +16,7 @@ public static class Mcu
         Creator = "Stoney_Eagle"
     };
 
-    public static readonly CollectionItem[] McuItems =
+    public static readonly SpecialItem[] McuItems =
     [
         new()
         {

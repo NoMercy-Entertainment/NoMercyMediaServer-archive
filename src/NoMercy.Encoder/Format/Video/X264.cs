@@ -17,7 +17,7 @@ public class X264 : BaseVideo
         {
             SetVideoCodec(videoCodec);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             SetVideoCodec(VideoCodecs.H264.Value);
         }

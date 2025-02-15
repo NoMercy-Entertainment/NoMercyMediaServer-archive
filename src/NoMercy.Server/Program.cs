@@ -1,42 +1,17 @@
 using System.Diagnostics;
 using System.Net;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CommandLine;
 using Microsoft.AspNetCore;
-using NoMercy.Data.Logic;
-using NoMercy.Encoder.Core;
-using NoMercy.Helpers.Monitoring;
-using NoMercy.MediaProcessing.Files;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Information;
-using NoMercy.Queue;
-using NoMercy.Server.app.Helper;
-using AppFiles = NoMercy.NmSystem.AppFiles;
+using NoMercy.Setup;
 
 namespace NoMercy.Server;
 public static class Program
 {
-    [DllImport("Kernel32.dll")]
-    private static extern IntPtr GetConsoleWindow();
-    [DllImport("User32.dll")]
-    private static extern bool ShowWindow(IntPtr hWnd, int cmdShow);
-
-    public static int ConsoleVisible { get; set; } = 1;
-
-    internal static void VsConsoleWindow(int i)
-    {
-        IntPtr hWnd = GetConsoleWindow();
-        if (hWnd != IntPtr.Zero)
-        {
-            ConsoleVisible = i;
-            ShowWindow(hWnd, i);
-        }
-    }
-
     private static bool ShouldSeedMarvel { get; set; }
 
     public static Task Main(string[] args)
@@ -51,19 +26,6 @@ public static class Program
         {
             Shutdown().Wait();
             Environment.Exit(0);
-        };
-
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-        {
-            if (ConsoleVisible == 0)
-            {
-                Logger.App("Prevented ProcessExit since the console is minimized.");
-            }
-            else
-            {
-                Logger.App("SIGTERM received, shutting down.");
-                Shutdown().Wait();
-            }
         };
 
         return Parser.Default.ParseArguments<StartupOptions>(args)
@@ -96,10 +58,7 @@ public static class Program
         Stopwatch stopWatch = new();
         stopWatch.Start();
 
-        Databases.QueueContext = new();
-        Databases.MediaContext = new();
-
-        await Init();
+        await Setup.Start.Init();
 
         IWebHost app = CreateWebHostBuilder(new WebHostBuilder()).Build();
 
@@ -175,80 +134,4 @@ public static class Program
             .UseStartup<Startup>();
     }
 
-    private static async Task Init()
-    {
-        await ApiInfo.RequestInfo();
-
-        if (UserSettings.TryGetUserSettings(out Dictionary<string, string>? settings))
-        {
-            UserSettings.ApplySettings(settings);
-        }
-
-        List<TaskDelegate> startupTasks =
-        [
-            new (ConsoleMessages.Logo),
-            new (AppFiles.CreateAppFolders),
-            new (Networking.Networking.Discover),
-            new (Auth.Init),
-            new (() => Seed.Init(ShouldSeedMarvel)),
-            new (Register.Init),
-            new (Binaries.DownloadAll),
-            new (Dev.Run),
-            new (ChromeCast.Init),
-            new (UpdateChecker.StartPeriodicUpdateCheck),
-
-            new (delegate
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                    && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 18362))
-                    return TrayIcon.Make();
-                return Task.CompletedTask;
-            }),
-            // new (StorageMonitor.UpdateStorage),
-        ];
-
-        await RunStartup(startupTasks);
-
-        Thread queues = new(new Task(() => QueueRunner.Initialize().Wait()).Start)
-        {
-            Name = "Queue workers",
-            Priority = ThreadPriority.Lowest,
-            IsBackground = true
-        };
-        queues.Start();
-
-        Thread fileWatcher = new(new Task(() => _ = new LibraryFileWatcher()).Start)
-        {
-            Name = "Library File Watcher",
-            Priority = ThreadPriority.Lowest,
-            IsBackground = true
-        };
-        fileWatcher.Start();
-        
-        FFmpegHardwareConfig ffmpegConfig = new();
-
-        foreach (GpuAccelerator accelerator in ffmpegConfig.Accelerators)
-        {
-            Logger.Encoder("");
-            Logger.Encoder("Found a dedicated GPU:");
-            Logger.Encoder($"Vendor: {accelerator.Vendor}");
-            Logger.Encoder($"Accelerator: {accelerator.Accelerator}");
-        }
-        
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 18362))
-        {
-            Logger.App(
-                "Your server is ready and we will hide the console window in 10 seconds\n you can show it again by right-clicking the tray icon");
-            await Task.Delay(10000)
-                .ContinueWith(_ => VsConsoleWindow(0));
-        }
-    }
-
-    private static async Task RunStartup(List<TaskDelegate> startupTasks)
-    {
-        foreach (TaskDelegate task in startupTasks)
-        {
-            await task.Invoke();
-        }
-    }
 }

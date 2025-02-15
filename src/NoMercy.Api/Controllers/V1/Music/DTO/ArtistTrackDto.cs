@@ -70,6 +70,7 @@ public record ArtistTrackDto
         Favorite = track.TrackUser.Any();
         Quality = track.Quality;
         AlbumName = track.AlbumTrack.First().Album.Name;
+        Link = new($"/music/tracks/{track.Id}", UriKind.Relative);
 
         Album = track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)

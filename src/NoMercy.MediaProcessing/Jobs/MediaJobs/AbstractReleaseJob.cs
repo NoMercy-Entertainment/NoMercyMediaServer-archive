@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.Queue;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;

@@ -6,7 +6,7 @@ using DeviceId;
 
 namespace NoMercy.NmSystem.Information;
 
-public class Software
+public static class Software
 {
     public static Version? Version { get; set; }
     
@@ -49,12 +49,14 @@ public class Software
     {
         if (IsWindows)
         {
+#pragma warning disable CA1416
             ManagementObjectSearcher searcher = new("select Version from Win32_OperatingSystem");
             foreach (ManagementBaseObject? o in searcher.Get())
             {
                 ManagementObject? item = (ManagementObject)o;
                 return item["Version"].ToString();
             }
+#pragma warning restore CA1416
         }
         else
         {
@@ -74,11 +76,13 @@ public class Software
     {
         if (IsWindows)
         {
+#pragma warning disable CA1416
             ManagementObjectSearcher searcher = new("select LastBootUpTime from Win32_OperatingSystem");
             foreach (ManagementBaseObject? o in searcher.Get())
             {
                 ManagementObject? item = (ManagementObject)o;
                 return ManagementDateTimeConverter.ToDateTime(item["LastBootUpTime"].ToString());
+#pragma warning restore CA1416
             }
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

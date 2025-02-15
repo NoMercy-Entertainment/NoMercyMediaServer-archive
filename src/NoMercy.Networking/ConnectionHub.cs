@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using Hub = Microsoft.AspNetCore.SignalR.Hub;
 
 namespace NoMercy.Networking;

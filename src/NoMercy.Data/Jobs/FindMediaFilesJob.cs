@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Data.Logic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
 using NoMercy.Queue;
 

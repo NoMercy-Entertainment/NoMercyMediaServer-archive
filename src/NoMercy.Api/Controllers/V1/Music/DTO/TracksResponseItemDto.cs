@@ -13,14 +13,14 @@ public record TracksResponseItemDto
     [JsonProperty("folder")] public string? Folder { get; set; }
     [JsonProperty("id")] public Guid Id { get; set; }
     [JsonProperty("library_id")] public Ulid? LibraryId { get; set; }
-    [JsonProperty("name")] public string Name { get; set; }
-    [JsonProperty("type")] public string Type { get; set; }
+    [JsonProperty("name")] public string Name { get; set; } = string.Empty;
+    [JsonProperty("type")] public string Type { get; set; } = string.Empty;
     [JsonProperty("year")] public int? Year { get; set; }
-    [JsonProperty("link")] public Uri Link { get; set; }
+    [JsonProperty("link")] public Uri Link { get; set; } = null!;
 
-    [JsonProperty("artists")] public List<ArtistDto> Artists { get; set; }
-    [JsonProperty("albums")] public List<AlbumDto> Albums { get; set; }
-    [JsonProperty("tracks")] public List<ArtistTrackDto> Tracks { get; set; }
+    [JsonProperty("artists")] public List<ArtistDto> Artists { get; set; } = [];
+    [JsonProperty("albums")] public List<AlbumDto> Albums { get; set; } = [];
+    [JsonProperty("tracks")] public List<ArtistTrackDto> Tracks { get; set; } = [];
 
     public TracksResponseItemDto()
     {

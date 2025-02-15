@@ -4,6 +4,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
@@ -11,6 +12,7 @@ using NoMercy.Providers.TMDB.Models.TV;
 using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Files;
+
 public class LibraryFileWatcher
 {
     // ReSharper disable once InconsistentNaming
@@ -25,7 +27,7 @@ public class LibraryFileWatcher
 
     private static readonly JobDispatcher JobDispatcher = new();
     private static readonly FileRepository FileRepository = new(MediaContext);
-    private static readonly FileManager FileManager = new(FileRepository, JobDispatcher);
+    private static readonly FileManager FileManager = new(FileRepository);
 
     private const int Delay = 10;
 

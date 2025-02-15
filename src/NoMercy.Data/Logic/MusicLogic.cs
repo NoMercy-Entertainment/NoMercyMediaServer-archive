@@ -2,12 +2,12 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using FFMpegCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using NoMercy.Data.Jobs;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.AcoustId.Client;
 using NoMercy.Providers.AcoustId.Models;
@@ -117,7 +117,7 @@ public partial class MusicLogic : IAsyncDisposable
 
         MusicBrainzReleaseAppends? releaseAppends = await musicBrainzReleaseClient.WithAllAppends();
 
-        if (releaseAppends is null || releaseAppends.Title.IsNullOrEmpty())
+        if (releaseAppends is null || string.IsNullOrEmpty(releaseAppends.Title))
         {
             Logger.App($"Release not found: {release.Title}", LogEventLevel.Warning);
             await Task.CompletedTask;
@@ -281,7 +281,7 @@ public partial class MusicLogic : IAsyncDisposable
         {
             Id = musicBrainzRelease.MusicBrainzReleaseGroup.Id,
             Title = musicBrainzRelease.MusicBrainzReleaseGroup.Title,
-            Description = musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation.IsNullOrEmpty()
+            Description = string.IsNullOrEmpty(musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation)
                 ? null
                 : musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation,
             Year = musicBrainzRelease.MusicBrainzReleaseGroup.FirstReleaseDate.ParseYear(),
@@ -341,7 +341,7 @@ public partial class MusicLogic : IAsyncDisposable
             Id = musicBrainzRelease.Id,
             Name = musicBrainzRelease.Title,
             Country = musicBrainzRelease.Country,
-            Disambiguation = musicBrainzRelease.Disambiguation.IsNullOrEmpty()
+            Disambiguation = string.IsNullOrEmpty(musicBrainzRelease.Disambiguation)
                 ? null
                 : musicBrainzRelease.Disambiguation,
             Year = musicBrainzRelease.DateTime?.ParseYear() ??
@@ -417,7 +417,9 @@ public partial class MusicLogic : IAsyncDisposable
         {
             Id = musicBrainzArtist.Id,
             Name = musicBrainzArtist.Name,
-            Disambiguation = musicBrainzArtist.Disambiguation.IsNullOrEmpty() ? null : musicBrainzArtist.Disambiguation,
+            Disambiguation = string.IsNullOrEmpty(musicBrainzArtist.Disambiguation) 
+                ? null 
+                : musicBrainzArtist.Disambiguation,
             Country = musicBrainzArtist.Country,
             TitleSort = musicBrainzArtist.SortName,
 
@@ -454,7 +456,7 @@ public partial class MusicLogic : IAsyncDisposable
 
         try
         {
-            foreach (MusicBrainzGenreDetails genre in musicBrainzArtist.Genres ?? [])
+            foreach (MusicBrainzGenreDetails genre in musicBrainzArtist.Genres)
                 await LinkGenreToArtist(musicBrainzArtist, genre);
         }
         catch (Exception e)

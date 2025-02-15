@@ -1,4 +1,3 @@
-using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Rules;
 
 namespace NoMercy.Encoder.Format.Video;
@@ -17,7 +16,7 @@ public class Vp9 : BaseVideo
         {
             SetVideoCodec(videoCodec);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             SetVideoCodec(VideoCodecs.Vp9.Value);
         }
