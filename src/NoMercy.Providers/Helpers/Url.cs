@@ -1,5 +1,6 @@
 namespace NoMercy.Providers.Helpers;
-public static partial class Url
+
+public static class Url
 {
     public static Uri ToHttps(this Uri url)
     {

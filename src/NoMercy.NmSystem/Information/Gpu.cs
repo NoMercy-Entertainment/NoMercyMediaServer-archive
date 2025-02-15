@@ -1,9 +1,8 @@
 using System.Management;
-using FFMpegCore;
 
 namespace NoMercy.NmSystem.Information;
 
-public class Gpu
+public static class Gpu
 {
     public static List<string> Vendors()
     {

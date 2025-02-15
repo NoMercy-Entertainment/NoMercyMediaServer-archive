@@ -7,6 +7,7 @@ using NoMercy.Encoder;
 using NoMercy.Encoder.Core;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using DirectoryInfo = BDInfo.IO.DirectoryInfo;
 
 namespace NoMercy.MediaSources.OpticalMedia;
@@ -34,7 +35,6 @@ public class Wip
         }
 
         XDocument doc = XDocument.Parse(xmlContent);
-        XNamespace ns = "urn:BDA:bdmv;disclib";
         XNamespace di = "urn:BDA:bdmv;discinfo";
 
         string title = doc.Descendants(di + "name").FirstOrDefault()?.Value ?? bDRom.VolumeLabel;

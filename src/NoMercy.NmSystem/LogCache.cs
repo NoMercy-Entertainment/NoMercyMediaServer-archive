@@ -1,4 +1,7 @@
+using NoMercy.NmSystem.Dto;
+
 namespace NoMercy.NmSystem;
+
 public static class LogCache
 {
     private static readonly Dictionary<string, List<LogEntry>?> Cache = new();

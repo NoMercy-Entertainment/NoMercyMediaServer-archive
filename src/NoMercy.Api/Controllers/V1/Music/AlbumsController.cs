@@ -6,7 +6,8 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
+using NoMercy.Networking.Dto;
 
 namespace NoMercy.Api.Controllers.V1.Music;
 

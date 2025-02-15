@@ -6,7 +6,7 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Collections;
 

@@ -71,7 +71,7 @@ public class CoverArtImageJob : IShouldQueue
     private class CoverPalette : Image
     {
         public string? Palette { get; set; }
-        public Uri? Url { get; set; }
+        public Uri? Url { get; init; }
     }
 
     private static async Task<CoverPalette?> FetchCover(MusicBrainzReleaseAppends musicBrainzReleaseAppends)

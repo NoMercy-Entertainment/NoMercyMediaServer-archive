@@ -7,7 +7,7 @@ namespace NoMercy.Api.Controllers.V1.Music.DTO;
 
 public record PlaylistResponseDto
 {
-    [JsonProperty("data")] public List<PlaylistResponseItemDto> Data { get; set; }
+    [JsonProperty("data")] public List<PlaylistResponseItemDto> Data { get; set; } = [];
 
     public static readonly Func<MediaContext, Guid, IAsyncEnumerable<Playlist>> GetPlaylists =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId) => mediaContext.Playlists

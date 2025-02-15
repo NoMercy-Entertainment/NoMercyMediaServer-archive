@@ -1,5 +1,5 @@
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 
 namespace NoMercy.MediaProcessing.Files;
 

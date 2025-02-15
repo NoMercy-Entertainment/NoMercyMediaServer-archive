@@ -8,12 +8,12 @@ using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Logic;
-using NoMercy.Data.Logic.Seeds;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Images;
-using NoMercy.Networking;
+using NoMercy.MediaProcessing.Seeds;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
 

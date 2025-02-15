@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Helpers;
 
 namespace NoMercy.Api.Controllers.V1.Media.DTO;
 
@@ -140,7 +139,7 @@ public static class Queries
 
     public static HashSet<Genre> GetHome(MediaContext mediaContext, Guid userId, string? language, int take, int page = 0)
     {
-        IOrderedQueryable<Genre>? query = mediaContext.Genres.AsNoTracking()
+        IOrderedQueryable<Genre> query = mediaContext.Genres.AsNoTracking()
             .OrderBy(genre => genre.Name)
             .Where(genre => genre.GenreMovies.Any(g => g.Movie.Library.LibraryUsers.FirstOrDefault(u => u.UserId.Equals(userId)) != null) ||
                             genre.GenreTvShows.Any(g => g.Tv.Library.LibraryUsers.FirstOrDefault(u => u.UserId.Equals(userId)) != null))

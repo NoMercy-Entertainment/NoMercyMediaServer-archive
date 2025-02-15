@@ -7,7 +7,7 @@ using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Api.Controllers.V1.Music;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Controllers.V1.Media;
@@ -95,7 +95,7 @@ public class UserDataController : BaseController
             )
             .Include(userData => userData.Collection!)
             .ThenInclude(collection => collection.CollectionMovies)
-            .ThenInclude(collectionMovie => collectionMovie.Movie!)
+            .ThenInclude(collectionMovie => collectionMovie.Movie)
             .ThenInclude(movie => movie.VideoFiles)
             
             .Include(userData => userData.Special)

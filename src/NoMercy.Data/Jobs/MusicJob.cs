@@ -2,6 +2,7 @@ using NoMercy.Data.Logic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.Queue;
 
 namespace NoMercy.Data.Jobs;

@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using Serilog.Events;
 
 namespace NoMercy.Data.Logic;

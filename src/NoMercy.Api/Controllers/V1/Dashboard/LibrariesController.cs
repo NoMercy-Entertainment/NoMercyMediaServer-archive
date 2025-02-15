@@ -9,10 +9,10 @@ using NoMercy.Api.Middleware;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
@@ -267,21 +267,20 @@ public class LibrariesController(
             });
 
         await using MediaContext mediaContext = new();
-        JobDispatcher jobDispatcher = new();
 
         foreach (Library library in librariesList)
         {
             foreach (LibraryMovie movie in library.LibraryMovies)
             {
                 FileRepository fileRepository = new(mediaContext);
-                FileManager fileManager = new(fileRepository, jobDispatcher);
+                FileManager fileManager = new(fileRepository);
                 await fileManager.FindFiles(movie.MovieId, library);
             }
 
             foreach (LibraryTv show in library.LibraryTvs)
             {
                 FileRepository fileRepository = new(mediaContext);
-                FileManager fileManager = new(fileRepository, jobDispatcher);
+                FileManager fileManager = new(fileRepository);
                 await fileManager.FindFiles(show.TvId, library);
             }
         }
@@ -305,19 +304,18 @@ public class LibrariesController(
             return NotFound(new StatusResponseDto<string> { Status = "error", Data = "Library not found" });
 
         await using MediaContext mediaContext = new();
-        JobDispatcher jobDispatcher = new();
 
         foreach (LibraryMovie movie in library.LibraryMovies)
         {
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             await fileManager.FindFiles(movie.MovieId, library);
         }
 
         foreach (LibraryTv show in library.LibraryTvs)
         {
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             await fileManager.FindFiles(show.TvId, library);
         }
 
@@ -565,10 +563,9 @@ public class LibrariesController(
         try
         {
             await using MediaContext mediaContext = new();
-            JobDispatcher jobDispatcher = new();
             
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             
             await fileManager.MoveToLibraryFolder(request.Id, folder);
             

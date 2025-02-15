@@ -19,8 +19,9 @@ using NoMercy.Helpers;
 using NoMercy.Helpers.Monitoring;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.Information;
 using NoMercy.Providers.TMDB.Client;
@@ -687,7 +688,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
             client.BaseAddress = new(Config.ApiServerBaseUrl);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
-            client.DefaultRequestHeaders.Authorization = new("Bearer", Auth.AccessToken);
+            client.DefaultRequestHeaders.Authorization = new("Bearer", Globals.Globals.AccessToken);
 
             HttpRequestMessage httpRequestMessage = new(HttpMethod.Patch, "server/name")
             {

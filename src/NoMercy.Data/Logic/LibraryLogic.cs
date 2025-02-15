@@ -3,6 +3,7 @@ using NoMercy.Data.Jobs;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.Queue;
 using Serilog.Events;
 

@@ -8,10 +8,10 @@ using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.TV;
@@ -169,9 +169,8 @@ public class TvShowsController(TvShowRepository tvShowRepository, MediaContext m
 
         try
         {
-            JobDispatcher jobDispatcher = new();
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             
             await fileManager.FindFiles(id, tv.Library);
         }

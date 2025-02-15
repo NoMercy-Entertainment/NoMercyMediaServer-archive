@@ -1,6 +1,6 @@
-﻿using NoMercy.Networking;
-using NoMercy.NmSystem;
+﻿using NoMercy.NmSystem;
 using NoMercy.Providers.CoverArt.Models;
+using NoMercy.Setup;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Configuration = AcoustID.Configuration;

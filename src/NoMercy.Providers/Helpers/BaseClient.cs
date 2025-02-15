@@ -1,7 +1,7 @@
 ﻿using Serilog.Events;
 using Microsoft.AspNetCore.WebUtilities;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 
 namespace NoMercy.Providers.Helpers;
 

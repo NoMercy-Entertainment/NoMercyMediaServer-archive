@@ -135,8 +135,8 @@ public record SpecialResponseItemDto
         Favorite = special.SpecialUser.Count != 0;
         NumberOfItems = special.Items.Count;
 
-        int movies = special.Items.Count(item => item.MovieId is not null && (bool)item.Movie?.VideoFiles.Any());
-        int episodes = special.Items.Count(item => item.EpisodeId is not null && (bool)item.Episode?.VideoFiles.Any());
+        int movies = special.Items.Count(item => item.MovieId is not null && item.Movie?.VideoFiles.Count != 0);
+        int episodes = special.Items.Count(item => item.EpisodeId is not null && item.Episode?.VideoFiles.Count != 0);
 
         Cast = [];
         Crew = [];

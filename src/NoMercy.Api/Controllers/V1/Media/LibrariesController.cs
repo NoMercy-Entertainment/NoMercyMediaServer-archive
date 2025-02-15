@@ -8,7 +8,6 @@ using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Networking;
 
 namespace NoMercy.Api.Controllers.V1.Media;
 
