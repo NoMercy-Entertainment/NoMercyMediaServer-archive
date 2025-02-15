@@ -1,5 +1,7 @@
 // ReSharper disable MemberCanBePrivate.Global
 
+using NoMercy.NmSystem.Information;
+
 namespace NoMercy.NmSystem;
 
 public static class AppFiles

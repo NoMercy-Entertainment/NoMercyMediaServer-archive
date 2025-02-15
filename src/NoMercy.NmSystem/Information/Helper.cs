@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace NoMercy.NmSystem.Information;
 
-public class Helper
+public static class Helper
 {
     internal static string RunCommand(string command)
     {
@@ -16,7 +16,8 @@ public class Helper
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            using Process process = Process.Start(psi);
+            
+            using Process? process = Process.Start(psi);
             if (process != null)
             {
                 string output = process.StandardOutput.ReadToEnd().Trim();

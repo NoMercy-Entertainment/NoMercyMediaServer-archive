@@ -7,15 +7,14 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.MediaProcessing.Jobs;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using Serilog.Events;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace NoMercy.MediaProcessing.Files;
 public partial class FileManager(
-    IFileRepository fileRepository,
-    JobDispatcher jobDispatcher
+    IFileRepository fileRepository
 ) : IFileManager
 {
     private int Id { get; set; }
@@ -37,8 +36,6 @@ public partial class FileManager(
 
         foreach (Folder folder in Folders)
         {
-            Logger.App($"Scanning {Movie?.Title ?? Show?.Title} for files in {folder.Path}");
-
             ConcurrentBag<MediaFolderExtend> files = await GetFiles(library, folder.Path);
 
             if (!files.IsEmpty) Files.AddRange(files);
@@ -681,7 +678,7 @@ public partial class FileManager(
 
     private List<Folder> Paths(Library library, Movie? movie = null, Tv? show = null)
     {
-        List<Folder> folders = new();
+        List<Folder> folders = [];
         string? folder = library.Type switch
         {
             "movie" => movie?.Folder?.Replace("/", ""),
@@ -689,9 +686,14 @@ public partial class FileManager(
             _ => ""
         };
 
-        if (folder == null) return folders;
+        if (folder == null)
+        {
+            Logger.App("Folder not set");
+            return folders;
+        }
 
-        Folder[] rootFolders = library.FolderLibraries
+        MediaContext mediaContext = new();
+        Folder[] rootFolders = mediaContext.FolderLibrary
             .Select(f => f.Folder)
             .ToArray();
 
@@ -700,11 +702,13 @@ public partial class FileManager(
             string path = Path.Combine(rootFolder.Path, folder);
 
             if (Directory.Exists(path))
+            {
                 folders.Add(new()
                 {
                     Path = path,
                     Id = rootFolder.Id
                 });
+            }
         }
 
         return folders;

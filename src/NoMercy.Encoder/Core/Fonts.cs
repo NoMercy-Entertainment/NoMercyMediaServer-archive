@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 using NoMercy.Encoder.Format.Rules;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 
 namespace NoMercy.Encoder.Core;
 

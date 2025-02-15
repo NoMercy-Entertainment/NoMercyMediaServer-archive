@@ -27,10 +27,9 @@ public static class ResourceMonitor
 
     private static async Task BroadcastLoop(CancellationToken cancellationToken)
     {
-        while (true)
+        while (_broadcasting && !cancellationToken.IsCancellationRequested)
         {
             DateTime time = DateTime.Now;
-            if (!_broadcasting || cancellationToken.IsCancellationRequested) break;
             try
             {
                 Resource resourceData = Helpers.Monitoring.ResourceMonitor.Monitor();

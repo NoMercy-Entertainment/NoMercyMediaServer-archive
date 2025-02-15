@@ -42,7 +42,7 @@ public class ImageController : Controller
 
             FileInfo fileInfo = new(filePath);
             long originalFileSize = fileInfo.Length;
-            string? originalMimeType = MimeUtility.GetMimeMapping(filePath);
+            string originalMimeType = MimeUtility.GetMimeMapping(filePath);
 
             bool emptyArguments = request.Width is null && request.Type is null && request.Quality is 100;
 

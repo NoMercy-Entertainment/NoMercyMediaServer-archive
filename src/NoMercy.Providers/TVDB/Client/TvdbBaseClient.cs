@@ -1,9 +1,10 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.WebUtilities;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.Providers.Helpers;
 using NoMercy.Providers.TVDB.Models;
+using NoMercy.Setup;
 using Serilog.Events;
 
 namespace NoMercy.Providers.TVDB.Client;

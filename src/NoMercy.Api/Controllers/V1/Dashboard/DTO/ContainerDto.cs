@@ -1,11 +1,11 @@
 using Newtonsoft.Json;
-using NoMercy.Data.Logic.Seeds;
 using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Audio;
 using NoMercy.Encoder.Format.Container;
 using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
+using NoMercy.MediaProcessing.Seeds;
 using NoMercy.NmSystem.Extensions;
 using Ass = NoMercy.Encoder.Format.Container.Ass;
 using Flac = NoMercy.Encoder.Format.Container.Flac;

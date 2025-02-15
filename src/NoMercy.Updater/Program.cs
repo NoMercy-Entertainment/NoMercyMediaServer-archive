@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using Newtonsoft.Json;
 using NoMercy.NmSystem;
-using NoMercy.Server.app.Helper;
+using NoMercy.Setup;
 using Semver;
 
 namespace NoMercy.Updater;

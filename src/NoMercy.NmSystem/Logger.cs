@@ -1,7 +1,9 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.LogEnrichers;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
@@ -18,7 +20,7 @@ public static class Logger
     {
         return lc
             .Enrich.FromLogContext()
-            .Enrich.With<WithThreadId>();
+            .Enrich.With<WithThreadIdEnricher>();
     }
 
     private static LoggerConfiguration SinkFile(this LoggerConfiguration lc, string filePath)

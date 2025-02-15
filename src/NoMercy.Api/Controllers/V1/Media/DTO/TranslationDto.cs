@@ -7,7 +7,7 @@ public record TranslationDto
 {
     public TranslationDto(Translation translation)
     {
-        Iso31661 = translation.Iso31661;
+        Iso31661 = translation.Iso31661 ?? string.Empty;
         Iso6391 = translation.Iso6391 ?? string.Empty;
         EnglishName = translation.EnglishName ?? string.Empty;
         Name = translation.Name ?? string.Empty;

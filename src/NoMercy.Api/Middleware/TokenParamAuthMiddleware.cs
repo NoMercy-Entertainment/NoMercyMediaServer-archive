@@ -2,7 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Middleware;

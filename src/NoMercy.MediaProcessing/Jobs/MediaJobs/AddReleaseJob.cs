@@ -11,7 +11,7 @@ using NoMercy.MediaProcessing.MusicGenres;
 using NoMercy.MediaProcessing.Recordings;
 using NoMercy.MediaProcessing.ReleaseGroups;
 using NoMercy.MediaProcessing.Releases;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
 using NoMercy.Providers.MusicBrainz.Models;
 using Serilog.Events;

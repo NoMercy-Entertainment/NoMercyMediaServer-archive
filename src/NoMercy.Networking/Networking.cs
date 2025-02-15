@@ -5,13 +5,11 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Mono.Nat;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 
 namespace NoMercy.Networking;
 
@@ -141,24 +139,6 @@ public class Networking
 
         ExternalAddress =
             $"https://{Regex.Replace(ExternalIp, "\\.", "-")}.{Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
-    }
-
-    public static IWebHost TempServer()
-    {
-        return WebHost.CreateDefaultBuilder()
-            .UseUrls("http://0.0.0.0:" + Config.InternalServerPort)
-            .Configure(app =>
-            {
-                app.Run(async context =>
-                {
-                    string code = context.Request.Query["code"].ToString();
-
-                    Auth.TokenByAuthorizationCode(code);
-
-                    context.Response.Headers.Append("Content-Type", "text/html");
-                    await context.Response.WriteAsync("<script>window.close();</script>");
-                });
-            }).Build();
     }
 
     public static bool SendToAll(string name, string endpoint, object? data = null)

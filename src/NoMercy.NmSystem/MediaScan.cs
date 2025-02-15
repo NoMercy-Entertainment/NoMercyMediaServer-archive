@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using FFMpegCore;
 using MovieFileLibrary;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
 using Serilog.Events;
 

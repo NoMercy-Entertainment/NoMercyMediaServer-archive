@@ -1,9 +1,10 @@
 ﻿
 using System.Diagnostics;
 using AcoustID;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.Providers.AcoustId.Models;
+using NoMercy.Setup;
 
 namespace NoMercy.Providers.AcoustId.Client;
 

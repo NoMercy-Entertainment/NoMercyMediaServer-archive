@@ -73,6 +73,7 @@ public record PlaylistTrackDto
         Quality = trackTrack.Track.Quality;
         Lyrics = trackTrack.Track.Lyrics;
         Type = "tracks";
+        Link = new($"/music/playlist/{trackTrack.PlaylistId}", UriKind.Relative);
 
         Album = trackTrack.Track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)

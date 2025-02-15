@@ -2,7 +2,7 @@ using System.Management;
 
 namespace NoMercy.NmSystem.Information;
 
-public class Cpu
+public static class Cpu
 {
     internal static List<string> Vendors()
     {
@@ -27,6 +27,7 @@ public class Cpu
     {
         List<string> vendors = [];
         
+#pragma warning disable CA1416
         ManagementObjectSearcher searcher = new("select Name from Win32_Processor");
         foreach (ManagementBaseObject? o in searcher.Get())
         {
@@ -36,6 +37,7 @@ public class Cpu
                 vendors.Add(cpuName.Trim());
             }
         }
+#pragma warning restore CA1416
 
         return vendors;
     }
@@ -81,6 +83,8 @@ public class Cpu
     private static List<string> GetCpuNamesWindows()
     {
         List<string> cpus = [];
+        
+#pragma warning disable CA1416
         ManagementObjectSearcher searcher = new("select Name from Win32_Processor");
         foreach (ManagementBaseObject? o in searcher.Get())
         {
@@ -90,6 +94,7 @@ public class Cpu
                 cpus.Add(cpuName.Trim());
             }
         }
+#pragma warning restore CA1416
 
         return cpus;
     }

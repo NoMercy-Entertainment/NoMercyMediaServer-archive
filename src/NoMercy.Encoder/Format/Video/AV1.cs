@@ -4,20 +4,20 @@ namespace NoMercy.Encoder.Format.Video;
 
 // https://trac.ffmpeg.org/wiki/Encode/AV1
 
-public class AV1 : BaseVideo
+public class Av1 : BaseVideo
 {
     protected internal override bool BFramesSupport => true;
     protected internal override int Modulus => 2;
     protected internal int Passes { get; set; } = 2;
     protected internal override int[] CrfRange => [0, 63];
 
-    public AV1(string videoCodec = "librav1e")
+    public Av1(string videoCodec = "librav1e")
     {
         try
         {
             SetVideoCodec(videoCodec);
         }
-        catch (Exception e)
+        catch (Exception)
         {
             SetVideoCodec(VideoCodecs.Av1.Value);
         }
@@ -153,7 +153,7 @@ public class AV1 : BaseVideo
         "6.0", "6.1", "6.2"
     ];
 
-    public AV1 SetPasses(int passes)
+    public Av1 SetPasses(int passes)
     {
         Passes = passes;
         return this;

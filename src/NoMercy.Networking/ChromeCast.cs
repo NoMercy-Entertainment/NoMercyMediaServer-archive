@@ -115,7 +115,7 @@ public class ChromeCast
         {
             CustomData = new Dictionary<string, string>
             {
-                {"accessToken", Auth.AccessToken!},
+                {"accessToken", Globals.Globals.AccessToken!},
                 {"basePath", Networking.ExternalAddress},
                 {"playlist", $"{Networking.ExternalAddress}/api/v1/{value}/watch"}
             }

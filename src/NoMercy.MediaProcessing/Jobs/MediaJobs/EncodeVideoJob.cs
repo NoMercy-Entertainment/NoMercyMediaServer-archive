@@ -1,4 +1,3 @@
-using FFMpegCore;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -27,11 +26,10 @@ public class EncodeVideoJob : AbstractEncoderJob
     {
         await using MediaContext context = new();
         await using QueueContext queueContext = new();
-        JobDispatcher jobDispatcher = new();
 
         await using LibraryRepository libraryRepository = new(context);
         FileRepository fileRepository = new(context);
-        FileManager fileManager = new(fileRepository, jobDispatcher);
+        FileManager fileManager = new(fileRepository);
 
         Folder? folder = await libraryRepository.GetLibraryFolder(FolderId);
         if (folder is null) return;

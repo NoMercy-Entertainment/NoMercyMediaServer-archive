@@ -2,11 +2,11 @@ using Moq;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Movies;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Client.Mocks;
 using NoMercy.Providers.TMDB.Models.Movies;
+using NoMercy.Setup;
 
 namespace NoMercy.Tests.MediaProcessing.Movies;
 

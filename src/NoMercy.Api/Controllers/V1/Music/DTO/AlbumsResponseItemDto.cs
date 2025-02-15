@@ -38,8 +38,8 @@ public record AlbumsResponseItemDto
         Type = "albums";
         Link = new($"/music/album/{Id}", UriKind.Relative);
 
-        Tracks = album.AlbumTrack?
+        Tracks = album.AlbumTrack
             .Select(albumTrack => albumTrack.Track)
-            .Count(albumTrack => albumTrack.Duration != null) ?? 0;
+            .Count(albumTrack => albumTrack.Duration != null);
     }
 }

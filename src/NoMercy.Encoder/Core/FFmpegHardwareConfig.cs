@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 using Serilog.Events;
 
 namespace NoMercy.Encoder.Core;

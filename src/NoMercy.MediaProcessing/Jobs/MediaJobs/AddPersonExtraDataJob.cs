@@ -3,7 +3,6 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 using NoMercy.Database;
-using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.People;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.People;
@@ -25,7 +24,6 @@ public class AddPersonExtraDataJob : AbstractShowExtraDataJob<TmdbPersonAppends,
     {
         await using MediaContext context = new();
         JobDispatcher jobDispatcher = new();
-        FileRepository fileRepository = new(context);
 
         PersonRepository personRepository = new(context);
         PersonManager personManager = new(personRepository, jobDispatcher);

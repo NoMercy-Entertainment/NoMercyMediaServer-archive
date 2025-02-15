@@ -1,12 +1,8 @@
-using NoMercy.MediaProcessing.Jobs;
 using NoMercy.Providers.TMDB.Client;
 
 namespace NoMercy.MediaProcessing.Images;
 
-public class MovieDbImageManager(
-    ImageRepository imageRepository,
-    JobDispatcher jobDispatcher
-) : IMovieDbImageManager
+public class MovieDbImageManager : IMovieDbImageManager
 {
     public static async Task<string> ColorPalette(string type, string? path, bool? download = true)
     {
