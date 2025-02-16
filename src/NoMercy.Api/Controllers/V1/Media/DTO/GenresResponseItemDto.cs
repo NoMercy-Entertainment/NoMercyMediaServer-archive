@@ -175,7 +175,7 @@ public record GenresResponseItemDto
 
         MediaType = "genres";
         Type = "genres";
-        Link = new($"/genres/{Id}", UriKind.Relative);
+        Link = new($"/genre/{Id}", UriKind.Relative);
         NumberOfItems = genre.GenreMovies.Count + genre.GenreTvShows.Count;
         HaveItems = genre.GenreMovies.Count(genreMovie => genreMovie.Movie.VideoFiles
                 .Any(v => v.Folder != null))
