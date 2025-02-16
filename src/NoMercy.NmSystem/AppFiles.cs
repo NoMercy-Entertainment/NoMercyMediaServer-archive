@@ -6,6 +6,7 @@ namespace NoMercy.NmSystem;
 
 public static class AppFiles
 {
+    public static readonly string ApplicationName = "NoMercy MediaServer";
     public static readonly string AppDataPath =
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
@@ -57,7 +58,7 @@ public static class AppFiles
     public static readonly string SecretsStore = Path.Combine(SecretsPath, "secrets.bin");
     public static readonly string SecretsKey = Path.Combine(SecretsPath, "secrets.key");
 
-    public static readonly string AppIcon = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
+    public static readonly string AppIcon = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon" + Info.IconSuffix);
 
     public static readonly string MediaDatabase = Path.Combine(DataPath, "media.db");
     public static readonly string QueueDatabase = Path.Combine(DataPath, "queue.db");

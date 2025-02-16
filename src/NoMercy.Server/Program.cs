@@ -45,7 +45,7 @@ public static class Program
         if (!Console.IsOutputRedirected)
         {
             Console.Clear();
-            Console.Title = "NoMercy MediaServer";
+            Console.Title = AppFiles.ApplicationName;
         }
 
         Version version = Assembly.GetExecutingAssembly().GetName().Version!;
