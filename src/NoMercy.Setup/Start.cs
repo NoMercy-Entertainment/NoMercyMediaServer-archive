@@ -53,6 +53,11 @@ public class Start
                     return TrayIcon.Make();
                 return Task.CompletedTask;
             }),
+            new (delegate
+            {
+                DesktopIconCreator.CreateDesktopIcon(AppFiles.ApplicationName, AppFiles.ServerExePath, AppFiles.AppIcon);
+                return Task.CompletedTask;
+            })
         ];
 
         await RunStartup(startupTasks);

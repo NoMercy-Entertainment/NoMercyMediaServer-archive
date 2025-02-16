@@ -44,7 +44,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
             GenreRowDto<GenreRowItemDto> genreRowDto = new()
             {
                 Title = name,
-                MoreLink = new($"/genres/{genre.Id}", UriKind.Relative),
+                MoreLink = new($"/genre/{genre.Id}", UriKind.Relative),
                 Id = genre.Id.ToString(),
 
                 Source = genre.GenreMovies.Select(movie => new HomeSourceDto(movie.MovieId, "movie"))
@@ -149,7 +149,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
             GenreRowDto<GenreRowItemDto> genreRowDto = new()
             {
                 Title = name,
-                MoreLink = new($"/genres/{genre.Id}", UriKind.Relative),
+                MoreLink = new($"/genre/{genre.Id}", UriKind.Relative),
                 Id = genre.Id.ToString(),
                 Source = movies
                     .Concat(tvs)
@@ -485,7 +485,7 @@ public class HomeController(MediaContext mediaContext) : BaseController
             GenreRowDto<GenreRowItemDto> genreRowDto = new()
             {
                 Title = name,
-                MoreLink = new($"/genres/{genre.Id}", UriKind.Relative),
+                MoreLink = new($"/genre/{genre.Id}", UriKind.Relative),
                 Id = genre.Id.ToString(),
                 Source = movies
                     .Concat(tvs)
