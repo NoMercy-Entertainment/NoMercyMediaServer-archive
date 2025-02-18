@@ -25,13 +25,13 @@ public class VideoFile : VideoTracks
     [JsonProperty("chapters")] public string? Chapters { get; set; }
 
     [JsonProperty("episode_id")] public int? EpisodeId { get; set; }
-    public Episode Episode { get; init; } = null!;
+    public Episode? Episode { get; set; }
 
     [JsonProperty("movie_id")] public int? MovieId { get; set; }
-    public Movie Movie { get; init; } = null!;
+    public Movie? Movie { get; set; }
     
     [JsonProperty("metadata_id")] public Ulid? MetadataId { get; set; }
-    public Metadata? Metadata { get; init; }
+    public Metadata? Metadata { get; set; }
 
     [JsonProperty("user_data")] public ICollection<UserData> UserData { get; set; } = [];
 }

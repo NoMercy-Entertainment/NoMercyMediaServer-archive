@@ -13,24 +13,39 @@ public static partial class Str
     
     public static double MatchPercentage(string strA, string strB)
     {
-        int result = 0;
-        for (int i = strA.Length - 1; i >= 0; i--)
-            if (i >= strB.Length || strA[i] == strB[i])
-            {
-                // Do nothing
-            }
-            else if (char.ToLower(strA[i]) == char.ToLower(strB[i]))
-            {
-                result += 1;
-            }
-            else
-            {
-                result += 4;
-            }
+        if (string.IsNullOrEmpty(strA) || string.IsNullOrEmpty(strB))
+            return 0;
 
-        return 100 - (result + 4 * Math.Abs(strA.Length - strB.Length)) / (2.0 * (strA.Length + strB.Length)) * 100;
+        int distance = LevenshteinDistance(strA.ToLower(), strB.ToLower());
+        int maxLength = Math.Max(strA.Length, strB.Length);
+
+        return (1.0 - (double)distance / maxLength) * 100;
     }
 
+    private static int LevenshteinDistance(string s1, string s2)
+    {
+        int[,] dp = new int[s1.Length + 1, s2.Length + 1];
+
+        for (int i = 0; i <= s1.Length; i++)
+            dp[i, 0] = i;
+        for (int j = 0; j <= s2.Length; j++)
+            dp[0, j] = j;
+
+        for (int i = 1; i <= s1.Length; i++)
+        {
+            for (int j = 1; j <= s2.Length; j++)
+            {
+                int cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+                dp[i, j] = Math.Min(Math.Min(
+                        dp[i - 1, j] + 1,    // Deletion
+                        dp[i, j - 1] + 1),   // Insertion
+                    dp[i - 1, j - 1] + cost); // Substitution
+            }
+        }
+
+        return dp[s1.Length, s2.Length];
+    }
+    
     public static List<T> SortByMatchPercentage<T>(IEnumerable<T> array, Func<T, string> keySelector, string match)
     {
         return array.OrderBy(item => MatchPercentage(match, keySelector(item))).ToList();
@@ -137,7 +152,7 @@ public static partial class Str
         return Regex.Replace(str, @"(\p{Ll})(\P{Ll})", "$1 $2");
     }
     
-    /** This method is used to sanitize a string by removing diacritics, non-alphanumeric characters and accents. */
+    /** This method sanitizes a string by removing diacritics, non-alphanumeric characters and accents. */
     public static string Sanitize(this string str)
     {
         return str.RemoveDiacritics().RemoveNonAlphaNumericCharacters().RemoveAccents();
@@ -176,56 +191,45 @@ public static partial class Str
     {
         return Regex.Replace(str, "\"", $"'");
     }
+    
     private static string _parseTitleSort(string? value = null, DateTime? date = null)
     {
-        if (value == null) return "";
+        if (string.IsNullOrWhiteSpace(value)) return "";
 
-        value = Regex.Replace(value, "^The[\\s]*", "");
-        value = Regex.Replace(value, "^An[\\s]{1,}", "");
-        value = Regex.Replace(value, "^A[\\s]{1,}", "");
-        value = Regex.Replace(value, @":\s|\sand\sthe", date != null ? $".{date.ParseYear()}." : ".");
-        value = Regex.Replace(value, "\\.", " ");
+        // Remove leading "The ", "An ", "A " (case-insensitive)
+        value = Regex.Replace(value, @"^(The|An|A)\s+", "", RegexOptions.IgnoreCase);
+
+        // Replace ": " and " and the " with the year if available
+        if (date != null)
+        {
+            string year = date.Value.Year.ToString();
+            value = Regex.Replace(value, @"[:]\s| and the ", $".{year}.", RegexOptions.IgnoreCase);
+        }
+
+        // Replace multiple dots with a space (keeps readability)
+        value = Regex.Replace(value, @"\.+", " ");
+
+        // Sanitize file name to remove unwanted characters
         value = CleanFileName(value);
 
-        return value.ToLower();
+        return value.ToLower().Trim();
     }
-
-    // public static string TitleSort<T>(this T? self, DateTime? date = null)
-    // {
-    //     return _parseTitleSort(self?.ToString(), date);
-    // }
 
     private static string _cleanFileName(string? name)
     {
-        if (name == null) return "";
-
-        name = Regex.Replace(name, "/", ".");
-        name = Regex.Replace(name, ":\\s", ".");
-        name = Regex.Replace(name, "\\s", ".");
-        name = Regex.Replace(name, "\\? {2}", ".");
-        name = Regex.Replace(name, "\\? ", ".");
-        name = Regex.Replace(name, "u,\\.", ".");
-        name = Regex.Replace(name, "u, ", ".");
-        name = Regex.Replace(name, "`", "");
-        name = Regex.Replace(name, "'", "");
-        name = Regex.Replace(name, "’", "");
-        name = Regex.Replace(name, "\"", "");
-        name = Regex.Replace(name, "u,", ".");
-        name = Regex.Replace(name, @"\.,", ".");
-        name = Regex.Replace(name, "\"", "'");
-        name = Regex.Replace(name, "\\s", ".");
-        name = Regex.Replace(name, "&", "and");
-        name = Regex.Replace(name, "#", ".");
-        name = Regex.Replace(name, "!", "");
-        name = Regex.Replace(name, "\\*", "-");
-        name = Regex.Replace(name, @"\.\.", ".");
-        name = Regex.Replace(name, "u,\\.", ".");
-        name = Regex.Replace(name, ": ", ".");
-        name = Regex.Replace(name, @"\|", ".");
-        name = Regex.Replace(name, ":", ".");
-        name = Regex.Replace(name, "\\. *$", "");
-        name = Regex.Replace(name, @"'|\?|\.\s|-\.|\.\(\d {1,3}\)|[^[:print:]\]|[^-_.\[:alnum:]\]", "");
-        name = Regex.Replace(name, "\\. {2,}", ".");
+        if (string.IsNullOrWhiteSpace(name)) return "";
+        // Replace forbidden characters with a dot or remove them
+        name = Regex.Replace(name, @"[/\\|:*?\""<>{}]", ".");
+        // Remove unwanted punctuation
+        name = Regex.Replace(name, @"[!'’`]", "");
+        // Replace ampersand
+        name = Regex.Replace(name, @"&", "and");
+        // Replace spaces with dots
+        name = Regex.Replace(name, @"\s+", ".");
+        // Collapse multiple dots
+        name = Regex.Replace(name, @"\.+", ".");
+        // Trim leading/trailing dots
+        name = Regex.Replace(name, @"^\.+|\.+$", "");
 
         return name.Trim();
     }
@@ -239,11 +243,6 @@ public static partial class Str
     {
         return _parseTitleSort(self.ToString(), parseYear != null ? new DateTime(parseYear.Value, 1, 1) : null);
     }
-
-    // public static string? TitleCase<T>(this T? self)
-    // {
-    //     return self?.ToString()?.Split("")[0].ToUpper() + self?.ToString()?.Substring(1).ToLower() ?? "";
-    // }
 
     public static string Capitalize(this string str)
     {
