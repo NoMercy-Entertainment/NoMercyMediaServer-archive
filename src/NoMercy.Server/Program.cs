@@ -5,6 +5,7 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CommandLine;
 using Microsoft.AspNetCore;
+using NoMercy.MediaProcessing.Seeds;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Information;
 using NoMercy.Setup;
@@ -12,8 +13,6 @@ using NoMercy.Setup;
 namespace NoMercy.Server;
 public static class Program
 {
-    private static bool ShouldSeedMarvel { get; set; }
-
     public static Task Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
@@ -53,12 +52,16 @@ public static class Program
         Logger.App($"NoMercy MediaServer version: v{version.Major}.{version.Minor}.{version.Build}");
 
         options.ApplySettings(out bool shouldSeedMarvel);
-        ShouldSeedMarvel = shouldSeedMarvel;
 
         Stopwatch stopWatch = new();
         stopWatch.Start();
+        
+        List<TaskDelegate> startupTasks =
+        [
+            new (() => Seed.Init(shouldSeedMarvel)),
+        ];
 
-        await Setup.Start.Init();
+        await Setup.Start.Init(startupTasks);
 
         IWebHost app = CreateWebHostBuilder(new WebHostBuilder()).Build();
 
