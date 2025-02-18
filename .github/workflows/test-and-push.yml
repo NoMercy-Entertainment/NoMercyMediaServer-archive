@@ -58,13 +58,11 @@ jobs:
             git config user.name "GitHub Actions"
             git config user.email "actions@github.com"
             
-            git remote update
             git fetch origin
+            git checkout master
+            git pull --rebase origin master
             
-            git checkout -b master origin/master
-        
-            git merge origin/dev --allow-unrelated-histories -X theirs
-        
+            git merge origin/dev --no-edit --allow-unrelated-histories -X theirs
             git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
