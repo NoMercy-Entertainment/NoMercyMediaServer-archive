@@ -103,13 +103,8 @@ public record SpecialResponseItemDto
         Favorite = special.SpecialUser.Count != 0;
 
         NumberOfItems = special.Items.Count;
-
-        int movies = special.Items.Count(item => item.MovieId is not null && item.Movie?.VideoFiles.Count != 0);
-        int episodes = special.Items
-            .Where(item => item.EpisodeId is not null)
-            .Count(item => item.Episode?.VideoFiles.Count != 0);
-
-        HaveItems = movies + episodes;
+        
+        HaveItems = specialItems.Count;
 
         TotalDuration = items.Sum(item => item.TotalDuration);
 
@@ -138,13 +133,13 @@ public record SpecialResponseItemDto
         int movies = special.Items.Count(item => item.MovieId is not null && item.Movie?.VideoFiles.Count != 0);
         int episodes = special.Items.Count(item => item.EpisodeId is not null && item.Episode?.VideoFiles.Count != 0);
 
+        HaveItems = movies + episodes;
+
         Cast = [];
         Crew = [];
         Backdrops = [];
         Posters = [];
         Genres = [];
-
-        HaveItems = movies + episodes;
 
         TotalDuration = special.Items.Sum(item => item.Movie?.Runtime ?? 0);
 
