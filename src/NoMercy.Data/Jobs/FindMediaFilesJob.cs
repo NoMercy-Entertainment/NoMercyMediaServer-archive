@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Data.Logic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
 using NoMercy.Queue;
 
@@ -58,7 +58,7 @@ public class FindMediaFilesJob : IShouldQueue
 
             if (library.LibraryMovies.Count > 0)
             {
-                LibraryMovie? libraryMovie = library.LibraryMovies?.FirstOrDefault();
+                LibraryMovie? libraryMovie = library.LibraryMovies.FirstOrDefault();
                 if (libraryMovie == null) return;
 
                 libraryMovie.Movie.Folder = file.Files.FirstOrDefault()?.Path;
@@ -67,7 +67,7 @@ public class FindMediaFilesJob : IShouldQueue
             }
             else if (library.LibraryTvs.Count > 0)
             {
-                LibraryTv? libraryTv = library.LibraryTvs?.FirstOrDefault();
+                LibraryTv? libraryTv = library.LibraryTvs.FirstOrDefault();
                 if (libraryTv == null) return;
 
                 libraryTv.Tv.Folder = file.Files.FirstOrDefault()?.Path;

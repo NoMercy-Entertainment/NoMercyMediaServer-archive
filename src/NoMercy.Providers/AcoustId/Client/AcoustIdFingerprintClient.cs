@@ -1,9 +1,10 @@
 ﻿
 using System.Diagnostics;
 using AcoustID;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.Providers.AcoustId.Models;
+using NoMercy.Setup;
 
 namespace NoMercy.Providers.AcoustId.Client;
 
@@ -46,9 +47,9 @@ public class AcoustIdFingerprintClient : AcoustIdBaseClient
 
         FingerPrintData? fingerprintData = output.FromJson<FingerPrintData>();
 
-        if (fingerprintData == null) throw new Exception("Fingerprint data is null");
+        if (fingerprintData == null) throw new("Fingerprint data is null");
 
-        return new ValueTask<AcoustIdFingerprint?>(WithFingerprint([
+        return new(WithFingerprint([
             "recordings",
             "releases",
             "tracks",

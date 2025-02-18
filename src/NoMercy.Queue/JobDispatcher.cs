@@ -1,4 +1,3 @@
-using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
 using Serilog.Events;
@@ -7,7 +6,7 @@ namespace NoMercy.Queue;
 
 public class JobDispatcher
 {
-    private static readonly JobQueue Queue = new(new QueueContext());
+    private static readonly JobQueue Queue = new(new());
 
     public static void Dispatch(IShouldQueue job, string onQueue = "default", int priority = 0)
     {

@@ -1,17 +1,13 @@
 using System.Collections.Concurrent;
 using Newtonsoft.Json;
 using NoMercy.Database;
-using NoMercy.MediaProcessing.Jobs;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
 namespace NoMercy.MediaProcessing.Images;
 
-public class BaseImageManager (
-    ImageRepository imageRepository,
-    JobDispatcher jobDispatcher
-): IBaseImageManager, IDisposable
+public class BaseImageManager : IBaseImageManager, IDisposable
 {
     public delegate Task<Image<Rgba32>?> DownloadUrl(Uri path, bool? download);
 
@@ -53,7 +49,7 @@ public class BaseImageManager (
     public static PaletteColors ColorPaletteFromImage(Image<Rgba32>? image)
     {
         if (image is null)
-            return new PaletteColors
+            return new()
             {
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 Dominant = null,
@@ -89,7 +85,7 @@ public class BaseImageManager (
         foreach (MultiUriType item in items)
         {
             Image<Rgba32>? imageData = await client.Invoke(item.Url, download);
-            list.Add(new ColorPaletteArgument
+            list.Add(new()
             {
                 Key = item.Key,
                 ImageData = imageData
@@ -102,7 +98,9 @@ public class BaseImageManager (
     public static async Task<string> ColorPalette(DownloadPath client, string type, string? path,
         bool? download = true)
     {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
         Image<Rgba32>? imageData = await client.Invoke(path, download);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
         return GenerateColorPalette(new List<ColorPaletteArgument>
         {
@@ -120,8 +118,10 @@ public class BaseImageManager (
         List<ColorPaletteArgument> list = new();
         foreach (MultiStringType item in items)
         {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             Image<Rgba32>? imageData = await client.Invoke(item.Path, download);
-            list.Add(new ColorPaletteArgument
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+            list.Add(new()
             {
                 Key = item.Key,
                 ImageData = imageData
@@ -225,7 +225,7 @@ public class BaseImageManager (
 
         image.Mutate(x => x.Resize(new ResizeOptions()
         {
-            Size = new Size(1, 1),
+            Size = new(1, 1),
             Mode = ResizeMode.Max
         }));
 
@@ -233,7 +233,7 @@ public class BaseImageManager (
             .OrderByDescending(kvp => kvp.Value)
             .Take(1);
 
-        return new PaletteColors()
+        return new()
         {
             Dominant = "#" + sortedColors.FirstOrDefault().Key.ToHex(),
             Primary = "#" + image[0, 0].ToHex(),
@@ -269,15 +269,15 @@ public class BaseImageManager (
         double min = Math.Min(r, Math.Min(g, b));
         double delta = max - min;
 
-        double hue = 0.0;
+        double hue;
         double saturation = max == 0 ? 0 : delta / max;
         double value = max;
 
         if (delta == 0)
             hue = 0;
-        else if (max == r)
+        else if (Math.Abs(max - r) < 0)
             hue = (g - b) / delta + (g < b ? 6 : 0);
-        else if (max == g)
+        else if (Math.Abs(max - g) < 0)
             hue = (b - r) / delta + 2;
         else
             hue = (r - g) / delta + 4;

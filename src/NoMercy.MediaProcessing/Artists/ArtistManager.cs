@@ -4,6 +4,7 @@ using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.MediaProcessing.MusicGenres;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.MusicBrainz.Models;
 using Serilog.Events;
@@ -49,11 +50,11 @@ public class ArtistManager(
         try
         {
             List<ArtistMusicGenre> genres = artistCredit.MusicBrainzArtist.Genres
-                ?.Select(genre => new ArtistMusicGenre
+                .Select(genre => new ArtistMusicGenre
                 {
                     ArtistId = artistCredit.MusicBrainzArtist.Id,
                     MusicGenreId = genre.Id,
-                }).ToList() ?? [];
+                }).ToList();
 
             await musicGenreRepository.LinkToArtist(genres);
         }

@@ -4,6 +4,7 @@ using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
@@ -100,7 +101,6 @@ public class LibraryManager(
     private async Task ProcessMovieFolder(MediaFolderExtend folderExtend)
     {
         if (_library is null) return;
-        if (folderExtend.Parsed is null) return;
 
         Logger.App("Processing movie folder " + folderExtend.Path);
 
@@ -120,7 +120,6 @@ public class LibraryManager(
     private async Task ProcessTvFolder(MediaFolderExtend folderExtend)
     {
         if (_library is null) return;
-        if (folderExtend.Parsed is null) return;
 
         Logger.App("Processing tv folder " + folderExtend.Path);
 
@@ -140,7 +139,6 @@ public class LibraryManager(
     private void ProcessMusicFolder(MediaFolderExtend baseFolderExtend)
     {
         if (_library is null) return;
-        if (baseFolderExtend.Parsed is null) return;
 
         jobDispatcher.DispatchJob<ProcessReleaseFolderJob>(baseFolderExtend.Path, _library.Id);
     }

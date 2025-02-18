@@ -2,7 +2,6 @@ using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Api.Controllers.V1.Media.DTO;
@@ -55,7 +54,7 @@ public record CollectionMovieDto
         Poster = movie.Poster;
         Type = "movie";
         Year = movie.ReleaseDate.ParseYear();
-        Link = new Uri($"/movie/{Id}", UriKind.Relative);
+        Link = new($"/movie/{Id}", UriKind.Relative);
         Genres = movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie.Genre))
             .ToArray();
@@ -82,8 +81,10 @@ public record CollectionMovieDto
         Favorite = false;
         Watched = false;
         // Logo = movie.LogoPath;
+        Genres = [];
+        Link = new($"/movie/{Id}", UriKind.Relative);
         MediaType = "movie";
-        ColorPalette = new IColorPalettes();
+        ColorPalette = new();
         Poster = tmdbMovie.PosterPath;
         Type = "movie";
         Year = tmdbMovie.ReleaseDate.ParseYear();

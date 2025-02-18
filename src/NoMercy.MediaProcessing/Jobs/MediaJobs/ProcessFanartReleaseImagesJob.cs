@@ -23,10 +23,9 @@ public class ProcessFanartReleaseImagesJob : AbstractFanArtDataJob
     public override async Task Handle()
     {
         await using MediaContext context = new();
-        JobDispatcher jobDispatcher = new();
 
         ImageRepository imageRepository = new(context);
-        FanArtImageManager imageManager = new(imageRepository, jobDispatcher);
+        FanArtImageManager imageManager = new(imageRepository);
 
         try
         {

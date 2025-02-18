@@ -1,9 +1,12 @@
 // ReSharper disable MemberCanBePrivate.Global
 
+using NoMercy.NmSystem.Information;
+
 namespace NoMercy.NmSystem;
 
 public static class AppFiles
 {
+    public static readonly string ApplicationName = "NoMercy MediaServer";
     public static readonly string AppDataPath =
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
@@ -39,7 +42,10 @@ public static class AppFiles
     public static readonly string FfmpegPath = Path.Combine(FfmpegFolder, "ffmpeg" + Info.ExecSuffix);
     public static readonly string FfProbePath = Path.Combine(FfmpegFolder, "ffprobe" + Info.ExecSuffix);
     public static readonly string FpCalcPath = Path.Combine(BinariesPath, "fpcalc", "fpcalc" + Info.ExecSuffix);
-
+    public static string UpdaterExePath => Path.Combine(BinariesPath, "NoMercyUpdater" + Info.ExecSuffix);
+    public static string ServerExePath => Path.Combine(BinariesPath, "NoMercyMediaServer" + Info.ExecSuffix);
+    public static string ServerTempExePath => Path.Combine(BinariesPath, "NoMercyMediaServer_temp" + Info.ExecSuffix);
+    
     public static readonly string SubtitleEdit =
         Path.Combine(BinariesPath, "subtitleedit", "SubtitleEdit" + Info.ExecSuffix);
 
@@ -52,7 +58,7 @@ public static class AppFiles
     public static readonly string SecretsStore = Path.Combine(SecretsPath, "secrets.bin");
     public static readonly string SecretsKey = Path.Combine(SecretsPath, "secrets.key");
 
-    public static readonly string AppIcon = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon.ico");
+    public static readonly string AppIcon = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon" + Info.IconSuffix);
 
     public static readonly string MediaDatabase = Path.Combine(DataPath, "media.db");
     public static readonly string QueueDatabase = Path.Combine(DataPath, "queue.db");

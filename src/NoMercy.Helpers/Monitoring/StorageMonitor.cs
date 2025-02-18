@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 
 namespace NoMercy.Helpers.Monitoring;
 
@@ -26,8 +25,8 @@ public class StorageMonitor
             };
             if (d.IsReady)
             {
-                resourceMonitorDto.Total = (long)d.TotalSize / 1024 / 1024 / 1024;
-                resourceMonitorDto.Available = (long)d.AvailableFreeSpace / 1024 / 1024 / 1024;
+                resourceMonitorDto.Total = d.TotalSize / 1024 / 1024 / 1024;
+                resourceMonitorDto.Available = d.AvailableFreeSpace / 1024 / 1024 / 1024;
             }
 
             resourceMonitorDtos.Add(resourceMonitorDto);
@@ -61,7 +60,7 @@ public class StorageMonitor
                 StorageDto movieStorageDto = new()
                 {
                     Path = folderLibrary.Folder.Path,
-                    Data = new Usage
+                    Data = new()
                     {
                         Movies = 0,
                         Shows = 0,
@@ -76,7 +75,7 @@ public class StorageMonitor
                 StorageDto tvStorageDto = new()
                 {
                     Path = folderLibrary.Folder.Path,
-                    Data = new Usage
+                    Data = new()
                     {
                         Movies = 0,
                         Shows = 0,
@@ -91,7 +90,7 @@ public class StorageMonitor
                 StorageDto musicStorageDto = new()
                 {
                     Path = folderLibrary.Folder.Path,
-                    Data = new Usage
+                    Data = new()
                     {
                         Movies = 0,
                         Shows = 0,
@@ -102,8 +101,8 @@ public class StorageMonitor
                     }
                 };
                 Storage.Add(musicStorageDto);
-            };
-        };
+            }
+        }
         
         Storage = Storage.GroupBy(f => f.Path)
             .Select(f => f.First())

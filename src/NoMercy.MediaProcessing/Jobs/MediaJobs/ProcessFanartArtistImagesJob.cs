@@ -3,7 +3,6 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
@@ -26,10 +25,9 @@ public class ProcessFanartArtistImagesJob : AbstractFanArtDataJob
     public override async Task Handle()
     {
         await using MediaContext context = new();
-        JobDispatcher jobDispatcher = new();
 
         ImageRepository imageRepository = new(context);
-        FanArtImageManager imageManager = new(imageRepository, jobDispatcher);
+        FanArtImageManager imageManager = new(imageRepository);
         
         try
         {
@@ -47,12 +45,12 @@ public class ProcessFanartArtistImagesJob : AbstractFanArtDataJob
             {
                 if (artistCover is not null && (dbArtist.Cover is null || dbArtist._colorPalette is ""))
                 {
-                    dbArtist.Cover = artistCover.FilePath ?? dbArtist.Cover;
+                    dbArtist.Cover = artistCover.FilePath;
                     dbArtist._colorPalette = artistCover._colorPalette.Replace("\"image\"", "\"cover\"");
 
                     await context.Artists.Upsert(dbArtist)
                         .On(v => v.Id)
-                        .WhenMatched((s, i) => new Artist
+                        .WhenMatched((s, i) => new()
                         {
                             Id = i.Id,
                             Cover = i.Cover,

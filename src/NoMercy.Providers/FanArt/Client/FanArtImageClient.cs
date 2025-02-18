@@ -1,6 +1,6 @@
-﻿using NoMercy.Networking;
-using NoMercy.NmSystem;
+﻿using NoMercy.NmSystem;
 using NoMercy.Providers.CoverArt.Models;
+using NoMercy.Setup;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Configuration = AcoustID.Configuration;
@@ -17,7 +17,7 @@ public class FanArtImageClient : FanArtBaseClient
 
     public Task<CoverArtCovers?> Cover(bool priority = false)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             //
         };
@@ -32,9 +32,9 @@ public class FanArtImageClient : FanArtBaseClient
         if (File.Exists(filePath)) return Image.Load<Rgba32>(filePath);
 
         HttpClient httpClient = new();
-        httpClient.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+        httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
         httpClient.DefaultRequestHeaders.Add("Accept", "image/*");
-        httpClient.BaseAddress = new Uri("https://assets.fanart.tv");
+        httpClient.BaseAddress = new("https://assets.fanart.tv");
 
         HttpResponseMessage response = await httpClient.GetAsync(url);
         if (!response.IsSuccessStatusCode) return null;

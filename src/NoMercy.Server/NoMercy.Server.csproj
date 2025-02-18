@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
@@ -7,7 +6,7 @@
         <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
         <Authors>NoMercy Entertainment</Authors>
         <Description>The Effortless Encoder</Description>
-        <Copyright>(c) 2023 NoMercy Entertainment</Copyright>
+        <Copyright>2025 NoMercy Entertainment</Copyright>
         <PackageProjectUrl>https://nomercy.tv</PackageProjectUrl>
         <PackageIcon>Assets\icon.png</PackageIcon>
         <Company>NoMercy Entertainment</Company>
@@ -15,6 +14,10 @@
         <LangVersion>12</LangVersion>
         <BuildFrameworkVersion>6.0.2</BuildFrameworkVersion>
         <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <RepositoryUrl>https://github.com/NoMercy-Entertainment/NoMercyMediaServer</RepositoryUrl>
+        <PackageTags>streaming media content-management private streaming-video streaming-audio blurayrip video-encoder</PackageTags>
+        <NeutralLanguage>en</NeutralLanguage>
     </PropertyGroup>
     <PropertyGroup>
         <IsTestProject>false</IsTestProject>
@@ -27,44 +30,37 @@
         <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
         <DebugType>None</DebugType>
         <DebugSymbols>false</DebugSymbols>
+        
+       <Version>0.1.51</Version>
+       <AssemblyVersion>$(Version).0</AssemblyVersion>
+       <FileVersion>$(Version).0</FileVersion>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Asp.Versioning.Http" Version="8.1.0"/>
         <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0"/>
         <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0"/>
-        <PackageReference Include="AspNetCore.SwaggerUI.Themes" Version="1.0.0"/>
+        <PackageReference Include="AspNetCore.SwaggerUI.Themes" Version="2.0.0" />
         <PackageReference Include="BDInfo" Version="0.8.0" />
         <PackageReference Include="Castle.Core" Version="5.1.1" />
         <PackageReference Include="FFMpegCore" Version="5.1.0"/>
-        <PackageReference Include="H.NotifyIcon" Version="2.1.3"/>
+        <PackageReference Include="H.NotifyIcon" Version="2.2.0" />
         <PackageReference Include="I18N.DotNet" Version="1.3.1" />
         <PackageReference Include="MediaBrowser.BdInfo" Version="1.0.1" />
         <PackageReference Include="MediaBrowser.Model.Signed" Version="3.0.647" />
 <!--        <PackageReference Include="ImageProcessor" Version="2.9.0"/>-->
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.8"/>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="8.0.8"/>
-        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2"/>
-        <PackageReference Include="MimeMapping" Version="3.0.1"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="9.0.2" />
+        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.5.0" />
+        <PackageReference Include="MimeMapping" Version="3.1.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.7.3"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.7.3"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="6.7.3"/>
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.7.3"/>
+        <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="7.2.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="7.2.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="7.2.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="7.2.0" />
         <PackageReference Include="System.Net.WebSockets" Version="4.3.0"/>
         <PackageReference Include="Ulid" Version="1.3.4"/>
-    </ItemGroup>
-    <ItemGroup>
-        <None Update="Assets\icon.png">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-        <None Update="Assets\icon.icns">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
-    <ItemGroup>
-        <EmbeddedResource Include="Assets\icon.ico" />
     </ItemGroup>
     <ItemGroup>
         <Reference Include="AniDB">
@@ -73,6 +69,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <ProjectReference Include="..\NoMercy.Globals\NoMercy.Globals.csproj" />
         <ProjectReference Include="..\NoMercy.Api\NoMercy.Api.csproj"/>
         <ProjectReference Include="..\NoMercy.Database\NoMercy.Database.csproj"/>
         <ProjectReference Include="..\NoMercy.Data\NoMercy.Data.csproj"/>

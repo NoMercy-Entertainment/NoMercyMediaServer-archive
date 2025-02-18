@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
 using PlaylistResponseItemDto = NoMercy.Api.Controllers.V1.Music.DTO.PlaylistResponseItemDto;
 
 namespace NoMercy.Api.Controllers.V1.Music;
@@ -28,7 +28,7 @@ public class PlaylistsController : BaseController
 
         await using MediaContext mediaContext = new();
         await foreach (Playlist playlist in PlaylistResponseDto.GetPlaylists(mediaContext, userId))
-            playlists.Add(new PlaylistResponseItemDto(playlist));
+            playlists.Add(new(playlist));
 
         return Ok(new PlaylistResponseDto
         {
@@ -54,14 +54,14 @@ public class PlaylistsController : BaseController
 
         return Ok(new TracksResponseDto
         {
-            Data = new TracksResponseItemDto
+            Data = new()
             {
                 Id = playlist.Id,
                 Name = playlist.Name,
                 Cover = playlist.Cover is not null ? new Uri($"/images/music{playlist.Cover}", UriKind.Relative).ToString() : null,
                 Description = playlist.Description,
                 ColorPalette = playlist.ColorPalette,
-                Tracks = playlist.Tracks.Select(t => new ArtistTrackDto(t.Track, language)).ToList() ?? []
+                Tracks = playlist.Tracks.Select(t => new ArtistTrackDto(t.Track, language)).ToList()
             }
         });
     }

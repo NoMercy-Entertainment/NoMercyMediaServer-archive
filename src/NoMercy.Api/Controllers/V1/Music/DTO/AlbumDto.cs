@@ -20,7 +20,7 @@ public record AlbumDto
 
     public AlbumDto(AlbumArtist albumArtist, string country)
     {
-        string? description = albumArtist.Album.Translations?
+        string? description = albumArtist.Album.Translations
             .FirstOrDefault(translation => translation.Iso31661 == country)?
             .Description;
 
@@ -29,7 +29,7 @@ public record AlbumDto
         Cover = albumArtist.Album.Cover;
         Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         Disambiguation = albumArtist.Album.Disambiguation;
-        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
+        Link = new($"/music/album/{Id}", UriKind.Relative);
         Description = !string.IsNullOrEmpty(description)
             ? description
             : albumArtist.Album.Description;
@@ -43,7 +43,7 @@ public record AlbumDto
 
     public AlbumDto(AlbumTrack albumTrack, string country)
     {
-        string? description = albumTrack.Album.Translations?
+        string? description = albumTrack.Album.Translations
             .FirstOrDefault(translation => translation.Iso31661 == country)?
             .Description;
 
@@ -52,7 +52,7 @@ public record AlbumDto
         Cover = albumTrack.Album.Cover;
         Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         Disambiguation = albumTrack.Album.Disambiguation;
-        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
+        Link = new($"/music/album/{Id}", UriKind.Relative);
         Description = !string.IsNullOrEmpty(description)
             ? description
             : albumTrack.Album.Description;
@@ -68,7 +68,7 @@ public record AlbumDto
             .Count(at => at.Track.Folder != null);
         Tracks = tracks ?? 0;
 
-        AlbumArtist = albumTrack.Album.AlbumArtist?.MaxBy(at => at.ArtistId)?.ArtistId;
+        AlbumArtist = albumTrack.Album.AlbumArtist.MaxBy(at => at.ArtistId)?.ArtistId;
     }
 
     public AlbumDto(Album album, string country)
@@ -82,7 +82,7 @@ public record AlbumDto
         Cover = album.Cover;
         Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
         Disambiguation = album.Disambiguation;
-        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
+        Link = new($"/music/album/{Id}", UriKind.Relative);
         Description = !string.IsNullOrEmpty(description)
             ? description
             : album.Description;
@@ -99,7 +99,7 @@ public record AlbumDto
 
         int trackCount = album.Tracks;
 
-        int? artistTrackCount = album.AlbumTrack?
+        int? artistTrackCount = album.AlbumTrack
             .Select(albumTrack => albumTrack.Track)
             .SelectMany(track => track.ArtistTrack)
             .Count();

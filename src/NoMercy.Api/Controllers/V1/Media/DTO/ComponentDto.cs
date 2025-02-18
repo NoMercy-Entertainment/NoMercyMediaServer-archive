@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using System.ComponentModel.DataAnnotations.Schema;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
@@ -48,19 +47,18 @@ public record Update
 
 public record RenderProps<T>
 {
-    private string _title = string.Empty;
-    [JsonProperty("id")] public Ulid Id { get; set; } = Ulid.NewUlid();
-
-    [JsonProperty("title")] public string Title { get; set; }
-
+    [JsonProperty("id")] public dynamic Id { get; set; } = Ulid.NewUlid();
+    [JsonProperty("next_id")] public dynamic NextId { get; set; } = Ulid.NewUlid();
+    [JsonProperty("previous_id")] public dynamic PreviousId { get; set; } = Ulid.NewUlid();
+    [JsonProperty("title")] public string Title { get; set; } = string.Empty;
     [JsonProperty("more_link")] public Uri? MoreLink { get; set; }
     [JsonProperty("more_link_text")] public string? MoreText => MoreLink is not null ? "See all".Localize() : null;
     [JsonProperty("items")] public IEnumerable<ComponentDto<T>>? Items { get; set; } = [];
     [JsonProperty("data")] public T? Data { get; set; }
     [JsonProperty("watch")] public bool Watch { get; set; }
-    [JsonProperty("context_menu_items")] public Dictionary<string, object>[]? ContextMenuItems { get; set; }
+    [JsonProperty("context_menu_items")] public Dictionary<string, object>[]? ContextMenuItems { get; set; } = [];
     [JsonProperty("url")] public Uri? Url { get; set; }
-    [JsonProperty("displayList")] public IEnumerable<ArtistTrackDto>? DisplayList { get; set; }
+    [JsonProperty("displayList")] public IEnumerable<ArtistTrackDto>? DisplayList { get; set; } = [];
 }
 
 public record RenderPropsItemDto
@@ -83,7 +81,7 @@ public record RenderPropsItemDto
     [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
-    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; } = default!;
+    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; } = [];
     [JsonProperty("link")] public required Uri Link { get; set; } = default!;
 
     public RenderPropsItemDto(UserData item, string country)
@@ -105,7 +103,7 @@ public record RenderPropsItemDto
             Overview = item.Movie.Overview;
             MediaType = "movie";
             Type = "movie";
-            Link = new Uri($"/movie/{Id}/watch", UriKind.Relative);
+            Link = new($"/movie/{Id}/watch", UriKind.Relative);
 
             NumberOfItems = 1;
             HaveItems = item.Movie.VideoFiles.Count(v => v.Folder != null);
@@ -137,7 +135,7 @@ public record RenderPropsItemDto
 
             MediaType = "tv";
             Type = "tv";
-            Link = new Uri($"/tv/{Id}/watch", UriKind.Relative);
+            Link = new($"/tv/{Id}/watch", UriKind.Relative);
 
             NumberOfItems = item.Tv.NumberOfEpisodes;
             HaveItems = item.Tv.Episodes
@@ -167,7 +165,7 @@ public record RenderPropsItemDto
 
             MediaType = "specials";
             Type = "specials";
-            Link = new Uri($"/specials/{Id}/watch", UriKind.Relative);
+            Link = new($"/specials/{Id}/watch", UriKind.Relative);
 
             NumberOfItems = item.Special.Items.Count;
             HaveItems = item.Special.Items
@@ -213,7 +211,7 @@ public record RenderPropsItemDto
 
             MediaType = "collection";
             Type = "collection";
-            Link = new Uri($"/collection/{Id}/watch", UriKind.Relative);
+            Link = new($"/collection/{Id}/watch", UriKind.Relative);
 
             NumberOfItems = item.Collection.CollectionMovies.Count;
             HaveItems = item.Collection.CollectionMovies

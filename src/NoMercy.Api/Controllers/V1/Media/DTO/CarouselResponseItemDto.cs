@@ -30,8 +30,8 @@ public record CarouselResponseItemDto
             .Take(36)
             .ToListAsync();
 
-    public static readonly Func<MediaContext, Guid, Task<List<CarouselResponseItemDto>>> GetLatestAlbums =
-        (mediaContext, userId) => mediaContext.Albums
+    public static readonly Func<MediaContext, Task<List<CarouselResponseItemDto>>> GetLatestAlbums =
+        (mediaContext) => mediaContext.Albums
             .Where(album => album.Cover != null && album.AlbumTrack.Count > 0)
             .Where(album => album.AlbumTrack
                 .Any(artistTrack => artistTrack.Track.Duration != null))
@@ -42,8 +42,8 @@ public record CarouselResponseItemDto
             .Take(36)
             .ToListAsync();
 
-    public static readonly Func<MediaContext, Guid, Task<List<CarouselResponseItemDto>>> GetLatestArtists =
-        (mediaContext, userId) => mediaContext.Artists
+    public static readonly Func<MediaContext, Task<List<CarouselResponseItemDto>>> GetLatestArtists =
+        (mediaContext) => mediaContext.Artists
             .Where(artist => artist.Cover != null && artist.ArtistTrack.Count > 0)
             .Where(artist => artist.ArtistTrack
                 .Any(artistTrack => artistTrack.Track.Duration != null))
@@ -135,10 +135,10 @@ public record CarouselResponseItemDto
         Description = artist.Description;
         Folder = artist.Folder ?? "";
         Id = artist.Id.ToString();
-        LibraryId = artist.LibraryId ?? Ulid.Empty;
+        LibraryId = artist.LibraryId;
         Name = artist.Name;
         Type = "artists";
-        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
+        Link = new($"/music/artist/{Id}", UriKind.Relative);
 
         Tracks = artist.ArtistTrack
             .Where(artistTrack => artistTrack.Track.Duration != null)
@@ -155,10 +155,10 @@ public record CarouselResponseItemDto
         Description = album.Description;
         Folder = album.Folder ?? "";
         Id = album.Id.ToString();
-        LibraryId = album.LibraryId ?? Ulid.Empty;
+        LibraryId = album.LibraryId;
         Name = album.Name;
         Type = "albums";
-        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
+        Link = new($"/music/album/{Id}", UriKind.Relative);
 
         Tracks = album.AlbumTrack
             .Where(albumTrack => albumTrack.Track.Duration != null)
@@ -176,10 +176,10 @@ public record CarouselResponseItemDto
         Description = playlist.Artist.Description;
         Folder = playlist.Artist.Folder ?? "";
         Id = playlist.Artist.Id.ToString();
-        LibraryId = playlist.Artist.LibraryId ?? Ulid.Empty;
+        LibraryId = playlist.Artist.LibraryId;
         Name = playlist.Artist.Name;
         Type = "artists";
-        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
+        Link = new($"/music/artist/{Id}", UriKind.Relative);
 
         Tracks = playlist.Artist.ArtistTrack
             .Where(artistTrack => artistTrack.Track.Duration != null)
@@ -196,10 +196,10 @@ public record CarouselResponseItemDto
         Description = playlist.Album.Description;
         Folder = playlist.Album.Folder ?? "";
         Id = playlist.Album.Id.ToString();
-        LibraryId = playlist.Album.LibraryId ?? Ulid.Empty;
+        LibraryId = playlist.Album.LibraryId;
         Name = playlist.Album.Name;
         Type = "albums";
-        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
+        Link = new($"/music/album/{Id}", UriKind.Relative);
 
         Tracks = playlist.Album.AlbumTrack
             .Where(albumTrack => albumTrack.Track.Duration != null)
@@ -216,7 +216,7 @@ public record CarouselResponseItemDto
         Id = playlist.Id.ToString();
         Name = playlist.Name;
         Type = "playlists";
-        Link = new Uri($"/music/playlist/{Id}", UriKind.Relative);
+        Link = new($"/music/playlist/{Id}", UriKind.Relative);
 
         Tracks = playlist.Tracks
             .Where(playlistTrack => playlistTrack.Track.Duration != null)
@@ -233,6 +233,6 @@ public record CarouselResponseItemDto
         Id = track.Id.ToString();
         Name = track.Name;
         Type = "tracks";
-        Link = new Uri($"/music/track/{Id}", UriKind.Relative);
+        Link = new($"/music/tracks/{Id}", UriKind.Relative);
     }
 }

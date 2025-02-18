@@ -1,6 +1,6 @@
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.Providers.MusicBrainz.Models;
 
 namespace NoMercy.MediaProcessing.Recordings;

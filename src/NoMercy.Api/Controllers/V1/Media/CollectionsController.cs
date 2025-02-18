@@ -6,7 +6,7 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Collections;
 
@@ -77,7 +77,7 @@ public class CollectionsController(CollectionRepository collectionRepository) : 
         if (collection is not null && collection.CollectionMovies.Count > 0 && collection.Images.Count > 0)
             return Ok(new CollectionResponseDto
             {
-                Data = new CollectionResponseItemDto(collection, country)
+                Data = new(collection)
             });
 
         TmdbCollectionClient tmdbCollectionsClient = new(id);
@@ -100,7 +100,7 @@ public class CollectionsController(CollectionRepository collectionRepository) : 
 
         return Ok(new CollectionResponseDto
         {
-            Data = new CollectionResponseItemDto(collectionAppends)
+            Data = new(collectionAppends)
         });
     }
 

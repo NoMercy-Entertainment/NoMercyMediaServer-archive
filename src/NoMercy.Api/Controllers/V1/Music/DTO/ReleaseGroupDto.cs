@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 
 namespace NoMercy.Api.Controllers.V1.Music.DTO;
 public record ReleaseGroupDto
@@ -36,6 +36,6 @@ public record ReleaseGroupDto
         Origin = Info.DeviceId;
         Type = "release_groups";
         Year = artistReleaseGroup.ReleaseGroup.Year;
-        Link = new Uri($"/music/release_groups/{Id}", UriKind.Relative);
+        Link = new($"/music/release_groups/{Id}", UriKind.Relative);
     }
 }

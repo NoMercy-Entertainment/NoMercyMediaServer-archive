@@ -1,6 +1,6 @@
 ﻿using AcoustID;
-using NoMercy.Networking;
 using NoMercy.Providers.FanArt.Models;
+using NoMercy.Setup;
 
 namespace NoMercy.Providers.FanArt.Client;
 
@@ -13,7 +13,7 @@ public class FanArtMovieClient : FanArtBaseClient
 
     public Task<FanArtMovie?> Movie(Guid id, bool priority = false)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             //
         };
@@ -23,7 +23,7 @@ public class FanArtMovieClient : FanArtBaseClient
 
     public Task<FanArtLatest[]?> Latest(Guid id, bool priority = false)
     {
-        Dictionary<string, string?> queryParams = new()
+        Dictionary<string, string> queryParams = new()
         {
             //
         };
