@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
 
 namespace NoMercy.Api.Controllers.V1.Media;
 
@@ -14,7 +14,7 @@ namespace NoMercy.Api.Controllers.V1.Media;
 [Tags("Media Genres")]
 [ApiVersion(1.0)]
 [Authorize]
-[Route("api/v{version:apiVersion}/genres")]
+[Route("api/v{version:apiVersion}/genre")]
 public class GenresController : BaseController
 {
     private readonly GenreRepository _genreRepository;
@@ -35,7 +35,7 @@ public class GenresController : BaseController
 
         string language = Language();
 
-        List<GenresResponseItemDto>? genres = await _genreRepository
+        List<GenresResponseItemDto> genres = await _genreRepository
             .GetGenresAsync(userId, language, request.Take, request.Page)
             .Select(genre => new GenresResponseItemDto(genre))
             .ToListAsync();
@@ -60,7 +60,7 @@ public class GenresController : BaseController
 
         if (request.Version != "lolomo")
         {
-            IOrderedEnumerable<GenreResponseItemDto>? concat = genre.GenreMovies
+            IOrderedEnumerable<GenreResponseItemDto> concat = genre.GenreMovies
                 .Select(movie => new GenreResponseItemDto(movie))
                 .Concat(genre.GenreTvShows
                     .Select(tv => new GenreResponseItemDto(tv)))

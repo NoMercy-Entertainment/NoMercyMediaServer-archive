@@ -9,11 +9,11 @@ namespace NoMercy.Encoder.Core;
 
 public static class HlsPlaylistGenerator
 {
-    public static Task Build(string inputFilePath, string outputFilename, List<string>? priorityLanguages = null)
+    public static Task Build(string basePath, string filename, List<string>? priorityLanguages = null)
     {
         priorityLanguages ??= ["eng", "jpn"];
 
-        string[] folders = Directory.GetDirectories(inputFilePath)
+        string[] folders = Directory.GetDirectories(basePath)
             .Where(f => Path.GetFileName(f).StartsWith("audio_", StringComparison.InvariantCultureIgnoreCase) ||
                         Path.GetFileName(f).StartsWith("video_", StringComparison.InvariantCultureIgnoreCase))
             .ToArray();
@@ -80,10 +80,10 @@ public static class HlsPlaylistGenerator
                 string profile = RunProcess(AppFiles.FfProbePath,
                         $"-v error -select_streams v:0 -show_entries stream=profile -of default=noprint_wrappers=1:nokey=1 {videoFile}")
                     .Trim();
-                string vCodecProfile = MapProfileToCodec(vCodec, profile);
+                string vCodecProfile = MapProfileToCodec(profile);
 
                 double duration = GetVideoDuration(videoFile) / 100000;
-                double totalSize = GetTotalSize(Path.Combine(inputFilePath, folderName ?? ""));
+                double totalSize = GetTotalSize(Path.Combine(basePath, folderName ?? ""));
 
                 double bandwidth = totalSize * 8 / duration;
                 bandwidth = Math.Round(bandwidth);
@@ -114,7 +114,7 @@ public static class HlsPlaylistGenerator
             masterPlaylist.AppendLine();
         }
 
-        File.WriteAllText(Path.Combine(inputFilePath, outputFilename + ".m3u8"), masterPlaylist.ToString());
+        File.WriteAllText(Path.Combine(basePath, filename + ".m3u8"), masterPlaylist.ToString());
 
         return Task.CompletedTask;
     }
@@ -131,7 +131,7 @@ public static class HlsPlaylistGenerator
         string output = RunProcess(AppFiles.FfProbePath,
             $"-v error -select_streams 0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoPath}\"");
         
-        string? x = output.Trim().Replace("N/A", "0");
+        string x = output.Trim().Replace("N/A", "0");
         if (x == "")
         {
             return 0;
@@ -143,7 +143,7 @@ public static class HlsPlaylistGenerator
     {
         Process process = new()
         {
-            StartInfo = new ProcessStartInfo
+            StartInfo = new()
             {
                 FileName = command,
                 Arguments = arguments,
@@ -161,7 +161,7 @@ public static class HlsPlaylistGenerator
         return result;
     }
 
-    private static string MapProfileToCodec(string codec, string profile)
+    private static string MapProfileToCodec(string profile)
     {
         return profile switch
         {

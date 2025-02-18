@@ -2,24 +2,34 @@ using NoMercy.Encoder.Format.Rules;
 
 namespace NoMercy.Encoder.Format.Video;
 
+// https://trac.ffmpeg.org/wiki/Encode/H.265
+
 public class X265 : BaseVideo
 {
     protected internal override bool BFramesSupport => true;
     protected internal override int Modulus => 2;
-    internal int Passes { get; set; } = 2;
+    protected internal int Passes { get; set; } = 2;
+    protected internal override int[] CrfRange => [0, 51];
 
     public X265(string videoCodec = "libx265")
     {
-        if(HasGpu)
+        try
+        {
             SetVideoCodec(videoCodec);
-        else
+        }
+        catch (Exception)
+        {
             SetVideoCodec(VideoCodecs.H265.Value);
+        }
     }
 
     protected override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.H265,
-        VideoCodecs.H265Nvenc
+        VideoCodecs.H265Nvenc,
+        // VideoCodecs.H265Qsv,
+        // VideoCodecs.H265Amf,
+        VideoCodecs.H265Videotoolbox
     ];
 
     protected internal override string[] AvailableContainers =>
@@ -34,6 +44,7 @@ public class X265 : BaseVideo
         get
         {
             if (VideoCodecs.H265Nvenc.Value == VideoCodec.Value)
+            {
                 return
                 [
                     VideoPresets.Default, VideoPresets.Slow, VideoPresets.Medium, VideoPresets.Fast,
@@ -42,6 +53,16 @@ public class X265 : BaseVideo
                     VideoPresets.P1, VideoPresets.P2, VideoPresets.P3, VideoPresets.P4, VideoPresets.P5,
                     VideoPresets.P6, VideoPresets.P7
                 ];
+            }
+            else if (VideoCodecs.H265Amf.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Qsv.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Videotoolbox.Value == VideoCodec.Value)
+            {
+            }
 
             return
             [
@@ -58,16 +79,27 @@ public class X265 : BaseVideo
         get
         {
             if (VideoCodecs.H265Nvenc.Value == VideoCodec.Value)
+            {
                 return
                 [
                     VideoProfiles.Baseline, VideoProfiles.Main, VideoProfiles.High,
                     VideoProfiles.High10, VideoProfiles.High422, VideoProfiles.High444
                 ];
+            }
+            else if (VideoCodecs.H265Amf.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Qsv.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Videotoolbox.Value == VideoCodec.Value)
+            {
+            }
 
             return
             [
                 VideoProfiles.Baseline, VideoProfiles.Main, VideoProfiles.High,
-                VideoProfiles.High10, VideoProfiles.High444p
+                VideoProfiles.High10, VideoProfiles.High444P
             ];
         }
     }
@@ -77,11 +109,22 @@ public class X265 : BaseVideo
         get
         {
             if (VideoCodecs.H265Nvenc.Value == VideoCodec.Value)
+            {
                 return
                 [
                     VideoTunes.Hq, VideoTunes.Li,
                     VideoTunes.Ull, VideoTunes.Lossless
                 ];
+            }
+            else if (VideoCodecs.H265Amf.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Qsv.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Videotoolbox.Value == VideoCodec.Value)
+            {
+            }
 
             return
             [
@@ -93,8 +136,8 @@ public class X265 : BaseVideo
 
     public override string[] AvailableColorSpaces =>
     [
-        ColorSpaces.Yuv420p, ColorSpaces.Yuv420p10le,
-        ColorSpaces.Yuv422p, ColorSpaces.Yuv444p,
+        ColorSpaces.Yuv420P, ColorSpaces.Yuv420P10Le,
+        ColorSpaces.Yuv422P, ColorSpaces.Yuv444P,
     ];
 
     public override string[] AvailableLevels
@@ -102,6 +145,7 @@ public class X265 : BaseVideo
         get
         {
             if (VideoCodecs.H265Nvenc.Value == VideoCodec.Value)
+            {
                 return
                 [
                     "auto",
@@ -112,6 +156,16 @@ public class X265 : BaseVideo
                     "5", "5.0", "5.1", "5.2",
                     "6.0", "6.1", "6.2"
                 ];
+            }
+            else if (VideoCodecs.H265Amf.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Qsv.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H265Videotoolbox.Value == VideoCodec.Value)
+            {
+            }
 
             return
             [

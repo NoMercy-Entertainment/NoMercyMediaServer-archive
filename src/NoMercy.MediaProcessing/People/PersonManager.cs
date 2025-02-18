@@ -4,6 +4,7 @@ using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.MediaProcessing.Jobs.PaletteJobs;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -240,7 +241,7 @@ public class PersonManager(
                 AspectRatio = image.AspectRatio,
                 Height = image.Height,
                 Iso6391 = image.Iso6391,
-                FilePath = image.FilePath,
+                FilePath = image.FilePath ?? string.Empty,
                 Width = image.Width,
                 VoteAverage = image.VoteAverage,
                 VoteCount = image.VoteCount,
@@ -293,7 +294,7 @@ public class PersonManager(
 
             jobs.AddRange(aggregateCrew.Jobs.Select(crewJob => new Job
             {
-                CreditId = crewJob.CreditId,
+                CreditId = crewJob.CreditId ?? string.Empty,
                 Task = crewJob.Job,
                 Order = crewJob.Order,
                 EpisodeCount = crewJob.EpisodeCount
@@ -344,7 +345,7 @@ public class PersonManager(
             
             jobs.AddRange(aggregateCrew.Jobs.Select(j => new Job
             {
-                CreditId = j.CreditId,
+                CreditId = j.CreditId ?? string.Empty,
                 Task = j.Job,
                 Order = j.Order,
                 EpisodeCount = j.EpisodeCount
@@ -373,14 +374,14 @@ public class PersonManager(
         {
             peopleIds.Add(tmdbCast.Id);
             
-            roles.Add(new Role
+            roles.Add(new()
             {
                 CreditId = tmdbCast.CreditId,
                 Character = tmdbCast.Character,
                 Order = tmdbCast.Order
             });
             
-            casts.Add(new Cast
+            casts.Add(new()
             {
                 CreditId = tmdbCast.CreditId,
                 PersonId = tmdbCast.Id,
@@ -392,14 +393,14 @@ public class PersonManager(
         {
             peopleIds.Add(tmdbCrew.Id);
             
-            jobs.Add(new Job
+            jobs.Add(new()
             {
-                CreditId = tmdbCrew.CreditId,
+                CreditId = tmdbCrew.CreditId ?? string.Empty,
                 Task = tmdbCrew.Job,
                 Order = tmdbCrew.Order
             });
             
-            crews.Add(new Crew
+            crews.Add(new()
             {
                 CreditId = tmdbCrew.CreditId,
                 PersonId = tmdbCrew.Id,
@@ -422,14 +423,14 @@ public class PersonManager(
         {
             peopleIds.Add(aggregateCast.Id);
 
-            roles.Add(new Role
+            roles.Add(new()
             {
                 CreditId = aggregateCast.CreditId,
                 Character = aggregateCast.Character,
                 Order = aggregateCast.Order
             });
             
-            casts.Add(new Cast
+            casts.Add(new()
             {
                 CreditId = aggregateCast.CreditId,
                 PersonId = aggregateCast.Id,
@@ -441,14 +442,14 @@ public class PersonManager(
         {
             peopleIds.Add(tmdbCrew.Id);
 
-            jobs.Add(new Job
+            jobs.Add(new()
             {
-                CreditId = tmdbCrew.CreditId,
+                CreditId = tmdbCrew.CreditId ?? string.Empty,
                 Task = tmdbCrew.Job,
                 Order = tmdbCrew.Order
             });
             
-            crews.Add(new Crew
+            crews.Add(new()
             {
                 CreditId = tmdbCrew.CreditId,
                 PersonId = tmdbCrew.Id,
@@ -475,7 +476,7 @@ public class PersonManager(
                     "translations"
                 ]);
 
-                if (personTask is null)
+                if (personTask?.Name is null)
                 {
                     Logger.MovieDb($"Person {id} not found", LogEventLevel.Warning);
                     return;

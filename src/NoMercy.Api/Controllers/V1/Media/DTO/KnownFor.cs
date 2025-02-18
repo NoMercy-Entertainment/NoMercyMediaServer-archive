@@ -1,6 +1,5 @@
 using Newtonsoft.Json;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.TMDB.Models.People;
 
@@ -11,9 +10,9 @@ public record KnownFor
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("genre_ids")] public int[]? GenreIds { get; set; }
     [JsonProperty("id")] public int? Id { get; set; }
-    [JsonProperty("original_language")] public string OriginalLanguage { get; set; }
-    [JsonProperty("original_title")] public string OriginalTitle { get; set; }
-    [JsonProperty("overview")] public string Overview { get; set; }
+    [JsonProperty("original_language")] public string OriginalLanguage { get; set; } = string.Empty;
+    [JsonProperty("original_title")] public string OriginalTitle { get; set; } = string.Empty;
+    [JsonProperty("overview")] public string Overview { get; set; } = string.Empty;
     [JsonProperty("popularity")] public double Popularity { get; set; }
     [JsonProperty("release_date")] public DateTime? ReleaseDate { get; set; }
     [JsonProperty("title")] public string? Title { get; set; }
@@ -21,24 +20,24 @@ public record KnownFor
     [JsonProperty("vote_average")] public double VoteAverage { get; set; }
     [JsonProperty("vote_count")] public long VoteCount { get; set; }
     [JsonProperty("character")] public string? Character { get; set; }
-    [JsonProperty("credit_id")] public string CreditId { get; set; }
+    [JsonProperty("credit_id")] public string CreditId { get; set; } = string.Empty;
     [JsonProperty("order")] public long? Order { get; set; }
     [JsonProperty("media_type")] public string? MediaType { get; set; }
     [JsonProperty("hasItem")] public bool? HasItem { get; set; }
-    [JsonProperty("poster")] public string Poster { get; set; }
+    [JsonProperty("poster")] public string Poster { get; set; } = string.Empty;
     [JsonProperty("year")] public long? Year { get; set; }
-    [JsonProperty("origin_country")] public string[] OriginCountry { get; set; }
-    [JsonProperty("original_name")] public string OriginalName { get; set; }
+    [JsonProperty("origin_country")] public string[] OriginCountry { get; set; } = [];
+    [JsonProperty("original_name")] public string OriginalName { get; set; } = string.Empty;
     [JsonProperty("first_air_date")] public DateTimeOffset? FirstAirDate { get; set; }
-    [JsonProperty("name")] public string Name { get; set; }
+    [JsonProperty("name")] public string Name { get; set; } = string.Empty;
     [JsonProperty("department")] public string? Department { get; set; }
     [JsonProperty("job")] public string? Job { get; set; }
     [JsonProperty("type")] public string? Type { get; set; }
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
     [JsonProperty("episode_count")] public int? EpisodeCount { get; set; }
-    
-    [JsonProperty("link")] public Uri Link { get; set; }
+
+    [JsonProperty("link")] public Uri Link { get; set; } = null!;
 
     public KnownFor(Cast cast)
     {
@@ -56,7 +55,7 @@ public record KnownFor
         ReleaseDate = cast.Movie?.ReleaseDate ?? cast.Tv?.FirstAirDate;
         VoteAverage = cast.Movie?.VoteAverage ?? cast.Tv?.VoteAverage ?? 0;
         VoteCount = cast.Movie?.VoteCount ?? cast.Tv?.VoteCount ?? 0;
-        Link = new Uri($"/{MediaType}/{Id}", UriKind.Relative);
+        Link = new($"/{MediaType}/{Id}", UriKind.Relative);
         HasItem = cast.Movie?.VideoFiles.Count != 0 || (cast.Tv?.Episodes.Any(e => e.VideoFiles.Count != 0) ?? false);
         NumberOfItems = cast.Movie?.VideoFiles.Count + cast.Tv?.Episodes.Count(e => e.VideoFiles.Count != 0);
         HaveItems = cast.Movie?.VideoFiles.Count != 0 ? 1 : cast.Tv?.Episodes.Count(e => e.VideoFiles.Count != 0) ?? 0;
@@ -78,7 +77,7 @@ public record KnownFor
         VoteAverage = crew.Movie?.VoteAverage ?? crew.Tv!.VoteAverage ?? 0;
         VoteCount = crew.Movie?.VoteCount ?? crew.Tv!.VoteCount ?? 0;
         Job = crew.Job.Task ?? string.Empty;
-        Link = new Uri($"/{MediaType}/{Id}", UriKind.Relative);
+        Link = new($"/{MediaType}/{Id}", UriKind.Relative);
         HasItem = crew.Movie?.VideoFiles.Count != 0 || (crew.Tv?.Episodes.Any(e => e.VideoFiles.Count != 0) ?? false);
         NumberOfItems = crew.Movie?.VideoFiles.Count + crew.Tv?.Episodes.Count(e => e.VideoFiles.Count > 0);
         HaveItems = crew.Movie?.VideoFiles.Count != 0 ? 1 : crew.Tv?.Episodes.Count(e => e.VideoFiles.Count > 0) ?? 0;
@@ -110,7 +109,7 @@ public record KnownFor
         VoteCount = crew.VoteCount;
         Job = crew.Job;
         EpisodeCount = crew.EpisodeCount;
-        Link = new Uri($"/{crew.MediaType}/{Id}", UriKind.Relative);
+        Link = new($"/{crew.MediaType}/{Id}", UriKind.Relative);
 
         NumberOfItems = person?.Casts
             .Where(c => c.MovieId == crew.Id || c.TvId == crew.Id || c.SeasonId == crew.Id || c.EpisodeId == crew.Id)
@@ -151,7 +150,7 @@ public record KnownFor
         VoteCount = crew.VoteCount;
         Job = crew.Job;
         EpisodeCount = crew.EpisodeCount;
-        Link = new Uri($"/{crew.MediaType}/{Id}", UriKind.Relative);
+        Link = new($"/{crew.MediaType}/{Id}", UriKind.Relative);
 
         HasItem = person?.Crews.Any(c =>
             (c.MovieId == crew.Id || c.TvId == crew.Id || c.SeasonId == crew.Id || c.EpisodeId == crew.Id) &&

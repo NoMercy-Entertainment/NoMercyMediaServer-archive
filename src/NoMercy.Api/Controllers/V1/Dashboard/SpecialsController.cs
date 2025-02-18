@@ -8,12 +8,12 @@ using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Logic;
-using NoMercy.Data.Logic.Seeds;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Images;
-using NoMercy.Networking;
+using NoMercy.MediaProcessing.Seeds;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
 
@@ -61,7 +61,7 @@ public class SpecialsController : BaseController
 
             await mediaContext.Specials.Upsert(special)
                 .On(l => new { l.Id })
-                .WhenMatched((ls, li) => new Special
+                .WhenMatched((ls, li) => new()
                 {
                     Id = li.Id,
                     Title = li.Title,
@@ -69,13 +69,13 @@ public class SpecialsController : BaseController
                 })
                 .RunAsync();
 
-            await mediaContext.SpecialUser.Upsert(new SpecialUser
+            await mediaContext.SpecialUser.Upsert(new()
                 {
                     SpecialId = special.Id,
                     UserId = userId
                 })
                 .On(lu => new { lu.SpecialId, lu.UserId })
-                .WhenMatched((lus, lui) => new SpecialUser
+                .WhenMatched((lus, lui) => new()
                 {
                     SpecialId = lui.SpecialId,
                     UserId = lui.UserId,
@@ -131,9 +131,9 @@ public class SpecialsController : BaseController
                 
                 special._colorPalette = await MovieDbImageManager
                     .MultiColorPalette([
-                        new BaseImageManager.MultiStringType("poster", request.Poster),
-                        new BaseImageManager.MultiStringType("backdrop", request.Backdrop),
-                        new BaseImageManager.MultiStringType("logo", request.Logo)
+                        new("poster", request.Poster),
+                        new("backdrop", request.Backdrop),
+                        new("logo", request.Logo)
                     ]);
             }
             
@@ -374,7 +374,7 @@ public class SpecialsController : BaseController
 
     [HttpPost]
     [Route("addmarvel")]
-    public async Task<IActionResult> AddMarvel()
+    public IActionResult AddMarvel()
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan all specials");

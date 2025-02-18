@@ -9,8 +9,7 @@ using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
-using Uri = System.Uri;
+using NoMercy.Helpers;
 
 namespace NoMercy.Api.Controllers.V1.Music;
 
@@ -40,8 +39,8 @@ public class MusicController : BaseController
         List<CarouselResponseItemDto> favoriteAlbums = await CarouselResponseItemDto.GetFavoriteAlbums(mediaContext, userId);
 
         List<CarouselResponseItemDto> playlists = await CarouselResponseItemDto.GetPlaylists(mediaContext, userId);
-        List<CarouselResponseItemDto> latestArtists = await CarouselResponseItemDto.GetLatestArtists(mediaContext, userId);
-        List<CarouselResponseItemDto> latestAlbums = await CarouselResponseItemDto.GetLatestAlbums(mediaContext, userId);
+        List<CarouselResponseItemDto> latestArtists = await CarouselResponseItemDto.GetLatestArtists(mediaContext);
+        List<CarouselResponseItemDto> latestAlbums = await CarouselResponseItemDto.GetLatestAlbums(mediaContext);
 
         return Ok(new Render
         {
@@ -53,7 +52,7 @@ public class MusicController : BaseController
                     Props =
                     {
                         Items = [
-                            new ComponentDto<dynamic>
+                            new()
                             {
                                 Component = "NMMusicHomeCard",
                                 Props =
@@ -62,7 +61,7 @@ public class MusicController : BaseController
                                     Data = favoriteArtist
                                 }
                             },
-                            new ComponentDto<dynamic>
+                            new()
                             {
                                 Component = "NMMusicHomeCard",
                                 Props =
@@ -71,7 +70,7 @@ public class MusicController : BaseController
                                     Data = favoriteAlbum
                                 }
                             },
-                            new ComponentDto<dynamic>
+                            new()
                             {
                                 Component = "NMMusicHomeCard",
                                 Props =
@@ -126,7 +125,7 @@ public class MusicController : BaseController
                     Props =
                     {
                         Title = "Playlists",
-                        MoreLink = new Uri("/music/playlists", UriKind.Relative),
+                        MoreLink = new("/music/playlists", UriKind.Relative),
                         Items = playlists
                             .Select(item => new ComponentDto<CarouselResponseItemDto>
                             {
@@ -145,7 +144,7 @@ public class MusicController : BaseController
                     Props =
                     {
                         Title = "Artists",
-                        MoreLink = new Uri("/music/artists", UriKind.Relative),
+                        MoreLink = new("/music/artists", UriKind.Relative),
                         Items = latestArtists
                             .Select(item => new ComponentDto<CarouselResponseItemDto>
                             {
@@ -164,7 +163,7 @@ public class MusicController : BaseController
                     Props =
                     {
                         Title = "Albums",
-                        MoreLink = new Uri("/music/albums", UriKind.Relative),
+                        MoreLink = new("/music/albums", UriKind.Relative),
                         Items = latestAlbums
                             .Select(item => new ComponentDto<CarouselResponseItemDto>
                             {
@@ -292,7 +291,7 @@ public class MusicController : BaseController
         //
         // Uri link = new("/", UriKind.Relative);
         // if (topTrack != null)
-        //     link = new Uri($"/music/track/{topTrack.Id}", UriKind.Relative);
+        //     link = new Uri($"/music/tracks/{topTrack.Id}", UriKind.Relative);
         // else if (topArtist != null)
         //     link = new Uri($"/music/artist/{topArtist.Id}", UriKind.Relative);
         // else if (topAlbum != null)
@@ -308,7 +307,7 @@ public class MusicController : BaseController
         //     {"width", "33.33333%"}
         // };
 
-        List<ArtistTrackDto>? songResults = songs
+        List<ArtistTrackDto> songResults = songs
             .Take(6)
             .Select(track => new ArtistTrackDto(track, country))
             .ToList();
@@ -316,7 +315,7 @@ public class MusicController : BaseController
         return Ok(new Render
         {
             Data = [
-                songResults.Count > 0 ? new ComponentDto<dynamic>
+                songResults.Count > 0 ? new()
                 {
                     Component = "NMContainer",
                     Props =
@@ -331,7 +330,7 @@ public class MusicController : BaseController
                             //         Data = topResult,
                             //     }
                             // },
-                            new ComponentDto<dynamic>
+                            new()
                             {
                                 Component = "NMList",
                                 Props =
@@ -350,7 +349,7 @@ public class MusicController : BaseController
                             },
                         ]
                     }
-                } : new ComponentDto<dynamic> { },
+                } : new ComponentDto<dynamic>(),
 
                 new ComponentDto<CarouselResponseItemDto>
                 {
@@ -366,7 +365,7 @@ public class MusicController : BaseController
                                 Component = "NMMusicCard",
                                 Props =
                                 {
-                                    Data = new CarouselResponseItemDto(item),
+                                    Data = new(item),
                                 }
                             })
                     }
@@ -385,7 +384,7 @@ public class MusicController : BaseController
                             Component = "NMMusicCard",
                             Props =
                             {
-                                Data = new CarouselResponseItemDto(item),
+                                Data = new(item),
                             }
                         })
                     }
@@ -404,7 +403,7 @@ public class MusicController : BaseController
                             Component = "NMMusicCard",
                             Props =
                             {
-                                Data = new CarouselResponseItemDto(item),
+                                Data = new(item),
                             }
                         })
                     }

@@ -69,7 +69,7 @@ public class BaseSubtitle : Classes
     {
         CodecDto[] availableCodecs = AvailableCodecs;
         if (availableCodecs.All(codec => codec.Value != subtitleCodec))
-            throw new Exception(
+            throw new(
                 $"Wrong subtitle codec value for {subtitleCodec}, available formats are {string.Join(", ", AvailableCodecs.Select(codec => codec.Value))}");
 
         SubtitleCodec = availableCodecs.First(codec => codec.Value == subtitleCodec);
@@ -83,10 +83,10 @@ public class BaseSubtitle : Classes
         return this;
     }
 
-    public BaseSubtitle AddCustomArguments((string key, string Val)[] profileCustomArguments)
+    public BaseSubtitle AddCustomArguments((string key, string val)[] profileCustomArguments)
     {
-        foreach ((string key, string Val) in profileCustomArguments)
-            AddCustomArgument(key, Val);
+        foreach ((string key, string val) in profileCustomArguments)
+            AddCustomArgument(key, val);
         return this;
     }
 
@@ -170,7 +170,7 @@ public class BaseSubtitle : Classes
 
     private string GetVariant(BaseSubtitle stream)
     {
-        string? variant = "full";
+        string variant = "full";
 
         string? description = "";
         if(stream.SubtitleStream!.Tags?.TryGetValue("title", out description) is false) return variant;
@@ -194,7 +194,7 @@ public class BaseSubtitle : Classes
     internal static string GetExtension(BaseSubtitle stream)
     {
         stream.SubtitleCodec = SubtitleCodecs.Webvtt;
-        string? extension = "vtt";
+        string extension = "vtt";
             
         if (stream.SubtitleStream!.CodecName == "hdmv_pgs_subtitle" || stream.SubtitleStream.CodecName == "dvd_subtitle")
         {
@@ -224,7 +224,7 @@ public class BaseSubtitle : Classes
         
         if (!IsoLanguageMapper.IsoToLanguage.TryGetValue(Language, out string? language))
         {
-            throw new Exception($"Language {Language} is not supported");
+            throw new($"Language {Language} is not supported");
         }
         commandDictionary[$"-metadata:s:s:{index}"] = $"title=\"{language}\"";
         commandDictionary[$"-metadata:s:s:{index}"] = $"language=\"{Language}\"";
@@ -255,7 +255,7 @@ public class BaseSubtitle : Classes
             "webvtt" => new Vtt(),
             "srt" => new Srt(),
             "ass" => new Ass(),
-            "_" => throw new Exception($"Subtitle {profileCodec} is not supported"),
+            "_" => throw new($"Subtitle {profileCodec} is not supported"),
             _ => throw new ArgumentOutOfRangeException(nameof(profileCodec), profileCodec, null)
         };
     }

@@ -21,7 +21,7 @@ public class SimilarPaletteJob : AbstractPaletteJob<Similar>
 
     public override async Task Handle()
     {
-        await using MediaContext? context = new();
+        await using MediaContext context = new();
 
         List<Similar> similars = context.Similar
             .Where(x => string.IsNullOrEmpty(x._colorPalette))
@@ -33,8 +33,8 @@ public class SimilarPaletteJob : AbstractPaletteJob<Similar>
         foreach (Similar similar in similars)
             similar._colorPalette = await MovieDbImageManager
                 .MultiColorPalette([
-                    new BaseImageManager.MultiStringType("poster", similar.Poster),
-                    new BaseImageManager.MultiStringType("backdrop", similar.Backdrop)
+                    new("poster", similar.Poster),
+                    new("backdrop", similar.Backdrop)
                 ]);
 
         await context.SaveChangesAsync();

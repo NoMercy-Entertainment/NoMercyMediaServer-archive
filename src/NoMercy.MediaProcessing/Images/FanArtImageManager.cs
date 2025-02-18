@@ -1,5 +1,4 @@
 using NoMercy.Database.Models;
-using NoMercy.MediaProcessing.Jobs;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.FanArt.Client;
@@ -10,8 +9,7 @@ using Image = NoMercy.Database.Models.Image;
 namespace NoMercy.MediaProcessing.Images;
 
 public class FanArtImageManager(
-    ImageRepository imageRepository,
-    JobDispatcher jobDispatcher
+    ImageRepository imageRepository
 ) : IFanArtImageManager
 {
     public static async Task<string> ColorPalette(string type, Uri url, bool? download = true)
@@ -29,7 +27,7 @@ public class FanArtImageManager(
         try
         {
             List<Image> thumbs = fanArtArtistDetails.Thumbs.ToList()
-                .ConvertAll<Image>(image => new Image
+                .ConvertAll<Image>(image => new()
                 {
                     AspectRatio = 1,
                     Type = "thumb",
@@ -40,7 +38,7 @@ public class FanArtImageManager(
                     _colorPalette = ColorPalette("image", image.Url).Result
                 });
             List<Image> logos = fanArtArtistDetails.Logos.ToList()
-                .ConvertAll<Image>(image => new Image
+                .ConvertAll<Image>(image => new()
                 {
                     AspectRatio = 1,
                     Type = "logo",
@@ -51,7 +49,7 @@ public class FanArtImageManager(
                     _colorPalette = ColorPalette("image", image.Url).Result
                 });
             List<Image> banners = fanArtArtistDetails.Banners.ToList()
-                .ConvertAll<Image>(image => new Image
+                .ConvertAll<Image>(image => new()
                 {
                     AspectRatio = 1,
                     Type = "banner",
@@ -62,7 +60,7 @@ public class FanArtImageManager(
                     _colorPalette = ColorPalette("image", image.Url).Result
                 });
             List<Image> hdLogos = fanArtArtistDetails.HdLogos.ToList()
-                .ConvertAll<Image>(image => new Image
+                .ConvertAll<Image>(image => new()
                 {
                     AspectRatio = 1,
                     Type = "hdLogo",
@@ -73,7 +71,7 @@ public class FanArtImageManager(
                     _colorPalette = ColorPalette("image", image.Url).Result
                 });
             List<Image> artistBackgrounds = fanArtArtistDetails.Backgrounds.ToList()
-                .ConvertAll<Image>(image => new Image
+                .ConvertAll<Image>(image => new()
                 {
                     AspectRatio = 1,
                     Type = "background",

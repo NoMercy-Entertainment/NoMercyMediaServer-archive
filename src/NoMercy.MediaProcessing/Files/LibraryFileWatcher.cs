@@ -4,6 +4,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.Shared;
@@ -11,10 +12,11 @@ using NoMercy.Providers.TMDB.Models.TV;
 using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Files;
+
 public class LibraryFileWatcher
 {
     // ReSharper disable once InconsistentNaming
-    private static readonly Lazy<LibraryFileWatcher> _instance = new(() => new LibraryFileWatcher());
+    private static readonly Lazy<LibraryFileWatcher> _instance = new(() => new());
     public static LibraryFileWatcher Instance => _instance.Value;
 
     private static readonly MediaContext MediaContext = new();
@@ -25,7 +27,7 @@ public class LibraryFileWatcher
 
     private static readonly JobDispatcher JobDispatcher = new();
     private static readonly FileRepository FileRepository = new(MediaContext);
-    private static readonly FileManager FileManager = new(FileRepository, JobDispatcher);
+    private static readonly FileManager FileManager = new(FileRepository);
 
     private const int Delay = 10;
 
@@ -90,7 +92,7 @@ public class LibraryFileWatcher
 
     private void _onError(FileWatcherEventArgs e)
     {
-        Logger.System(e, LogEventLevel.Verbose);
+        // Logger.System(e, LogEventLevel.Error);
     }
 
     private Library? GetLibraryByPath(string path)
@@ -122,12 +124,12 @@ public class LibraryFileWatcher
         {
             if (!FileChangeGroups.TryGetValue(folderPath, out FileChangeGroup? fileChangeGroup))
             {
-                fileChangeGroup = new FileChangeGroup(e.ChangeType, library, folderPath);
+                fileChangeGroup = new(e.ChangeType, library, folderPath);
                 FileChangeGroups[folderPath] = fileChangeGroup;
             }
 
             fileChangeGroup.Timer?.Dispose();
-            fileChangeGroup.Timer = new Timer(ProcessFileChanges, fileChangeGroup, TimeSpan.FromSeconds(Delay),
+            fileChangeGroup.Timer = new(ProcessFileChanges, fileChangeGroup, TimeSpan.FromSeconds(Delay),
                 Timeout.InfiniteTimeSpan);
         }
     }
@@ -191,7 +193,7 @@ public class LibraryFileWatcher
     private async Task HandleFolder(Library library, string path)
     {
         MediaScan mediaScan = new();
-        MediaScan? scan = mediaScan.EnableFileListing();
+        MediaScan scan = mediaScan.EnableFileListing();
 
         if (library.Type == "music")
             scan.DisableRegexFilter();

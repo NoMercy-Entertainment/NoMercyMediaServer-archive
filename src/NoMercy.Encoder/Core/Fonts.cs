@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 using NoMercy.Encoder.Format.Rules;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 
 namespace NoMercy.Encoder.Core;
 
@@ -25,14 +25,14 @@ public static class Fonts
         List<Attachment> attachments = [];
         foreach (string file in files)
         {
-            attachments.Add(new Attachment
+            attachments.Add(new()
             {
                 Filename = Path.GetFileName(file),
                 MimeType = MimeTypes.GetMimeTypeFromFile(file)
             });
         }
 
-        File.WriteAllText(attachmentsFile, attachments.ToJson());
+        await File.WriteAllTextAsync(attachmentsFile, attachments.ToJson());
     }
 
     private class Attachment

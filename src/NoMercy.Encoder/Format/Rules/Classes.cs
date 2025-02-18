@@ -1,3 +1,4 @@
+using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Container;
 using NoMercy.NmSystem;
 using Serilog.Events;
@@ -25,8 +26,8 @@ public class Classes
     internal int HlsListSize { get; set; }
     internal string HlsPlaylistType { get; set; } = "vod";
     protected int HlsTime { get; set; } = 4;
-
-    public static bool HasGpu => CheckGpu();
+    
+    internal static FFmpegHardwareConfig FfmpegConfig = new();
 
     protected string Type
     {
@@ -45,11 +46,11 @@ public class Classes
     {
         get
         {
-            if (string.IsNullOrEmpty(CropValue)) return new CropArea();
+            if (string.IsNullOrEmpty(CropValue)) return new();
             int[] parts = CropValue.Split(':')
                 .Select(int.Parse)
                 .ToArray();
-            return new CropArea(parts[0], parts[1], parts[2], parts[3]);
+            return new(parts[0], parts[1], parts[2], parts[3]);
         }
         set => CropValue = $"crop={value.W}:{value.H}:{value.X}:{value.Y}";
     }
@@ -65,7 +66,7 @@ public class Classes
             try
             {
                 if (string.IsNullOrEmpty(ScaleValue))
-                    return new ScaleArea { W = 0, H = 0 };
+                    return new() { W = 0, H = 0 };
 
                 string[] scale = ScaleValue.Split(':');
                 int width = int.Parse(scale[0]);
@@ -76,7 +77,7 @@ public class Classes
                     height = (int)(width * AspectRatioValue);
                 }
 
-                return new ScaleArea
+                return new()
                 {
                     W = width,
                     H = height
@@ -177,20 +178,5 @@ public class Classes
     public virtual Classes ApplyFlags()
     {
         return this;
-    }
-
-    private static bool CheckGpu()
-    {
-        try
-        {
-            string result = FfMpeg.Exec("-init_hw_device cuda=hw -filter_hw_device hw -hwaccels 2>&1").Result;
-            // Logger.Encoder(result);
-            return !result.Contains("Failed", StringComparison.InvariantCultureIgnoreCase);
-        }
-        catch (Exception e)
-        {
-            Logger.Encoder(e.Message);
-            return false;
-        }
     }
 }

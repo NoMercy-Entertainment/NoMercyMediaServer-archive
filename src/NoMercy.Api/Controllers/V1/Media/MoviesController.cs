@@ -8,10 +8,10 @@ using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -41,7 +41,7 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
         if (movie is not null)
             return Ok(new InfoResponseDto
             {
-                Data = new InfoResponseItemDto(movie, country)
+                Data = new(movie, country)
             });
 
         TmdbMovieClient tmdbMovieClient = new(id);
@@ -54,7 +54,7 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
 
         return Ok(new InfoResponseDto
         {
-            Data = new InfoResponseItemDto(movieAppends, country)
+            Data = new(movieAppends, country)
         });
     }
 
@@ -97,7 +97,7 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
 
     [HttpGet]
     [Route("watch")]
-    public async Task<IActionResult> Watch(int id)
+    public IActionResult Watch(int id)
     {
         Guid userId = User.UserId();
         if (!User.IsAllowed())
@@ -145,7 +145,6 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan movies");
 
-        await using MediaContext mediaContext = new();
         Movie? movie = await mediaContext.Movies
             .AsNoTracking()
             .Include(movie => movie.Library)
@@ -158,9 +157,10 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
 
         try
         {
-            JobDispatcher jobDispatcher = new();
+            Logger.MovieDb("Rescanning {movie.Title} for files", LogEventLevel.Debug);
+            
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             
             await fileManager.FindFiles(id, movie.Library);
         }
@@ -187,7 +187,6 @@ public class MoviesController(MovieRepository movieRepository, MediaContext medi
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to refresh movies");
 
-        await using MediaContext mediaContext = new();
         Movie? movie = await mediaContext.Movies
             .AsNoTracking()
             .Include(movie => movie.Library)

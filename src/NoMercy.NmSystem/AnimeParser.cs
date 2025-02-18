@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using NoMercy.NmSystem.Dto;
 
 
 namespace NoMercy.NmSystem;
@@ -27,7 +28,7 @@ public class AnimeParser
     {
         Match match = NameRegex.Match(filename.Trim());
         if (!match.Success)
-            return new AnimeInfo { FileName = filename };
+            return new() { FileName = filename };
 
         AnimeInfo info = new()
         {

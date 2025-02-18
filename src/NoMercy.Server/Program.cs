@@ -1,26 +1,18 @@
 using System.Diagnostics;
 using System.Net;
-using System.Net.Sockets;
+using System.Reflection;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using CommandLine;
 using Microsoft.AspNetCore;
-using NoMercy.Data.Jobs;
-using NoMercy.Data.Logic;
-using NoMercy.Database;
-using NoMercy.Helpers.Monitoring;
-using NoMercy.MediaProcessing.Files;
-using NoMercy.Networking;
+using NoMercy.MediaProcessing.Seeds;
 using NoMercy.NmSystem;
-using NoMercy.Queue;
-using NoMercy.Server.app.Helper;
-using AppFiles = NoMercy.NmSystem.AppFiles;
+using NoMercy.NmSystem.Information;
+using NoMercy.Setup;
 
 namespace NoMercy.Server;
 public static class Program
 {
-    private static bool ShouldSeedMarvel { get; set; }
-    
     public static Task Main(string[] args)
     {
         AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) =>
@@ -35,12 +27,6 @@ public static class Program
             Environment.Exit(0);
         };
 
-        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-        {
-            Logger.App("SIGTERM received, shutting down.");
-            Shutdown().Wait();
-        };
-
         return Parser.Default.ParseArguments<StartupOptions>(args)
             .MapResult(Start, ErrorParsingArguments);
 
@@ -51,21 +37,31 @@ public static class Program
         }
     }
 
+    private delegate IntPtr WndProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
     private static async Task Start(StartupOptions options)
     {
-        Console.Clear();
-        Console.Title = "NoMercy Server";
+        if (!Console.IsOutputRedirected)
+        {
+            Console.Clear();
+            Console.Title = AppFiles.ApplicationName;
+        }
+
+        Version version = Assembly.GetExecutingAssembly().GetName().Version!;
+        Software.Version = version;
+        Logger.App($"NoMercy MediaServer version: v{version.Major}.{version.Minor}.{version.Build}");
 
         options.ApplySettings(out bool shouldSeedMarvel);
-        ShouldSeedMarvel = shouldSeedMarvel;
 
         Stopwatch stopWatch = new();
         stopWatch.Start();
+        
+        List<TaskDelegate> startupTasks =
+        [
+            new (() => Seed.Init(shouldSeedMarvel)),
+        ];
 
-        Databases.QueueContext = new QueueContext();
-        Databases.MediaContext = new MediaContext();
-
-        await Init();
+        await Setup.Start.Init(startupTasks);
 
         IWebHost app = CreateWebHostBuilder(new WebHostBuilder()).Build();
 
@@ -80,15 +76,17 @@ public static class Program
                 Logger.App($"Internal Address: {Networking.Networking.InternalAddress}");
                 Logger.App($"External Address: {Networking.Networking.ExternalAddress}");
 
-                ConsoleMessages.ServerRunning();
+                if (!Console.IsOutputRedirected)
+                {
+                    ConsoleMessages.ServerRunning();
+                }
 
                 Logger.App($"Server started in {stopWatch.ElapsedMilliseconds}ms");
             });
         });
 
         new Thread(() => app.RunAsync()).Start();
-        // new Thread(Dev.Run).Start();
-        
+
         await Task.Delay(-1);
     }
 
@@ -111,12 +109,19 @@ public static class Program
             Scheme = Uri.UriSchemeHttps
         };
 
-        List<string>? urls = new List<string>
-        {
-            localhostIPv4Url.ToString()
-        };
+        List<string> urls = [localhostIPv4Url.ToString()];
 
         return WebHost.CreateDefaultBuilder([])
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+                logging.AddFilter("Microsoft", LogLevel.None);
+            })
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IApiVersionDescriptionProvider, DefaultApiVersionDescriptionProvider>();
+                services.AddSingleton<ISunsetPolicyManager, DefaultSunsetPolicyManager>();
+            })
             .ConfigureKestrel(Certificate.KestrelConfig)
             .UseUrls(urls.ToArray())
             .UseKestrel(options =>
@@ -129,76 +134,7 @@ public static class Program
             })
             .UseQuic()
             .UseSockets()
-            .ConfigureServices(services =>
-            {
-                services.AddSingleton<IApiVersionDescriptionProvider, DefaultApiVersionDescriptionProvider>();
-                services.AddSingleton<ISunsetPolicyManager, DefaultSunsetPolicyManager>();
-            })
             .UseStartup<Startup>();
     }
 
-    private static async Task Init()
-    {
-        await ApiInfo.RequestInfo();
-
-        if (UserSettings.TryGetUserSettings(out Dictionary<string, string>? settings))
-        {
-            UserSettings.ApplySettings(settings);
-        }
-
-        List<TaskDelegate> startupTasks =
-        [
-            new (ConsoleMessages.Logo),
-            new (AppFiles.CreateAppFolders),
-            new (Networking.Networking.Discover),
-            new (Auth.Init),
-            new (() => Seed.Init(ShouldSeedMarvel)),
-            new (Register.Init),
-            new (Binaries.DownloadAll),
-            // new (AniDbBaseClient.Init),
-            new (TrayIcon.Make),
-            new (StorageMonitor.UpdateStorage),
-        ];
-
-        // AppDomain.CurrentDomain.ProcessExit += (_, _) => { AniDbBaseClient.Dispose(); };
-
-        await RunStartup(startupTasks);
-
-        Thread queues = new(new Task(() => QueueRunner.Initialize().Wait()).Start)
-        {
-            Name = "Queue workers",
-            Priority = ThreadPriority.Lowest,
-            IsBackground = true
-        };
-        queues.Start();
-
-        Thread fileWatcher = new(new Task(() => _ = new LibraryFileWatcher()).Start)
-        {
-            Name = "Library File Watcher",
-            Priority = ThreadPriority.Lowest,
-            IsBackground = true
-        };
-        fileWatcher.Start();
-        
-        Thread storageMonitor = new(new Task(() =>
-        {
-            StorageJob storageJob = new(StorageMonitor.Storage);
-            storageJob.Handle().Wait();
-            // JobDispatcher.Dispatch(storageJob, "data", 1000);
-        }).Start)
-        {
-            Name = "Storage Watcher",
-            Priority = ThreadPriority.Lowest,
-            IsBackground = true
-        };
-        storageMonitor.Start();
-    }
-
-    private static async Task RunStartup(List<TaskDelegate> startupTasks)
-    {
-        foreach (TaskDelegate task in startupTasks)
-        {
-            await task.Invoke();
-        }
-    }
 }

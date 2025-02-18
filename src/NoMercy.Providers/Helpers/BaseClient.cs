@@ -1,7 +1,7 @@
 ﻿using Serilog.Events;
 using Microsoft.AspNetCore.WebUtilities;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 
 namespace NoMercy.Providers.Helpers;
 
@@ -15,13 +15,13 @@ public class BaseClient : IDisposable
     protected virtual int ConcurrentRequests => 1;
     protected virtual int Interval => 1000;
     protected virtual Dictionary<string, string?> QueryParams => new();
-    protected virtual string UserAgent => ApiInfo.UserAgent;
+    protected virtual string UserAgent => Config.UserAgent;
     private static BaseClient? _instance;
 
     protected BaseClient()
     {
         _instance ??= this;
-        Client = new HttpClient()
+        Client = new()
         {
             BaseAddress = _instance.BaseUrl,
             DefaultRequestHeaders =
@@ -32,15 +32,15 @@ public class BaseClient : IDisposable
             Timeout = TimeSpan.FromMinutes(5)
         };
 
-        foreach (KeyValuePair<string, string> keyValuePair in _instance.QueryParams)
-            Client.DefaultRequestHeaders.Add(keyValuePair.Key, keyValuePair.Value);
+        foreach ((string? key, string? value) in _instance.QueryParams)
+            Client.DefaultRequestHeaders.Add(key, value);
     }
 
     protected BaseClient(Guid id)
     {
         Id = id;
         _instance ??= this;
-        Client = new HttpClient()
+        Client = new()
         {
             BaseAddress = _instance.BaseUrl,
             DefaultRequestHeaders =
@@ -51,15 +51,15 @@ public class BaseClient : IDisposable
             Timeout = TimeSpan.FromMinutes(5)
         };
 
-        foreach (KeyValuePair<string, string> keyValuePair in _instance.QueryParams)
-            Client.DefaultRequestHeaders.Add(keyValuePair.Key, keyValuePair.Value);
+        foreach ((string? key, string? value) in _instance.QueryParams)
+            Client.DefaultRequestHeaders.Add(key, value);
     }
 
     private static Queue? _queue;
 
     protected static Queue Queue()
     {
-        return _queue ??= new Queue(new QueueOptions
+        return _queue ??= new(new()
         {
             Concurrent = _instance?.ConcurrentRequests ?? 1,
             Interval = _instance?.Interval ?? 1000,
@@ -70,11 +70,11 @@ public class BaseClient : IDisposable
     protected virtual async Task<T?> Get<T>(string url, Dictionary<string, string?>? query, bool? priority = false)
         where T : class
     {
-        query ??= new Dictionary<string, string?>();
+        query ??= new();
 
-        foreach (KeyValuePair<string, string> queryParam in QueryParams) query.Add(queryParam.Key, queryParam.Value);
+        foreach (KeyValuePair<string, string?> queryParam in QueryParams) query.Add(queryParam.Key, queryParam.Value);
 
-        string newUrl = QueryHelpers.AddQueryString(url, query!);
+        string newUrl = QueryHelpers.AddQueryString(url, query);
 
         if (CacheController.Read(newUrl, out T? result)) return result;
 

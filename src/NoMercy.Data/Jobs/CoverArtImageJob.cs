@@ -71,7 +71,7 @@ public class CoverArtImageJob : IShouldQueue
     private class CoverPalette : Image
     {
         public string? Palette { get; set; }
-        public Uri? Url { get; set; }
+        public Uri? Url { get; init; }
     }
 
     private static async Task<CoverPalette?> FetchCover(MusicBrainzReleaseAppends musicBrainzReleaseAppends)
@@ -91,7 +91,7 @@ public class CoverArtImageJob : IShouldQueue
         {
             if (!coverItem.CoverArtThumbnails.Large.HasSuccessStatus("image/*")) continue;
 
-            return new CoverPalette
+            return new()
             {
                 // Palette =
                 //     await ImageLogic.CoverArtImage.ColorPalette("cover", coverItem.CoverArtThumbnails.Large),

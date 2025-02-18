@@ -7,7 +7,8 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Helpers;
+using NoMercy.Networking.Dto;
 
 namespace NoMercy.Api.Controllers.V1.Music;
 
@@ -30,7 +31,7 @@ public class ArtistsController : BaseController
 
         await using MediaContext mediaContext = new();
         await foreach (Artist artist in ArtistsResponseDto.GetArtists(mediaContext, userId, letter))
-            artists.Add(new ArtistsResponseItemDto(artist));
+            artists.Add(new(artist));
 
         List<ArtistTrack> tracks = mediaContext.ArtistTrack
             .Where(artistTrack => artists.Select(a => a.Id).Contains(artistTrack.ArtistId))
@@ -66,7 +67,7 @@ public class ArtistsController : BaseController
 
         return Ok(new ArtistResponseDto
         {
-            Data = new ArtistResponseItemDto(artist, userId, language)
+            Data = new(artist, userId, language)
         });
     }
 
@@ -90,9 +91,9 @@ public class ArtistsController : BaseController
         if (request.Value)
         {
             await mediaContext.ArtistUser
-                .Upsert(new ArtistUser(artist.Id, userId))
+                .Upsert(new(artist.Id, userId))
                 .On(m => new { m.ArtistId, m.UserId })
-                .WhenMatched(m => new ArtistUser
+                .WhenMatched(m => new()
                 {
                     ArtistId = m.ArtistId,
                     UserId = m.UserId

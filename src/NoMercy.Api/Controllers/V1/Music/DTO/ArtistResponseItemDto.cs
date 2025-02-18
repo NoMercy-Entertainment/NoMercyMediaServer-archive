@@ -4,7 +4,6 @@ using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Api.Controllers.V1.Music.DTO;
@@ -45,7 +44,7 @@ public record ArtistResponseItemDto
         LibraryId = artist.LibraryId;
         Name = artist.Name;
         Type = "artists";
-        Link = new Uri($"/music/artist/{Id}", UriKind.Relative);
+        Link = new($"/music/artist/{Id}", UriKind.Relative);
 
         Genres = artist.ArtistMusicGenre
             .Select(artistMusicGenre => new GenreDto(artistMusicGenre));

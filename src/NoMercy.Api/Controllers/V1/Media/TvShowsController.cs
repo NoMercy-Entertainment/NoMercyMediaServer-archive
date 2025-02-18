@@ -8,10 +8,10 @@ using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.TV;
@@ -41,7 +41,7 @@ public class TvShowsController(TvShowRepository tvShowRepository, MediaContext m
         if (tv is not null)
             return Ok(new InfoResponseDto
             {
-                Data = new InfoResponseItemDto(tv, language)
+                Data = new(tv, language)
             });
 
         TmdbTvClient tmdbTvClient = new(id);
@@ -54,7 +54,7 @@ public class TvShowsController(TvShowRepository tvShowRepository, MediaContext m
 
         return Ok(new InfoResponseDto
         {
-            Data = new InfoResponseItemDto(tvShowAppends, language)
+            Data = new(tvShowAppends, language)
         });
     }
 
@@ -156,7 +156,6 @@ public class TvShowsController(TvShowRepository tvShowRepository, MediaContext m
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to rescan tv shows");
 
-        await using MediaContext mediaContext = new();
         Tv? tv = await mediaContext.Tvs
             .AsNoTracking()
             .Where(tv => tv.Id == id)
@@ -170,9 +169,8 @@ public class TvShowsController(TvShowRepository tvShowRepository, MediaContext m
 
         try
         {
-            JobDispatcher jobDispatcher = new();
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             
             await fileManager.FindFiles(id, tv.Library);
         }
@@ -200,7 +198,6 @@ public class TvShowsController(TvShowRepository tvShowRepository, MediaContext m
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to refresh tv shows");
 
-        await using MediaContext mediaContext = new();
         Tv? tv = await mediaContext.Tvs
             .AsNoTracking()
             .Where(tv => tv.Id == id)

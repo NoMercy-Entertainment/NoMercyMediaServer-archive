@@ -1,4 +1,3 @@
-using NoMercy.MediaProcessing.Jobs;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.CoverArt.Client;
@@ -7,10 +6,7 @@ using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Images;
 
-public class CoverArtImageManagerManager(
-    ImageRepository imageRepository,
-    JobDispatcher jobDispatcher
-): ICoverArtImageManagerManager
+public class CoverArtImageManagerManager: ICoverArtImageManagerManager
 {
     public static async Task<string> ColorPalette(string type, Uri url, bool? download = true)
     {
@@ -44,7 +40,7 @@ public class CoverArtImageManagerManager(
             {
                 if (!coverItem.CoverArtThumbnails.Large.HasSuccessStatus("image/*")) continue;
 
-                return new CoverPalette
+                return new()
                 {
                     Palette = await ColorPalette("cover", coverItem.CoverArtThumbnails.Large),
                     Url = coverItem.CoverArtThumbnails.Large

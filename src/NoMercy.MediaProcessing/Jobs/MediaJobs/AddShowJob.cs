@@ -9,7 +9,7 @@ using NoMercy.MediaProcessing.Episodes;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Seasons;
 using NoMercy.MediaProcessing.Shows;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Season;
 using NoMercy.Providers.TMDB.Models.TV;
@@ -31,7 +31,7 @@ public class AddShowJob : AbstractMediaJob
         JobDispatcher jobDispatcher = new();
 
         FileRepository fileRepository = new(context);
-        FileManager fileManager = new(fileRepository, jobDispatcher);
+        FileManager fileManager = new(fileRepository);
 
         ShowRepository showRepository = new(context);
         ShowManager showManager = new(showRepository, jobDispatcher);

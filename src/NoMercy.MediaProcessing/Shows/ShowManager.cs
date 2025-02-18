@@ -31,8 +31,8 @@ public class ShowManager(
 
         string colorPalette = await MovieDbImageManager
             .MultiColorPalette([
-                new BaseImageManager.MultiStringType("poster", showAppends.PosterPath),
-                new BaseImageManager.MultiStringType("backdrop", showAppends.BackdropPath)
+                new("poster", showAppends.PosterPath),
+                new("backdrop", showAppends.BackdropPath)
             ]);
 
         Tv show = new()
@@ -215,7 +215,6 @@ public class ShowManager(
         IEnumerable<Media> videos = show.Videos.Results
             .Select(media => new Media
             {
-                _type = "video",
                 Id = Ulid.NewUlid(),
                 Iso6391 = media.Iso6391,
                 Name = media.Name,
@@ -302,7 +301,7 @@ public class ShowManager(
         Logger.MovieDb($"Show {show.Name}: Logos stored", LogEventLevel.Debug);
 
         IEnumerable<Image> logosJobItems = logos
-            .Where(x => x.FilePath != null && !x.FilePath.EndsWith(".svg"))
+            .Where(x => !x.FilePath.EndsWith(".svg"))
             .Select(x => new Image { FilePath = x.FilePath })
             .ToArray();
         if (backdropJobItems.Any())

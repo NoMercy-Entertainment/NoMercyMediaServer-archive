@@ -1,11 +1,11 @@
 name: Build Executables
 
 on:
+  workflow_dispatch:
   workflow_run:
     workflows: ["Test and Create Pull Request to Master"]
     types:
       - completed
-  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
@@ -51,17 +51,42 @@ jobs:
       
           # Publish for Windows
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyMediaServer --output ./output
+          mv ./output/NoMercyMediaServer.exe ./output/NoMercyMediaServer-windows-x64.exe
       
           # Publish for macOS
           dotnet publish ./src/NoMercy.Server/NoMercy.Server.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyMediaServer --output ./output
           mv ./output/NoMercyMediaServer ./output/NoMercyMediaServer-macos-x64
+          
+      - name: Publish NoMercy.Updater
+        run: |
+          mkdir -p ./output
+      
+          # Publish for Linux
+          dotnet publish ./src/NoMercy.Updater/NoMercy.Updater.csproj --configuration Release --runtime linux-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyUpdater --output ./output
+          mv ./output/NoMercyUpdater ./output/NoMercyUpdater-linux-x64
+      
+          # Publish for Windows
+          dotnet publish ./src/NoMercy.Updater/NoMercy.Updater.csproj --configuration Release --runtime win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyUpdater --output ./output
+          mv ./output/NoMercyUpdater.exe ./output/NoMercyUpdater-windows-x64.exe
+      
+          # Publish for macOS
+          dotnet publish ./src/NoMercy.Updater/NoMercy.Updater.csproj --configuration Release --runtime osx-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:IncludeAllContentForSelfExtract=true /p:EnableCompressionInSingleFile=true /p:DebugType=None /p:DebugSymbols=false /p:PublishReadyToRun=false /p:OutputFileName=NoMercyUpdater --output ./output
+          mv ./output/NoMercyUpdater ./output/NoMercyUpdater-macos-x64
+
+      # Get the version of the project
+      - name: Get Version
+        uses: kzrnm/get-net-sdk-project-versions-action@v2
+        id: get-version
+        with:
+          proj-path: ./src/NoMercy.Server/NoMercy.Server.csproj
+      - run: echo "${{steps.get-version.outputs.version}}"
           
       # Create the GitHub release
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ github.run_number }}
+          tag_name: v${{ steps.get-version.outputs.version }}
           release_name: NoMercy MediaServer Release
           body: |
             New release for NoMercy MediaServer is ready.
@@ -70,6 +95,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get Short SHA
+        id: get_short_sha
+        run: echo "::set-output name=short_sha::${GITHUB_SHA::7}"
+
       # Upload Windows Release Asset
       - name: Upload Windows Release Asset
         uses: actions/upload-release-asset@v1
@@ -77,8 +106,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./output/NoMercyMediaServer.exe
-          asset_name: NoMercyMediaServer.exe
+          asset_path: ./output/NoMercyMediaServer-windows-x64.exe
+          asset_name: NoMercyMediaServer-windows-x64-${{ steps.get_short_sha.outputs.short_sha }}.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
+
+      - name: Upload Windows Updater Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyUpdater-windows-x64.exe
+          asset_name: NoMercyUpdater-windows-x64-${{ steps.get_short_sha.outputs.short_sha }}.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
       # Upload macOS Release Asset
@@ -89,7 +128,17 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer-macos-x64
-          asset_name: NoMercyMediaServer-macos-x64
+          asset_name: NoMercyMediaServer-macos-x64-${{ steps.get_short_sha.outputs.short_sha }}
+          asset_content_type: application/x-apple-diskimage
+
+      - name: Upload macOS Updater Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyUpdater-macos-x64
+          asset_name: NoMercyUpdater-macos-x64-${{ steps.get_short_sha.outputs.short_sha }}
           asset_content_type: application/x-apple-diskimage
 
       # Upload Linux Release Asset
@@ -100,5 +149,15 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./output/NoMercyMediaServer-linux-x64
-          asset_name: NoMercyMediaServer-linux-x64
+          asset_name: NoMercyMediaServer-linux-x64-${{ steps.get_short_sha.outputs.short_sha }}
+          asset_content_type: application/x-executable
+
+      - name: Upload Linux Updater Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./output/NoMercyUpdater-linux-x64
+          asset_name: NoMercyUpdater-linux-x64-${{ steps.get_short_sha.outputs.short_sha }}
           asset_content_type: application/x-executable

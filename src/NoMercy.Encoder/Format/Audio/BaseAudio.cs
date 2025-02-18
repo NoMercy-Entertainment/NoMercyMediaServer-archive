@@ -24,6 +24,7 @@ public class BaseAudio : Classes
 
     public int StreamIndex => AudioStream?.Index ?? -1;
 
+    // ReSharper disable once InconsistentNaming
     public long _bitRate = -1;
 
     private long BitRate => _bitRate == -1
@@ -42,7 +43,7 @@ public class BaseAudio : Classes
     private readonly Dictionary<string, dynamic> _ops = [];
 
     protected virtual string[] AvailableContainers { get; set; } = [
-        AudioContainers.Mp3, AudioContainers.Flac, AudioContainers.M4a,
+        AudioContainers.Mp3, AudioContainers.Flac, AudioContainers.M4A,
         AudioContainers.Aac, AudioContainers.Ogg, AudioContainers.Wav
     ];
 
@@ -88,7 +89,7 @@ public class BaseAudio : Classes
     public BaseAudio SetAudioKiloBitrate(int kiloBitrate)
     {
         if (kiloBitrate < 1)
-            throw new Exception("Wrong kilo bitrate value");
+            throw new("Wrong kilo bitrate value");
 
         _bitRate = kiloBitrate;
 
@@ -98,7 +99,7 @@ public class BaseAudio : Classes
     protected virtual BaseAudio SetAudioQuality(int qualityLevel)
     {
         if (qualityLevel is < 0 or > 9)
-            throw new Exception("Wrong quality level value");
+            throw new("Wrong quality level value");
 
         AudioQualityLevel = qualityLevel;
 
@@ -108,7 +109,7 @@ public class BaseAudio : Classes
     protected BaseAudio SetAudioCodec(string audioCodec)
     {
         if (AvailableCodecs.All(codec => codec.Value != audioCodec))
-            throw new Exception(
+            throw new(
                 $"Wrong audio codec value for {audioCodec}, available formats are {string.Join(", ", AvailableCodecs.Select(codec => codec.Value))}");
 
         AudioCodec = AvailableCodecs.First(codec => codec.Value == audioCodec);
@@ -126,7 +127,7 @@ public class BaseAudio : Classes
             return this;
 
         if (channels < 1)
-            throw new Exception("Wrong audio channels value");
+            throw new("Wrong audio channels value");
 
         AudioChannels = channels;
 
@@ -135,14 +136,14 @@ public class BaseAudio : Classes
 
     public BaseAudio AddCustomArgument(string key, dynamic? value)
     {
-        _extraParameters[key] = value;
+        _extraParameters[key] = value ?? string.Empty;
         return this;
     }
 
-    public BaseAudio AddCustomArguments((string key, string Val)[] profileCustomArguments)
+    public BaseAudio AddCustomArguments((string key, string val)[] profileCustomArguments)
     {
-        foreach ((string key, string Val) in profileCustomArguments)
-            AddCustomArgument(key, Val);
+        foreach ((string key, string val) in profileCustomArguments)
+            AddCustomArgument(key, val);
         return this;
     }
 
@@ -210,7 +211,9 @@ public class BaseAudio : Classes
             {
                 BaseAudio newStream = (BaseAudio)MemberwiseClone();
 
-                newStream.Language = stream.Language == "und" ? "eng" : stream.Language;
+                newStream.Language = stream.Language == "und" 
+                    ? "eng" 
+                    : stream.Language ?? "eng";
 
                 newStream.IsAudio = true;
 
@@ -237,7 +240,7 @@ public class BaseAudio : Classes
 
         if (!IsoLanguageMapper.IsoToLanguage.TryGetValue(Language, out string? language))
         {
-            throw new Exception($"Language {Language} is not supported");
+            throw new($"Language {Language} is not supported");
         }
         commandDictionary[$"-metadata:s:a:{index}"] = $"title=\"{language} {AudioChannels}-{AudioCodec.SimpleValue}\"";
         commandDictionary[$"-metadata:s:a:{index}"] = $"language=\"{Language}\"";
@@ -270,7 +273,7 @@ public class BaseAudio : Classes
             "mp3" => new Mp3(),
             "flac" => new Flac(),
             "vorbis" => new Vorbis(),
-            _ => throw new Exception($"Audio codec {profileCodec} is not supported")
+            _ => throw new($"Audio codec {profileCodec} is not supported")
         };
     }
 }

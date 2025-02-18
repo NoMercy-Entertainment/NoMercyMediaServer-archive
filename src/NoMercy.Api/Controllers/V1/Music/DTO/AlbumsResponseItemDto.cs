@@ -36,10 +36,10 @@ public record AlbumsResponseItemDto
         Id = album.Id;
         Name = album.Name;
         Type = "albums";
-        Link = new Uri($"/music/album/{Id}", UriKind.Relative);
+        Link = new($"/music/album/{Id}", UriKind.Relative);
 
-        Tracks = album.AlbumTrack?
+        Tracks = album.AlbumTrack
             .Select(albumTrack => albumTrack.Track)
-            .Count(albumTrack => albumTrack.Duration != null) ?? 0;
+            .Count(albumTrack => albumTrack.Duration != null);
     }
 }

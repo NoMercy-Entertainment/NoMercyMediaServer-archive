@@ -4,7 +4,7 @@ namespace NoMercy.Api.Controllers.V1.Dashboard.DTO;
 
 public class ConfigDto
 {
-    [JsonProperty("data")] public ConfigDtoData Data { get; set; }
+    [JsonProperty("data")] public ConfigDtoData Data { get; set; } = new();
 }
 
 public class ConfigDtoData
@@ -19,4 +19,5 @@ public class ConfigDtoData
     [JsonProperty("data_workers")] public int? DataWorkers { get; set; }
     [JsonProperty("image_workers")] public int? ImageWorkers { get; set; }
     [JsonProperty("request_workers")] public int? RequestWorkers { get; set; }
+    [JsonProperty("swagger")] public bool? Swagger { get; set; }
 }

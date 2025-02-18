@@ -81,6 +81,12 @@ public static partial class Str
     {
         return Convert.ToInt32(value);
     }
+    
+    public static bool ToBoolean(this string value)
+    {
+        if (string.IsNullOrEmpty(value)) return false;
+        return bool.Parse(value);
+    }
 
     public static string Spacer(string text, int padding, bool begin = false)
     {
@@ -205,6 +211,7 @@ public static partial class Str
         name = Regex.Replace(name, "’", "");
         name = Regex.Replace(name, "\"", "");
         name = Regex.Replace(name, "u,", ".");
+        name = Regex.Replace(name, @"\.,", ".");
         name = Regex.Replace(name, "\"", "'");
         name = Regex.Replace(name, "\\s", ".");
         name = Regex.Replace(name, "&", "and");
@@ -260,7 +267,7 @@ public static partial class Str
         if (string.IsNullOrEmpty(str))
             return str;
 
-        string[] words = str.Split(new[] { ' ', '_' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] words = str.Split([' ', '_'], StringSplitOptions.RemoveEmptyEntries);
         return string.Join("_", words.Select(word => word[..1].ToUpper() + word[1..].ToLower()));
     }
 

@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.TMDB.Models.Movies;
 using NoMercy.Providers.TMDB.Models.TV;
@@ -18,14 +17,6 @@ public record InfoResponseItemDto
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("logo")] public string? Logo { get; set; }
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
-    [JsonProperty("videos")] public IEnumerable<VideoDto> Videos { get; set; }
-    [JsonProperty("backdrops")] public IEnumerable<ImageDto> Backdrops { get; set; }
-    [JsonProperty("posters")] public IEnumerable<ImageDto> Posters { get; set; }
-    [JsonProperty("similar")] public IEnumerable<RelatedDto> Similar { get; set; }
-    [JsonProperty("recommendations")] public IEnumerable<RelatedDto> Recommendations { get; set; }
-    [JsonProperty("cast")] public IEnumerable<PeopleDto> Cast { get; set; }
-    [JsonProperty("crew")] public IEnumerable<PeopleDto> Crew { get; set; }
-    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; }
     [JsonProperty("watched")] public bool Watched { get; set; }
     [JsonProperty("favorite")] public bool Favorite { get; set; }
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
@@ -38,14 +29,23 @@ public record InfoResponseItemDto
     [JsonProperty("creator")] public PeopleDto? Creator { get; set; }
     [JsonProperty("director")] public PeopleDto? Director { get; set; }
     [JsonProperty("writer")] public PeopleDto? Writer { get; set; }
-    [JsonProperty("genres")] public IEnumerable<GenreDto> Genres { get; set; }
-    [JsonProperty("keywords")] public IEnumerable<string> Keywords { get; set; }
     [JsonProperty("type")] public string Type { get; set; }
     [JsonProperty("media_type")] public string MediaType { get; set; }
-    [JsonProperty("translations")] public IEnumerable<TranslationDto> Translations { get; set; }
-    [JsonProperty("seasons")] public IEnumerable<SeasonDto> Seasons { get; set; }
     [JsonProperty("total_duration")] public int TotalDuration { get; set; }
-    [JsonProperty("link")] public Uri Link { get; set; }
+    
+    [JsonProperty("genres")] public IEnumerable<GenreDto> Genres { get; set; } = [];
+    [JsonProperty("keywords")] public IEnumerable<string> Keywords { get; set; } = [];
+    [JsonProperty("videos")] public IEnumerable<VideoDto> Videos { get; set; } = [];
+    [JsonProperty("backdrops")] public IEnumerable<ImageDto> Backdrops { get; set; } = [];
+    [JsonProperty("posters")] public IEnumerable<ImageDto> Posters { get; set; } = [];
+    [JsonProperty("similar")] public IEnumerable<RelatedDto> Similar { get; set; } = [];
+    [JsonProperty("recommendations")] public IEnumerable<RelatedDto> Recommendations { get; set; } = [];
+    [JsonProperty("cast")] public IEnumerable<PeopleDto> Cast { get; set; } = [];
+    [JsonProperty("crew")] public IEnumerable<PeopleDto> Crew { get; set; } = [];
+    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; } = [];
+    [JsonProperty("translations")] public IEnumerable<TranslationDto> Translations { get; set; } = [];
+    [JsonProperty("seasons")] public IEnumerable<SeasonDto> Seasons { get; set; } = [];
+    [JsonProperty("link")] public Uri Link { get; set; } = null!;
 
     public InfoResponseItemDto(Movie movie, string? country)
     {
@@ -58,7 +58,7 @@ public record InfoResponseItemDto
             : movie.Overview;
         Type = "movie";
         MediaType = "movie";
-        Link = new Uri($"/movie/{Id}", UriKind.Relative);
+        Link = new($"/movie/{Id}", UriKind.Relative);
         Watched = movie.VideoFiles
             .Any(videoFile => videoFile.UserData.Any());
 
@@ -80,7 +80,7 @@ public record InfoResponseItemDto
         //          movie.Poster;
         Poster = movie.Poster;
 
-        ExternalIds = new ExternalIds
+        ExternalIds = new()
         {
             ImdbId = movie.ImdbId
         };
@@ -151,9 +151,9 @@ public record InfoResponseItemDto
 
     public InfoResponseItemDto(TmdbMovieAppends tmdbMovie, string? country)
     {
-        string? title = tmdbMovie.Translations.Translations
-            .FirstOrDefault(translation => translation.Iso31661 == country)?
-            .Data.Title;
+        // string? title = tmdbMovie.Translations.Translations
+        //     .FirstOrDefault(translation => translation.Iso31661 == country)?
+        //     .Data.Title;
 
         string? overview = tmdbMovie.Translations.Translations
             .FirstOrDefault(translation => translation.Iso31661 == country)?
@@ -166,7 +166,7 @@ public record InfoResponseItemDto
             : tmdbMovie.Overview;
         Type = "movie";
         MediaType = "movie";
-        Link = new Uri($"/movie/{Id}", UriKind.Relative);
+        Link = new($"/movie/{Id}", UriKind.Relative);
         Watched = false;
 
         Favorite = false;
@@ -178,11 +178,11 @@ public record InfoResponseItemDto
         Year = tmdbMovie.ReleaseDate.ParseYear();
         VoteAverage = tmdbMovie.VoteAverage;
 
-        ColorPalette = new IColorPalettes();
+        ColorPalette = new();
         Backdrop = tmdbMovie.BackdropPath;
         Poster = tmdbMovie.PosterPath;
 
-        ExternalIds = new ExternalIds
+        ExternalIds = new()
         {
             ImdbId = tmdbMovie.ImdbId
         };
@@ -265,7 +265,7 @@ public record InfoResponseItemDto
             : tv.Overview;
         Type = tv.Type ?? "tv";
         MediaType = "tv";
-        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+        Link = new($"/tv/{Id}", UriKind.Relative);
         Watched = tv.Episodes
             .Any(episode => episode.VideoFiles
                 .Any(videoFile => videoFile.UserData.Any()));
@@ -295,7 +295,7 @@ public record InfoResponseItemDto
         // Poster = tv.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ?? tv.Poster;
         Poster = tv.Poster;
 
-        ExternalIds = new ExternalIds
+        ExternalIds = new()
         {
             ImdbId = tv.ImdbId,
             TvdbId = tv.TvdbId
@@ -332,7 +332,7 @@ public record InfoResponseItemDto
         Genres = tv.GenreTvs
             .Select(genreTv => new GenreDto(genreTv));
 
-        ExternalIds = new ExternalIds
+        ExternalIds = new()
         {
             ImdbId = tv.ImdbId,
             TvdbId = tv.TvdbId
@@ -356,7 +356,7 @@ public record InfoResponseItemDto
 
         Cast = cast;
         Crew = crew;
-        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+        Link = new($"/tv/{Id}", UriKind.Relative);
         Director = crew.FirstOrDefault(people => people.Job == "Director");
         Writer = crew.FirstOrDefault(people => people.Job == "Writer");
         // Directors = tv.Crew
@@ -416,7 +416,7 @@ public record InfoResponseItemDto
             : tmdbTv.Overview;
         Type = tmdbTv.Type ?? "tv";
         MediaType = "tv";
-        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+        Link = new($"/tv/{Id}", UriKind.Relative);
         Watched = false;
         Favorite = false;
 
@@ -442,7 +442,7 @@ public record InfoResponseItemDto
             tmdbTv.Images.Posters.FirstOrDefault()?.FilePath;
 
 
-        ExternalIds = new ExternalIds
+        ExternalIds = new()
         {
             ImdbId = tmdbTv.ExternalIds.ImdbId,
             TvdbId = tmdbTv.ExternalIds.TvdbId
@@ -531,7 +531,7 @@ public record InfoResponseItemDto
             : collection.Overview;
         Type = "collection";
         MediaType = "collection";
-        Link = new Uri($"/collection/{Id}", UriKind.Relative);
+        Link = new($"/collection/{Id}", UriKind.Relative);
         // Watched = tv.Watched;
         // Favorite = tv.Favorite;
         TitleSort = collection.Title
@@ -561,7 +561,6 @@ public record InfoResponseItemDto
             collection.Backdrop;
         Poster = collection.Images.FirstOrDefault(image => image is { Type: "poster", Iso6391: null })?.FilePath ??
             collection.Poster;
-
 
         ContentRatings = collection.CollectionMovies
             .Select(certificationMovie => new ContentRating

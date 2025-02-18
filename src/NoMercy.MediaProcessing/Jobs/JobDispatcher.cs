@@ -1,7 +1,7 @@
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
 using NoMercy.MediaProcessing.Jobs.PaletteJobs;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 
 namespace NoMercy.MediaProcessing.Jobs;
 

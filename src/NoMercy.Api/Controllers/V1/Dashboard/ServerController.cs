@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Asp.Versioning;
@@ -20,9 +19,11 @@ using NoMercy.Helpers;
 using NoMercy.Helpers.Monitoring;
 using NoMercy.MediaProcessing.Images;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.Information;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -70,7 +71,6 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                 title: "Unauthorized.",
                 detail: "You do not have permission to access the setup");
 
-        await using MediaContext context = new();
         List<Library> libraries = await context.Libraries
             .Include(library => library.FolderLibraries)
             .ThenInclude(folderLibrary => folderLibrary.Folder)
@@ -97,7 +97,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
         return Ok(new StatusResponseDto<SetupResponseDto>
         {
             Status = "ok",
-            Data = new SetupResponseDto
+            Data = new()
             {
                 SetupComplete = libraryCount > 0
                                 && folderCount > 0
@@ -126,7 +126,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to stop the server");
 
-        // ApplicationLifetime.StopApplication();
+        ApplicationLifetime.StopApplication();
         return Content("Done");
     }
 
@@ -139,6 +139,15 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
 
         // ApplicationLifetime.StopApplication();
         return Content("Done");
+    }
+    
+    [HttpGet("update/check")]
+    public IActionResult CheckForUpdate()
+    {
+        return Ok(new
+        {
+            updateAvailable = UpdateChecker.IsUpdateAvailable()
+        });
     }
 
     [HttpPost]
@@ -168,7 +177,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
 
     [HttpPost]
     [Route("addfiles")]
-    public async Task<IActionResult> AddFiles([FromBody] AddFilesRequest request)
+    public IActionResult AddFiles([FromBody] AddFilesRequest request)
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to add files");
@@ -264,7 +273,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
             ? "/"
             : Path.Combine(fullPath, @"..\..");
 
-        return new DirectoryTreeDto
+        return new()
         {
             Path = newPath,
             Parent = parentPath,
@@ -273,13 +282,6 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
             Size = type == "file" ? int.Parse(fileInfo.Length.ToString()) : null,
             Type = type
         };
-    }
-
-    [NonAction]
-    private string DeviceName()
-    {
-        Configuration? device = context.Configuration.FirstOrDefault(device => device.Key == "serverName");
-        return device?.Value ?? Environment.MachineName;
     }
 
     [HttpPost]
@@ -295,7 +297,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
 
         return Ok(new DataResponseDto<FileListResponseDto>
         {
-            Data = new FileListResponseDto()
+            Data = new()
             {
                 Status = "ok",
                 Files = fileList
@@ -336,20 +338,20 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
 
             Parallel.ForEach(audioFiles, (file) =>
             {
-                fileList.Add(new FileItemDto
+                fileList.Add(new()
                 {
                     Size = file.Length,
                     Mode = (int)file.Attributes,
                     Name = Path.Combine(directoryPath, file.Name),
                     Parent = directoryPath,
-                    Parsed = new MovieFile(directoryPath)
+                    Parsed = new(directoryPath)
                     {
                         Title = albumName + " - " + Path.GetFileNameWithoutExtension(file.Name),
                         Year = year.ToString(),
                         IsSeries = false,
                         IsSuccess = true
                     },
-                    Match = new MovieOrEpisodeDto()
+                    Match = new()
                     {
                         Title = albumName,
                     },
@@ -430,6 +432,18 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                                 .Where(item => item.TvId == show.Id)
                                 .Where(item => item.SeasonNumber == parsed.Season)
                                 .FirstOrDefault(item => item.EpisodeNumber == parsed.Episode);
+                            
+                            if (episode == null)
+                            {
+                                List<Episode> episodes = context.Episodes
+                                    .Where(item => item.TvId == show.Id)
+                                    .Where(item => item.SeasonNumber > 0)
+                                    .OrderBy(item => item.SeasonNumber)
+                                    .ThenBy(item => item.EpisodeNumber)
+                                    .ToList();
+
+                                episode = episodes.ElementAtOrDefault(parsed.Episode.Value - 1);
+                            }
 
                             if (episode == null)
                             {
@@ -441,7 +455,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                                 Season? season = await context.Seasons
                                     .FirstOrDefaultAsync(season => season.TvId == show.Id && season.SeasonNumber == details.SeasonNumber);
 
-                                episode = new Episode
+                                episode = new()
                                 {
                                     Id = details.Id,
                                     TvId = show.Id,
@@ -461,7 +475,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                                 await context.SaveChangesAsync();
                             }
 
-                            match = new MovieOrEpisodeDto
+                            match = new()
                             {
                                 Id = episode.Id,
                                 Title = episode.Title ?? "",
@@ -515,7 +529,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                                     await job.Handle();
                                 }
 
-                                movieItem = new Movie
+                                movieItem = new()
                                 {
                                     Id = details.Id,
                                     Title = details.Title,
@@ -524,7 +538,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                                 };
                             }
 
-                            match = new MovieOrEpisodeDto
+                            match = new()
                             {
                                 Id = movieItem.Id,
                                 Title = movieItem.Title,
@@ -542,7 +556,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                         ? "/"
                         : Path.GetDirectoryName(Path.Combine(file.DirectoryName, ".."));
 
-                    fileList.Add(new FileItemDto
+                    fileList.Add(new()
                     {
                         Size = file.Length,
                         Mode = (int)file.Attributes,
@@ -551,7 +565,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                         Parsed = parsed,
                         Match = match,
                         File = file.FullName,
-                        Streams = new StreamsDto
+                        Streams = new()
                         {
                             Video = mediaAnalysis.VideoStreams
                                 .Select(video => new VideoDto
@@ -584,6 +598,13 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
         return fileList.OrderBy(file => file.Name).ToList();
     }
 
+    [NonAction]
+    private string DeviceName()
+    {
+        Configuration? device = context.Configuration.FirstOrDefault(device => device.Key == "serverName");
+        return device?.Value ?? Environment.MachineName;
+    }
+
     [HttpGet]
     [Route("info")]
     public IActionResult ServerInfo()
@@ -594,11 +615,11 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
         return Ok(new ServerInfoDto
         {
             Server = DeviceName(),
-            Cpu = Info.Cpu,
-            Gpu = Info.Gpu,
-            Os = Info.Platform.ToTitleCase(),
+            Cpu = Info.CpuNames,
+            Gpu = Info.GpuNames,
+            Os = $"{Info.Platform.ToTitleCase()} {Info.OsVersion}",
             Arch = Info.Architecture,
-            Version = Info.Version,
+            Version = Software.GetReleaseVersion(),
             BootTime = Info.StartTime
         });
     }
@@ -639,7 +660,6 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to update server information");
 
-        await using MediaContext context = new();
         Configuration? configuration = await context.Configuration
             .AsTracking()
             .FirstOrDefaultAsync(configuration => configuration.Key == "serverName");
@@ -648,7 +668,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
         {
             if (configuration == null)
             {
-                configuration = new Configuration
+                configuration = new()
                 {
                     Key = "serverName",
                     Value = request.Name,
@@ -665,10 +685,10 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
             await context.SaveChangesAsync();
 
             HttpClient client = new();
-            client.BaseAddress = new Uri(Config.ApiServerBaseUrl);
+            client.BaseAddress = new(Config.ApiServerBaseUrl);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
-            client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Auth.AccessToken);
+            client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
+            client.DefaultRequestHeaders.Authorization = new("Bearer", Globals.Globals.AccessToken);
 
             HttpRequestMessage httpRequestMessage = new(HttpMethod.Patch, "server/name")
             {
@@ -832,7 +852,7 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
                 .Resize(new ResizeOptions()
                 {
                     Sampler = KnownResamplers.NearestNeighbor,
-                    Size = new Size(100, 0)
+                    Size = new(100, 0)
                 })
                 // Reduce the color palette to 1 color without dithering.
                 .Quantize(new OctreeQuantizer()
