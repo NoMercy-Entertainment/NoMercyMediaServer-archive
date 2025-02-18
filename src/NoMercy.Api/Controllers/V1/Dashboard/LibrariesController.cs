@@ -9,10 +9,10 @@ using NoMercy.Api.Middleware;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Jobs.MediaJobs;
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
@@ -106,7 +106,7 @@ public class LibrariesController(
             {
                 Language? language = languages.FirstOrDefault(l => l.Iso6391 == subtitle);
                 if (language is null) continue;
-                library.LanguageLibraries.Add(new LanguageLibrary { LibraryId = library.Id, LanguageId = language.Id });
+                library.LanguageLibraries.Add(new() { LibraryId = library.Id, LanguageId = language.Id });
             }
 
             await libraryRepository.UpdateLibraryAsync(library);
@@ -267,21 +267,20 @@ public class LibrariesController(
             });
 
         await using MediaContext mediaContext = new();
-        JobDispatcher jobDispatcher = new();
 
         foreach (Library library in librariesList)
         {
             foreach (LibraryMovie movie in library.LibraryMovies)
             {
                 FileRepository fileRepository = new(mediaContext);
-                FileManager fileManager = new(fileRepository, jobDispatcher);
+                FileManager fileManager = new(fileRepository);
                 await fileManager.FindFiles(movie.MovieId, library);
             }
 
             foreach (LibraryTv show in library.LibraryTvs)
             {
                 FileRepository fileRepository = new(mediaContext);
-                FileManager fileManager = new(fileRepository, jobDispatcher);
+                FileManager fileManager = new(fileRepository);
                 await fileManager.FindFiles(show.TvId, library);
             }
         }
@@ -305,19 +304,18 @@ public class LibrariesController(
             return NotFound(new StatusResponseDto<string> { Status = "error", Data = "Library not found" });
 
         await using MediaContext mediaContext = new();
-        JobDispatcher jobDispatcher = new();
 
         foreach (LibraryMovie movie in library.LibraryMovies)
         {
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             await fileManager.FindFiles(movie.MovieId, library);
         }
 
         foreach (LibraryTv show in library.LibraryTvs)
         {
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             await fileManager.FindFiles(show.TvId, library);
         }
 
@@ -357,7 +355,7 @@ public class LibrariesController(
 
     [HttpPost]
     [Route("{id:ulid}/refresh")]
-    public async Task<IActionResult> Refresh(Ulid id)
+    public IActionResult Refresh(Ulid id)
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to refresh the library");
@@ -394,8 +392,6 @@ public class LibrariesController(
             {
                 Status = "error", Message = "Something went wrong adding the folder: {0}", Args = [e.Message]
             });
-            return UnprocessableEntity(
-                $"Something went wrong adding a new folder {id} to {library} library: {e.Message}");
         }
 
         try
@@ -525,15 +521,15 @@ public class LibrariesController(
 
     [HttpDelete]
     [Route("{id:ulid}/folders/{folderId:ulid}/encoder_profiles/{encoderProfileId:ulid}")]
-    public async Task<IActionResult> DeleteEncoderProfile(Ulid id, Ulid profileId)
+    public async Task<IActionResult> DeleteEncoderProfile(Ulid id, Ulid folderId, Ulid encoderProfileId)
     {
         if (!User.IsModerator())
             return UnauthorizedResponse("You do not have permission to delete the encoder profile");
-
-        EncoderProfile? encoderProfile = await encoderRepository.GetEncoderProfileByIdAsync(profileId);
+    
+        EncoderProfile? encoderProfile = await encoderRepository.GetEncoderProfileByIdAsync(encoderProfileId);
         if (encoderProfile is null)
             return NotFound(new StatusResponseDto<string> { Status = "error", Data = "Encoder profile not found" });
-
+    
         try
         {
             await encoderRepository.DeleteEncoderProfileAsync(encoderProfile);
@@ -567,10 +563,9 @@ public class LibrariesController(
         try
         {
             await using MediaContext mediaContext = new();
-            JobDispatcher jobDispatcher = new();
             
             FileRepository fileRepository = new(mediaContext);
-            FileManager fileManager = new(fileRepository, jobDispatcher);
+            FileManager fileManager = new(fileRepository);
             
             await fileManager.MoveToLibraryFolder(request.Id, folder);
             

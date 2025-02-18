@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 
 namespace NoMercy.Api.Controllers.V1.Music.DTO;
 public record ArtistTrackDto
@@ -32,7 +31,7 @@ public record ArtistTrackDto
         Name = artistTrack.Track.Name;
         Cover = artistTrack.Track.AlbumTrack.FirstOrDefault()?.Album.Cover;
         Cover = Cover is not null ? new Uri($"/images/music{Cover}", UriKind.Relative).ToString() : null;
-        Link = new Uri($"/music/track/{artistTrack.ArtistId}", UriKind.Relative);
+        Link = new($"/music/tracks/{artistTrack.Track.Id}", UriKind.Relative);
         Path = new Uri($"/{artistTrack.Track.FolderId}{artistTrack.Track.Folder}{artistTrack.Track.Filename}", UriKind.Relative).ToString();
         Type = "tracks";
         ColorPalette = artistTrack.Track.AlbumTrack.FirstOrDefault()?.Album.ColorPalette;
@@ -71,6 +70,7 @@ public record ArtistTrackDto
         Favorite = track.TrackUser.Any();
         Quality = track.Quality;
         AlbumName = track.AlbumTrack.First().Album.Name;
+        Link = new($"/music/tracks/{track.Id}", UriKind.Relative);
 
         Album = track.AlbumTrack
             .DistinctBy(trackAlbum => trackAlbum.AlbumId)

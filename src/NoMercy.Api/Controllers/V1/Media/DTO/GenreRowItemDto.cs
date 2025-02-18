@@ -2,7 +2,6 @@ using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Api.Controllers.V1.Media.DTO;
@@ -18,16 +17,16 @@ public record GenreRowItemDto
     [JsonProperty("type")] public string? Type { get; set; }
     [JsonProperty("year")] public int? Year { get; set; }
     [JsonProperty("media_type")] public string? MediaType { get; set; }
-    [JsonProperty("genres")] public GenreDto[]? Genres { get; set; }
-    [JsonProperty("tags")] public IEnumerable<string> Tags { get; set; }
+    [JsonProperty("genres")] public GenreDto[] Genres { get; set; } = [];
+    [JsonProperty("tags")] public IEnumerable<string> Tags { get; set; } = [];
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("rating")] public RatingClass? Rating { get; set; }
     [JsonProperty("number_of_items")] public int? NumberOfItems { get; set; }
     [JsonProperty("have_items")] public int? HaveItems { get; set; }
-    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; }
-    [JsonProperty("link")] public Uri Link { get; set; }
+    [JsonProperty("content_ratings")] public IEnumerable<ContentRating> ContentRatings { get; set; } = [];
+    [JsonProperty("link")] public Uri Link { get; set; } = null!;
 
-    [JsonProperty("videos")] public VideoDto[]? Videos { get; set; }
+    [JsonProperty("videos")] public VideoDto[] Videos { get; set; } = [];
 
     public GenreRowItemDto(Movie movie, string country)
     {
@@ -49,7 +48,7 @@ public record GenreRowItemDto
 
         MediaType = "movie";
         Type = "movie";
-        Link = new Uri($"/movie/{Id}", UriKind.Relative);
+        Link = new($"/movie/{Id}", UriKind.Relative);
         NumberOfItems = 1;
         HaveItems = movie.VideoFiles.Count(v => v.Folder != null);
 
@@ -93,7 +92,7 @@ public record GenreRowItemDto
 
         MediaType = "tv";
         Type = "tv";
-        Link = new Uri($"/tv/{Id}", UriKind.Relative);
+        Link = new($"/tv/{Id}", UriKind.Relative);
         NumberOfItems = tv.NumberOfEpisodes;
         HaveItems = tv.Episodes
             .Count(episode => episode.VideoFiles.Any(v => v.Folder != null));
@@ -139,7 +138,7 @@ public record GenreRowItemDto
 
         MediaType = "tv";
         Type = "tv";
-        Link = new Uri($"/collection/{Id}", UriKind.Relative);
+        Link = new($"/collection/{Id}", UriKind.Relative);
         NumberOfItems = collection.CollectionMovies.Count;
         HaveItems = collection.CollectionMovies
             .Count(movie => movie.Movie.VideoFiles.Any(v => v.Folder != null));
@@ -171,13 +170,13 @@ public record GenreRowItemDto
         TitleSort = special.Title.TitleSort();
         Type = "collection";
         Year = special.Items.MinBy(movie => movie.Movie?.ReleaseDate)?.Movie?.ReleaseDate.ParseYear()
-               ?? special.Items?.Select(tv => tv.Episode?.Tv)?.FirstOrDefault()?.FirstAirDate.ParseYear();
+               ?? special.Items.Select(tv => tv.Episode?.Tv).FirstOrDefault()?.FirstAirDate.ParseYear();
 
         MediaType = "tv";
         Type = "tv";
-        Link = new Uri($"/specials/{Id}", UriKind.Relative);
+        Link = new($"/specials/{Id}", UriKind.Relative);
 
-        NumberOfItems = special.Items?.Count;
+        NumberOfItems = special.Items.Count;
         
         Tags = [];
 
@@ -196,7 +195,7 @@ public record GenreRowItemDto
         ContentRatings = special.Items
             .SelectMany(item => item.Movie?.CertificationMovies ?? Enumerable.Empty<CertificationMovie>())
             .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
-                || certificationMovie.Certification.Iso31661 == country)
+                                         || certificationMovie.Certification.Iso31661 == country)
             .Select(certificationMovie => new ContentRating
             {
                 Rating = certificationMovie.Certification.Rating,

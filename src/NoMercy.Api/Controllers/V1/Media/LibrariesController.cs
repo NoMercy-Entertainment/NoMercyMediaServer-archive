@@ -1,4 +1,3 @@
-using System.Collections;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -9,7 +8,6 @@ using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.Networking;
 
 namespace NoMercy.Api.Controllers.V1.Media;
 
@@ -25,7 +23,7 @@ public class LibrariesController(
     : BaseController
 {
     [HttpGet]
-    public async Task<IActionResult> Libraries()
+    public IActionResult Libraries()
     {
         Guid userId = User.UserId();
         if (!User.IsAllowed())
@@ -63,10 +61,10 @@ public class LibrariesController(
             IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc");
             IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc");
 
-            list.Add(new GenreRowDto<dynamic>
+            list.Add(new()
             {
                 Title = library.Title,
-                MoreLink = new Uri($"/libraries/{library.Id}", UriKind.Relative),
+                MoreLink = new($"/libraries/{library.Id}", UriKind.Relative),
                 Items = movies.Select(movie => new GenreRowItemDto(movie, country))
                     .Concat(shows.Select(tv => new GenreRowItemDto(tv, country)))
             });
@@ -75,17 +73,17 @@ public class LibrariesController(
         IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
         IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
 
-        list.Add(new GenreRowDto<dynamic>
+        list.Add(new()
         {
             Title = "Collections",
-            MoreLink = new Uri("/collection", UriKind.Relative),
+            MoreLink = new("/collection", UriKind.Relative),
             Items = collections.Select(collection => new GenreRowItemDto(collection, country))
         });
 
-        list.Add(new GenreRowDto<dynamic>
+        list.Add(new()
         {
             Title = "Specials",
-            MoreLink = new Uri("/specials", UriKind.Relative),
+            MoreLink = new("/specials", UriKind.Relative),
             Items = specials.Select(special => new GenreRowItemDto(special, country))
         });
 
@@ -97,10 +95,10 @@ public class LibrariesController(
 
         List<GenreRowItemDto> genres = [];
         if (tv != null)
-            genres.Add(new GenreRowItemDto(tv, language));
+            genres.Add(new(tv, language));
 
         if (movie != null)
-            genres.Add(new GenreRowItemDto(movie, language));
+            genres.Add(new(movie, language));
 
         GenreRowItemDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
             .Randomize().FirstOrDefault();
@@ -115,7 +113,7 @@ public class LibrariesController(
                     Update =
                     {
                         When = "pageLoad",
-                        Link = new Uri("/home/card", UriKind.Relative),
+                        Link = new("/home/card", UriKind.Relative),
                     },
                     Props =
                     {
@@ -147,7 +145,7 @@ public class LibrariesController(
 
     [HttpGet]
     [Route("tv")]
-    public async Task<IActionResult> Tv()
+    public IActionResult Tv()
     {
         Guid userId = User.UserId();
         if (!User.IsAllowed())
@@ -165,10 +163,10 @@ public class LibrariesController(
             IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
             IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
 
-            list.Add(new GenreRowDto<dynamic>
+            list.Add(new()
             {
                 Title = library.Title,
-                MoreLink = new Uri($"/libraries/{library.Id}", UriKind.Relative),
+                MoreLink = new($"/libraries/{library.Id}", UriKind.Relative),
                 Items = movies.Select(movie => new GenreRowItemDto(movie, country))
                     .Concat(shows.Select(tv => new GenreRowItemDto(tv, country)))
             });
@@ -177,17 +175,17 @@ public class LibrariesController(
         IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
         IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
 
-        list.Add(new GenreRowDto<dynamic>
+        list.Add(new()
         {
             Title = "Collections",
-            MoreLink = new Uri("/collection", UriKind.Relative),
+            MoreLink = new("/collection", UriKind.Relative),
             Items = collections.Select(collection => new GenreRowItemDto(collection, country))
         });
 
-        list.Add(new GenreRowDto<dynamic>
+        list.Add(new()
         {
             Title = "Specials",
-            MoreLink = new Uri("/specials", UriKind.Relative),
+            MoreLink = new("/specials", UriKind.Relative),
             Items = specials.Select(special => new GenreRowItemDto(special, country))
         });
 
@@ -205,7 +203,7 @@ public class LibrariesController(
                     Update =
                     {
                         When = "pageLoad",
-                        Link = new Uri("/home/card", UriKind.Relative),
+                        Link = new("/home/card", UriKind.Relative),
                     },
                     Props =
                     {
@@ -237,7 +235,7 @@ public class LibrariesController(
 
     [HttpGet]
     [Route("{libraryId:ulid}")]
-    public async Task<IActionResult> Library(Ulid libraryId, [FromQuery] PageRequestDto request)
+    public IActionResult Library(Ulid libraryId, [FromQuery] PageRequestDto request)
     {
         Guid userId = User.UserId();
         if (!User.IsAllowed())

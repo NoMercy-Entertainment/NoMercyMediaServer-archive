@@ -1,4 +1,3 @@
-using NoMercy.Networking;
 using NoMercy.NmSystem;
 using Serilog.Events;
 using SixLabors.ImageSharp;
@@ -42,8 +41,8 @@ public abstract class TmdbImageClient : TmdbBaseClient
                     return isSvg ? null : await Image.LoadAsync<Rgba32>(filePath);
 
                 using HttpClient httpClient = new();
-                httpClient.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
-                httpClient.BaseAddress = new Uri("https://image.tmdb.org/t/p/");
+                httpClient.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
+                httpClient.BaseAddress = new("https://image.tmdb.org/t/p/");
                 httpClient.DefaultRequestHeaders.Add("Accept", "image/*");
                 httpClient.Timeout = TimeSpan.FromMinutes(5);
 

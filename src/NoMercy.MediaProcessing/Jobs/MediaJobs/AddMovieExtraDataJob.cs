@@ -3,10 +3,9 @@
 // ---------------------------------------------------------------------------------------------------------------------
 
 using NoMercy.Database;
-using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Movies;
 using NoMercy.MediaProcessing.People;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.Providers.TMDB.Models.Movies;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
@@ -24,7 +23,6 @@ public class AddMovieExtraDataJob : AbstractMediaExraDataJob<TmdbMovieAppends>
     {
         await using MediaContext context = new();
         JobDispatcher jobDispatcher = new();
-        FileRepository fileRepository = new(context);
 
         MovieRepository movieRepository = new(context);
         MovieManager movieManager = new(movieRepository, jobDispatcher);

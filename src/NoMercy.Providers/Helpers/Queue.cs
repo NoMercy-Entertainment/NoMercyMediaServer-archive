@@ -65,22 +65,22 @@ public class Queue(QueueOptions options)
     {
         lock (_tasks)
         {
-            List<KeyValuePair<string, Func<Task>>>? tasks = new ConcurrentDictionary<string, Func<Task>?>(_tasks)
+            List<KeyValuePair<string, Func<Task>>> tasks = new ConcurrentDictionary<string, Func<Task>?>(_tasks)
                 .Where(_ => _currentlyHandled < Options.Concurrent).ToList();
 
-            foreach (KeyValuePair<string, Func<Task>?> task in tasks ?? [])
+            foreach ((string? key, Func<Task>? value) in tasks)
             {
                 _currentlyHandled++;
-                _tasks?.Remove(task.Key);
+                _tasks?.Remove(key);
 
                 try
                 {
-                    Task? result = task.Value?.Invoke();
-                    Resolve?.Invoke(this, new QueueEventArgs { Result = result });
+                    Task result = value.Invoke();
+                    Resolve?.Invoke(this, new() { Result = result });
                 }
                 catch (Exception ex)
                 {
-                    Reject?.Invoke(this, new QueueEventArgs { Error = ex });
+                    Reject?.Invoke(this, new() { Error = ex });
                 }
                 finally
                 {
@@ -125,12 +125,12 @@ public class Queue(QueueOptions options)
                 try
                 {
                     T result = await task();
-                    Resolve?.Invoke(this, new QueueEventArgs { Result = result });
+                    Resolve?.Invoke(this, new() { Result = result });
                     tcs.SetResult(result);
                 }
                 catch (Exception ex)
                 {
-                    Reject?.Invoke(this, new QueueEventArgs { Error = ex });
+                    Reject?.Invoke(this, new() { Error = ex });
                     tcs.SetException(ex);
                     if (ex.Message.Contains("404")) return;
                     Logger.App($"Url failed: {url} {ex.Message}", LogEventLevel.Error);
@@ -165,7 +165,7 @@ public class Queue(QueueOptions options)
         {
             lock (_tasks)
             {
-                return _tasks?.Count ?? 0;
+                return _tasks.Count;
             }
         }
     }

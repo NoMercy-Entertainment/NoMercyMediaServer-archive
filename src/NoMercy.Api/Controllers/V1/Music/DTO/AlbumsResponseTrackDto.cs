@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.NmSystem.Information;
 
 namespace NoMercy.Api.Controllers.V1.Music.DTO;
 public record AlbumsResponseTrackDto
@@ -40,12 +41,12 @@ public record AlbumsResponseTrackDto
         Id = artistTrack.Track.Id;
         LibraryId = libraryId;
         Name = artistTrack.Track.Name;
-        Origin = NmSystem.Info.DeviceId;
+        Origin = Info.DeviceId;
         Path = artistTrack.Track.Folder + "/" + artistTrack.Track.Filename;
         Quality = artistTrack.Track.Quality;
         Track = artistTrack.Track.TrackNumber;
         Type = "track";
-        Link = new Uri($"/music/album/{artistTrack.AlbumId}", UriKind.Relative);
+        Link = new($"/music/album/{artistTrack.AlbumId}", UriKind.Relative);
 
         Album = artistTrack.Track.AlbumTrack
             .Select(albumTrack => new AlbumDto(albumTrack, country))

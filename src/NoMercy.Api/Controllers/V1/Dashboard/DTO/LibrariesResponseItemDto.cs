@@ -28,11 +28,11 @@ public record LibrariesResponseItemDto
     {
         string image = library.Type switch
         {
-            "anime" => library.LibraryTvs?.Randomize()?.FirstOrDefault(lt => lt.Library.Type == "anime")?.Tv.Backdrop ??
+            "anime" => library.LibraryTvs.Randomize().FirstOrDefault(lt => lt.Library.Type == "anime")?.Tv.Backdrop ??
                 library.Image ?? "",
-            "movie" => library.LibraryMovies?.Randomize()?.FirstOrDefault(lm => lm.Library.Type == "movie")?.Movie
+            "movie" => library.LibraryMovies.Randomize().FirstOrDefault(lm => lm.Library.Type == "movie")?.Movie
                 .Backdrop ?? library.Image ?? "",
-            "tv" => library.LibraryTvs?.Randomize()?.FirstOrDefault(lt => lt.Library.Type == "tv")?.Tv.Backdrop ??
+            "tv" => library.LibraryTvs.Randomize().FirstOrDefault(lt => lt.Library.Type == "tv")?.Tv.Backdrop ??
                 library.Image ?? "",
             _ => library.Image ?? ""
         };
@@ -58,7 +58,7 @@ public record LibrariesResponseItemDto
             {
                 FolderId = folderLibrary.FolderId,
                 LibraryId = folderLibrary.LibraryId,
-                Folder = new FolderDto
+                Folder = new()
                 {
                     Id = folderLibrary.Folder.Id,
                     Path = folderLibrary.Folder.Path,

@@ -8,20 +8,28 @@ public class X264 : BaseVideo
 {
     protected internal override bool BFramesSupport => true;
     protected internal override int Modulus => 2;
-    internal int Passes { get; set; } = 2;
+    protected internal int Passes { get; set; } = 2;
+    protected internal override int[] CrfRange => [0, 51];
 
     public X264(string videoCodec = "libx264")
     {
-        if(HasGpu)
+        try
+        {
             SetVideoCodec(videoCodec);
-        else
+        }
+        catch (Exception)
+        {
             SetVideoCodec(VideoCodecs.H264.Value);
+        }
     }
 
     protected override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.H264,
-        VideoCodecs.H264Nvenc
+        VideoCodecs.H264Nvenc,
+        // VideoCodecs.H264Qsv,
+        // VideoCodecs.H264Amf,
+        VideoCodecs.H264Videotoolbox
     ];
 
     protected internal override string[] AvailableContainers =>
@@ -35,7 +43,8 @@ public class X264 : BaseVideo
     {
         get
         {
-            if ("h264_nvenc" == VideoCodec.Value)
+            if (VideoCodecs.H264Nvenc.Value == VideoCodec.Value)
+            {
                 return
                 [
                     VideoPresets.Default, VideoPresets.Slow, VideoPresets.Medium, VideoPresets.Fast,
@@ -44,6 +53,16 @@ public class X264 : BaseVideo
                     VideoPresets.P1, VideoPresets.P2, VideoPresets.P3, VideoPresets.P4, VideoPresets.P5,
                     VideoPresets.P6, VideoPresets.P7
                 ];
+            }
+            else if (VideoCodecs.H264Amf.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H264Qsv.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H264Videotoolbox.Value == VideoCodec.Value)
+            {
+            }
 
             return
             [
@@ -59,17 +78,28 @@ public class X264 : BaseVideo
     {
         get
         {
-            if ("h264_nvenc" == VideoCodec.Value)
+            if (VideoCodecs.H264Nvenc.Value == VideoCodec.Value)
+            {
                 return
                 [
                     VideoProfiles.Baseline, VideoProfiles.Main, VideoProfiles.High,
-                    VideoProfiles.High10, VideoProfiles.High422, VideoProfiles.High444p
+                    VideoProfiles.High10, VideoProfiles.High422, VideoProfiles.High444P
                 ];
+            }
+            else if (VideoCodecs.H264Amf.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H264Qsv.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H264Videotoolbox.Value == VideoCodec.Value)
+            {
+            }
 
             return
             [
                 VideoProfiles.Baseline, VideoProfiles.Main, VideoProfiles.High,
-                VideoProfiles.High10, VideoProfiles.High444p
+                VideoProfiles.High10, VideoProfiles.High444P
             ];
         }
     }
@@ -78,12 +108,23 @@ public class X264 : BaseVideo
     {
         get
         {
-            if ("h264_nvenc" == VideoCodec.Value)
+            if (VideoCodecs.H264Nvenc.Value == VideoCodec.Value)
+            {
                 return
                 [
                     VideoTunes.Hq, VideoTunes.Li,
                     VideoTunes.Ull, VideoTunes.Lossless
                 ];
+            }
+            else if (VideoCodecs.H264Amf.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H264Qsv.Value == VideoCodec.Value)
+            {
+            }
+            else if (VideoCodecs.H264Videotoolbox.Value == VideoCodec.Value)
+            {
+            }
 
             return
             [
@@ -97,8 +138,8 @@ public class X264 : BaseVideo
 
     public override string[] AvailableColorSpaces =>
     [
-        ColorSpaces.Yuv420p, ColorSpaces.Yuv420p10le,
-        ColorSpaces.Yuv422p, ColorSpaces.Yuv444p,
+        ColorSpaces.Yuv420P, ColorSpaces.Yuv420P10Le,
+        ColorSpaces.Yuv422P, ColorSpaces.Yuv444P,
     ];
 
     public override string[] AvailableLevels =>

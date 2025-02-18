@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Libraries;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 
@@ -18,11 +18,8 @@ public class EncodeMusicJob : AbstractEncoderJob
     {
         await using MediaContext context = new();
         await using QueueContext queueContext = new();
-        JobDispatcher jobDispatcher = new();
 
         await using LibraryRepository libraryRepository = new(context);
-        FileRepository fileRepository = new(context);
-        FileManager fileManager = new(fileRepository, jobDispatcher);
 
         Folder? folder = await libraryRepository.GetLibraryFolder(FolderId);
         if (folder is null) return;
@@ -45,12 +42,10 @@ public class EncodeMusicJob : AbstractEncoderJob
         
         // get all files in the folder that are not encoded
         await using MediaScan mediaScan = new();
-        ConcurrentBag<MediaFolderExtend>? files = await mediaScan
+        ConcurrentBag<MediaFolderExtend> files = await mediaScan
             .DisableRegexFilter()
             .EnableFileListing()
             .Process(folder.Path);
-        
-        if (files is null) return;
 
         string rawAlbumName = Path.GetDirectoryName(folder.Path) ?? string.Empty;
         

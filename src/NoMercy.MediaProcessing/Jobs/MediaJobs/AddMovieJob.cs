@@ -7,7 +7,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Movies;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
 using NoMercy.Providers.TMDB.Models.Movies;
 
@@ -28,7 +28,7 @@ public class AddMovieJob : AbstractMediaJob
         JobDispatcher jobDispatcher = new();
 
         FileRepository fileRepository = new(context);
-        FileManager fileManager = new(fileRepository, jobDispatcher);
+        FileManager fileManager = new(fileRepository);
 
         MovieRepository movieRepository = new(context);
         MovieManager movieManager = new(movieRepository, jobDispatcher);

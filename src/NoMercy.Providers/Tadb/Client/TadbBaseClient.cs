@@ -1,8 +1,8 @@
-﻿using System.Net.Http.Headers;
-using Microsoft.AspNetCore.WebUtilities;
-using NoMercy.Networking;
+﻿using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.Providers.Helpers;
+using NoMercy.Setup;
 using Serilog.Events;
 
 namespace NoMercy.Providers.Tadb.Client;
@@ -17,20 +17,20 @@ public class TadbBaseClient : IDisposable
     {
         _client.BaseAddress = _baseUrl;
         _client.DefaultRequestHeaders.Accept.Clear();
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+        _client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
         _client.Timeout = TimeSpan.FromMinutes(5);
     }
 
     protected TadbBaseClient(int id)
     {
-        _client = new HttpClient
+        _client = new()
         {
             BaseAddress = _baseUrl
         };
         _client.DefaultRequestHeaders.Accept.Clear();
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+        _client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
         _client.Timeout = TimeSpan.FromMinutes(5);
         Id = id;
     }
@@ -39,7 +39,7 @@ public class TadbBaseClient : IDisposable
 
     private static Helpers.Queue GetQueue()
     {
-        return _queue ??= new Helpers.Queue(new QueueOptions { Concurrent = 2, Interval = 1000, Start = true });
+        return _queue ??= new(new() { Concurrent = 2, Interval = 1000, Start = true });
     }
 
     private static int Max(int available, int wanted, int constraint)
@@ -53,10 +53,10 @@ public class TadbBaseClient : IDisposable
 
     public int Id { get; private set; }
 
-    protected async Task<T?> Get<T>(string url, Dictionary<string, string> query = null, bool? priority = false)
+    protected async Task<T?> Get<T>(string url, Dictionary<string, string>? query = null, bool? priority = false)
         where T : class
     {
-        query ??= new Dictionary<string, string>();
+        query ??= new();
 
         string newUrl = QueryHelpers.AddQueryString(url, query!);
 

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.NewtonSoftConverters;
 
 namespace NoMercy.Providers.Helpers;
 

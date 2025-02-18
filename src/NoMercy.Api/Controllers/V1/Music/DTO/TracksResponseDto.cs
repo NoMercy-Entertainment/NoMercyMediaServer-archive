@@ -7,8 +7,8 @@ namespace NoMercy.Api.Controllers.V1.Music.DTO;
 
 public record TracksResponseDto
 {
-    [JsonProperty("data")] public TracksResponseItemDto Data { get; set; }
-
+    [JsonProperty("data")] public TracksResponseItemDto Data { get; set; } = new();
+ 
     public static readonly Func<MediaContext, Guid, IAsyncEnumerable<TrackUser>> GetTracks =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId) => mediaContext.TrackUser
             .AsNoTracking()

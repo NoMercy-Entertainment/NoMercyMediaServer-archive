@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
@@ -19,8 +18,8 @@ public record EpisodeDto
     [JsonProperty("color_palette")] public IColorPalettes? ColorPalette { get; set; }
     [JsonProperty("progress")] public object? Progress { get; set; }
     [JsonProperty("available")] public bool Available { get; set; }
-    [JsonProperty("translations")] public IEnumerable<TranslationDto> Translations { get; set; }
-    [JsonProperty("link")] public Uri Link { get; set; }
+    [JsonProperty("translations")] public IEnumerable<TranslationDto> Translations { get; set; } = [];
+    [JsonProperty("link")] public Uri Link { get; set; } = null!;
 
     public EpisodeDto(Episode episode)
     {
@@ -39,7 +38,7 @@ public record EpisodeDto
             : episode.Overview;
         EpisodeNumber = episode.EpisodeNumber;
         SeasonNumber = episode.SeasonNumber;
-        Link = new Uri($"/tv/{episode.TvId}/watch?season={episode.SeasonNumber}&episode={episode.EpisodeNumber}", UriKind.Relative);
+        Link = new($"/tv/{episode.TvId}/watch?season={episode.SeasonNumber}&episode={episode.EpisodeNumber}", UriKind.Relative);
         AirDate = episode.AirDate;
         Still = episode.Still;
         ColorPalette = episode.ColorPalette;
@@ -78,9 +77,9 @@ public record EpisodeDto
         SeasonNumber = episodeData.SeasonNumber;
         AirDate = episodeData.AirDate;
         Still = episodeData.StillPath;
-        ColorPalette = new IColorPalettes();
+        ColorPalette = new();
         Available = false;
-        Link = new Uri($"/tv/{tvId}/watch?season={seasonNumber}&episode={episodeNumber}", UriKind.Relative);
+        Link = new($"/tv/{tvId}/watch?season={seasonNumber}&episode={episodeNumber}", UriKind.Relative);
 
         Translations = episodeData.Translations.Translations
             .Select(translation => new TranslationDto(translation));

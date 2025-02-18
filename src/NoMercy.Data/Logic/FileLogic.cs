@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using Serilog.Events;
 
 namespace NoMercy.Data.Logic;
@@ -54,7 +55,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
 
     private async Task StoreMusic()
     {
-        MediaFile? item = Files.FirstOrDefault(file => file.Parsed is not null)
+        MediaFile? item = Files.FirstOrDefault(file => file.Parsed.Title is not null)
             ?.Files?.FirstOrDefault(file => file.Parsed is not null);
 
         if (item == null) return;
@@ -130,7 +131,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
                 if (match.Groups["type"].Value != "sign" && match.Groups["type"].Value != "song" &&
                     match.Groups["type"].Value != "full") continue;
 
-                subtitles.Add(new Subtitle
+                subtitles.Add(new()
                 {
                     Language = match.Groups["lang"].Value,
                     Type = match.Groups["type"].Value,
@@ -169,7 +170,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
 
             await _mediaContext.VideoFiles.Upsert(videoFile)
                 .On(vf => vf.Filename)
-                .WhenMatched((vs, vi) => new VideoFile
+                .WhenMatched((vs, vi) => new()
                 {
                     Id = vi.Id,
                     EpisodeId = vi.EpisodeId,
@@ -261,7 +262,7 @@ public partial class FileLogic(int id, Library library) : IDisposable, IAsyncDis
             string path = Path.Combine(rootFolder.Path, folder);
 
             if (Directory.Exists(path))
-                Folders.Add(new Folder
+                Folders.Add(new()
                 {
                     Path = path,
                     Id = rootFolder.Id

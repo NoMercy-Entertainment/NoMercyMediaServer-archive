@@ -4,9 +4,8 @@
 
 using NoMercy.Database;
 using NoMercy.MediaProcessing.Collections;
-using NoMercy.MediaProcessing.Files;
 using NoMercy.MediaProcessing.Movies;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.Providers.TMDB.Models.Collections;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
@@ -24,7 +23,6 @@ public class AddCollectionExtraDataJob : AbstractMediaExraDataJob<TmdbCollection
     {
         await using MediaContext context = new();
         JobDispatcher jobDispatcher = new();
-        FileRepository fileRepository = new(context);
 
         MovieRepository movieRepository = new(context);
         MovieManager movieManager = new(movieRepository, jobDispatcher);

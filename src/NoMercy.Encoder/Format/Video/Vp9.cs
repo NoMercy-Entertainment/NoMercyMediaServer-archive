@@ -2,24 +2,33 @@ using NoMercy.Encoder.Format.Rules;
 
 namespace NoMercy.Encoder.Format.Video;
 
+// https://trac.ffmpeg.org/wiki/Encode/VP9
+
 public class Vp9 : BaseVideo
 {
     protected internal override bool BFramesSupport => true;
-    internal int Passes { get; set; } = 2;
+    protected internal int Passes { get; set; } = 2;
+    protected internal override int[] CrfRange => [0, 63];
 
     public Vp9(string videoCodec = "vp9")
     {
-        // throw new NotImplementedException("Vp9 is not implemented yet.");
-        if(HasGpu)
+        try
+        {
             SetVideoCodec(videoCodec);
-        else
+        }
+        catch (Exception)
+        {
             SetVideoCodec(VideoCodecs.Vp9.Value);
+        }
     }
 
     protected override CodecDto[] AvailableCodecs =>
     [
         VideoCodecs.Vp9,
-        VideoCodecs.Vp9Nvenc
+        VideoCodecs.Vp9Nvenc,
+        // VideoCodecs.Vp9Qsv,
+        // VideoCodecs.Vp9Amf,
+        // VideoCodecs.Vp9Videotoolbox
     ];
 
     protected internal override string[] AvailableContainers =>
@@ -43,8 +52,8 @@ public class Vp9 : BaseVideo
 
     public override string[] AvailableColorSpaces =>
     [
-        ColorSpaces.Yuv420p, ColorSpaces.Yuv420p10le,
-        ColorSpaces.Yuv422p, ColorSpaces.Yuv444p,
+        ColorSpaces.Yuv420P, ColorSpaces.Yuv420P10Le,
+        ColorSpaces.Yuv422P, ColorSpaces.Yuv444P,
     ];
 
     public override string[] AvailableTune =>

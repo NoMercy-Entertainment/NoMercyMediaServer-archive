@@ -1,7 +1,9 @@
 using System.Drawing;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.LogEnrichers;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
@@ -18,7 +20,7 @@ public static class Logger
     {
         return lc
             .Enrich.FromLogContext()
-            .Enrich.With<WithThreadId>();
+            .Enrich.With<WithThreadIdEnricher>();
     }
 
     private static LoggerConfiguration SinkFile(this LoggerConfiguration lc, string filePath)
@@ -60,9 +62,13 @@ public static class Logger
             .WriteTo.Logger(lc => lc
                 .SinkFile(Path.Join(AppFiles.LogPath, "log.txt"))
             )
-            .WriteTo.Logger(lc => lc
-                .SinkConsole()
-            );
+            .WriteTo.Logger(lc =>
+            { 
+                if (!Console.IsOutputRedirected)
+                {
+                    lc.SinkConsole();
+                }
+            });
     }
 
     public static void SetLogLevel(LogEventLevel level)
@@ -87,7 +93,7 @@ public static class Logger
             Name = name;
             DisplayName = displayName;
             Color = ToHexString(color);
-            Type = type ?? "log";
+            Type = type;
         }
     }
 
@@ -308,11 +314,13 @@ public static class Logger
         return LogColors?[type] ?? Color.White;
     }
 
+    // ReSharper disable once MethodOverloadWithOptionalParameter
     public static T Log<T>(this T self, string type = "server") where T : class
     {
         return Log<T>(self, LogEventLevel.Debug, type);
     }
 
+    // ReSharper disable once MethodOverloadWithOptionalParameter
     private static T Log<T>(this T self, LogEventLevel level = LogEventLevel.Debug, string type = "server")
         where T : class
     {
@@ -380,8 +388,7 @@ public static class Logger
 
     private static void Log(LogEventLevel level, string message, string type = "server")
     {
-        if (!ShouldLog(level))
-            return;
+        if (!ShouldLog(level) || Console.IsOutputRedirected) return;
 
         Color color = GetColor(type);
 

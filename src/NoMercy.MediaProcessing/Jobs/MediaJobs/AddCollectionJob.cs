@@ -7,7 +7,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Collections;
 using NoMercy.MediaProcessing.Movies;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.Providers.TMDB.Models.Collections;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;

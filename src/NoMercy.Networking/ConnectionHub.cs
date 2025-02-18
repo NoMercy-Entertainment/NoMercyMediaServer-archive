@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
 using NoMercy.Database;
 using NoMercy.Database.Models;
+using NoMercy.Helpers;
 using Hub = Microsoft.AspNetCore.SignalR.Hub;
 
 namespace NoMercy.Networking;
@@ -82,7 +83,7 @@ public class ConnectionHub : Hub
         await using MediaContext mediaContext = new();
         await mediaContext.Devices.Upsert(client)
             .On(x => x.DeviceId)
-            .WhenMatched((ds, di) => new Device
+            .WhenMatched((ds, di) => new()
             {
                 Browser = di.Browser,
                 // CustomName = di.CustomName,
@@ -103,7 +104,7 @@ public class ConnectionHub : Hub
         
         if (device is not null)
         {
-            await SaveActivityLog(mediaContext, new ActivityLog()
+            await SaveActivityLog(mediaContext, new()
             {
                 DeviceId = device.Id,
                 Time = DateTime.Now,
@@ -127,7 +128,7 @@ public class ConnectionHub : Hub
             Device? device = mediaContext.Devices.FirstOrDefault(x => x.DeviceId == client.DeviceId);
             if (device is not null)
             {
-                await SaveActivityLog(mediaContext, new ActivityLog()
+                await SaveActivityLog(mediaContext, new()
                 {
                     DeviceId = device.Id,
                     Time = DateTime.Now,
@@ -151,7 +152,7 @@ public class ConnectionHub : Hub
             await mediaContext.ActivityLogs.AddAsync(log);
             await mediaContext.SaveChangesAsync();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             if (count > 2) return; // 3 times
             

@@ -1,8 +1,8 @@
-﻿using System.Net.Http.Headers;
-using Microsoft.AspNetCore.WebUtilities;
-using NoMercy.Networking;
+﻿using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.Providers.Helpers;
+using NoMercy.Setup;
 using Serilog.Events;
 
 namespace NoMercy.Providers.MusixMatch.Client;
@@ -17,8 +17,8 @@ public class MusixMatchBaseClient : IDisposable
     {
         _client.BaseAddress = _baseUrl;
         _client.DefaultRequestHeaders.Accept.Clear();
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+        _client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
 
         _client.DefaultRequestHeaders.Add("authority", "apic-desktop.musixmatch.com");
         _client.DefaultRequestHeaders.Add("cookie", "x-mxm-token-guid=");
@@ -26,13 +26,13 @@ public class MusixMatchBaseClient : IDisposable
 
     protected MusixMatchBaseClient(Guid id)
     {
-        _client = new HttpClient
+        _client = new()
         {
             BaseAddress = _baseUrl
         };
         _client.DefaultRequestHeaders.Accept.Clear();
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        _client.DefaultRequestHeaders.Add("User-Agent", ApiInfo.UserAgent);
+        _client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+        _client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
 
         _client.DefaultRequestHeaders.Add("authority", "apic-desktop.musixmatch.com");
         _client.DefaultRequestHeaders.Add("cookie", "x-mxm-token-guid=");
@@ -44,7 +44,7 @@ public class MusixMatchBaseClient : IDisposable
 
     private static Helpers.Queue GetQueue()
     {
-        return _queue ??= new Helpers.Queue(new QueueOptions { Concurrent = 2, Interval = 1000, Start = true });
+        return _queue ??= new(new() { Concurrent = 2, Interval = 1000, Start = true });
     }
 
     protected Guid Id { get; private set; }

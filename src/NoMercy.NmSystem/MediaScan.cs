@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using FFMpegCore;
 using MovieFileLibrary;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
 using Serilog.Events;
 
@@ -12,6 +13,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
     private bool _fileListingEnabled;
     private bool _regexFilterEnabled = true;
+    private string? Filter { get; set; }
 
     private readonly Regex _folderNameRegex =
         new(
@@ -75,7 +77,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
         movieFile1.Year ??= Str.MatchYearRegex().Match(folderPath)
             .Value;
 
-        folders.Add(new MediaFolderExtend
+        folders.Add(new()
         {
             Name = Path.GetFileName(folderPath),
             Path = folderPath,
@@ -83,7 +85,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
             Modified = Directory.GetLastWriteTime(folderPath),
             Accessed = Directory.GetLastAccessTime(folderPath),
             Type = "folder",
-            Parsed = new MovieFileExtend
+            Parsed = new()
             {
                 Title = movieFile1.Title,
                 Year = movieFile1.Year,
@@ -103,7 +105,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                 if ((_regexFilterEnabled && _folderNameRegex.IsMatch(folderName)) || depth == 0)
                 {
-                    files.Add(new MediaFile
+                    files.Add(new()
                     {
                         Name = folderName,
                         Path = directory,
@@ -122,7 +124,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 movieFile.Year ??= Str.MatchYearRegex()
                     .Match(directory).Value;
 
-                folders.Add(new MediaFolderExtend
+                folders.Add(new()
                 {
                     Name = folderName,
                     Path = directory,
@@ -130,7 +132,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                     Modified = Directory.GetLastWriteTime(directory),
                     Accessed = Directory.GetLastAccessTime(directory),
                     Type = "folder",
-                    Parsed = new MovieFileExtend
+                    Parsed = new()
                     {
                         Title = movieFile.Title,
                         Year = movieFile.Year,
@@ -181,7 +183,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
 
                 if (_regexFilterEnabled && _folderNameRegex.IsMatch(folderName))
                 {
-                    folders.Add(new MediaFolderExtend
+                    folders.Add(new()
                     {
                         Name = folderName,
                         Path = dir,
@@ -199,7 +201,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                 movieFile.Year ??= Str.MatchYearRegex()
                     .Match(directory).Value;
 
-                folders.Add(new MediaFolderExtend
+                folders.Add(new()
                 {
                     Name = folderName,
                     Path = directory,
@@ -208,7 +210,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                     Accessed = Directory.GetLastAccessTime(directory),
                     Type = "folder",
 
-                    Parsed = new MovieFileExtend
+                    Parsed = new()
                     {
                         Title = movieFile.Title,
                         Year = movieFile.Year,
@@ -242,6 +244,12 @@ public class MediaScan : IDisposable, IAsyncDisposable
             Parallel.ForEach(Directory.GetFiles(folderPath), (file, _) =>
             {
                 file = Path.GetFullPath(file.ToUtf8());
+                
+                if (Filter is not null)
+                {
+                    if(!file.Contains(Filter)) return;
+                }
+                
                 string extension = Path.GetExtension(file).ToLower();
 
                 if (_extensionFilter.Length > 0 && !_extensionFilter.Contains(extension)) return;
@@ -281,7 +289,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                     IMediaAnalysis analysis = FFProbe.Analyse(file);
                     if (isVideoFile || isAudioFile)
                     {
-                        ffprobe = new FFprobeData
+                        ffprobe = new()
                         {
                             Duration = analysis.Duration,
                             Format = analysis.Format,
@@ -348,5 +356,12 @@ public class MediaScan : IDisposable, IAsyncDisposable
         GC.WaitForPendingFinalizers();
 
         return ValueTask.CompletedTask;
+    }
+
+    public MediaScan FilterByFileName(string? filter)
+    {
+        Filter = filter;
+        
+        return this;
     }
 }

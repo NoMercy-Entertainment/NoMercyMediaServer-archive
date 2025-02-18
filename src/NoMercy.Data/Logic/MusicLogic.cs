@@ -2,12 +2,12 @@ using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using FFMpegCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using NoMercy.Data.Jobs;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.Networking;
+using NoMercy.Networking.Dto;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.Providers.AcoustId.Client;
 using NoMercy.Providers.AcoustId.Models;
@@ -117,7 +117,7 @@ public partial class MusicLogic : IAsyncDisposable
 
         MusicBrainzReleaseAppends? releaseAppends = await musicBrainzReleaseClient.WithAllAppends();
 
-        if (releaseAppends is null || releaseAppends.Title.IsNullOrEmpty())
+        if (releaseAppends is null || string.IsNullOrEmpty(releaseAppends.Title))
         {
             Logger.App($"Release not found: {release.Title}", LogEventLevel.Warning);
             await Task.CompletedTask;
@@ -207,7 +207,7 @@ public partial class MusicLogic : IAsyncDisposable
 
         if (albumId is null) return null;
 
-        return new AcoustIdFingerprintReleaseGroups()
+        return new()
         {
             Id = albumId.ToGuid()
         };
@@ -281,7 +281,7 @@ public partial class MusicLogic : IAsyncDisposable
         {
             Id = musicBrainzRelease.MusicBrainzReleaseGroup.Id,
             Title = musicBrainzRelease.MusicBrainzReleaseGroup.Title,
-            Description = musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation.IsNullOrEmpty()
+            Description = string.IsNullOrEmpty(musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation)
                 ? null
                 : musicBrainzRelease.MusicBrainzReleaseGroup.Disambiguation,
             Year = musicBrainzRelease.MusicBrainzReleaseGroup.FirstReleaseDate.ParseYear(),
@@ -292,7 +292,7 @@ public partial class MusicLogic : IAsyncDisposable
         {
             await mediaContext.ReleaseGroups.Upsert(insert)
                 .On(e => new { e.Id })
-                .WhenMatched((s, i) => new ReleaseGroup
+                .WhenMatched((s, i) => new()
                 {
                     Id = i.Id,
                     Title = i.Title,
@@ -341,7 +341,7 @@ public partial class MusicLogic : IAsyncDisposable
             Id = musicBrainzRelease.Id,
             Name = musicBrainzRelease.Title,
             Country = musicBrainzRelease.Country,
-            Disambiguation = musicBrainzRelease.Disambiguation.IsNullOrEmpty()
+            Disambiguation = string.IsNullOrEmpty(musicBrainzRelease.Disambiguation)
                 ? null
                 : musicBrainzRelease.Disambiguation,
             Year = musicBrainzRelease.DateTime?.ParseYear() ??
@@ -359,7 +359,7 @@ public partial class MusicLogic : IAsyncDisposable
         {
             await mediaContext.Albums.Upsert(insert)
                 .On(e => new { e.Id })
-                .WhenMatched((s, i) => new Album
+                .WhenMatched((s, i) => new()
                 {
                     Id = i.Id,
                     Name = i.Name,
@@ -417,7 +417,9 @@ public partial class MusicLogic : IAsyncDisposable
         {
             Id = musicBrainzArtist.Id,
             Name = musicBrainzArtist.Name,
-            Disambiguation = musicBrainzArtist.Disambiguation.IsNullOrEmpty() ? null : musicBrainzArtist.Disambiguation,
+            Disambiguation = string.IsNullOrEmpty(musicBrainzArtist.Disambiguation) 
+                ? null 
+                : musicBrainzArtist.Disambiguation,
             Country = musicBrainzArtist.Country,
             TitleSort = musicBrainzArtist.SortName,
 
@@ -431,7 +433,7 @@ public partial class MusicLogic : IAsyncDisposable
         {
             await mediaContext.Artists.Upsert(insert)
                 .On(e => new { e.Id })
-                .WhenMatched((s, i) => new Artist
+                .WhenMatched((s, i) => new()
                 {
                     Id = i.Id,
                     Name = i.Name,
@@ -454,7 +456,7 @@ public partial class MusicLogic : IAsyncDisposable
 
         try
         {
-            foreach (MusicBrainzGenreDetails genre in musicBrainzArtist.Genres ?? [])
+            foreach (MusicBrainzGenreDetails genre in musicBrainzArtist.Genres)
                 await LinkGenreToArtist(musicBrainzArtist, genre);
         }
         catch (Exception e)
@@ -517,7 +519,7 @@ public partial class MusicLogic : IAsyncDisposable
         {
             await mediaContext.Tracks.Upsert(insert)
                 .On(e => new { e.Id })
-                .WhenMatched((ts, ti) => new Track
+                .WhenMatched((ts, ti) => new()
                 {
                     Id = ti.Id,
                     Name = ti.Name,
@@ -589,7 +591,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.AlbumReleaseGroup.Upsert(insert)
             .On(e => new { e.AlbumId, e.ReleaseGroupId })
-            .WhenMatched((s, i) => new AlbumReleaseGroup
+            .WhenMatched((s, i) => new()
             {
                 AlbumId = i.AlbumId,
                 ReleaseGroupId = i.ReleaseGroupId
@@ -610,7 +612,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.ArtistReleaseGroup.Upsert(insert)
             .On(e => new { e.ArtistId, e.ReleaseGroupId })
-            .WhenMatched((s, i) => new ArtistReleaseGroup
+            .WhenMatched((s, i) => new()
             {
                 ArtistId = i.ArtistId,
                 ReleaseGroupId = i.ReleaseGroupId
@@ -630,7 +632,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.AlbumLibrary.Upsert(insert)
             .On(e => new { e.AlbumId, e.LibraryId })
-            .WhenMatched((s, i) => new AlbumLibrary
+            .WhenMatched((s, i) => new()
             {
                 AlbumId = i.AlbumId,
                 LibraryId = i.LibraryId
@@ -650,7 +652,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.ArtistLibrary.Upsert(insert)
             .On(e => new { e.ArtistId, e.LibraryId })
-            .WhenMatched((s, i) => new ArtistLibrary
+            .WhenMatched((s, i) => new()
             {
                 ArtistId = i.ArtistId,
                 LibraryId = i.LibraryId
@@ -672,7 +674,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.AlbumTrack.Upsert(insert)
             .On(e => new { e.AlbumId, e.TrackId })
-            .WhenMatched((s, i) => new AlbumTrack
+            .WhenMatched((s, i) => new()
             {
                 AlbumId = i.AlbumId,
                 TrackId = i.TrackId
@@ -693,7 +695,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.AlbumArtist.Upsert(insert)
             .On(e => new { e.AlbumId, e.ArtistId })
-            .WhenMatched((s, i) => new AlbumArtist
+            .WhenMatched((s, i) => new()
             {
                 AlbumId = i.AlbumId,
                 ArtistId = i.ArtistId
@@ -714,7 +716,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.ArtistTrack.Upsert(insert)
             .On(e => new { e.ArtistId, e.TrackId })
-            .WhenMatched((s, i) => new ArtistTrack
+            .WhenMatched((s, i) => new()
             {
                 ArtistId = i.ArtistId,
                 TrackId = i.TrackId
@@ -735,7 +737,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.MusicGenreReleaseGroup.Upsert(insert)
             .On(e => new { e.GenreId, e.ReleaseGroupId })
-            .WhenMatched((s, i) => new MusicGenreReleaseGroup
+            .WhenMatched((s, i) => new()
             {
                 GenreId = i.GenreId,
                 ReleaseGroupId = i.ReleaseGroupId
@@ -763,7 +765,7 @@ public partial class MusicLogic : IAsyncDisposable
 
             await new MediaContext().MusicGenres.Upsert(genreInsert)
                 .On(e => new { e.Id })
-                .WhenMatched((s, i) => new MusicGenre
+                .WhenMatched((s, i) => new()
                 {
                     Id = i.Id,
                     Name = i.Name
@@ -780,7 +782,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.ArtistMusicGenre.Upsert(insert)
             .On(e => new { e.MusicGenreId, e.ArtistId })
-            .WhenMatched((s, i) => new ArtistMusicGenre
+            .WhenMatched((s, i) => new()
             {
                 MusicGenreId = i.MusicGenreId,
                 ArtistId = i.ArtistId
@@ -800,7 +802,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.AlbumMusicGenre.Upsert(insert)
             .On(e => new { e.MusicGenreId, e.AlbumId })
-            .WhenMatched((s, i) => new AlbumMusicGenre
+            .WhenMatched((s, i) => new()
             {
                 MusicGenreId = i.MusicGenreId,
                 AlbumId = i.AlbumId
@@ -820,7 +822,7 @@ public partial class MusicLogic : IAsyncDisposable
         MediaContext mediaContext = new();
         await mediaContext.MusicGenreTrack.Upsert(insert)
             .On(e => new { e.GenreId, e.TrackId })
-            .WhenMatched((s, i) => new MusicGenreTrack
+            .WhenMatched((s, i) => new()
             {
                 GenreId = i.GenreId,
                 TrackId = i.TrackId

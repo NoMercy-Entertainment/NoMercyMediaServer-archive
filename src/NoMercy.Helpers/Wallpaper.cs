@@ -81,13 +81,13 @@ public static class Wallpaper
     {
         RegistryKey? key = Registry.CurrentUser.OpenSubKey(DesktopRegPath, true);
         if (key == null)
-            throw new Exception("Could not open the registry key.");
+            throw new("Could not open the registry key.");
 
         RegistryKey? key2 = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
         if (key2 == null)
-            throw new Exception("Could not open the registry key.");
+            throw new("Could not open the registry key.");
 
-        return new Config
+        return new()
         {
             Style = GetRegistryValue(key, WallpaperStyleRegPath, 0),
             IsTile = GetRegistryValue(key, TileWallpaperRegPath, false),
@@ -99,11 +99,11 @@ public static class Wallpaper
     {
         RegistryKey? key = Registry.CurrentUser.OpenSubKey(DesktopRegPath, true);
         if (key == null)
-            throw new Exception("Could not open the registry key.");
+            throw new("Could not open the registry key.");
 
         RegistryKey? key2 = Registry.CurrentUser.OpenSubKey(DesktopRegColor, true);
         if (key2 == null)
-            throw new Exception("Could not open the registry key.");
+            throw new("Could not open the registry key.");
 
         SetRegistryValue(key, WallpaperStyleRegPath, value.Style);
         SetRegistryValue(key, TileWallpaperRegPath, value.IsTile);
@@ -126,22 +126,22 @@ public static class Wallpaper
         switch (style)
         {
             case WallpaperStyle.Fill:
-                SetWallpaperConfig(new Config { Style = 10, IsTile = false, Color = "000000" });
+                SetWallpaperConfig(new() { Style = 10, IsTile = false, Color = "000000" });
                 break;
             case WallpaperStyle.Fit:
-                SetWallpaperConfig(new Config { Style = 6, IsTile = false, Color = "000000" });
+                SetWallpaperConfig(new() { Style = 6, IsTile = false, Color = "000000" });
                 break;
             case WallpaperStyle.Stretch:
-                SetWallpaperConfig(new Config { Style = 2, IsTile = false, Color = "000000" });
+                SetWallpaperConfig(new() { Style = 2, IsTile = false, Color = "000000" });
                 break;
             case WallpaperStyle.Tile:
-                SetWallpaperConfig(new Config { Style = 0, IsTile = true });
+                SetWallpaperConfig(new() { Style = 0, IsTile = true });
                 break;
             case WallpaperStyle.Center:
-                SetWallpaperConfig(new Config { Style = 0, IsTile = false, Color = "000000" });
+                SetWallpaperConfig(new() { Style = 0, IsTile = false, Color = "000000" });
                 break;
             case WallpaperStyle.Span: // Windows 8 or newer only
-                SetWallpaperConfig(new Config { Style = 22, IsTile = false, Color = "000000" });
+                SetWallpaperConfig(new() { Style = 22, IsTile = false, Color = "000000" });
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(style));
@@ -158,14 +158,14 @@ public static class Wallpaper
         if (_historyRestored) return;
 
         if (!_backupState.HasValue)
-            throw new Exception("You must call BackupState() before.");
+            throw new("You must call BackupState() before.");
 
         State backupState = _backupState.Value;
 
         using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(HistoryRegPath, true))
         {
             if (key == null)
-                throw new Exception("Could not open the registry key.");
+                throw new("Could not open the registry key.");
 
             for (int i = 0; i < HistoryMaxEntries; i++)
                 key.SetValue($"BackgroundHistoryPath{i}", backupState.History[i] ?? string.Empty,
@@ -175,40 +175,34 @@ public static class Wallpaper
         _historyRestored = true;
     }
 
-    /// <summary>
-    /// Backups the current wallpaper state (style and history).
-    /// </summary>
     private static void BackupState()
     {
-        string[] history = new string?[HistoryMaxEntries];
+        string[] history = new string[HistoryMaxEntries];
 
         using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(HistoryRegPath, true))
         {
             if (key == null)
-                throw new Exception("Could not open the registry key.");
+                throw new("Could not open the registry key.");
 
             for (int i = 0; i < history.Length; i++)
-                history[i] = (string)key.GetValue($"BackgroundHistoryPath{i}");
+                history[i] = (string)key.GetValue($"BackgroundHistoryPath{i}") ?? string.Empty;
         }
 
         _backupState = new State
         {
             Config = GetWallpaperConfig(),
             History = history,
-            Wallpaper = history[0]!,
-            Color = history[1]!
+            Wallpaper = history[0],
+            Color = history[1]
         };
 
         _historyRestored = false;
     }
 
-    /// <summary>
-    /// Restores the state (style, wallpaper and history) before any Set() method.
-    /// </summary>
     public static void RestoreState()
     {
         if (!_backupState.HasValue)
-            throw new Exception("You must call BackupState() before.");
+            throw new("You must call BackupState() before.");
 
         SetWallpaperConfig(_backupState.Value.Config);
         ChangeWallpaper(_backupState.Value.Wallpaper);
@@ -218,9 +212,6 @@ public static class Wallpaper
         _backupState = null;
     }
 
-    /// <summary>
-    /// Sets the wallpaper without changing its style.
-    /// </summary>
     public static void Set(string? filename, string color)
     {
         BackupState();
@@ -228,9 +219,6 @@ public static class Wallpaper
         ChangeWallpaper(filename);
     }
 
-    /// <summary>
-    /// Sets the wallpaper with the given style.
-    /// </summary>
     public static void Set(string? filename, WallpaperStyle style, string color)
     {
         BackupState();
@@ -239,18 +227,12 @@ public static class Wallpaper
         ChangeWallpaper(filename);
     }
 
-    /// <summary>
-    /// Sets the wallpaper without changing its style nor the history in Windows settings.
-    /// </summary>
     public static void SilentSet(string? filename, string color)
     {
         Set(filename, color);
         RestoreHistory();
     }
 
-    /// <summary>
-    /// Sets the wallpaper with the given style without changing the history in Windows settings.
-    /// </summary>
     public static void SilentSet(string filename, WallpaperStyle style, string color)
     {
         Set(filename, style, color);

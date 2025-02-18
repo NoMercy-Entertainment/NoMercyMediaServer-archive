@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
-using NoMercy.Database.Models;
 using NoMercy.NmSystem;
 using Serilog.Events;
 
@@ -12,23 +11,21 @@ public static class QueueRunner
         Dictionary<string, (int count, List<Worker> workerInstances, CancellationTokenSource _cancellationTokenSource)>
         Workers = new()
         {
-            [Config.QueueWorkers.Key] = (Config.QueueWorkers.Value, [], new CancellationTokenSource()),
-            [Config.EncoderWorkers.Key] = (Config.EncoderWorkers.Value, [], new CancellationTokenSource()),
-            [Config.CronWorkers.Key] = (Config.CronWorkers.Value, [], new CancellationTokenSource()),
-            [Config.DataWorkers.Key] = (Config.DataWorkers.Value, [], new CancellationTokenSource()),
-            [Config.ImageWorkers.Key] = (Config.ImageWorkers.Value, [], new CancellationTokenSource())
+            [Config.QueueWorkers.Key] = (Config.QueueWorkers.Value, [], new()),
+            [Config.EncoderWorkers.Key] = (Config.EncoderWorkers.Value, [], new()),
+            [Config.CronWorkers.Key] = (Config.CronWorkers.Value, [], new()),
+            [Config.DataWorkers.Key] = (Config.DataWorkers.Value, [], new()),
+            [Config.ImageWorkers.Key] = (Config.ImageWorkers.Value, [], new())
             //[Config.RequestRunners.Key] = (Config.RequestRunners.Value, [], new CancellationTokenSource()),
         };
 
     private static bool _isInitialized;
-    private static readonly JobQueue JobQueue = new(new QueueContext());
+    private static readonly JobQueue JobQueue = new(new());
     private static bool _isUpdating;
 
     public static async Task Initialize()
     {
         if (_isInitialized) return;
-
-        // await Task.Delay(2000);
 
         _isInitialized = true;
 
@@ -43,10 +40,8 @@ public static class QueueRunner
                      _cancellationTokenSource)> keyValuePair in Workers)
             for (int i = 0; i < keyValuePair.Value.count; i++)
                 taskList.Add(Task.Run(() => new Thread(() => SpawnWorker(keyValuePair.Key)).Start()));
-        // await Task.Delay(2000);
+        
         await Task.WhenAll(taskList);
-
-        return;
     }
 
     private static Task SpawnWorker(string name)
@@ -115,7 +110,7 @@ public static class QueueRunner
 
     private static WorkCompletedEventHandler QueueWorkerCompleted(string name, Worker instance)
     {
-        return (sender, args) =>
+        return (_, _) =>
         {
             if (!ShouldRemoveWorker(name)) return;
 
@@ -129,9 +124,9 @@ public static class QueueRunner
         return Workers[name].workerInstances.Count > Workers[name].count;
     }
 
-    private static Task UpdateRunningWorkerCounts(string name)
+    private static void UpdateRunningWorkerCounts(string name)
     {
-        if (ShouldRemoveWorker(name)) return Task.CompletedTask;
+        if (ShouldRemoveWorker(name)) return;
 
         int i = Workers[name].workerInstances.Count;
 
@@ -148,8 +143,6 @@ public static class QueueRunner
                 await Task.Delay(100);
             }
         }, Workers[name]._cancellationTokenSource.Token);
-
-        return Task.CompletedTask;
     }
 
     public static async Task<bool> SetWorkerCount(string name, int max, Guid? userId)
@@ -158,14 +151,14 @@ public static class QueueRunner
         
         await using MediaContext context = new();
         await context.Configuration
-            .Upsert(new Configuration()
+            .Upsert(new()
             {
                 Key = $"{name}Runners",
                 ModifiedBy = userId,
                 Value = max.ToString()
             })
             .On(x => x.Key)
-            .WhenMatched((s, i) => new Configuration
+            .WhenMatched((s, i) => new()
             {
                 Value = max.ToString(),
                 ModifiedBy = i.ModifiedBy,
@@ -180,7 +173,7 @@ public static class QueueRunner
         (int count, List<Worker> workerInstances, CancellationTokenSource _cancellationTokenSource) valueTuple =
             Workers[name];
         valueTuple.count = max;
-        valueTuple._cancellationTokenSource = new CancellationTokenSource();
+        valueTuple._cancellationTokenSource = new();
         Workers[name] = valueTuple;
 
         await Task.Run(() =>

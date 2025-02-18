@@ -31,12 +31,12 @@ public static class Images
         int height = (int)(width * aspectRatio);
 
         inputStream.Mutate(x => x.Resize(width, height));
-        return (ImageToByteArray(inputStream, arguments), arguments.Format?.MimeTypes.First() ?? "image/png");
+        return (ImageToByteArray(inputStream, arguments), arguments.Format.MimeTypes.First());
     }
 
-    private static Image<Rgba32> ReadFileStream(string image, int attempts = 0)
+    private static Image<Rgba32> ReadFileStream(string image)
     {
-        if (!File.Exists(image)) throw new Exception("File not found");
+        if (!File.Exists(image)) throw new("File not found");
 
         // try
         // {
