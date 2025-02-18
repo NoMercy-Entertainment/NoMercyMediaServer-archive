@@ -43,15 +43,18 @@ public record SpecialResponseDto
                     string country) =>
                 mediaContext.Movies.AsNoTracking()
                     .Where(movie => ids.Contains(movie.Id))
+                    .Include(tv => tv.MovieUser
+                        .Where(movieUser => movieUser.UserId.Equals(userId))
+                    )
+                    .Include(movie => movie!.VideoFiles)
+                    .ThenInclude(file => file.UserData
+                        .Where(userData => userData.UserId.Equals(userId))
+                    )
                     .Include(movie => movie.CertificationMovies
                         .Where(certification => certification.Certification.Iso31661 == country ||
                                                 certification.Certification.Iso31661 == "US")
                     )
                     .ThenInclude(certificationMovie => certificationMovie.Certification)
-                    .Include(movie => movie.VideoFiles)
-                    .ThenInclude(file => file.UserData
-                        .Where(userData => userData.UserId.Equals(userId))
-                    )
                     .Include(movie => movie.GenreMovies)
                     .ThenInclude(genreMovie => genreMovie.Genre)
                     .Include(movie => movie.Cast
@@ -90,6 +93,11 @@ public record SpecialResponseDto
                     .Include(tv => tv.TvUser
                         .Where(tvUser => tvUser.UserId.Equals(userId))
                     )
+                    .Include(tv => tv.Episodes)
+                    .ThenInclude(episode => episode!.VideoFiles)
+                    .ThenInclude(file => file.UserData
+                        .Where(userData => userData.UserId.Equals(userId))
+                    )
                     .Include(tv => tv.GenreTvs)
                     .ThenInclude(genreTv => genreTv.Genre)
                     .Include(tv => tv.Cast
@@ -118,8 +126,6 @@ public record SpecialResponseDto
                         .OrderByDescending(image => image.VoteAverage)
                         .Take(2)
                     )
-                    .Include(tv => tv.Episodes)
-                    .ThenInclude(episode => episode.VideoFiles)
             );
 
     #endregion
@@ -136,7 +142,7 @@ public record SpecialResponseDto
                 .ThenInclude(file => file.UserData)
                 .Include(special => special.Items)
                 .ThenInclude(specialItem => specialItem.Episode)
-                .ThenInclude(movie => movie!.VideoFiles)
+                .ThenInclude(episode => episode!.VideoFiles)
                 .ThenInclude(file => file.UserData)
                 .FirstOrDefault());
 

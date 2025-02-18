@@ -34,22 +34,17 @@ public class Networking
 
     public static Task Discover()
     {
+        Logger.Setup("Discovering Networking");
+        
         NatUtility.DeviceFound += DeviceFound;
         NatUtility.UnknownDeviceFound += UnknownDeviceFound;
+        
         NatUtility.StartDiscovery();
         
         if (ExternalIp == "")
             ExternalIp = GetExternalIp();
         
-        NatUtility.StopDiscovery();
         return Task.CompletedTask;
-    }
-
-    private static void UnknownDeviceFound(object? sender, DeviceEventUnknownArgs e)
-    {
-        NatUtility.StopDiscovery();
-        if (ExternalIp == "")
-            ExternalIp = GetExternalIp();
     }
 
     private static string? _internalIp;
@@ -107,10 +102,14 @@ public class Networking
 
     private static void DeviceFound(object? sender, DeviceEventArgs args)
     {
+        Logger.Setup("UPNP router Found: " + args.Device.DeviceEndpoint);
+        
         _device = args.Device;
-
+        
         try
         {
+            Logger.Setup($"Trying to add UPNP records");
+            
             _device.CreatePortMap(new(
                 protocol:Protocol.Tcp,
                 privatePort: Config.InternalServerPort,
@@ -126,10 +125,14 @@ public class Networking
                 description: "NoMercy MediaServer (UDP)"));
 
             ExternalIp = _device.GetExternalIP().ToString();
+            
+            Logger.Setup($"IP address obtained from UPNP: {ExternalIp}");
         }
         catch (Exception e)
         {
-            Logger.Setup($"Failed to create port map: {e.Message}");
+            Logger.Setup($"Failed to create UPNP records: {e.Message}");
+            Logger.Setup($"You may need to manually forward port {Config.InternalServerPort} to {Config.ExternalServerPort}");
+            Logger.Setup($"For more information, visit: https://www.noip.com/support/knowledgebase/general-port-forwarding-guide");
         }
 
         NatUtility.StopDiscovery();
@@ -139,6 +142,12 @@ public class Networking
 
         ExternalAddress =
             $"https://{Regex.Replace(ExternalIp, "\\.", "-")}.{Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
+    }
+    
+    private static void UnknownDeviceFound(object? sender, DeviceEventUnknownArgs args)
+    {
+        if (ExternalIp == "")
+            ExternalIp = GetExternalIp();
     }
 
     public static bool SendToAll(string name, string endpoint, object? data = null)
