@@ -25,7 +25,7 @@ public class Start
             ShowWindow(hWnd, i);
         }
     }
-    public static async Task Init()
+    public static async Task Init(List<TaskDelegate> tasks)
     {
         await ApiInfo.RequestInfo();
 
@@ -40,6 +40,7 @@ public class Start
             new (AppFiles.CreateAppFolders),
             new (Networking.Networking.Discover),
             new (Auth.Init),
+            ..tasks,
             new (Register.Init),
             new (Binaries.DownloadAll),
             new (Dev.Run),
