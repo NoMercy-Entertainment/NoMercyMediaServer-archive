@@ -8,7 +8,7 @@ namespace NoMercy.NmSystem.Information;
 
 public static class Software
 {
-    public static Version? Version { get; set; }
+    public static Version? Version { get; set; } = new(0, 1, 0, 0);
     
     public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     public static bool IsMac => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
