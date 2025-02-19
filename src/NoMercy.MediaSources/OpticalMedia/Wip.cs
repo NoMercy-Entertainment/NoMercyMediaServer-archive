@@ -5,6 +5,7 @@ using BDInfo;
 using BDInfo.IO;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.NmSystem.SystemCalls;
 using DirectoryInfo = BDInfo.IO.DirectoryInfo;

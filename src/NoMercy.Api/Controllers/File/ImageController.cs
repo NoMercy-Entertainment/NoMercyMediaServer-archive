@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using MimeMapping;
 using NoMercy.Helpers;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.Helpers;
 using NoMercy.Providers.TMDB.Client;
