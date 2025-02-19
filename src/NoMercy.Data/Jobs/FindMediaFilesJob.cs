@@ -3,7 +3,7 @@ using NoMercy.Data.Logic;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Networking.Dto;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Queue;
 
 namespace NoMercy.Data.Jobs;

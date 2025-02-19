@@ -12,7 +12,7 @@ using NoMercy.MediaProcessing.Recordings;
 using NoMercy.MediaProcessing.ReleaseGroups;
 using NoMercy.MediaProcessing.Releases;
 using NoMercy.Networking.Dto;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.MusicBrainz.Models;
 using Serilog.Events;
 
