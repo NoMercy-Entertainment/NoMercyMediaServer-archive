@@ -5,7 +5,7 @@
 using NoMercy.Database;
 using NoMercy.MediaProcessing.People;
 using NoMercy.MediaProcessing.Seasons;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.TMDB.Models.Season;
 using Serilog.Events;
 

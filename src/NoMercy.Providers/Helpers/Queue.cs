@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
 namespace NoMercy.Providers.Helpers;
