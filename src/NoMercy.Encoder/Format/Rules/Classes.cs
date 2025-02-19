@@ -1,6 +1,6 @@
 using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Container;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
 namespace NoMercy.Encoder.Format.Rules;
