@@ -12,6 +12,6 @@ public class MediaFile
     public string Type { get; set; } = string.Empty;
     public MovieFileExtend? Parsed { get; set; }
 
-    public FFprobeData? FFprobe { get; set; }
+    public FfProbeData? FFprobe { get; set; }
     // public Fingerprint? FingerPint { get; init; }
 }
