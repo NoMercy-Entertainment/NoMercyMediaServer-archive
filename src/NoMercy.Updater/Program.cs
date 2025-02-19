@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Newtonsoft.Json;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Setup;
 using Semver;

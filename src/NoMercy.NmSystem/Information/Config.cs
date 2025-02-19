@@ -1,6 +1,4 @@
-using NoMercy.NmSystem.Information;
-
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.Information;
 
 public static class Config
 {

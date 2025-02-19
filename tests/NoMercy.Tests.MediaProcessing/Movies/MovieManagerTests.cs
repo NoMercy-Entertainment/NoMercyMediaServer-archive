@@ -3,6 +3,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Jobs;
 using NoMercy.MediaProcessing.Movies;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Client.Mocks;
 using NoMercy.Providers.TMDB.Models.Movies;
