@@ -7,6 +7,7 @@ using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 using Logger = NoMercy.NmSystem.Logger;
 
@@ -134,10 +135,9 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 
         for (int i = 0; i < sections; i++)
         {
-            string execString =
-                $"-threads 1 -nostats -hide_banner -ss {i * step} -i \"{path}\" -vframes 10 -vf cropdetect -t {1} -f null -";
-
-            string result = FfMpeg.Exec(execString, executable: FfmpegPath).Result;
+            string cropSection = $"-threads 1 -nostats -hide_banner -ss {i * step} -i \"{path}\" -vframes 10 -vf cropdetect -t {1} -f null -";
+            
+            string result = Shell.ExecStdErrSync(FfmpegPath, cropSection);
             results.Add(result);
         }
         
@@ -413,7 +413,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             Logger.Encoder($"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt");
             Logger.Encoder(AppFiles.SubtitleEdit + arg, LogEventLevel.Debug);
 
-            Task<string> execTask = Shell.Exec(AppFiles.SubtitleEdit, arg);
+            Task<string> execTask = Shell.ExecStdOutAsync(AppFiles.SubtitleEdit, arg);
 
             Task progressTask = Task.Run(async () =>
             {
