@@ -24,7 +24,6 @@ using NoMercy.NmSystem;
 using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.Information;
-using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.TMDB.Client;
 using NoMercy.Providers.TMDB.Models.Episode;
 using NoMercy.Providers.TMDB.Models.Movies;
@@ -38,8 +37,10 @@ using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Dithering;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using AppFiles = NoMercy.NmSystem.Information.AppFiles;
+using Config = NoMercy.NmSystem.Information.Config;
 using Configuration = NoMercy.Database.Models.Configuration;
 using Image = NoMercy.Database.Models.Image;
+using Logger = NoMercy.NmSystem.SystemCalls.Logger;
 using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
 
 namespace NoMercy.Api.Controllers.V1.Dashboard;
