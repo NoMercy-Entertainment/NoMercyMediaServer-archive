@@ -64,5 +64,10 @@ jobs:
             
             git merge origin/dev --no-edit --allow-unrelated-histories -X theirs
             git push origin master
+            
+            # Rebase dev branch
+            git checkout dev
+            git rebase master
+            git push --force-with-lease origin dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

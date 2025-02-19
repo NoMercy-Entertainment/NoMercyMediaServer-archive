@@ -3,7 +3,6 @@ using System.Text;
 using Pastel;
 using Serilog.Core;
 using Serilog.Events;
-using Logger = NoMercy.NmSystem.SystemCalls.Logger;
 
 namespace NoMercy.NmSystem.LogEnrichers;
 internal class ConsoleTypeEnricher : ILogEventEnricher

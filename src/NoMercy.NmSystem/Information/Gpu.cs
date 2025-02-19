@@ -1,5 +1,4 @@
 using System.Management;
-using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.NmSystem.Information;
 
@@ -28,9 +27,11 @@ public static class Gpu
     private static List<string> GetGpuVendorsWindows()
     {
         List<string> vendors = [];
+#pragma warning disable CA1416
         try
         {
             using ManagementObjectSearcher searcher = new("SELECT * FROM Win32_VideoController");
+
             foreach (ManagementBaseObject? obj in searcher.Get())
             {
                 string vendor = obj["AdapterCompatibility"]?.ToString() ?? "Unknown";
@@ -44,17 +45,18 @@ public static class Gpu
         {
             Console.WriteLine($"Error detecting GPUs on Windows: {ex.Message}");
         }
+#pragma warning restore CA1416
         return vendors;
     }
 
     private static List<string> GetGpuVendorsLinux()
     {
-        string output = Shell.ExecCommand("lspci | grep -i 'VGA' | awk -F ': ' '{print $2}'");
+        string output = SystemCalls.Shell.ExecCommand("lspci | grep -i 'VGA' | awk -F ': ' '{print $2}'");
         return output.Split('\n').Where(v => !string.IsNullOrEmpty(v)).ToList();
     }
     private static List<string> GetGpuVendorsMac()
     {
-        string output = Shell.ExecCommand("system_profiler SPDisplaysDataType | grep 'Chipset Model' | awk -F ': ' '{print $2}'");
+        string output = SystemCalls.Shell.ExecCommand("system_profiler SPDisplaysDataType | grep 'Chipset Model' | awk -F ': ' '{print $2}'");
         return output.Split('\n').Where(v => !string.IsNullOrEmpty(v)).ToList();
     }
 
@@ -82,6 +84,7 @@ public static class Gpu
     {
         List<string> gpus = [];
         
+#pragma warning disable CA1416
         try
         {
             ManagementObjectSearcher searcher = new("select Name from Win32_VideoController");
@@ -97,19 +100,20 @@ public static class Gpu
         {
             Console.WriteLine($"Error detecting GPUs on Windows: {ex.Message}");
         }
+#pragma warning restore CA1416
         
         return gpus;
     }
     private static List<string> GetGpuNamesLinux()
     {
-        string output = Shell.ExecCommand("lspci | grep 'VGA'");
+        string output = SystemCalls.Shell.ExecCommand("lspci | grep 'VGA'");
         return output.Split('\n').Where(v => !string.IsNullOrEmpty(v)).ToList();
     }
     private static List<string> GetGpuNamesMac()
     {
         List<string> gpus = [];
         
-        string systemProfilerOutput = Shell.ExecCommand("system_profiler SPDisplaysDataType");
+        string systemProfilerOutput = SystemCalls.Shell.ExecCommand("system_profiler SPDisplaysDataType");
         
         string[] lines = systemProfilerOutput.Split('\n');
         foreach (string line in lines)

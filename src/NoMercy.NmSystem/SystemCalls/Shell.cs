@@ -96,7 +96,7 @@ public static class Shell
         }
     }
 
-    internal static string ExecCommand(string command)
+    public static string ExecCommand(string command)
     {
         try
         {
