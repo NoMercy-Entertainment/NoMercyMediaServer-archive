@@ -3,13 +3,14 @@ using System.Globalization;
 using System.Text;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.SystemCalls;
 using static NoMercy.Encoder.Core.IsoLanguageMapper;
 
 namespace NoMercy.Encoder.Core;
 
 public static class HlsPlaylistGenerator
 {
-    public static Task Build(string basePath, string filename, List<string>? priorityLanguages = null)
+    public static async Task Build(string basePath, string filename, List<string>? priorityLanguages = null)
     {
         priorityLanguages ??= ["eng", "jpn"];
 
@@ -74,12 +75,14 @@ public static class HlsPlaylistGenerator
                 string resolution = $"{parts[1]}x{parts[2]}";
                 bool isSdr = parts.Length == 4 && parts[3] == "SDR";
 
-                string vCodec = RunProcess(AppFiles.FfProbePath,
-                        $"-v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {videoFile}")
-                    .Trim();
-                string profile = RunProcess(AppFiles.FfProbePath,
-                        $"-v error -select_streams v:0 -show_entries stream=profile -of default=noprint_wrappers=1:nokey=1 {videoFile}")
-                    .Trim();
+                string vCodec = Shell.ExecStdOutAsync(AppFiles.FfProbePath, 
+                    $"-v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 {videoFile}")
+                    .Result.Trim();
+
+                string profile = Shell.ExecStdOutAsync(AppFiles.FfProbePath, 
+                    $"-v error -select_streams v:0 -show_entries stream=profile -of default=noprint_wrappers=1:nokey=1 {videoFile}")
+                    .Result.Trim();
+
                 string vCodecProfile = MapProfileToCodec(profile);
 
                 double duration = GetVideoDuration(videoFile) / 100000;
@@ -114,9 +117,7 @@ public static class HlsPlaylistGenerator
             masterPlaylist.AppendLine();
         }
 
-        File.WriteAllText(Path.Combine(basePath, filename + ".m3u8"), masterPlaylist.ToString());
-
-        return Task.CompletedTask;
+        await File.WriteAllTextAsync(Path.Combine(basePath, filename + ".m3u8"), masterPlaylist.ToString());
     }
 
     private static double GetTotalSize(string videoFolderPath)
@@ -128,8 +129,8 @@ public static class HlsPlaylistGenerator
 
     private static double GetVideoDuration(string videoPath)
     {
-        string output = RunProcess(AppFiles.FfProbePath,
-            $"-v error -select_streams 0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoPath}\"");
+        string output = Shell.ExecStdOutSync(AppFiles.FfProbePath, 
+            $"-v error -select_streams 0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoPath}\"").Trim();
         
         string x = output.Trim().Replace("N/A", "0");
         if (x == "")
@@ -137,28 +138,6 @@ public static class HlsPlaylistGenerator
             return 0;
         }
         return double.Parse(x, CultureInfo.InvariantCulture);
-    }
-
-    public static string RunProcess(string command, string arguments, string? cwd = null)
-    {
-        Process process = new()
-        {
-            StartInfo = new()
-            {
-                FileName = command,
-                Arguments = arguments,
-                WorkingDirectory = cwd,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
-
-        process.Start();
-        string result = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
-        return result;
     }
 
     private static string MapProfileToCodec(string profile)
