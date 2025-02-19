@@ -1,5 +1,4 @@
-﻿using NoMercy.NmSystem;
-using NoMercy.NmSystem.Information;
+﻿using NoMercy.NmSystem.Information;
 using NoMercy.Providers.CoverArt.Models;
 using NoMercy.Setup;
 using SixLabors.ImageSharp;
