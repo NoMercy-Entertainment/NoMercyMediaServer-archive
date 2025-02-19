@@ -68,7 +68,7 @@ public static class DesktopIconCreator
 
             string scriptPath = "/tmp/CreateShortcut.scpt";
             File.WriteAllText(scriptPath, script);
-            System.Diagnostics.Process.Start("osascript", scriptPath)?.WaitForExit();
+            System.Diagnostics.Process.Start("osascript", scriptPath).WaitForExit();
 
             if (!string.IsNullOrEmpty(iconPath) && File.Exists(iconPath))
             {

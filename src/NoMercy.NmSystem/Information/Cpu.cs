@@ -1,5 +1,4 @@
 using System.Management;
-using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.NmSystem.Information;
 
@@ -46,7 +45,7 @@ public static class Cpu
     {
         List<string> vendors = [];
         
-        string output = Shell.ExecCommand("lscpu | grep 'Model name:'");
+        string output = SystemCalls.Shell.ExecCommand("lscpu | grep 'Model name:'");
         vendors.Add(output.Trim().Split(':')[1].Trim());
 
         return vendors;
@@ -55,7 +54,7 @@ public static class Cpu
     {
         List<string> vendors = [];
         
-        string output = Shell.ExecCommand("sysctl -n machdep.cpu.brand_string");
+        string output = SystemCalls.Shell.ExecCommand("sysctl -n machdep.cpu.brand_string");
         vendors.Add(output.Trim());
 
         return vendors;
@@ -103,7 +102,7 @@ public static class Cpu
     {
         List<string> cpus = [];
         
-        string output = Shell.ExecCommand("lscpu | grep 'Model name:'");
+        string output = SystemCalls.Shell.ExecCommand("lscpu | grep 'Model name:'");
         cpus.Add(output.Trim().Split(':')[1].Trim());
         
         return cpus;
@@ -112,7 +111,7 @@ public static class Cpu
     {
         List<string> cpus = [];
         
-        string output = Shell.ExecCommand("sysctl -n machdep.cpu.brand_string");
+        string output = SystemCalls.Shell.ExecCommand("sysctl -n machdep.cpu.brand_string");
         cpus.Add(output.Trim());
         
         return cpus;

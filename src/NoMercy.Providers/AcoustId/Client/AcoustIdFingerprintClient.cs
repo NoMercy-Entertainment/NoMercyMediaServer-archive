@@ -1,7 +1,5 @@
-﻿
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using AcoustID;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.Providers.AcoustId.Models;
