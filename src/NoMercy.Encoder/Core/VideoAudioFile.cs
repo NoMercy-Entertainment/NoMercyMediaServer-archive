@@ -9,7 +9,7 @@ using NoMercy.Encoder.Format.Video;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
-using Logger = NoMercy.NmSystem.Logger;
+using Logger = NoMercy.NmSystem.SystemCalls.Logger;
 
 namespace NoMercy.Encoder.Core;
 
