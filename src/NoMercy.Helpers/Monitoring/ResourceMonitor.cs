@@ -1,5 +1,5 @@
 using LibreHardwareMonitor.Hardware;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.Helpers.Monitoring;
 public class ResourceMonitor

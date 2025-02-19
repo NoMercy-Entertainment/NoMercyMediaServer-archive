@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using NoMercy.Networking;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.Api.Controllers.Socket;
 

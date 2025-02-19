@@ -8,7 +8,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.Networking;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.Api.Controllers.Socket;
 public class VideoHub(IHttpContextAccessor httpContextAccessor) : ConnectionHub(httpContextAccessor)

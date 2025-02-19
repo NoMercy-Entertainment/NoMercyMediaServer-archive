@@ -7,6 +7,7 @@ using FFMpegCore;
 using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Rules;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.Encoder;
 [Serializable]

@@ -6,6 +6,7 @@ using NoMercy.NmSystem;
 using NoMercy.NmSystem.Information;
 using Serilog.Events;
 using NoMercy.Helpers;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Setup.Dto;
 
 namespace NoMercy.Setup;
