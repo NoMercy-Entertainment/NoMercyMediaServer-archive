@@ -6,8 +6,8 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Dto;
-using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
+using Logger = NoMercy.NmSystem.SystemCalls.Logger;
 
 namespace NoMercy.Data.Logic;
 

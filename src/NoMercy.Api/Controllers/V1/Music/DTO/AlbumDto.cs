@@ -35,7 +35,7 @@ public record AlbumDto
             : albumArtist.Album.Description;
         Type = "albums";
         ColorPalette = albumArtist.Album.ColorPalette;
-        Tracks = albumArtist.Album.AlbumTrack?.Count ?? 0;
+        Tracks = albumArtist.Album.AlbumTrack.Count;
         Year = albumArtist.Album.Year;
 
         AlbumArtist = albumArtist.ArtistId;
