@@ -4,7 +4,7 @@
 
 using NoMercy.Database;
 using NoMercy.MediaProcessing.Images;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.FanArt.Client;
 using NoMercy.Providers.FanArt.Models;
 using Serilog.Events;

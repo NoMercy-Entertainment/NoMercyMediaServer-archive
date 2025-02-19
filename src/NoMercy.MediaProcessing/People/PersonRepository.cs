@@ -2,7 +2,7 @@ using FlexLabs.EntityFrameworkCore.Upsert;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.People;

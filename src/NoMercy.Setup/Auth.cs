@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Newtonsoft.Json;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Information;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.Setup;
 

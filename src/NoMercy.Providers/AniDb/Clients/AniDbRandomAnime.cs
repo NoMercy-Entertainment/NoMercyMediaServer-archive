@@ -1,7 +1,7 @@
 using AniDB;
 using AniDB.RequestEnums;
 using AniDB.ResponseItems;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.AniDb.Models;
 
 namespace NoMercy.Providers.AniDb.Clients;
