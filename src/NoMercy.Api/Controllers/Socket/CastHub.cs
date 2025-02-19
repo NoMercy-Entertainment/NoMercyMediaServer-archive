@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
 using NoMercy.Networking;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using Sharpcaster.Models.ChromecastStatus;
 using Sharpcaster.Models.Media;
 

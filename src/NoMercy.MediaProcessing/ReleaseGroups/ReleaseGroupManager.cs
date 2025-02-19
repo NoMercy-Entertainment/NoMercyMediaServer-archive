@@ -1,8 +1,8 @@
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Common;
 using NoMercy.MediaProcessing.Images;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.MusicBrainz.Models;
 using Serilog.Events;
 
