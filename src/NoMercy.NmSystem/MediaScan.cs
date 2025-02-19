@@ -4,6 +4,7 @@ using FFMpegCore;
 using MovieFileLibrary;
 using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
@@ -284,7 +285,7 @@ public class MediaScan : IDisposable, IAsyncDisposable
                     IsSuccess = movieFile?.IsSuccess ?? false
                 };
 
-                FFprobeData? ffprobe = null;
+                FfProbeData? ffprobe = null;
                 try
                 {
                     IMediaAnalysis analysis = FFProbe.Analyse(file);

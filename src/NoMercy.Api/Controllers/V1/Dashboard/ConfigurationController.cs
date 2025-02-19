@@ -10,6 +10,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 using NoMercy.Queue;
 using Configuration = NoMercy.Database.Models.Configuration;
 

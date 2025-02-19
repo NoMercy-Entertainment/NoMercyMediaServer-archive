@@ -37,7 +37,7 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Dithering;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
-using AppFiles = NoMercy.NmSystem.AppFiles;
+using AppFiles = NoMercy.NmSystem.Information.AppFiles;
 using Configuration = NoMercy.Database.Models.Configuration;
 using Image = NoMercy.Database.Models.Image;
 using VideoDto = NoMercy.Api.Controllers.V1.Dashboard.DTO.VideoDto;
