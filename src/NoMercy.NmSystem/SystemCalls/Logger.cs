@@ -7,9 +7,9 @@ using NoMercy.NmSystem.NewtonSoftConverters;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
-using ILogger = Serilog.ILogger;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.SystemCalls;
+
 public static class Logger
 {
     private static Serilog.Core.Logger ConsoleLog { get; set; }

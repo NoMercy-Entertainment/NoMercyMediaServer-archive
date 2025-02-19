@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Providers.Helpers;
 
 namespace NoMercy.Providers.OpenSubtitles.Client;

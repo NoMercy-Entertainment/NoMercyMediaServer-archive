@@ -1,7 +1,7 @@
 using FFMpegCore;
 using NoMercy.Encoder.Format.Rules;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
 namespace NoMercy.Encoder.Format.Video;

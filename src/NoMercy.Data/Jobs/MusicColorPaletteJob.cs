@@ -1,4 +1,4 @@
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Queue;
 using Serilog.Events;
 

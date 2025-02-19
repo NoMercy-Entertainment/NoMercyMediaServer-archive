@@ -5,7 +5,7 @@
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Images;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
 namespace NoMercy.MediaProcessing.Jobs.PaletteJobs;
