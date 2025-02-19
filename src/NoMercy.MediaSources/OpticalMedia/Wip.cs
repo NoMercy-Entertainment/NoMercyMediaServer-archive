@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using BDInfo;
 using BDInfo.IO;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.NewtonSoftConverters;

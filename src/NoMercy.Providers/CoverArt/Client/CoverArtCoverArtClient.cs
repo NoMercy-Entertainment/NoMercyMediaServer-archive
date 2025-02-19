@@ -1,12 +1,9 @@
-﻿using NoMercy.NmSystem;
-using NoMercy.NmSystem.Information;
+﻿using NoMercy.NmSystem.Information;
 using NoMercy.Providers.CoverArt.Models;
 using NoMercy.Setup;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Configuration = AcoustID.Configuration;
-using Image = SixLabors.ImageSharp.Image;
-using Uri = System.Uri;
 
 namespace NoMercy.Providers.CoverArt.Client;
 
