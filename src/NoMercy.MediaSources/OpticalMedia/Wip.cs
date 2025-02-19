@@ -3,11 +3,10 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using BDInfo;
 using BDInfo.IO;
-using NoMercy.Encoder;
-using NoMercy.Encoder.Core;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.NewtonSoftConverters;
+using NoMercy.NmSystem.SystemCalls;
 using DirectoryInfo = BDInfo.IO.DirectoryInfo;
 
 namespace NoMercy.MediaSources.OpticalMedia;
@@ -39,11 +38,9 @@ public class Wip
 
         string title = doc.Descendants(di + "name").FirstOrDefault()?.Value ?? bDRom.VolumeLabel;
 
-        string playlistString = FfMpeg
-            .Exec($" -hide_banner -v info -i \"bluray:{directoryInfo.FullName}\"", executable: AppFiles.FfProbePath).Result;
+        string playlistString = Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{directoryInfo.FullName}\"");
 
-        string ffprobeString = HlsPlaylistGenerator.RunProcess(AppFiles.FfProbePath,
-            $" -v quiet -show_programs -show_format -show_streams -show_data -show_chapters -sexagesimal -print_format json \"bluray:{directoryInfo.FullName}\"");
+        string ffprobeString = Shell.ExecStdOutSync(AppFiles.FfProbePath, $" -v quiet -show_programs -show_format -show_streams -show_data -show_chapters -sexagesimal -print_format json \"bluray:{directoryInfo.FullName}\"");
 
         File.WriteAllText(Path.Combine(AppFiles.TempPath, "bdrom.json"), bDRom.ToJson());
         File.WriteAllText(Path.Combine(AppFiles.TempPath, "analysis.json"), ffprobeString);
@@ -124,8 +121,8 @@ public class Wip
 
             Logger.Encoder(command + "\"");
 
-            FfMpeg.Exec(command, executable: @"H:\C\Downloads\ffmpeg-build-windows\ffmpeg.exe").Wait();
-            // Logger.Encoder();
+            string result = Shell.ExecStdErrSync(AppFiles.FfmpegPath, command);
+            Logger.Encoder(result);
 
         }
         
