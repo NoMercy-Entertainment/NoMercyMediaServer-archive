@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Information;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
 namespace NoMercy.Encoder.Core;
@@ -33,8 +34,11 @@ public class FFmpegHardwareConfig
     {
         try
         {
-            string result = FfMpeg.Exec($"-hide_banner {arg} -hwaccels 2>&1").Result;
             Logger.Encoder($"Checking Acceleration: -hide_banner {arg} -hwaccels 2>&1", LogEventLevel.Debug);
+            // var awaiter = FfMpeg.ExecStdOut($"-hide_banner {arg} -hwaccels 2>&1").GetAwaiter();
+            // string result = awaiter.GetResult();
+            string result = Shell.ExecStdOutSync(AppFiles.FfmpegPath, $"-hide_banner {arg} -hwaccels 2>&1");
+
             return !result.Contains("Failed", StringComparison.InvariantCultureIgnoreCase) &&
                    !result.Contains("exception", StringComparison.InvariantCultureIgnoreCase);
         }
@@ -76,7 +80,7 @@ public class FFmpegHardwareConfig
             {
                 int index = gpuCounts[GpuVendor.Nvidia];
                 string arg =
-                    $"-hwaccel cuda -init_hw_device cuda=cu:{index} -filter_hw_device cu -hwaccel_output_format cuda";
+                    $"-init_hw_device cuda=cu:{index} -filter_hw_device cu";
                 bool supported = CheckAccel(arg);
                 if (supported)
                 {
@@ -99,7 +103,7 @@ public class FFmpegHardwareConfig
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     string arg =
-                        $"-hwaccel dxva2 -init_hw_device dxva2=hw{index} -filter_hw_device hw -hwaccel_output_format dxva2";
+                        $"-init_hw_device dxva2=hw{index} -filter_hw_device hw";
                     bool supported = CheckAccel(arg);
                     if (supported)
                     {
@@ -117,7 +121,7 @@ public class FFmpegHardwareConfig
                 else
                 {
                     string arg =
-                        $"-hwaccel vaapi -init_hw_device vaapi=hw{index}:/dev/dri/renderD128 -filter_hw_device hw -hwaccel_output_format vaapi";
+                        $"-init_hw_device vaapi=hw{index}:/dev/dri/renderD128 -filter_hw_device hw";
                     bool supported = CheckAccel(arg);
                     if (supported)
                     {
@@ -140,7 +144,7 @@ public class FFmpegHardwareConfig
             {
                 int index = gpuCounts[GpuVendor.Intel];
                 string arg =
-                    $"-hwaccel qsv -init_hw_device qsv=hw{index} -filter_hw_device hw -hwaccel_output_format qsv";
+                    $"-init_hw_device qsv=hw{index} -filter_hw_device hw";
                 bool supported = CheckAccel(arg);
                 if (supported)
                 {
@@ -160,7 +164,7 @@ public class FFmpegHardwareConfig
             else if (vendor.Contains("qualcomm"))
             {
                 int index = gpuCounts[GpuVendor.Qualcomm];
-                string arg = $"-hwaccel opencl -init_hw_device opencl=hw{index} -filter_hw_device hw";
+                string arg = $"-init_hw_device opencl=hw{index} -filter_hw_device hw";
                 bool supported = CheckAccel(arg);
                 if (supported)
                 {
@@ -180,7 +184,7 @@ public class FFmpegHardwareConfig
             else if (vendor.Contains("apple"))
             {
                 int index = gpuCounts[GpuVendor.Apple];
-                string arg = $"-hwaccel videotoolbox -init_hw_device videotoolbox:hw{index} -filter_hw_device hw";
+                string arg = $"-init_hw_device videotoolbox:hw{index} -filter_hw_device hw";
                 bool supported = CheckAccel(arg);
                 if (supported)
                 {
