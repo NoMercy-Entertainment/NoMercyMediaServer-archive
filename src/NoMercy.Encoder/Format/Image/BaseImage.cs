@@ -2,7 +2,6 @@ using System.Text;
 using FFMpegCore;
 using NoMercy.Encoder.Core;
 using NoMercy.Encoder.Format.Rules;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
