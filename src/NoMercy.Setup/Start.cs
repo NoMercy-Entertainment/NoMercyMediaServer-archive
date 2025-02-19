@@ -83,10 +83,7 @@ public class Start
 
         foreach (GpuAccelerator accelerator in ffmpegConfig.Accelerators)
         {
-            Logger.Encoder("");
-            Logger.Encoder("Found a dedicated GPU:");
-            Logger.Encoder($"Vendor: {accelerator.Vendor}");
-            Logger.Encoder($"Accelerator: {accelerator.Accelerator}");
+            Logger.Encoder($"Found a dedicated GPU. Vendor: {accelerator.Vendor}, Accelerator: {accelerator.Accelerator}");
         }
         
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 18362))

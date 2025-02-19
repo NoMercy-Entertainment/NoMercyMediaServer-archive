@@ -38,7 +38,7 @@ public static class DesktopIconCreator
             Type? id = Type.GetTypeFromProgID("WScript.Shell");
             if (id == null) return;
             
-            dynamic shell = Activator.CreateInstance(id);
+            dynamic shell = Activator.CreateInstance(id) ?? throw new InvalidOperationException();
             if (shell == null) return;
             
             dynamic shortcut = shell.CreateShortcut(shortcutPath);

@@ -1,6 +1,8 @@
 using System.Text;
 using Newtonsoft.Json;
+using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.Encoder.Core;
 
@@ -11,7 +13,7 @@ public static class Chapters
         string chapterFile = $"{location}/chapters.vtt";
 
         string command = $"-v quiet -print_format json -show_chapters \"{inputFilePath}\"";
-        string result = await FfMpeg.Ffprobe(command);
+        string result = await Shell.ExecStdOutAsync(AppFiles.FfProbePath, command);
         if (string.IsNullOrEmpty(result)) return;
 
         FfprobeChapterRoot? root = JsonConvert.DeserializeObject<FfprobeChapterRoot>(result);

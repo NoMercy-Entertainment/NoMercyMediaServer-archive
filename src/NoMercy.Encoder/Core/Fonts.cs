@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using NoMercy.Encoder.Format.Rules;
 using NoMercy.NmSystem.NewtonSoftConverters;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.Encoder.Core;
 
@@ -17,7 +18,7 @@ public static class Fonts
         }
 
         string command = $"-dump_attachment:t \"\" -i \"{inputFilePath}\" -y  -hide_banner -max_muxing_queue_size 9999 -async 1 -loglevel panic 2>&1";
-        await FfMpeg.Exec(command, folder);
+        await Shell.ExecAsync(command, folder);
 
         string[] files = Directory.GetFiles(folder);
         if (files.Length == 0) return;
