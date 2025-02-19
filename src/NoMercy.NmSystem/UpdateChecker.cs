@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Newtonsoft.Json;
+using NoMercy.NmSystem.Information;
+using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.NmSystem;
 
@@ -25,18 +27,7 @@ public static class UpdateChecker
     {
         try
         {
-            ProcessStartInfo startInfo = new()
-            {
-                FileName = AppFiles.UpdaterExePath,
-                Arguments = "--check",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using Process? process = Process.Start(startInfo);
-            string? output = process?.StandardOutput.ReadToEnd();
-            process?.WaitForExit();
+            string output = Shell.ExecStdOutSync(AppFiles.UpdaterExePath, "--check");
 
             if (string.IsNullOrEmpty(output)) return false;
 
