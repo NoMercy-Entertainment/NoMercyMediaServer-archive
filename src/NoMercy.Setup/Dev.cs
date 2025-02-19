@@ -1,6 +1,3 @@
-using System.Globalization;
-using Microsoft.Extensions.Logging;
-using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

@@ -1,8 +1,8 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
 using static NoMercy.Encoder.Core.IsoLanguageMapper;
 

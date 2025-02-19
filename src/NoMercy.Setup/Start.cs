@@ -4,7 +4,7 @@ using NoMercy.Networking;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Queue;
-using AppFiles = NoMercy.NmSystem.AppFiles;
+using AppFiles = NoMercy.NmSystem.Information.AppFiles;
 
 namespace NoMercy.Setup;
 
