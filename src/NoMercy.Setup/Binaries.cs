@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Information;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Setup.Dto;
 using Serilog.Events;
 
@@ -32,6 +34,8 @@ public static class Binaries
         {
             Logger.Setup("Downloading Binaries");
             // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+            StopUpdater();
+            
             foreach (Download program in Downloads)
             {
                 if (program.Url == null) continue;
@@ -100,7 +104,7 @@ public static class Binaries
             else if (sourceArchiveFileName.EndsWith(".tar.xz") || sourceArchiveFileName.EndsWith(".tar.gz"))
             {
                 Directory.CreateDirectory(destinationDirectoryName);
-                await Shell.Exec("tar", $"xf \"{sourceArchiveFileName}\" -C \"{destinationDirectoryName}\"");
+                await Shell.ExecAsync("tar", $"xf \"{sourceArchiveFileName}\" -C \"{destinationDirectoryName}\"");
                 File.Delete(sourceArchiveFileName);
             }
         }
@@ -131,5 +135,26 @@ public static class Binaries
         }
 
         Directory.Delete(workingDir);
+    }
+    
+    private static void StopUpdater()
+    {
+        foreach (Process process in Process.GetProcesses())
+        {
+            if (!process.ProcessName.StartsWith("NoMercyUpdater")) continue;
+            try
+            {
+                Logger.Setup("Stopping NoMercyUpdater...");
+                
+                process.Kill();
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                Logger.Setup($"Failed to stop server: {ex.Message}");
+                Logger.Setup("Please stop the server manually and restart the updater.");
+                throw;
+            }
+        }
     }
 }
