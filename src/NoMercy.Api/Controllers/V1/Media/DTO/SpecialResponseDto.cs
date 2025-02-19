@@ -46,7 +46,7 @@ public record SpecialResponseDto
                     .Include(tv => tv.MovieUser
                         .Where(movieUser => movieUser.UserId.Equals(userId))
                     )
-                    .Include(movie => movie!.VideoFiles)
+                    .Include(movie => movie.VideoFiles)
                     .ThenInclude(file => file.UserData
                         .Where(userData => userData.UserId.Equals(userId))
                     )
@@ -94,7 +94,7 @@ public record SpecialResponseDto
                         .Where(tvUser => tvUser.UserId.Equals(userId))
                     )
                     .Include(tv => tv.Episodes)
-                    .ThenInclude(episode => episode!.VideoFiles)
+                    .ThenInclude(episode => episode.VideoFiles)
                     .ThenInclude(file => file.UserData
                         .Where(userData => userData.UserId.Equals(userId))
                     )
