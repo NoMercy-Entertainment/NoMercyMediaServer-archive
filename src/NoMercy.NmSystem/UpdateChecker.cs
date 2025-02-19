@@ -1,7 +1,4 @@
-using System.Diagnostics;
 using Newtonsoft.Json;
-using NoMercy.NmSystem.Information;
-using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.NmSystem;
 
@@ -27,7 +24,7 @@ public static class UpdateChecker
     {
         try
         {
-            string output = Shell.ExecStdOutSync(AppFiles.UpdaterExePath, "--check");
+            string output = SystemCalls.Shell.ExecStdOutSync(AppFiles.UpdaterExePath, "--check");
 
             if (string.IsNullOrEmpty(output)) return false;
 

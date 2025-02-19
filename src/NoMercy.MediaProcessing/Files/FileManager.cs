@@ -9,9 +9,9 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Dto;
-using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 using Image = SixLabors.ImageSharp.Image;
+using Logger = NoMercy.NmSystem.SystemCalls.Logger;
 
 namespace NoMercy.MediaProcessing.Files;
 public partial class FileManager(
