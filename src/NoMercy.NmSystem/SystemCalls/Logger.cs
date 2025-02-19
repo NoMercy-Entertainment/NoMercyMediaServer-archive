@@ -2,6 +2,7 @@ using System.Drawing;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using NoMercy.NmSystem.Dto;
+using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.LogEnrichers;
 using NoMercy.NmSystem.NewtonSoftConverters;
 using Serilog;
