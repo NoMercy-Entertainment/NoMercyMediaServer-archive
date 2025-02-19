@@ -1,5 +1,5 @@
 using NoMercy.Helpers.Monitoring;
-using NoMercy.NmSystem;
+using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
 namespace NoMercy.Api.Controllers.Socket;
