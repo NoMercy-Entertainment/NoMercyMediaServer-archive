@@ -1,7 +1,7 @@
 using System.Text;
 using System.Xml.Serialization;
 
-namespace NoMercy.NmSystem;
+namespace NoMercy.NmSystem.Extensions;
 
 public static class XmlHelper
 {

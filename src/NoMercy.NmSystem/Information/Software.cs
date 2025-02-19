@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using DeviceId;
-using NoMercy.NmSystem.SystemCalls;
 
 namespace NoMercy.NmSystem.Information;
 
@@ -61,7 +60,7 @@ public static class Software
         }
         else
         {
-            string output = Shell.ExecCommand("uname -r");
+            string output = SystemCalls.Shell.ExecCommand("uname -r");
             return output.Trim();
         }
 
@@ -88,12 +87,12 @@ public static class Software
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
-            string output = Shell.ExecCommand("sysctl -n kern.boottime");
+            string output = SystemCalls.Shell.ExecCommand("sysctl -n kern.boottime");
             return new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(long.Parse(output.Split(' ').Last()));
         }
         else
         {
-            string output = Shell.ExecCommand("uptime -s");
+            string output = SystemCalls.Shell.ExecCommand("uptime -s");
             return DateTime.Parse(output.Trim());
         }
 
