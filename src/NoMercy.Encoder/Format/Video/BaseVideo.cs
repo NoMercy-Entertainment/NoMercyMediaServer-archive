@@ -307,6 +307,7 @@ public abstract class BaseVideo : Classes
         if (ConstantRateFactor > 0)
         {
             AddCustomArgument("-crf", ConstantRateFactor);
+            AddCustomArgument("-rc", "vbr");
             AddCustomArgument("-cq:v", Convert.ToInt32(ConstantRateFactor * 1.12));
         }
 
@@ -341,11 +342,6 @@ public abstract class BaseVideo : Classes
         commandDictionary["-c:v"] = VideoCodec.Value;
 
         commandDictionary["-map_metadata"] = -1;
-        commandDictionary["-fflags"] = "+bitexact";
-        commandDictionary["-flags:v"] = "+bitexact";
-        commandDictionary["-flags:a"] = "+bitexact";
-        commandDictionary["-flags:s"] = "+bitexact";
-
         commandDictionary["-movflags"] = "faststart";
         commandDictionary["-metadata"] = $"title=\"{Title.EscapeQuotes()}\"";
 

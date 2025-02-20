@@ -178,7 +178,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         }
         else
         {
-            command.Append($" -threads {Math.Floor(threadCount * 0.8)} ");
+            command.Append($" -threads {Math.Floor(threadCount * 0.5)} ");
         }
         
         foreach (GpuAccelerator accelerator in FfmpegConfig.Accelerators)
@@ -189,6 +189,11 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         command.Append(" -progress - ");
 
         command.Append($" -y -i \"{Container.InputFile}\" ");
+        
+        if (FfmpegConfig.Accelerators.Count > 0)
+        {
+            command.Append(" -gpu any ");
+        }
 
         // command.Append(" -max_muxing_queue_size 9999 ");
 
