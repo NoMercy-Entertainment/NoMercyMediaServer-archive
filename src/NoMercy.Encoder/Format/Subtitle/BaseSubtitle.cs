@@ -128,10 +128,6 @@ public class BaseSubtitle : Classes
     public override BaseSubtitle ApplyFlags()
     {
         // AddCustomArgument("-map_metadata", -1);
-        // AddCustomArgument("-fflags", "+bitexact");
-        // AddCustomArgument("-flags:v", "+bitexact");
-        // AddCustomArgument("-flags:a", "+bitexact");
-        // AddCustomArgument("-flags:s", "+bitexact");
         return this;
     }
 
