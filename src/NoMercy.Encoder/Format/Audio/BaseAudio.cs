@@ -194,10 +194,6 @@ public class BaseAudio : Classes
     public override BaseAudio ApplyFlags()
     {
         AddCustomArgument("-map_metadata", -1);
-        AddCustomArgument("-fflags", "+bitexact");
-        AddCustomArgument("-flags:v", "+bitexact");
-        AddCustomArgument("-flags:a", "+bitexact");
-        AddCustomArgument("-flags:s", "+bitexact");
         return this;
     }
 
