@@ -103,7 +103,7 @@ public class LibrariesController(
         GenreRowItemDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
             .Randomize().FirstOrDefault();
 
-        return Ok(new  Render
+        return Ok(new Render
         {
             Data = [
 
@@ -145,7 +145,7 @@ public class LibrariesController(
 
     [HttpGet]
     [Route("tv")]
-    public IActionResult Tv()
+    public async Task<IActionResult> Tv()
     {
         Guid userId = User.UserId();
         if (!User.IsAllowed())
@@ -160,8 +160,8 @@ public class LibrariesController(
 
         foreach (Library library in libraries)
         {
-            IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
-            IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 1, m => m.CreatedAt, "desc");
+            IEnumerable<Movie> movies = libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc");
+            IEnumerable<Tv> shows = libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc");
 
             list.Add(new()
             {
@@ -172,8 +172,8 @@ public class LibrariesController(
             });
         }
 
-        IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
-        IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 1, m => m.CreatedAt, "desc");
+        IEnumerable<Collection> collections = collectionRepository.GetCollectionItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
+        IEnumerable<Special> specials = specialRepository.GetSpecialItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
 
         list.Add(new()
         {
@@ -189,11 +189,23 @@ public class LibrariesController(
             Items = specials.Select(special => new GenreRowItemDto(special, country))
         });
 
-        GenreRowItemDto? genreRowItemDto = list.Where(g => !string.IsNullOrWhiteSpace(g.Title))
-            .Randomize().FirstOrDefault()
-            ?.Items.Randomize().FirstOrDefault();
+        await using MediaContext mediaContext = new();
 
-        return Ok(new  Render
+        Tv? tv = await Queries.GetRandomTvShow(mediaContext, userId, language);
+
+        Movie? movie = await Queries.GetRandomMovie(mediaContext, userId, language);
+
+        List<GenreRowItemDto> genres = [];
+        if (tv != null)
+            genres.Add(new(tv, language));
+
+        if (movie != null)
+            genres.Add(new(movie, language));
+
+        GenreRowItemDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
+            .Randomize().FirstOrDefault();
+
+        return Ok(new Render
         {
             Data = [
 
@@ -207,7 +219,7 @@ public class LibrariesController(
                     },
                     Props =
                     {
-                        Data = genreRowItemDto
+                        Data = homeCardItem
                     }
                 },
 
