@@ -21,16 +21,16 @@ public class Dev
         {
             Logger.Ripper($"Media inserted: {drive} ({label})");
             
-            MetaData? metaData = DriveMonitor.GetDriveMetadata(drive);
-
-            foreach (BluRayPlaylist bluRayPlaylists in metaData?.BluRayPlaylists ?? [])
-            {
-                Logger.Ripper(bluRayPlaylists.playlistId);
-                // DriveMonitor.ProcessMedia(drive, new()
-                // {
-                //
-                // });
-            }
+            // MetaData? metaData = DriveMonitor.GetDriveMetadata(drive);
+            //
+            // foreach (BluRayPlaylist bluRayPlaylists in metaData?.BluRayPlaylists ?? [])
+            // {
+            //     Logger.Ripper(bluRayPlaylists.playlistId);
+            //     // DriveMonitor.ProcessMedia(drive, new()
+            //     // {
+            //     //
+            //     // });
+            // }
         };
         driveMonitor.OnMediaEjected += drive =>
         {
