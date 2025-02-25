@@ -192,11 +192,17 @@ public class BaseSubtitle : Classes
         stream.SubtitleCodec = SubtitleCodecs.Webvtt;
         string extension = "vtt";
             
-        if (stream.SubtitleStream!.CodecName == "hdmv_pgs_subtitle" || stream.SubtitleStream.CodecName == "dvd_subtitle")
+        if (stream.SubtitleStream!.CodecName == "hdmv_pgs_subtitle")
         {
             stream.SubtitleCodec = SubtitleCodecs.Copy;
             stream.ConvertSubtitle = true;
             extension = "sup";
+        }
+        else if (stream.SubtitleStream.CodecName == "dvd_subtitle")
+        {
+            stream.SubtitleCodec = SubtitleCodecs.Copy;
+            stream.ConvertSubtitle = true;
+            extension = "vob";
         }
         else if (stream.SubtitleStream.CodecName == "ass")
         {
