@@ -7,6 +7,7 @@ using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.NmSystem.SystemCalls;
+using Serilog.Events;
 using DirectoryInfo = BDInfo.IO.DirectoryInfo;
 
 namespace NoMercy.MediaSources.OpticalMedia;
@@ -17,7 +18,7 @@ public class Wip
     {
         // string fileName = "E:/";
         // string fileName = @"M:\Anime\Download\Bleach\[BDMV] Bleach [BD-BOX] [SET-1]\BLEACH SET 1 DISC 2";
-        IDirectoryInfo directoryInfo = new DirectoryInfo(@"H:\TV.Shows\Download\The.Pink.Panther\The Pink Panther - La Pantera Rosa Vol 2 (1966-1968) [Bluray 1080p AVC Eng DTS-HD MA 2.0]");
+        IDirectoryInfo directoryInfo = new DirectoryInfo(@"E:\TV.Shows\Download\The.Pink.Panther\The Pink Panther - La Pantera Rosa Vol 2 (1966-1968) [Bluray 1080p AVC Eng DTS-HD MA 2.0]");
         
         string metadataFile = Path.Combine(directoryInfo.FullName, "BDMV", "META", "DL", "bdmt_eng.xml");
 
@@ -28,9 +29,9 @@ public class Wip
         {
             bDRom.Scan();
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            //
+            Logger.Error(e.Message, LogEventLevel.Error);
         }
 
         XDocument doc = XDocument.Parse(xmlContent);
@@ -38,7 +39,7 @@ public class Wip
 
         string title = doc.Descendants(di + "name").FirstOrDefault()?.Value ?? bDRom.VolumeLabel;
 
-        string playlistString = Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{directoryInfo.FullName}\"");
+        string playlistString = Shell.ExecStdOutSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{directoryInfo.FullName}\"");
 
         string ffprobeString = Shell.ExecStdOutSync(AppFiles.FfProbePath, $" -v quiet -show_programs -show_format -show_streams -show_data -show_chapters -sexagesimal -print_format json \"bluray:{directoryInfo.FullName}\"");
 
