@@ -82,7 +82,7 @@ public abstract class ConsoleMessages
     public static Task Logo()
     {
         ClearConsole();
-        SetConsoleSize(180, 40);
+        // SetConsoleSize(180, 40);
         
         if (Console.IsOutputRedirected) return Task.CompletedTask;
 
