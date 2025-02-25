@@ -16,4 +16,9 @@
       <ProjectReference Include="..\NoMercy.Queue\NoMercy.Queue.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="BDInfo" Version="0.8.0" />
+      <PackageReference Include="MediaInfo.Wrapper.Core" Version="21.9.3" />
+    </ItemGroup>
+
 </Project>

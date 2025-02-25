@@ -118,12 +118,27 @@ public class X264 : BaseVideo
             }
             else if (VideoCodecs.H264Amf.Value == VideoCodec.Value)
             {
+                return
+                [
+                    VideoTunes.Hq, VideoTunes.Li,
+                    VideoTunes.Ull, VideoTunes.Lossless
+                ];
             }
             else if (VideoCodecs.H264Qsv.Value == VideoCodec.Value)
             {
+                return
+                [
+                    VideoTunes.Hq, VideoTunes.Li,
+                    VideoTunes.Ull, VideoTunes.Lossless
+                ];
             }
             else if (VideoCodecs.H264Videotoolbox.Value == VideoCodec.Value)
             {
+                return
+                [
+                    VideoTunes.Hq, VideoTunes.Li,
+                    VideoTunes.Ull, VideoTunes.Lossless
+                ];
             }
 
             return
