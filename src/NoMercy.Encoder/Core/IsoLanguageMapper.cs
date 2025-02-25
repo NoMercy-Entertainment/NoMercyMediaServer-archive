@@ -380,4 +380,10 @@ public class IsoLanguageMapper
         { Xho, "za" },
         { Yid, "zu" }
     };
+    
+    public static string? GetIsoCode(string language)
+    {
+        Dictionary<string, string> languageToIso = IsoToLanguage.ToDictionary(kvp => kvp.Value, kvp => kvp.Key, StringComparer.OrdinalIgnoreCase);
+        return languageToIso.TryGetValue(language, out var isoCode) ? isoCode : null;
+    }
 }
