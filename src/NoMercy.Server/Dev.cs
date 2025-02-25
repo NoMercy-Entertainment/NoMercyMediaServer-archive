@@ -1,16 +1,44 @@
+using NoMercy.MediaSources.OpticalMedia;
+using NoMercy.MediaSources.OpticalMedia.Dto;
 using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.SystemCalls;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Processing.Processors.Dithering;
 using SixLabors.ImageSharp.Processing.Processors.Quantization;
 
-namespace NoMercy.Setup;
+namespace NoMercy.Server;
 
 public class Dev
 {
     public static async Task Run()
     {
+        
+        DriveMonitor driveMonitor = new();
+    
+        driveMonitor.OnMediaInserted += (drive, label) =>
+        {
+            Logger.Ripper($"Media inserted: {drive} ({label})");
+            
+            MetaData? metaData = DriveMonitor.GetDriveMetadata(drive);
+
+            foreach (BluRayPlaylist bluRayPlaylists in metaData?.BluRayPlaylists ?? [])
+            {
+                Logger.Ripper(bluRayPlaylists.playlistId);
+                // DriveMonitor.ProcessMedia(drive, new()
+                // {
+                //
+                // });
+            }
+        };
+        driveMonitor.OnMediaEjected += drive =>
+        {
+            Logger.Ripper($"Media ejected: {drive}");
+        };
+        
+        Task.Run(() => driveMonitor.StartPollingAsync());
+        
         // OpenSubtitlesClient client = new();
         // OpenSubtitlesClient subtitlesClient = await client.Login();
         // SubtitleSearchResponse? x = await subtitlesClient.SearchSubtitles("Black Panther Wakanda Forever (2022)", "dut");

@@ -59,6 +59,7 @@ public static class Program
         List<TaskDelegate> startupTasks =
         [
             new (() => Seed.Init(shouldSeedMarvel)),
+            new (Dev.Run),
         ];
 
         await Setup.Start.Init(startupTasks);
