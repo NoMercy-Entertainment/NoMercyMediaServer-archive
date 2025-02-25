@@ -411,6 +411,7 @@ public partial class FileManager(
                 match.Groups["type"].Value != "full") continue;
 
             if(match.Groups["ext"].Value == "sup") continue;
+            if(match.Groups["ext"].Value == "vob") continue;
 
             subtitles.Add(new()
             {
@@ -637,6 +638,7 @@ public partial class FileManager(
                     match.Groups["type"].Value != "full") continue;
 
                 if(match.Groups["ext"].Value == "sup") continue;
+                if(match.Groups["ext"].Value == "vob") continue;
 
                 subtitles.Add(new()
                 {
