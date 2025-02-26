@@ -14,6 +14,8 @@ public static class Shell
         public bool UseShellExecute { get; set; } = false;
         public bool CreateNoWindow { get; set; } = true;
         public bool MergeStdErrToOut { get; set; } = false; // For "2>&1" behavior
+        
+        public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
     }
 
     public class ExecResult
@@ -44,6 +46,11 @@ public static class Shell
             process.StartInfo.RedirectStandardError = false;
         else
             process.StartInfo.RedirectStandardError = options.CaptureStdErr;
+        
+        foreach (KeyValuePair<string, string> envVar in options.EnvironmentVariables)
+        {
+            process.StartInfo.EnvironmentVariables[envVar.Key] = envVar.Value;
+        }
 
         StringBuilder outputBuilder = new();
         StringBuilder errorBuilder = new();
