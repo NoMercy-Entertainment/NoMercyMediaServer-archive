@@ -152,8 +152,19 @@ public class BaseSubtitle : Classes
                 newStream.Variant = GetVariant(newStream);
 
                 if(newStream.SubtitleStream!.CodecName == newStream.SubtitleCodec.SimpleValue) continue;
+                
+                List<SubtitleStream> subTitleStreams = SubtitleStreams
+                    .Where(s => s.Language == stream.Language)
+                    .ToList();
+                
+                int currentStreamIndex = subTitleStreams.IndexOf(stream);
+                
+                if (newStream.SubtitleStream!.Tags?.TryGetValue("title", out _) == false && currentStreamIndex > 0)
+                {
+                    newStream.Variant = "sdh";
+                }
 
-                if(streams.Any(s => s.Extension == newStream.Extension && s.Variant == newStream.Variant && s.Language == newStream.Language)) continue;
+                if(streams.Any(s => s.HlsPlaylistFilename == newStream.HlsPlaylistFilename)) continue;
 
                 streams.Add(newStream);
             }
@@ -161,7 +172,7 @@ public class BaseSubtitle : Classes
 
         Logger.Encoder($"Added {streams.Count} subtitle streams", LogEventLevel.Verbose);
 
-        return streams;
+        return streams.Distinct().ToList();
     }
 
     private string GetVariant(BaseSubtitle stream)

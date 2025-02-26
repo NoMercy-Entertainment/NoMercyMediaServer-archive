@@ -79,9 +79,7 @@ public class Start
         // };
         // fileWatcher.Start();
         
-        FFmpegHardwareConfig ffmpegConfig = new();
-        
-        foreach (GpuAccelerator accelerator in ffmpegConfig.Accelerators)
+        foreach (GpuAccelerator accelerator in FFmpegHardwareConfig.Accelerators)
         {
             Logger.Encoder($"Found a dedicated GPU. Vendor: {accelerator.Vendor}, Accelerator: {accelerator.Accelerator}");
         }

@@ -1,3 +1,4 @@
+using NoMercy.Encoder.Core;
 using NoMercy.MediaSources.OpticalMedia;
 using NoMercy.MediaSources.OpticalMedia.Dto;
 using NoMercy.NmSystem.Extensions;
@@ -14,7 +15,6 @@ public class Dev
 {
     public static async Task Run()
     {
-        
         DriveMonitor driveMonitor = new();
     
         driveMonitor.OnMediaInserted += (drive, label) =>
