@@ -136,6 +136,7 @@ public class BaseContainer : Classes
 
     public override BaseContainer ApplyFlags()
     {
+        AddCustomArgument("-map_metadata", -1);
         return this;
     }
 

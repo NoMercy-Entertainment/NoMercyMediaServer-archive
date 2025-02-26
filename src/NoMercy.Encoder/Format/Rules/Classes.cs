@@ -26,9 +26,9 @@ public class Classes
     internal int HlsListSize { get; set; }
     internal string HlsPlaylistType { get; set; } = "vod";
     protected int HlsTime { get; set; } = 4;
-    
-    internal static FFmpegHardwareConfig FfmpegConfig = new();
 
+    public List<GpuAccelerator> Accelerators { get; set; } = FFmpegHardwareConfig.Accelerators;
+    
     protected string Type
     {
         get

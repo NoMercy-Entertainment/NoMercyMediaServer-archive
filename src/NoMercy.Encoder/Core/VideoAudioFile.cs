@@ -6,6 +6,7 @@ using NoMercy.Encoder.Format.Image;
 using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
+using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.Information;
 using Serilog.Events;
 using NoMercy.NmSystem.SystemCalls;
@@ -181,7 +182,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             command.Append($" -threads {Math.Floor(threadCount * 0.5)} ");
         }
         
-        foreach (GpuAccelerator accelerator in FfmpegConfig.Accelerators)
+        foreach (GpuAccelerator accelerator in Accelerators)
         {
             command.Append($" {accelerator.FfmpegArgs} ");
         }
@@ -190,12 +191,17 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 
         command.Append($" -y -i \"{Container.InputFile}\" ");
         
-        if (FfmpegConfig.Accelerators.Count > 0)
+        if (Accelerators.Count > 0)
         {
             command.Append(" -gpu any ");
         }
 
-        // command.Append(" -max_muxing_queue_size 9999 ");
+        // If we need to OCR the subs we need to make it possible by adding a background stream
+        // Doing it this way is super slow so we do it manually.
+        // if(Container.SubtitleStreams.Any(stream => stream.Extension is "sup" or "vob"))
+        // {
+        //     command.Append(" -f lavfi -i color=black:s=hd720 ");
+        // }
 
         bool isHdr = false;
 
@@ -205,11 +211,13 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             int index = Container.VideoStreams.IndexOf(stream);
 
             // if source is smaller than requested size, don't upscale
-            // if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height) continue;
             if (stream.Scale.W > stream.VideoStream!.Width || stream.Scale.H > stream.VideoStream.Height)
             {
-                stream.Scale.W = stream.VideoStream.Width;
-                stream.Scale.H = stream.VideoStream.Height;
+                stream.Scale = new()
+                {
+                    W = stream.VideoStream.Width,
+                    H = stream.VideoStream.Height
+                };
             }
 
             // if source is not HDR then don't make the HDR profile
@@ -248,11 +256,16 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         // if (Container.SubtitleStreams.Count > 0 && complexString.Length > 0) complexString.Append(';');
         // foreach (BaseSubtitle stream in Container.SubtitleStreams)
         // {
-        //     int index = Container.SubtitleStreams.IndexOf(stream);
-        //
-        //     complexString.Append($"[s:{stream.Index}]overlay[s{index}_hls_0]");
-        //
-        //     if (index != Container.SubtitleStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
+            // If we need to OCR
+            // Doing it this way is super slow.
+            // if (stream.Extension != "sup" && stream.Extension != "vob") continue;
+            // if (!stream.ConvertSubtitle) continue;
+            //
+            // int index = Container.SubtitleStreams.IndexOf(stream);
+            //
+            // complexString.Append($"[s:{stream.Index}]ocr=language={stream.Language},metadata=print:key=lavfi.ocr.text:file='subtitles/{stream.HlsPlaylistFilename}.{stream.Extension}'");
+            //
+            // if (index != Container.SubtitleStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         // }
 
         if (Container.ImageStreams.Count > 0 && complexString.Length > 0) complexString.Append(';');
@@ -342,18 +355,6 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             Dictionary<string, dynamic> commandDictionary = new();
             stream.AddToDictionary(commandDictionary, stream.Index);
 
-            // foreach (KeyValuePair<string, dynamic> parameter in Container._extraParameters ?? new Dictionary<string, dynamic>())
-            // {
-            //     commandDictionary[parameter.Key] = parameter.Value;
-            // }
-
-            // commandDictionary["-t"] = 300;
-            // if (Container.ContainerDto.Name == VideoContainers.Hls)
-            // {
-            //     commandDictionary["-hls_segment_filename"] = $"\"./{stream.HlsPlaylistFilename}_%05d.vtt\"";
-            //     commandDictionary[""] = $"\"./{stream.HlsPlaylistFilename}.m3u8\"";
-            // }
-
             commandDictionary[""] = $"\"./{stream.HlsPlaylistFilename}.{stream.Extension}\"";
 
             command.Append(commandDictionary.Aggregate("", (acc, pair) => $"{acc} {pair.Key} {pair.Value}"));
@@ -362,7 +363,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             {
                 ConvertSubtitle = true;
             }
-
+            
             stream.CreateFolder();
         }
 
@@ -374,8 +375,6 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 
             stream.AddToDictionary(commandDictionary, index);
 
-            // commandDictionary["-t"] = 300;
-
             if (Container.ContainerDto.Name == VideoContainers.Hls)
                 commandDictionary[""] = $"\"./{stream.Filename}/{stream.Filename}-%04d.jpg\"";
 
@@ -385,7 +384,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         }
 
         command.Append(" ");
-        // command.Append(" 2>&1 ");
+        
         return command.ToString();
     }
 
@@ -402,8 +401,10 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
         foreach (BaseSubtitle? subtitle in subtitles.DistinctBy(x => x.HlsPlaylistFilename))
         {
             string input = Path.Combine(BasePath, $"{subtitle.HlsPlaylistFilename}.{subtitle.Extension}");
+            string orcFile = Path.Combine(BasePath, "subtitles", "temp.txt");
             string output = Path.Combine(BasePath, $"{subtitle.HlsPlaylistFilename}.vtt");
-            string arg = $" /convert \"{input}\" WebVtt \"{output}\"";
+
+            string ocrCommand = $" -i \"{input}\" -f lavfi -i color=black:s=hd720 -filter_complex [0:s:0]ocr=language={subtitle.Language},metadata=print:key=lavfi.ocr.text:file=\"temp.txt\" -an -f null -";
 
             Networking.Networking.SendToAll("encoder-progress", "dashboardHub",  new Progress
             {
@@ -411,13 +412,20 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
                 Status = "running",
                 Title = title,
                 Thumbnail = $"/images/original{imgPath}",
-                Message = $"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt",
+                Message = $"OCR {IsoLanguageMapper.IsoToLanguage[subtitle.Language]}",
             });
 
             Logger.Encoder($"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt");
-            Logger.Encoder(AppFiles.SubtitleEdit + arg, LogEventLevel.Debug);
+            Logger.Encoder(AppFiles.FfmpegPath + ocrCommand, LogEventLevel.Debug);
 
-            Task<string> execTask = Shell.ExecStdOutAsync(AppFiles.SubtitleEdit, arg);
+            Task<string> execTask = Shell.ExecStdErrAsync(AppFiles.FfmpegPath, ocrCommand, new()
+            {
+                WorkingDirectory = Path.Combine(BasePath, "subtitles"),
+                EnvironmentVariables = new()
+                {
+                    ["TESSDATA_PREFIX"] = AppFiles.TesseractModelsFolder
+                }
+            });
 
             Task progressTask = Task.Run(async () =>
             {
@@ -429,7 +437,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
                         Status = "running",
                         Title = title,
                         Thumbnail = $"/images/original{imgPath}",
-                        Message = $"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt",
+                        Message = $"OCR {IsoLanguageMapper.IsoToLanguage[subtitle.Language]}",
                     });
 
                     await Task.Delay(1000);
@@ -437,7 +445,14 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             });
 
             await Task.WhenAll(execTask, progressTask);
-
+            
+            Logger.Encoder($"Converting {IsoLanguageMapper.IsoToLanguage[subtitle.Language]} subtitle to WebVtt");
+            
+            Subtitle[] parsedSubtitles = SubtitleParser.ParseSubtitles(orcFile);
+            
+            SubtitleParser.SaveToVtt(parsedSubtitles, output);
+            
+            File.Delete(orcFile);
         }
 
         Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress

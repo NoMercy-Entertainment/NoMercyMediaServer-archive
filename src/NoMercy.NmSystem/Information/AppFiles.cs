@@ -40,6 +40,10 @@ public static class AppFiles
     public static readonly string FfmpegPath = Path.Combine(FfmpegFolder, "ffmpeg" + Info.ExecSuffix);
     public static readonly string FfProbePath = Path.Combine(FfmpegFolder, "ffprobe" + Info.ExecSuffix);
     public static readonly string FpCalcPath = Path.Combine(BinariesPath, "fpcalc", "fpcalc" + Info.ExecSuffix);
+    
+    public static readonly string TesseractFolder = Path.Combine(RootPath, "binaries", "tesseract");
+    public static readonly string TesseractModelsFolder = Path.Combine(TesseractFolder, "tessdata");
+    
     public static string UpdaterExePath => Path.Combine(BinariesPath, "NoMercyUpdater" + Info.ExecSuffix);
     public static string ServerExePath => Path.Combine(BinariesPath, "NoMercyMediaServer" + Info.ExecSuffix);
     public static string ServerTempExePath => Path.Combine(BinariesPath, "NoMercyMediaServer_temp" + Info.ExecSuffix);
