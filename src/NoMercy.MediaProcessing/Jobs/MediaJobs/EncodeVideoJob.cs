@@ -80,23 +80,23 @@ public class EncodeVideoJob : AbstractEncoderJob
                     Title = fileMetadata.Title,
                     BaseFolder = fileMetadata.Path,
                     ShareBasePath = folder.Id + "/" + fileMetadata.FolderName,
-                    AudioStreams = container.AudioStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.AudioCodec.SimpleValue}").ToList(),
-                    VideoStreams = container.VideoStreams.Select(x => $"{x.StreamIndex}:{x.Scale.W}x{x.Scale.H}_{x.VideoCodec.SimpleValue}").ToList(),
-                    SubtitleStreams = container.SubtitleStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.SubtitleCodec.SimpleValue}").ToList(),
+                    AudioStreams = container.AudioStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.AudioCodec.SimpleValue}").Distinct().ToList(),
+                    VideoStreams = container.VideoStreams.Select(x => $"{x.StreamIndex}:{x.Scale.W}x{x.Scale.H}_{x.VideoCodec.SimpleValue}").Distinct().ToList(),
+                    SubtitleStreams = container.SubtitleStreams.Select(x => $"{x.StreamIndex}:{x.Language}_{x.SubtitleCodec.SimpleValue}").Distinct().ToList(),
                     HasGpu = container.VideoStreams.Any(x =>
                         x.VideoCodec.Value == VideoCodecs.H264Nvenc.Value || x.VideoCodec.Value == VideoCodecs.H265Nvenc.Value),
                     IsHdr = container.VideoStreams.Any(x => x.IsHdr)
                 };
 
-                await ffmpeg.Run(fullCommand, fileMetadata.Path, progressMeta);
-
-                await sprite.BuildSprite(progressMeta);
-
-                await container.BuildMasterPlaylist();
-
-                await container.ExtractChapters();
-
-                await container.ExtractFonts();
+                // await ffmpeg.Run(fullCommand, fileMetadata.Path, progressMeta);
+                //
+                // await sprite.BuildSprite(progressMeta);
+                //
+                // await container.BuildMasterPlaylist();
+                //
+                // await container.ExtractChapters();
+                //
+                // await container.ExtractFonts();
 
                 if (ffmpeg.ConvertSubtitle)
                 {
@@ -128,7 +128,7 @@ public class EncodeVideoJob : AbstractEncoderJob
         }
         catch (Exception e)
         {
-            Logger.Encoder(e.Message, LogEventLevel.Error);
+            Logger.Encoder(e, LogEventLevel.Error);
             
             Networking.Networking.SendToAll("encoder-progress", "dashboardHub", new Progress
             {

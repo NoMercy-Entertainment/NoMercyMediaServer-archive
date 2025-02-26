@@ -341,7 +341,6 @@ public abstract class BaseVideo : Classes
         commandDictionary["-map"] = $"[v{index}_hls_0]";
         commandDictionary["-c:v"] = VideoCodec.Value;
 
-        commandDictionary["-map_metadata"] = -1;
         commandDictionary["-movflags"] = "faststart";
         commandDictionary["-metadata"] = $"title=\"{Title.EscapeQuotes()}\"";
 

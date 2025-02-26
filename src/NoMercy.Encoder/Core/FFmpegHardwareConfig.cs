@@ -15,16 +15,16 @@ public enum GpuVendor
     Unknown
 }
 
-public class FFmpegHardwareConfig
+public static class FFmpegHardwareConfig
 {
-    public List<GpuAccelerator> Accelerators { get; private set; } = new();
+    public static List<GpuAccelerator> Accelerators { get; private set; } = [];
 
-    public FFmpegHardwareConfig()
+    static FFmpegHardwareConfig()
     {
         SetHardwareAccelerationFlags(Info.GpuVendors);
     }
 
-    public bool HasAccelerator(string accelerator)
+    public static bool HasAccelerator(string accelerator)
     {
         return Accelerators.Any(a => a.Accelerator == accelerator);
     }
@@ -46,7 +46,7 @@ public class FFmpegHardwareConfig
         }
     }
 
-    private void OpenClCheck()
+    private static void OpenClCheck()
     {
         string arg = "-extra_hw_frames 3 -init_hw_device opencl=ocl";
         bool supported = CheckAccel(arg);
@@ -60,7 +60,7 @@ public class FFmpegHardwareConfig
         }
     }
 
-    private void SetHardwareAccelerationFlags(List<string> gpuVendors)
+    private static void SetHardwareAccelerationFlags(List<string> gpuVendors)
     {
         if (!IsDedicatedGpuAvailable())
         {
@@ -171,8 +171,7 @@ public class FFmpegHardwareConfig
         }
     }
     
-    
-    private bool IsDedicatedGpuAvailable()
+    private static bool IsDedicatedGpuAvailable()
     {
         if (OperatingSystem.IsWindows())
         {
