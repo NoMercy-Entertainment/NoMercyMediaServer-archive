@@ -193,7 +193,6 @@ public class BaseAudio : Classes
 
     public override BaseAudio ApplyFlags()
     {
-        AddCustomArgument("-map_metadata", -1);
         return this;
     }
 
@@ -223,7 +222,7 @@ public class BaseAudio : Classes
             }
         }
 
-        return streams;
+        return streams.Distinct().ToList();
     }
 
     public void AddToDictionary(Dictionary<string, dynamic> commandDictionary, int index)
