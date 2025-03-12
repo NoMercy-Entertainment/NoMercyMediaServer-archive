@@ -55,6 +55,7 @@ public class Seed : IDisposable, IAsyncDisposable
     {
         try
         {
+            await StoreConfig();
             await AddLanguages();
             await AddCountries();
             await AddGenres();
@@ -107,7 +108,6 @@ public class Seed : IDisposable, IAsyncDisposable
                 Email = serverUser.Email,
                 Name = serverUser.Name,
                 Allowed = true,
-                Manage = serverUser.Enabled,
                 AudioTranscoding = serverUser.Enabled,
                 NoTranscoding = serverUser.Enabled,
                 VideoTranscoding = serverUser.Enabled,
@@ -125,7 +125,7 @@ public class Seed : IDisposable, IAsyncDisposable
                 Email = ui.Email,
                 Name = ui.Name,
                 Allowed = ui.Allowed,
-                Manage = ui.Manage,
+                Manage = us.Manage,
                 AudioTranscoding = ui.AudioTranscoding,
                 NoTranscoding = ui.NoTranscoding,
                 VideoTranscoding = ui.VideoTranscoding,
@@ -508,6 +508,11 @@ public class Seed : IDisposable, IAsyncDisposable
         {
             Logger.Setup(e.Message, LogEventLevel.Error);
         }
+    }
+
+    private static async Task StoreConfig()
+    {
+        
     }
 
     public void Dispose()
