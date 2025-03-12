@@ -52,7 +52,8 @@ public class AddReleaseJob : AbstractReleaseJob
             .ThenInclude(f => f.Folder)
             .FirstAsync();
         
-        (MusicBrainzReleaseAppends? releaseAppends, CoverArtImageManagerManager.CoverPalette? coverPalette) = await releaseManager.Add(Id, albumLibrary, BaseFolder, MediaFolder);
+        (MusicBrainzReleaseAppends? releaseAppends, CoverArtImageManagerManager.CoverPalette? coverPalette) 
+            = await releaseManager.Add(Id, albumLibrary, BaseFolder, MediaFolder);
         
         if (releaseAppends is null || string.IsNullOrEmpty(releaseAppends.Title))
         {
@@ -86,7 +87,7 @@ public class AddReleaseJob : AbstractReleaseJob
         
         Networking.Networking.SendToAll("RefreshLibrary", "socket", new RefreshLibraryDto
         {
-            QueryKey = ["music", "album", Id.ToString()]
+            QueryKey = ["music", "albums"]
         });
     }
 }

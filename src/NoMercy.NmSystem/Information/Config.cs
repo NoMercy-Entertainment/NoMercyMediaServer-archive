@@ -17,7 +17,7 @@ public static class Config
     public static int ExternalServerPort { get; set; } = 7626;
     
     public static bool Swagger { get; set; } = true;
-    public static bool IsDev { get; set; }
+    public static bool IsDev { get; set; } = false;
     public static bool UpdateAvailable { get; set; }
 
     public static KeyValuePair<string, int> QueueWorkers { get; set; } = new("queue", 1);

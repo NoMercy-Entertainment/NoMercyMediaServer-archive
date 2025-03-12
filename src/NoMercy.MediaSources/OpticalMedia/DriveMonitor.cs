@@ -5,279 +5,323 @@ using BDInfo;
 using MediaInfo;
 using NoMercy.Encoder;
 using NoMercy.Encoder.Core;
-using NoMercy.Encoder.Format.Rules;
 using NoMercy.MediaSources.OpticalMedia.Dto;
-using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.NmSystem.SystemCalls;
+using NoMercy.NmSystem.Extensions;
+using NoMercy.NmSystem.FileSystem;
+using NoMercy.NmSystem.Information;
+using NoMercy.NmSystem.NewtonSoftConverters;
+using NoMercy.Providers.TMDB.Client;
+using NoMercy.Providers.TMDB.Models.Episode;
+using NoMercy.Providers.TMDB.Models.Movies;
+using NoMercy.Providers.TMDB.Models.Season;
+using NoMercy.Providers.TMDB.Models.Shared;
+using NoMercy.Providers.TMDB.Models.TV;
 using Serilog.Events;
-using AppFiles = NoMercy.NmSystem.Information.AppFiles;
+using DirectoryInfo = BDInfo.IO.DirectoryInfo;
 using Logger = NoMercy.NmSystem.SystemCalls.Logger;
 using Shell = NoMercy.NmSystem.SystemCalls.Shell;
-using DirectoryInfo = BDInfo.IO.DirectoryInfo;
 
 namespace NoMercy.MediaSources.OpticalMedia;
 
 public partial class DriveMonitor
 {
     private readonly TimeSpan _pollingInterval = TimeSpan.FromSeconds(5);
-    private readonly HashSet<string> _knownDrives = [];
-
-    public event Action<string, string>? OnMediaInserted;
+    private static readonly HashSet<string> KnownDrives = [];
+    public static List<MetaData> Contents { get; private set; } = [];
+    
+    public event Action<string, string?>? OnMediaInserted;
     public event Action<string>? OnMediaEjected;
 
-    public async Task StartPollingAsync()
+    private static CancellationTokenSource? CancellationToken { get; set; }
+
+    public static Task Start()
+    {
+        DriveMonitor driveMonitor = new();
+                
+        driveMonitor.OnMediaInserted += async (drive, label) =>
+        {
+            Logger.Ripper($"Media inserted: {drive} ({label})");
+                    
+            Networking.Networking.SendToAll("DriveState", "ripperHub", new DriveState()
+            {
+                Open = false,
+                Path = drive.TrimEnd(Path.DirectorySeparatorChar),
+                Label = label,
+                MetaData = null,
+            });
+                    
+            MetaData? metaData = label is not null 
+                ? await GetDriveMetadata(drive) 
+                : null;
+                    
+            Networking.Networking.SendToAll("DriveState", "ripperHub", new DriveState
+            {
+                Open = false,
+                Path = drive.TrimEnd(Path.DirectorySeparatorChar),
+                Label = label,
+                MetaData = metaData,
+            });
+        };
+            
+        driveMonitor.OnMediaEjected += drive =>
+        {
+            Logger.Ripper($"Media ejected: {drive}");
+            
+            Contents = Contents.Where(c => c.Path != drive).ToList();
+                    
+            Networking.Networking.SendToAll("DriveState", "ripperHub", new DriveState
+            {
+                Open = true,
+                Path = drive.TrimEnd(Path.DirectorySeparatorChar),
+            });
+        };
+        
+        Task.Run(() => driveMonitor.StartPollingAsync());
+            
+        return Task.CompletedTask;
+    }
+
+    private async Task StartPollingAsync()
     {
         while (true)
         {
             try
             {
-                Dictionary<string, string> detectedDrives = Optical.GetOpticalDrives();
+                Dictionary<string, string?> detectedDrives = Optical.GetOpticalDrives()
+                    .Where(d => d.Value != null)
+                    .ToDictionary(d => d.Key, d => d.Value);
+                
                 HashSet<string> currentDrives = new(detectedDrives.Keys);
 
-                // Check for newly inserted media
-                foreach (KeyValuePair<string, string> drive in detectedDrives)
+                foreach ((string drive, string? label) in detectedDrives)
                 {
-                    if (!_knownDrives.Contains(drive.Key))
-                    {
-                        _knownDrives.Add(drive.Key);
-                        OnMediaInserted?.Invoke(drive.Key, drive.Value);
-                    }
+                    if (KnownDrives.Add(drive))
+                        OnMediaInserted?.Invoke(drive, label);
                 }
 
-                // Check for ejected media
-                foreach (string knownDrive in _knownDrives)
+                foreach (string knownDrive in KnownDrives.Except(currentDrives).ToList())
                 {
-                    if (!currentDrives.Contains(knownDrive))
-                    {
-                        OnMediaEjected?.Invoke(knownDrive);
-                    }
+                    OnMediaEjected?.Invoke(knownDrive);
+                    KnownDrives.Remove(knownDrive);
+                    Contents = Contents.Where(c => c.Path != knownDrive).ToList();
                 }
-
-                // Update known drives
-                _knownDrives.IntersectWith(currentDrives);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] OpticalDriveMonitor: {ex.Message}");
+                Logger.Ripper($"[ERROR] OpticalDriveMonitor: {ex.Message}");
             }
-
             await Task.Delay(_pollingInterval);
         }
-
         // ReSharper disable once FunctionNeverReturns
     }
 
-    public static MetaData? GetDriveMetadata(string drivePath)
+    public static async Task<MetaData?> GetDriveMetadata(string drivePath)
     {
+        DirectoryInfo directoryInfo = new(drivePath);
+        string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
+        
+        if (Contents.Any(c => c.Path == path)) 
+            return Contents.FirstOrDefault(c => c.Path == path);
+
         try
         {
-            DirectoryInfo directoryInfo = new(drivePath);
-            
             BDROM bDRom = ScanBdRom(directoryInfo);
-            
             string title = TryGetTitle(bDRom);
-
-            string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
+            string[] titleSegments = Regex.Split(title, @"[:_]|disc\s*\d+", RegexOptions.IgnoreCase);
+            
+            TmdbSearchClient tmdbSearchClient = new();
+            TmdbPaginatedResponse<TmdbMovie>? movieResponse = await tmdbSearchClient.Movie(titleSegments[0]);
+            TmdbPaginatedResponse<TmdbTvShow>? tvShowResponse = await tmdbSearchClient.TvShow(titleSegments[0]);
+            
+            TmdbMovie? movie = movieResponse?.Results.FirstOrDefault();
+            TmdbTvShow? tvShow = tvShowResponse?.Results.FirstOrDefault();
+            List<TmdbEpisode> episodes = await GetTmdbEpisodes(tvShow, titleSegments);
+            
             string playlistString = Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{path}\"");
-            FfprobeResult? ffProbeData = playlistString.FromJson<FfprobeResult>();
             
-            File.WriteAllText(Path.Combine(AppFiles.TempPath, "bdrom.json"), bDRom.ToJson());
+            List<BluRayPlaylist> bluRayPlaylist = ExtractBluRayPlaylists(directoryInfo, playlistString);
             
-            MatchCollection matches = PlaylistRegex().Matches(playlistString);
-
-            List<BluRayPlaylist> bluRayPlaylist = [];
-
-            foreach (Match match in matches)
-            {
-                string playlist = match.Groups["playlist"].Value;
-
-                string mplsPath = Path.Combine(directoryInfo.FullName, "BDMV", "PLAYLIST", $"{playlist}.mpls");
-
-                MediaInfoList mediaList = new(false);
-                mediaList.Open(mplsPath, InfoFileOptions.Max);
-
-                string? inform = mediaList.Inform(0);
-
-                BluRayPlaylist parsedPlaylist = BluRayPlaylist.Parse(inform);
-                
-                bluRayPlaylist.Add(parsedPlaylist);
-            }
-
-            return new()
+            MetaData cache = new()
             {
                 Title = title,
-                FfProbeData = ffProbeData,
+                Path = path,
                 BluRayPlaylists = bluRayPlaylist,
+                Data = new { Movie = movie, TvShow = tvShow, Episodes = episodes }
             };
             
+            Contents.Add(cache);
+            
+            return cache;
         }
         catch (Exception ex)
         {
             Logger.Ripper(ex, LogEventLevel.Error);
         }
-        
         return null;
     }
 
-    public static MetaData? ProcessMedia(string drivePath, MediaProcessingRequest request)
+    private static async Task<List<TmdbEpisode>> GetTmdbEpisodes(TmdbTvShow? tvShow, string[] titleSegments)
+    {
+        List<TmdbEpisode> episodes = [];
+        if (tvShow == null) return episodes;
+
+        TmdbTvClient tmdbTvClient = new(tvShow.Id);
+        TmdbTvShowDetails? tvDetails = await tmdbTvClient.Details();
+        
+        foreach (TmdbSeason season in tvDetails?.Seasons ?? [])
+        {
+            foreach (string segment in titleSegments)
+            {
+                string seasonName = season.Name!.ToLower();
+                string segmentTitle = segment.ToName().Trim().ToLower();
+                if (!segmentTitle.Contains(seasonName) && !seasonName.Contains(segmentTitle)) continue;
+                    
+                TmdbSeasonClient seasonClient = new(tvShow.Id, season.SeasonNumber);
+                episodes.AddRange((await seasonClient.Details())?.Episodes ?? []);
+                break;
+            }
+        }
+        
+        if (episodes.Count == 0)
+        {
+            TmdbSeasonClient seasonClient = new(tvShow.Id, 1);
+            episodes.AddRange((await seasonClient.Details())?.Episodes ?? []);
+        }
+        else if ((bool)tvDetails?.Seasons.Any(season => season.SeasonNumber == 0))
+        {
+            try
+            {
+                TmdbSeasonClient seasonClient = new(tvShow.Id, 0);
+                episodes.AddRange((await seasonClient.Details())?.Episodes ?? []);
+            }
+            catch (Exception e)
+            {
+                //
+            }
+        }
+        
+        return episodes;
+    }
+
+    private static List<BluRayPlaylist> ExtractBluRayPlaylists(DirectoryInfo directoryInfo, string playlistString)
+    {
+        List<BluRayPlaylist> bluRayPlaylist = [];
+        foreach (Match match in PlaylistRegex().Matches(playlistString))
+        {
+            string mplsPath = Path.Combine(directoryInfo.FullName, "BDMV", "PLAYLIST", $"{match.Groups["playlist"].Value}.mpls");
+            MediaInfoList mediaList = new(false);
+            mediaList.Open(mplsPath, InfoFileOptions.Max);
+            bluRayPlaylist.Add(BluRayPlaylist.Parse(mediaList.Inform(0)));
+        }
+        return bluRayPlaylist;
+    }
+    
+    public static async Task<MetaData?> ProcessMedia(string drivePath, MediaProcessingRequest request)
     {
         try
         {
             DirectoryInfo directoryInfo = new(drivePath);
-            
             BDROM bDRom = ScanBdRom(directoryInfo);
-            
             string title = TryGetTitle(bDRom);
+            string[] titleSegments = Regex.Split(title, @"[:_]|disc\s*\d+", RegexOptions.IgnoreCase);
+            
+            TmdbSearchClient tmdbSearchClient = new();
+            TmdbPaginatedResponse<TmdbMovie>? movieResponse = await tmdbSearchClient.Movie(titleSegments[0]);
+            TmdbPaginatedResponse<TmdbTvShow>? tvShowResponse = await tmdbSearchClient.TvShow(titleSegments[0]);
+            
+            TmdbMovie? movie = movieResponse?.Results.FirstOrDefault();
+            TmdbTvShow? tvShow = tvShowResponse?.Results.FirstOrDefault();
+            List<TmdbEpisode> episodes = await GetTmdbEpisodes(tvShow, titleSegments);
             
             string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
             string playlistString = Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{path}\"");
+            await File.WriteAllTextAsync(Path.Combine(AppFiles.TempPath, "bdrom.json"), bDRom.ToJson());
             
-            FfprobeResult? ffProbeData = playlistString.FromJson<FfprobeResult>();
-
-            File.WriteAllText(Path.Combine(AppFiles.TempPath, "bdrom.json"), bDRom.ToJson());
+            List<BluRayPlaylist> bluRayPlaylist = ExtractBluRayPlaylists(directoryInfo, playlistString);
+            await ConvertMedia(bluRayPlaylist, title, path);
             
-            List<Match> matches = PlaylistRegex().Matches(playlistString).ToList();
-
-            List<BluRayPlaylist> bluRayPlaylist = [];
-            
-            foreach (Match match in matches)
-            {
-                StringBuilder sb = new();
-
-                int matchIndex = matches.IndexOf(match);
-
-                string matchTitle = $"{title} {matchIndex + 1}".Replace(":", "");
-                string outputFile = Path.Combine(AppFiles.TempPath, $"{matchTitle}.mkv");
-                string chaptersFile = Path.Combine(AppFiles.TempPath, $"{matchTitle}.txt");
-
-                string playlist = match.Groups["playlist"].Value;
-                
-                string mplsPath = Path.Combine(directoryInfo.FullName, "BDMV", "PLAYLIST", $"{playlist}.mpls");
-
-                MediaInfoList mediaList = new(false);
-                mediaList.Open(mplsPath, InfoFileOptions.Max);
-
-                string? inform = mediaList.Inform(0);
-
-                BluRayPlaylist parsedPlaylist = BluRayPlaylist.Parse(inform);
-                bluRayPlaylist.Add(parsedPlaylist);
-
-                sb.Append(" -hide_banner -progress - ");
-                sb.Append($" -y -playlist {playlist} -i \"bluray:{path}\" ");
-
-                StringBuilder metadata = new();
-                metadata.AppendLine(";FFMETADATA1");
-                metadata.AppendLine($"title={matchTitle}");
-                metadata.AppendLine("");
-
-                foreach (Chapter chapter in parsedPlaylist.Chapters)
-                {
-                    int chapterIndex = parsedPlaylist.Chapters.IndexOf(chapter);
-                    int start = (int)chapter.Timestamp.TotalSeconds;
-                    int end = (chapterIndex < parsedPlaylist.Chapters.Count - 1
-                        ? (int)parsedPlaylist.Chapters[chapterIndex + 1].Timestamp.TotalSeconds
-                        : (int)parsedPlaylist.Duration.TotalSeconds);
-                    
-                    // start can't be less than 0 or greater than the duration
-                    start = Math.Max(0, start);
-                    start = Math.Min(start, end);
-                    
-                    // end can't be less than start or greater than the duration
-                    end = Math.Max(start, end);
-                    end = Math.Min(end, (int)parsedPlaylist.Duration.TotalSeconds);
-                    
-                    // start must be less than end and longer than 5 seconds to be considered a valid chapter
-                    if (start >= end || end - start < 5)  continue;
-
-                    metadata.AppendLine("[CHAPTER]");
-                    metadata.AppendLine("TIMEBASE=1");
-                    metadata.AppendLine($"START={start}");
-                    metadata.AppendLine($"END={end}");
-                    metadata.AppendLine($"title=Chapter {chapterIndex + 1}");
-                    metadata.AppendLine("");
-                }
-
-                File.WriteAllText(chaptersFile, metadata.ToString());
-
-                sb.Append(" -c copy -map 0:v:0 ");
-                
-                foreach (AudioTrack stream in parsedPlaylist.AudioTracks)
-                {
-                    int index = parsedPlaylist.AudioTracks.IndexOf(stream);
-                    string languageCode = IsoLanguageMapper.GetIsoCode(stream.Language) ?? "und";
-                    string language = stream.Language;
-
-                    sb.Append(
-                        $" -map 0:a:{index} -metadata:s:a:{index} language={languageCode} -metadata:s:a:{index} title=\"{language}\"");
-                }
-                
-                foreach (SubtitleTrack stream in parsedPlaylist.SubtitleTracks)
-                {
-                    int index = parsedPlaylist.SubtitleTracks.IndexOf(stream);
-                    string languageCode = IsoLanguageMapper.GetIsoCode(stream.Language) ?? "und";
-                    string language = stream.Language;
-
-                    sb.Append(
-                        $" -map 0:s:{index} -metadata:s:s:{index} language={languageCode} -metadata:s:s:{index} title=\"{language}\"");
-                }
-
-                sb.Append($" -f matroska \"{outputFile}\" ");
-
-                string command = sb.ToString();
-
-                Logger.Encoder(command + "\"");
-
-                ProgressMeta progressMeta = new()
-                {
-                    Id = Guid.NewGuid(),
-                    Title = matchTitle,
-                    BaseFolder = path,
-                    ShareBasePath = path,
-                    AudioStreams = parsedPlaylist.AudioTracks.Select(x => $"{x.StreamIndex}:{x.Language}_{x.Format}").ToList(),
-                    VideoStreams = parsedPlaylist.VideoTracks.Select(x => $"{x.StreamIndex}:{x.Width}x{x.Height}_{x.Format}").ToList(),
-                    SubtitleStreams = parsedPlaylist.SubtitleTracks.Select(x => $"{x.StreamIndex}:{x.Language}_{x.Format}").ToList(),
-                    HasGpu = parsedPlaylist.VideoTracks.Any(x =>
-                        x.Format == VideoCodecs.H264Nvenc.Value || x.Format == VideoCodecs.H265Nvenc.Value),
-                    IsHdr = false
-                };
-                
-                FfMpeg.Run(command, AppFiles.TempPath, progressMeta).Wait();
-                
-                File.Delete(chaptersFile);
-            }
-
-
             return new()
             {
                 Title = title,
-                FfProbeData = ffProbeData,
                 BluRayPlaylists = bluRayPlaylist,
+                Data = new { Movie = movie, TvShow = tvShow, Episodes = episodes }
             };
-            
         }
         catch (Exception ex)
         {
             Logger.Ripper(ex, LogEventLevel.Error);
         }
-        
         return null;
+    }
+
+    private static async Task ConvertMedia(List<BluRayPlaylist> bluRayPlaylists, string title, string path)
+    {
+        foreach ((BluRayPlaylist playlist, int index) in bluRayPlaylists.Select((p, i) => (p, i)))
+        {
+            StringBuilder sb = new();
+            string matchTitle = $"{title} {index + 1}".Replace(":", "");
+            string outputFile = Path.Combine(AppFiles.TempPath, $"{matchTitle}.mkv");
+            string chaptersFile = Path.Combine(AppFiles.TempPath, $"{matchTitle}.txt");
+
+            string metadata = GenerateMetadata(playlist, matchTitle);
+            await File.WriteAllTextAsync(chaptersFile, metadata);
+
+            sb.Append(" -hide_banner -progress - ");
+            sb.Append($" -y -playlist {index} -i \"bluray:{path}\" ");
+            sb.Append(" -c copy -map 0:v:0 ");
+
+            foreach ((AudioTrack stream, int idx) in playlist.AudioTracks.Select((s, i) => (s, i)))
+                sb.Append($" -map 0:a:{idx} -metadata:s:a:{idx} language={IsoLanguageMapper.GetIsoCode(stream.Language) ?? "und"} -metadata:s:a:{idx} title=\"{stream.Language}\"");
+            
+            foreach ((SubtitleTrack stream, int idx) in playlist.SubtitleTracks.Select((s, i) => (s, i)))
+                sb.Append($" -map 0:s:{idx} -metadata:s:s:{idx} language={IsoLanguageMapper.GetIsoCode(stream.Language) ?? "und"} -metadata:s:s:{idx} title=\"{stream.Language}\"");
+            
+            sb.Append($" -f matroska \"{outputFile}\" ");
+            string command = sb.ToString();
+            Logger.Encoder(command);
+            FfMpeg.Run(command, AppFiles.TempPath, new() { Id = Guid.NewGuid(), Title = matchTitle, BaseFolder = path }).Wait();
+            File.Delete(chaptersFile);
+        }
+    }
+
+    private static string GenerateMetadata(BluRayPlaylist playlist, string title)
+    {
+        StringBuilder sb = new();
+        sb.AppendLine(";FFMETADATA1");
+        sb.AppendLine($"title={title}");
+        sb.AppendLine("");
+
+        foreach ((Chapter chapter, int idx) in playlist.Chapters.Select((c, i) => (c, i)))
+        {
+            int start = (int)chapter.Timestamp.TotalSeconds;
+            int end = idx < playlist.Chapters.Count - 1 ? (int)playlist.Chapters[idx + 1].Timestamp.TotalSeconds : (int)playlist.Duration.TotalSeconds;
+            if (end - start < 5) continue;
+            sb.AppendLine("[CHAPTER]");
+            sb.AppendLine("TIMEBASE=1");
+            sb.AppendLine($"START={start}");
+            sb.AppendLine($"END={end}");
+            sb.AppendLine($"title=Chapter {idx + 1}");
+            sb.AppendLine("");
+        }
+        return sb.ToString();
     }
 
     private static BDROM ScanBdRom(DirectoryInfo directoryInfo)
     {
         BDROM bDRom = new(directoryInfo);
             
-        bDRom.PlaylistFileScanError += (sender, args) =>
+        bDRom.PlaylistFileScanError += (_, args) =>
         {
             Logger.Ripper(args.Message, LogEventLevel.Error);
             return false;
         };
-        bDRom.StreamClipFileScanError += (sender, args) =>
+        bDRom.StreamClipFileScanError += (_, args) =>
         {
             Logger.Ripper(args.Message, LogEventLevel.Error);
             return false;
         };
-        bDRom.StreamFileScanError += (sender, args) =>
+        bDRom.StreamFileScanError += (_, args) =>
         {
             Logger.Ripper(args.Message, LogEventLevel.Error);
             return false;
@@ -290,18 +334,120 @@ public partial class DriveMonitor
     private static string TryGetTitle(BDROM bDRom)
     {
         string metadataFile = Path.Combine(bDRom.DirectoryMETA.FullName, "DL", "bdmt_eng.xml");
-        string title = bDRom.VolumeLabel;
-            
-        if (File.Exists(metadataFile)){
-            string xmlContent = File.ReadAllText(metadataFile);
-            XDocument doc = XDocument.Parse(xmlContent);
-            XNamespace di = "urn:BDA:bdmv;discinfo";
-            title = doc.Descendants(di + "name").FirstOrDefault()?.Value ?? bDRom.VolumeLabel;
-        }
-
-        return title;
+        if (!File.Exists(metadataFile)) return bDRom.VolumeLabel;
+        
+        string xmlContent = File.ReadAllText(metadataFile);
+        XDocument doc = XDocument.Parse(xmlContent);
+        XNamespace di = "urn:BDA:bdmv;discinfo";
+        return doc.Descendants(di + "name").FirstOrDefault()?.Value ?? bDRom.VolumeLabel;
     }
 
     [GeneratedRegex(@"\[bluray.*?playlist\s(?<playlist>\d+).mpls\s\((?<duration>\d{1,}:\d{1,}:\d{1,})\)")]
     private static partial Regex PlaylistRegex();
+
+    public static async Task<bool> PlayMedia(string drivePath, string playlistId, CancellationTokenSource token)
+    {
+        if(CancellationToken is not null && CancellationToken.Token.CanBeCanceled)
+        {
+            await CancellationToken.CancelAsync();
+        }
+        
+        CancellationToken = token;
+        
+        DirectoryInfo directoryInfo = new(drivePath);
+        string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
+        
+        BDROM bDRom = ScanBdRom(directoryInfo);
+        string title = TryGetTitle(bDRom);
+
+        BluRayPlaylist playlist;
+
+        if (Contents.Any(c => c.Path == path) == false)
+        {
+            string playlistString =
+                Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{path}\"");
+
+            playlist = ExtractBluRayPlaylists(directoryInfo, playlistString)
+                .First(p => p.playlistId == playlistId);
+        }
+        else
+        {
+            playlist = Contents.First(c => c.Path == path)
+                .BluRayPlaylists.First(p => p.playlistId == playlistId);
+        }
+
+        StringBuilder masterPlaylist = new();
+        masterPlaylist.AppendLine("#EXTM3U");
+        masterPlaylist.AppendLine("#EXT-X-VERSION:6");
+        masterPlaylist.AppendLine();
+        
+        StringBuilder sb = new();
+        sb.Append(" -hide_banner -progress - ");
+        sb.Append($" -y -playlist {playlistId} -t 300 -i \"bluray:{path}\" ");
+        
+        foreach ((VideoTrack stream, int idx) in playlist.VideoTracks.Select((s, i) => (s, i)))
+        {
+            sb.Append($" -map 0:v:{idx} -c:v libx264 -b:v 5000k -vf scale=1280:-2 -preset ultrafast ");
+            sb.Append($" -hls_allow_cache 1 -hls_flags independent_segments -hls_segment_type mpegts -segment_list_type m3u8 -segment_time_delta 1 -start_number 0 -hls_playlist_type event -hls_init_time 4 -hls_time 4 -hls_list_size 0 -hls_segment_filename video_{idx}_%05d.ts video_{idx}.m3u8 ");
+        }
+
+        foreach ((AudioTrack stream, int idx) in playlist.AudioTracks.Select((s, i) => (s, i)))
+        {
+            sb.Append(
+                $" -map 0:a:{idx} -metadata:s:a:{idx} language={IsoLanguageMapper.GetIsoCode(stream.Language) ?? "und"} -metadata:s:a:{idx} title=\"{stream.Language}\" ");
+            sb.Append($" -c:a aac -b:a 192k -ac 2 -ar 44100 -f hls -hls_allow_cache 1 -hls_flags independent_segments -hls_segment_type mpegts -segment_list_type m3u8 -segment_time_delta 1 -start_number 0 -hls_playlist_type event -hls_init_time 4 -hls_time 4 -hls_list_size 0 -hls_segment_filename audio_{idx}_%05d.ts audio_{idx}.m3u8 ");
+            
+            masterPlaylist.AppendLine(
+                $"#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID=\"audio\",LANGUAGE=\"{stream.Language}\",AUTOSELECT=YES,DEFAULT={(idx == 0 ? "YES" : "NO")},URI=\"audio_{idx}.m3u8\",NAME=\"{IsoLanguageMapper.GetIsoCode(stream.Language) ?? "und"}\"");
+        }
+        masterPlaylist.AppendLine();
+        
+        // foreach ((SubtitleTrack stream, int idx) in playlist.SubtitleTracks.Select((s, i) => (s, i)))
+        // {
+        //     sb.Append($" -map 0:s:{idx} -metadata:s:s:{idx} language={IsoLanguageMapper.GetIsoCode(stream.Language) ?? "und"} -metadata:s:s:{idx} title=\"{stream.Language}\" ");
+        //     sb.Append($" -c:s mov_text -f hls -hls_allow_cache 1 -hls_flags independent_segments -hls_segment_type mpegts -segment_list_type m3u8 -segment_time_delta 1 -start_number 0 -hls_playlist_type event -hls_init_time 4 -hls_time 4 -hls_list_size 0 -hls_segment_filename subtitle_{idx}_%05d.ts subtitle_{idx}.m3u8 ");
+        // }
+        
+        string command = sb.ToString();
+        
+        masterPlaylist.AppendLine(
+            $"#EXT-X-STREAM-INF:BANDWIDTH={100000},RESOLUTION=1280x720,CODECS=\"avc1.4D401E,mp4a.40.2\",AUDIO=\"audio\",VIDEO-RANGE=SDR,NAME=\"video\"");
+        
+        masterPlaylist.AppendLine("video_0.m3u8");
+        masterPlaylist.AppendLine();
+        
+        string encodePath = Path.Combine(AppFiles.TranscodePath, "ripper");
+        Folders.EmptyFolder(encodePath);
+        Directory.CreateDirectory(encodePath);
+        
+        Logger.Encoder(command);
+        
+        Task.Run(FfMpeg.Run(command, encodePath, new()
+        {
+            Id = Guid.NewGuid(), 
+            Title = title,
+            BaseFolder = encodePath,
+        }).RunSynchronously, token.Token);
+        
+        await File.WriteAllTextAsync(Path.Combine(encodePath, "master.m3u8"), masterPlaylist.ToString(), token.Token);
+
+        while (!File.Exists(Path.Combine(encodePath, "video_0_00001.ts")))
+        {
+            //
+        }
+
+        return true;
+    }
+    
+    public static async Task<bool> StopMedia()
+    {
+        if (CancellationToken is null || !CancellationToken.Token.CanBeCanceled) return false;
+        
+        await CancellationToken.CancelAsync();
+        
+        string encodePath = Path.Combine(AppFiles.TranscodePath, "ripper");
+        Folders.EmptyFolder(encodePath);
+        
+        return true;
+    }
 }

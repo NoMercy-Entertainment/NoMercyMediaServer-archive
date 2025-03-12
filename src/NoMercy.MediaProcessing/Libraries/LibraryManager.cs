@@ -109,7 +109,7 @@ public class LibraryManager(
         TmdbPaginatedResponse<TmdbMovie>? paginatedMovieResponse =
             await tmdbSearchClient.Movie(folderExtend.Parsed.Title!, folderExtend.Parsed.Year);
 
-        if (paginatedMovieResponse?.Results.Length <= 0) return;
+        if (paginatedMovieResponse?.Results.Count <= 0) return;
 
         // List<Movie> res = Str.SortByMatchPercentage(paginatedMovieResponse?.Results, m => m.Title, folder.Parsed.Title);
         IEnumerable<TmdbMovie> res = paginatedMovieResponse?.Results ?? [];
@@ -128,7 +128,7 @@ public class LibraryManager(
         TmdbPaginatedResponse<TmdbTvShow>? paginatedTvShowResponse =
             await tmdbSearchClient.TvShow(folderExtend.Parsed.Title!, folderExtend.Parsed.Year);
 
-        if (paginatedTvShowResponse?.Results.Length <= 0) return;
+        if (paginatedTvShowResponse?.Results.Count <= 0) return;
 
         // List<TvShow> res = Str.SortByMatchPercentage(paginatedTvShowResponse.Results, m => m.Name, folder.Parsed.Title);
         IEnumerable<TmdbTvShow> res = paginatedTvShowResponse?.Results ?? [];
