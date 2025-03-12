@@ -1,5 +1,5 @@
+using System.Text.Json;
 using NoMercy.NmSystem.Dto;
-using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.NmSystem.SystemCalls;
 using Serilog.Events;
 
@@ -7,27 +7,35 @@ namespace NoMercy.NmSystem;
 
 public static class LogReader
 {
-    public static async Task<List<LogEntry>> GetLastDailyLogsAsync(
+    public static async Task<List<LogEntry>> GetLogsAsync(
         string logDirectoryPath,
         int limit = 10,
-        Func<LogEntry, bool>? filter = null)
+        int page = 1,
+        string? typeFilter = null,
+        string? levelFilter = null,
+        string? messageFilter = null)
     {
         if (!Directory.Exists(logDirectoryPath))
             throw new DirectoryNotFoundException($"Log directory not found: {logDirectoryPath}");
 
         IOrderedEnumerable<FileInfo> logFiles = GetLogFilesSortedByDate(logDirectoryPath);
-        List<LogEntry> logEntries = new();
-        
-        IEnumerable<Task<IEnumerable<LogEntry>>> tasks = logFiles.Select(fileInfo => ProcessFileAsync(fileInfo.FullName, limit, filter));
+        List<LogEntry> logEntries = [];
+
+        IEnumerable<Task<IEnumerable<LogEntry>>> tasks = logFiles.Select(fileInfo => ProcessFileAsync(fileInfo.FullName, typeFilter, levelFilter, messageFilter));
         IEnumerable<LogEntry>[] results = await Task.WhenAll(tasks);
 
         foreach (IEnumerable<LogEntry> entries in results)
         {
             logEntries.AddRange(entries);
-            if (logEntries.Count >= limit) break;
         }
 
-        return logEntries.Take(limit).ToList();
+        logEntries = logEntries
+            .OrderByDescending(entry => entry.Time)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .ToList();
+
+        return logEntries;
     }
 
     private static IOrderedEnumerable<FileInfo> GetLogFilesSortedByDate(string logDirectoryPath)
@@ -39,8 +47,9 @@ public static class LogReader
 
     private static async Task<IEnumerable<LogEntry>> ProcessFileAsync(
         string filePath,
-        int limit,
-        Func<LogEntry, bool>? filter)
+        string? typeFilter,
+        string? levelFilter,
+        string? messageFilter)
     {
         List<LogEntry> logEntries = new();
         FileInfo fileInfo = new(filePath);
@@ -53,26 +62,27 @@ public static class LogReader
 
         try
         {
-            if (LogCache.TryGetCachedEntries(filePath, out List<LogEntry>? cachedEntries) && 
-                cachedEntries?.Count > 0 && 
-                cachedEntries[0].Time >= fileInfo.LastWriteTime)
-            {
-                return cachedEntries.Where(entry => filter == null || filter(entry)).Take(limit);
-            }
-
             await using FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             using StreamReader reader = new(fileStream);
 
-            while (await reader.ReadLineAsync() is { } line && logEntries.Count < limit)
+            while (await reader.ReadLineAsync() is { } line)
             {
-                LogEntry? logEntry = line.FromJson<LogEntry>();
-                if (logEntry != null && (filter == null || filter(logEntry)))
+                try
                 {
-                    logEntries.Add(logEntry);
+                    LogEntry? logEntry = JsonSerializer.Deserialize<LogEntry>(line);
+                    if (logEntry != null &&
+                        (typeFilter == null || logEntry.Type == typeFilter) &&
+                        (levelFilter == null || logEntry.Level == levelFilter) &&
+                        (messageFilter == null || logEntry.Message.Contains(messageFilter)))
+                    {
+                        logEntries.Add(logEntry);
+                    }
+                }
+                catch (JsonException jsonEx)
+                {
+                    Logger.App($"Error deserializing line in file {filePath}: {jsonEx.Message}", LogEventLevel.Error);
                 }
             }
-
-            LogCache.AddToCache(filePath, logEntries);
         }
         catch (Exception ex)
         {

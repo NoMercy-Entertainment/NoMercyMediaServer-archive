@@ -1,20 +1,22 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using NoMercy.Encoder.Core;
 
 namespace NoMercy.MediaSources.OpticalMedia.Dto;
 
 public partial class BluRayPlaylist
 {
-    public string CompleteName { get; set; } = string.Empty;
-    public string playlistId { get; set; } = string.Empty;
-    public string Format { get; set; } = string.Empty;
-    public long FileSize { get; set; }
-    public TimeSpan Duration { get; set; }
-    public string OverallBitRate { get; set; } = string.Empty;
-    public List<VideoTrack> VideoTracks { get; set; } = [];
-    public List<AudioTrack> AudioTracks { get; set; } = [];
-    public List<SubtitleTrack> SubtitleTracks { get; set; } = [];
-    public List<Chapter> Chapters { get; set; } = [];
+    [JsonProperty("complete_name")] public string CompleteName { get; set; } = string.Empty;
+    [JsonProperty("playlist_id")] public string playlistId { get; set; } = string.Empty;
+    [JsonProperty("format")] public string Format { get; set; } = string.Empty;
+    [JsonProperty("file_size")] public long FileSize { get; set; }
+    [JsonProperty("duration")] public TimeSpan Duration { get; set; }
+    [JsonProperty("overall_bit_rate")] public string OverallBitRate { get; set; } = string.Empty;
+    [JsonProperty("video_tracks")] public List<VideoTrack> VideoTracks { get; set; } = new();
+    [JsonProperty("audio_tracks")] public List<AudioTrack> AudioTracks { get; set; } = new();
+    [JsonProperty("subtitle_tracks")] public List<SubtitleTrack> SubtitleTracks { get; set; } = new();
+    [JsonProperty("chapters")] public List<Chapter> Chapters { get; set; } = new();
 
     public static BluRayPlaylist Parse(string input)
     {
@@ -111,6 +113,7 @@ public partial class BluRayPlaylist
                 else if (line.StartsWith("Language"))
                 {
                     currentAudio.Language = value;
+                    currentAudio.Lang = IsoLanguageMapper.GetIsoCode(value);
                     playlist.AudioTracks.Add(currentAudio);
                     currentAudio = null;
                 }
@@ -163,7 +166,7 @@ public partial class BluRayPlaylist
         Match match = Regex.Match(line, @"(\d+:\d+:\d+.\d+)\s*:\s(.*)");
         if (match.Success)
         {
-            return new()
+            return new ()
             {
                 Timestamp = TimeSpan.Parse(match.Groups[1].Value),
                 Title = match.Groups[2].Value
@@ -179,41 +182,42 @@ public partial class BluRayPlaylist
 
 public class VideoTrack
 {
-    public int Id { get; set; }
-    public int StreamIndex { get; set; }
-    public string? Format { get; set; }
-    public string FormatInfo { get; set; } = string.Empty;
-    public int Width { get; set; }
-    public int Height { get; set; }
-    public string DisplayAspectRatio { get; set; } = string.Empty;
-    public double FrameRate { get; set; }
+    [JsonProperty("id")] public int Id { get; set; }
+    [JsonProperty("stream_index")] public int StreamIndex { get; set; }
+    [JsonProperty("format")] public string? Format { get; set; }
+    [JsonProperty("format_info")] public string FormatInfo { get; set; } = string.Empty;
+    [JsonProperty("width")] public int Width { get; set; }
+    [JsonProperty("height")] public int Height { get; set; }
+    [JsonProperty("display_aspect_ratio")] public string DisplayAspectRatio { get; set; } = string.Empty;
+    [JsonProperty("frame_rate")] public double FrameRate { get; set; }
 }
 
 public class AudioTrack
 {
-    public int Id { get; set; }
-    public int StreamIndex { get; set; }
-    public string? Format { get; set; }
-    public string FormatInfo { get; set; } = string.Empty;
-    public string? CommercialName { get; set; }
-    public TimeSpan Duration { get; set; }
-    public int? Channels { get; set; }
-    public int SamplingRate { get; set; } // Hz
-    public string? CompressionMode { get; set; }
-    public string Language { get; set; } = string.Empty;
+    [JsonProperty("id")] public int Id { get; set; }
+    [JsonProperty("stream_index")] public int StreamIndex { get; set; }
+    [JsonProperty("format")] public string? Format { get; set; }
+    [JsonProperty("format_info")] public string FormatInfo { get; set; } = string.Empty;
+    [JsonProperty("commercial_name")] public string? CommercialName { get; set; }
+    [JsonProperty("duration")] public TimeSpan Duration { get; set; }
+    [JsonProperty("channels")] public int? Channels { get; set; }
+    [JsonProperty("sampling_rate")] public int SamplingRate { get; set; } // Hz
+    [JsonProperty("compression_mode")] public string? CompressionMode { get; set; }
+    [JsonProperty("language")] public string Language { get; set; } = string.Empty;
+    [JsonProperty("lang")] public string? Lang { get; set; }
 }
 
 public class SubtitleTrack
 {
-    public int Id { get; set; }
-    public int StreamIndex { get; set; }
-    public string Format { get; set; } = string.Empty;
-    public TimeSpan Duration { get; set; }
-    public string Language { get; set; } = string.Empty;
+    [JsonProperty("id")] public int Id { get; set; }
+    [JsonProperty("stream_index")] public int StreamIndex { get; set; }
+    [JsonProperty("format")] public string Format { get; set; } = string.Empty;
+    [JsonProperty("duration")] public TimeSpan Duration { get; set; }
+    [JsonProperty("language")] public string Language { get; set; } = string.Empty;
 }
 
 public class Chapter
 {
-    public TimeSpan Timestamp { get; set; }
-    public string Title { get; set; } = string.Empty;
+    [JsonProperty("timestamp")] public TimeSpan Timestamp { get; set; }
+    [JsonProperty("title")] public string Title { get; set; } = string.Empty;
 }

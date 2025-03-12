@@ -6,6 +6,7 @@ using Asp.Versioning.ApiExplorer;
 using CommandLine;
 using Microsoft.AspNetCore;
 using NoMercy.MediaProcessing.Seeds;
+using NoMercy.MediaSources.OpticalMedia;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Setup;
@@ -60,6 +61,7 @@ public static class Program
         [
             new (() => Seed.Init(shouldSeedMarvel)),
             new (Dev.Run),
+            new (DriveMonitor.Start),
         ];
 
         await Setup.Start.Init(startupTasks);

@@ -24,6 +24,12 @@ public static class CacheController
 
     public static bool Read<T>(string url, out T? value, bool xml = false) where T : class?
     {
+        if (Config.IsDev == false) 
+        {
+            value = default;
+            return false;
+        }
+        
         string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
         lock (fullname)
         {
@@ -33,15 +39,12 @@ public static class CacheController
                 return false;
             }
 
-            if (Config.IsDev == false)
+            // invalidate cache after 1 day of creation date
+            if (File.GetCreationTime(fullname) < DateTime.Now.SubDays(1))
             {
-                // invalidate cache after 1 day of creation date
-                if (File.GetCreationTime(fullname) < DateTime.Now.SubDays(1))
-                {
-                    File.Delete(fullname);
-                    value = default;
-                    return false;
-                }
+                File.Delete(fullname);
+                value = default;
+                return false;
             }
 
             T? data;
@@ -75,6 +78,8 @@ public static class CacheController
 
     public static async Task Write(string url, string data, int retry = 0)
     {
+        if (Config.IsDev == false) return;
+        
         string fullname = Path.Combine(AppFiles.ApiCachePath, GenerateFileName(url));
 
         try

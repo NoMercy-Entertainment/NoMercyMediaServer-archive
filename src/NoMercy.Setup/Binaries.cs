@@ -39,7 +39,7 @@ public static class Binaries
             {
                 if (program.Url == null) continue;
                 
-                string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
+                string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Path, program.Name);
                 DateTime creationTime = Directory.GetCreationTimeUtc(destinationDirectoryName);
 
                 int days = creationTime.Subtract(program.LastUpdated).Days;
@@ -73,23 +73,24 @@ public static class Binaries
         
         string sourceArchiveFileName =
             Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
-        string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Name);
+        string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Path, program.Name);
         
         Logger.Setup($"Extracting {program.Name} to {destinationDirectoryName}");
         
         string extension = Path.GetExtension(program.Url!.ToString());
-        if (string.IsNullOrEmpty(extension) || extension == ".exe")
+        if (!program.NoDelete && (string.IsNullOrEmpty(extension) || extension == ".exe"))
         {
-            File.Delete(Path.Combine(AppFiles.BinariesPath, program.Name + Info.ExecSuffix));
-            File.Move(sourceArchiveFileName, Path.Combine(AppFiles.BinariesPath, program.Name + Info.ExecSuffix));
+            string file = Path.Combine(AppFiles.BinariesPath, program.Path, program.Name + Info.ExecSuffix);
+            File.Delete(file);
+            File.Move(sourceArchiveFileName, file);
             return;
         }
         
         try
         {
-            if (Directory.Exists(destinationDirectoryName) && 
+            if (!program.NoDelete && Directory.Exists(destinationDirectoryName) && 
                 (sourceArchiveFileName.EndsWith(".zip") || sourceArchiveFileName.EndsWith(".tar.xz") ||
-                                                           sourceArchiveFileName.EndsWith(".tar.gz")))
+                 sourceArchiveFileName.EndsWith(".tar.gz")))
             {
                 Directory.Delete(destinationDirectoryName, true);
             }
@@ -124,7 +125,7 @@ public static class Binaries
             return;
         }
 
-        string workingDir = Path.Combine(AppFiles.BinariesPath, program.Name, program.Filter);
+        string workingDir = Path.Combine(AppFiles.BinariesPath, program.Path, program.Name, program.Filter);
         foreach (string file in Directory.GetFiles(workingDir))
         {
             string filter = Path.DirectorySeparatorChar + program.Filter;

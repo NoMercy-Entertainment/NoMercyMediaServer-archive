@@ -55,6 +55,7 @@ public class CollectionRepository(MediaContext context)
             .ThenInclude(library => library.LibraryUsers)
             .Include(collection => collection.CollectionMovies)
             .ThenInclude(movie => movie.Movie)
+            
             .ThenInclude(movie => movie.Translations
                 .Where(translation => translation.Iso6391 == language))
             .Include(collection => collection.CollectionMovies)

@@ -6,7 +6,7 @@ namespace NoMercy.NmSystem.SystemCalls;
 
 public static class Optical
 {
-    public static Dictionary<string, string> GetOpticalDrives()
+    public static Dictionary<string, string?> GetOpticalDrives()
     {
         if (Software.IsWindows)
             return GetWindowsOpticalDrives();
@@ -18,23 +18,26 @@ public static class Optical
         throw new PlatformNotSupportedException("Unsupported OS.");
     }
 
-    private static Dictionary<string, string> GetWindowsOpticalDrives()
+    private static Dictionary<string, string?> GetWindowsOpticalDrives()
     {
-        Dictionary<string, string> drives = new();
+        Dictionary<string, string?> drives = new();
         foreach (DriveInfo drive in DriveInfo.GetDrives())
         {
             if (drive.DriveType == DriveType.CDRom && drive.IsReady)
             {
-                drives[drive.Name] = drive.VolumeLabel;
+                drives[drive.Name] = drive.VolumeLabel.Length > 0 ? drive.VolumeLabel : null;
+            } else if (drive.DriveType == DriveType.CDRom)
+            {
+                drives[drive.Name] = null;
             }
         }
 
         return drives;
     }
 
-    private static Dictionary<string, string> GetLinuxOpticalDrives()
+    private static Dictionary<string, string?> GetLinuxOpticalDrives()
     {
-        Dictionary<string, string> drives = new();
+        Dictionary<string, string?> drives = new();
         List<string> output = RunShellCommand("lsblk -o NAME,MOUNTPOINT,LABEL -n | grep sr");
 
         foreach (string line in output)
@@ -43,16 +46,15 @@ public static class Optical
             if (parts.Length < 2) continue;
 
             string path = $"/dev/{parts[0]}";
-            string label = parts.Length > 2 ? parts[2] : "Unknown";
-            drives[path] = label;
+            drives[path] = parts.Length > 2 ? parts[2] : null;
         }
 
         return drives;
     }
 
-    private static Dictionary<string, string> GetMacOpticalDrives()
+    private static Dictionary<string, string?> GetMacOpticalDrives()
     {
-        Dictionary<string, string> drives = new();
+        Dictionary<string, string?> drives = new();
         List<string> output = RunShellCommand("diskutil list | grep -i 'CD/DVD'");
 
         foreach (string line in output)
@@ -61,10 +63,7 @@ public static class Optical
             if (parts.Length <= 0) continue;
 
             string path = parts[^1]; // Last item is typically the disk identifier (e.g., /dev/disk2)
-            string label =
-                RunShellCommand($"diskutil info {path} | grep 'Volume Name'").FirstOrDefault()?.Split(": ")[1] ??
-                "Unknown";
-            drives[path] = label;
+            drives[path] = RunShellCommand($"diskutil info {path} | grep 'Volume Name'").FirstOrDefault()?.Split(": ")[1];
         }
 
         return drives;
