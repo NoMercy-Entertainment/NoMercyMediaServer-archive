@@ -1,6 +1,7 @@
 using NoMercy.NmSystem.Information;
 using System.Runtime.InteropServices;
 using System.Text;
+using NoMercy.NmSystem.Dto;
 
 namespace NoMercy.NmSystem.SystemCalls;
 
@@ -228,4 +229,35 @@ public static class Optical
     }
 
     #endregion
+    
+    public static OpticalDiscType GetDiscType(string drivePath)
+    {
+        if (!Directory.Exists(drivePath))
+            return OpticalDiscType.None;
+
+        // Check for Blu-ray
+        if (Directory.Exists(Path.Combine(drivePath, "BDMV")))
+            return OpticalDiscType.BluRay;
+
+        // Check for DVD
+        if (Directory.Exists(Path.Combine(drivePath, "VIDEO_TS")))
+            return OpticalDiscType.DVD;
+
+        // Check for CD (Audio CD or Data CD)
+        try
+        {
+            DriveInfo drive = new(drivePath);
+            if (drive.DriveType == DriveType.CDRom && drive.IsReady)
+            {
+                // If we get here and it's not BD or DVD, it's some form of CD
+                return OpticalDiscType.CD;
+            }
+        }
+        catch
+        {
+            return OpticalDiscType.None;
+        }
+
+        return OpticalDiscType.None;
+    }
 }

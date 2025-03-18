@@ -203,7 +203,7 @@ public class EncodeVideoJob : AbstractEncoderJob
                 .SetConstantRateFactor(profile.Crf)
                 .SetFrameRate(profile.Framerate)
                 .SetKiloBitrate(profile.Bitrate)
-                .ConvertHdrToSdr()
+                .ConvertHdrToSdr(profile.ConvertHdrToSdr)
                 .SetHlsSegmentFilename(profile.SegmentName)
                 .SetHlsPlaylistFilename(profile.PlaylistName)
                 .SetColorSpace(profile.ColorSpace)

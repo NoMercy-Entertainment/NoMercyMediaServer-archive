@@ -18,10 +18,10 @@ public class StartupOptions
     [Option("seed", Required = false, HelpText = "Run the server in development mode.")]
     public bool Seed { get; set; }
     
-    [Option('i', "internal-port", Required = false, HelpText = "Internal port to use for the server.")]
+    [Option('i', "internalPort", Required = false, HelpText = "Internal port to use for the server.")]
     public int InternalPort { get; set; }
     
-    [Option('e', "external-port", Required = false, HelpText = "External port to use for the server.")]
+    [Option('e', "externalPort", Required = false, HelpText = "External port to use for the server.")]
     public int ExternalPort { get; set; }
 
     public void ApplySettings(out bool shouldSeedMarvel)

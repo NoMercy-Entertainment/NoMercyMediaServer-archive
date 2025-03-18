@@ -512,7 +512,30 @@ public class Seed : IDisposable, IAsyncDisposable
 
     private static async Task StoreConfig()
     {
-        
+        Configuration[] configs =
+        [
+            new()
+            {
+                Key = "internalPort",
+                Value = Config.InternalServerPort.ToString()
+            },
+            new()
+            {
+                Key = "externalPort",
+                Value = Config.ExternalServerPort.ToString()
+            }
+        ];
+
+        await MediaContext.Configuration
+            .UpsertRange(configs)
+            .On(v => new { v.Key })
+            .WhenMatched((_, vi) => new()
+            {
+                Key = vi.Key,
+                Value = vi.Value,
+                UpdatedAt = DateTime.Now
+            })
+            .RunAsync();
     }
 
     public void Dispose()
