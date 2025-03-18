@@ -231,16 +231,14 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
                 isHdr = stream.IsHdr;
                 complexString.Append(
                     $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,format={stream.PixelFormat}[v{index}_hls_0]");
-
-                if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
             }
             else
             {
                 complexString.Append(
                     $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},format={stream.PixelFormat}[v{index}_hls_0]");
 
-                if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
-            }
+            } 
+            if (index != Container.VideoStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         }
 
         if (Container.AudioStreams.Count > 0 && complexString.Length > 0) complexString.Append(';');
@@ -274,11 +272,15 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
             int index = Container.ImageStreams.IndexOf(stream);
 
             if (isHdr)
+            {
                 complexString.Append(
                     $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv,zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=tonemap=hable:desat=0,zscale=t=bt709:m=bt709:r=tv,fps=1/{stream.FrameRate}[i{index}_hls_0]");
+            }
             else
+            {
                 complexString.Append(
                     $"[v:0]crop={stream.CropValue},scale={stream.ScaleValue},fps=1/{stream.FrameRate}[i{index}_hls_0]");
+            }
 
             if (index != Container.ImageStreams.Count - 1 && complexString.Length > 0) complexString.Append(';');
         }

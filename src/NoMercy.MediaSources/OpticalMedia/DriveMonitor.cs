@@ -6,6 +6,7 @@ using MediaInfo;
 using NoMercy.Encoder;
 using NoMercy.Encoder.Core;
 using NoMercy.MediaSources.OpticalMedia.Dto;
+using NoMercy.NmSystem.Dto;
 using NoMercy.NmSystem.SystemCalls;
 using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.FileSystem;
@@ -217,42 +218,159 @@ public partial class DriveMonitor
         return bluRayPlaylist;
     }
     
+    // public static async Task<MetaData?> ProcessMedia(string drivePath, MediaProcessingRequest request)
+    // {
+    //     try
+    //     {
+    //         DirectoryInfo directoryInfo = new(drivePath);
+    //         BDROM bDRom = ScanBdRom(directoryInfo);
+    //         string title = TryGetTitle(bDRom);
+    //         string[] titleSegments = Regex.Split(title, @"[:_]|disc\s*\d+", RegexOptions.IgnoreCase);
+    //         
+    //         TmdbSearchClient tmdbSearchClient = new();
+    //         TmdbPaginatedResponse<TmdbMovie>? movieResponse = await tmdbSearchClient.Movie(titleSegments[0]);
+    //         TmdbPaginatedResponse<TmdbTvShow>? tvShowResponse = await tmdbSearchClient.TvShow(titleSegments[0]);
+    //         
+    //         TmdbMovie? movie = movieResponse?.Results.FirstOrDefault();
+    //         TmdbTvShow? tvShow = tvShowResponse?.Results.FirstOrDefault();
+    //         List<TmdbEpisode> episodes = await GetTmdbEpisodes(tvShow, titleSegments);
+    //         
+    //         string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
+    //         string playlistString = Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{path}\"");
+    //         await File.WriteAllTextAsync(Path.Combine(AppFiles.TempPath, "bdrom.json"), bDRom.ToJson());
+    //         
+    //         List<BluRayPlaylist> bluRayPlaylist = ExtractBluRayPlaylists(directoryInfo, playlistString);
+    //         await ConvertMedia(bluRayPlaylist, title, path);
+    //         
+    //         return new()
+    //         {
+    //             Title = title,
+    //             BluRayPlaylists = bluRayPlaylist,
+    //             Data = new { Movie = movie, TvShow = tvShow, Episodes = episodes }
+    //         };
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Logger.Ripper(ex, LogEventLevel.Error);
+    //     }
+    //     return null;
+    // }
+    
     public static async Task<MetaData?> ProcessMedia(string drivePath, MediaProcessingRequest request)
     {
         try
         {
-            DirectoryInfo directoryInfo = new(drivePath);
-            BDROM bDRom = ScanBdRom(directoryInfo);
-            string title = TryGetTitle(bDRom);
-            string[] titleSegments = Regex.Split(title, @"[:_]|disc\s*\d+", RegexOptions.IgnoreCase);
-            
-            TmdbSearchClient tmdbSearchClient = new();
-            TmdbPaginatedResponse<TmdbMovie>? movieResponse = await tmdbSearchClient.Movie(titleSegments[0]);
-            TmdbPaginatedResponse<TmdbTvShow>? tvShowResponse = await tmdbSearchClient.TvShow(titleSegments[0]);
-            
-            TmdbMovie? movie = movieResponse?.Results.FirstOrDefault();
-            TmdbTvShow? tvShow = tvShowResponse?.Results.FirstOrDefault();
-            List<TmdbEpisode> episodes = await GetTmdbEpisodes(tvShow, titleSegments);
-            
-            string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
-            string playlistString = Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{path}\"");
-            await File.WriteAllTextAsync(Path.Combine(AppFiles.TempPath, "bdrom.json"), bDRom.ToJson());
-            
-            List<BluRayPlaylist> bluRayPlaylist = ExtractBluRayPlaylists(directoryInfo, playlistString);
-            await ConvertMedia(bluRayPlaylist, title, path);
-            
-            return new()
+            var discType = Optical.GetDiscType(drivePath);
+            string path = drivePath.TrimEnd(Path.DirectorySeparatorChar);
+
+            return discType switch
             {
-                Title = title,
-                BluRayPlaylists = bluRayPlaylist,
-                Data = new { Movie = movie, TvShow = tvShow, Episodes = episodes }
+                OpticalDiscType.BluRay => await ProcessBluRay(drivePath),
+                OpticalDiscType.DVD => await ProcessDvd(drivePath),
+                OpticalDiscType.CD => await ProcessCd(drivePath),
+                _ => null
             };
         }
         catch (Exception ex)
         {
             Logger.Ripper(ex, LogEventLevel.Error);
+            return null;
         }
-        return null;
+    }
+
+    private static async Task<MetaData?> ProcessBluRay(string drivePath)
+    {
+        DirectoryInfo directoryInfo = new(drivePath);
+        BDROM bDRom = ScanBdRom(directoryInfo);
+        string title = TryGetTitle(bDRom);
+        string[] titleSegments = Regex.Split(title, @"[:_]|disc\s*\d+", RegexOptions.IgnoreCase);
+
+        TmdbSearchClient tmdbSearchClient = new();
+        TmdbPaginatedResponse<TmdbMovie>? movieResponse = await tmdbSearchClient.Movie(titleSegments[0]);
+        TmdbPaginatedResponse<TmdbTvShow>? tvShowResponse = await tmdbSearchClient.TvShow(titleSegments[0]);
+
+        TmdbMovie? movie = movieResponse?.Results.FirstOrDefault();
+        TmdbTvShow? tvShow = tvShowResponse?.Results.FirstOrDefault();
+        List<TmdbEpisode> episodes = await GetTmdbEpisodes(tvShow, titleSegments);
+
+        string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
+        string playlistString = Shell.ExecStdErrSync(AppFiles.FfProbePath, $" -hide_banner -v info -i \"bluray:{path}\"");
+        await File.WriteAllTextAsync(Path.Combine(AppFiles.TempPath, "bdrom.json"), bDRom.ToJson());
+
+        List<BluRayPlaylist> bluRayPlaylist = ExtractBluRayPlaylists(directoryInfo, playlistString);
+        await ConvertMedia(bluRayPlaylist, title, path);
+
+        return new()
+        {
+            Title = title,
+            Path = path,
+            BluRayPlaylists = bluRayPlaylist,
+            Data = new { Movie = movie, TvShow = tvShow, Episodes = episodes }
+        };
+    }
+    
+    private static async Task<MetaData?> ProcessDvd(string drivePath)
+    {
+        DirectoryInfo directoryInfo = new(drivePath);
+        string title = directoryInfo.Name;
+        string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
+
+        string encodePath = Path.Combine(AppFiles.TranscodePath, "ripper");
+        Folders.EmptyFolder(encodePath);
+        Directory.CreateDirectory(encodePath);
+
+        StringBuilder sb = new();
+        sb.Append(" -hide_banner -progress - ");
+        sb.Append($" -y -i \"dvd:{drivePath}\" ");
+        // Add DVD-specific encoding parameters here
+
+        string command = sb.ToString();
+        Logger.Encoder(command);
+
+        Task.Run(FfMpeg.Run(command, encodePath, new()
+        {
+            Id = Guid.NewGuid(),
+            Title = title,
+            BaseFolder = encodePath,
+        }).RunSynchronously);
+
+        return new()
+        {
+            Title = title,
+            Path = path,
+        };
+    }
+    
+    private static async Task<MetaData?> ProcessCd(string drivePath)
+    {
+        DirectoryInfo directoryInfo = new(drivePath);
+        string title = directoryInfo.Name;
+        string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
+
+        string encodePath = Path.Combine(AppFiles.TranscodePath, "ripper");
+        Folders.EmptyFolder(encodePath);
+        Directory.CreateDirectory(encodePath);
+
+        StringBuilder sb = new();
+        sb.Append(" -hide_banner -progress - ");
+        sb.Append($" -y -i \"cd:{drivePath}\" ");
+        // Add CD-specific encoding parameters here
+
+        string command = sb.ToString();
+        Logger.Encoder(command);
+
+        Task.Run(FfMpeg.Run(command, encodePath, new()
+        {
+            Id = Guid.NewGuid(),
+            Title = title,
+            BaseFolder = encodePath,
+        }).RunSynchronously);
+
+        return new()
+        {
+            Title = title,
+            Path = path,
+        };
     }
 
     private static async Task ConvertMedia(List<BluRayPlaylist> bluRayPlaylists, string title, string path)
@@ -347,16 +465,27 @@ public partial class DriveMonitor
 
     public static async Task<bool> PlayMedia(string drivePath, string playlistId, CancellationTokenSource token)
     {
-        if(CancellationToken is not null && CancellationToken.Token.CanBeCanceled)
+        if (CancellationToken is not null && CancellationToken.Token.CanBeCanceled)
         {
             await CancellationToken.CancelAsync();
         }
-        
+
         CancellationToken = token;
-        
+        OpticalDiscType discType = Optical.GetDiscType(drivePath);
+
+        return discType switch
+        {
+            OpticalDiscType.BluRay => await PlayBluRay(drivePath, playlistId, token),
+            OpticalDiscType.DVD => await PlayDvd(drivePath, token),
+            OpticalDiscType.CD => await PlayCd(drivePath, token),
+            _ => false
+        };
+    }
+
+    private static async Task<bool> PlayBluRay(string drivePath, string playlistId, CancellationTokenSource token)
+    {
         DirectoryInfo directoryInfo = new(drivePath);
         string path = directoryInfo.FullName.TrimEnd(Path.DirectorySeparatorChar);
-        
         BDROM bDRom = ScanBdRom(directoryInfo);
         string title = TryGetTitle(bDRom);
 
@@ -435,6 +564,54 @@ public partial class DriveMonitor
         {
             //
         }
+
+        return true;
+    }
+    
+    private static async Task<bool> PlayDvd(string drivePath, CancellationTokenSource token)
+    {
+        string encodePath = Path.Combine(AppFiles.TranscodePath, "ripper");
+        Folders.EmptyFolder(encodePath);
+        Directory.CreateDirectory(encodePath);
+
+        StringBuilder sb = new();
+        sb.Append(" -hide_banner -progress - ");
+        sb.Append($" -y -i \"dvd:{drivePath}\" ");
+        // Add DVD-specific encoding parameters here
+
+        string command = sb.ToString();
+        Logger.Encoder(command);
+
+        Task.Run(FfMpeg.Run(command, encodePath, new()
+        {
+            Id = Guid.NewGuid(),
+            Title = "DVD",
+            BaseFolder = encodePath,
+        }).RunSynchronously, token.Token);
+
+        return true;
+    }
+    
+    private static async Task<bool> PlayCd(string drivePath, CancellationTokenSource token)
+    {
+        string encodePath = Path.Combine(AppFiles.TranscodePath, "ripper");
+        Folders.EmptyFolder(encodePath);
+        Directory.CreateDirectory(encodePath);
+
+        StringBuilder sb = new();
+        sb.Append(" -hide_banner -progress - ");
+        sb.Append($" -y -i \"cd:{drivePath}\" ");
+        // Add CD-specific encoding parameters here
+
+        string command = sb.ToString();
+        Logger.Encoder(command);
+
+        Task.Run(FfMpeg.Run(command, encodePath, new()
+        {
+            Id = Guid.NewGuid(),
+            Title = "CD",
+            BaseFolder = encodePath,
+        }).RunSynchronously, token.Token);
 
         return true;
     }

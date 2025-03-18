@@ -80,7 +80,7 @@ public class ConfigurationController : BaseController
             Config.InternalServerPort = request.InternalServerPort;
             await mediaContext.Configuration.Upsert(new()
                 {
-                    Key = "InternalServerPort",
+                    Key = "internalPort",
                     Value = request.InternalServerPort.ToString(),
                     ModifiedBy = userId
                 })
@@ -100,7 +100,7 @@ public class ConfigurationController : BaseController
             Config.ExternalServerPort = request.ExternalServerPort;
             await mediaContext.Configuration.Upsert(new()
                 {
-                    Key = "ExternalServerPort",
+                    Key = "externalPort",
                     Value = request.ExternalServerPort.ToString(),
                     ModifiedBy = userId
                 })
