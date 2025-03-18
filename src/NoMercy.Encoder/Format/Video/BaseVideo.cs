@@ -110,7 +110,9 @@ public abstract class BaseVideo : Classes
 
     private bool VideoIsHdr()
     {
-        return VideoStream?.PixelFormat.Contains("hdr") ?? false;
+        if (VideoStream is null)
+            throw new("Video stream is null");
+        return VideoStream.PixelFormat.Contains("hdr") || VideoStream.ColorSpace.Contains(ColorSpaces.Bt2020);
     }
 
     protected BaseVideo SetVideoCodec(string videoCodec)

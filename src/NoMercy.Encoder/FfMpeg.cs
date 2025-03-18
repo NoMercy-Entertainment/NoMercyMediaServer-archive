@@ -212,7 +212,7 @@ public class FfMpeg : Classes
                 string bitrate = parsedData.Bitrate;
                 double remaining = parsedData.Remaining;
 
-                string remainingHms = TimeSpan.FromSeconds(remaining).ToString();
+                string remainingHms = TimeSpan.FromSeconds(remaining).ToString(@"d\:hh\:mm\:ss");
 
                 string thumbnail = GetThumbnail(meta);
 
@@ -242,7 +242,6 @@ public class FfMpeg : Classes
 
                 progressData.RemainingSplit = progressData.RemainingHms
                     .Split(":")
-                    .Prepend("0")
                     .ToArray();
 
                 if (progressData.Speed == 0) return;

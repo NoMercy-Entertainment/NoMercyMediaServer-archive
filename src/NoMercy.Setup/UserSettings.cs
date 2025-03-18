@@ -37,10 +37,10 @@ namespace NoMercy.Setup
                 Logger.App($"Configuration: {setting.Key} = {setting.Value}");
                 switch (setting.Key)
                 {
-                    case "InternalServerPort":
+                    case "internalPort":
                         Config.InternalServerPort = int.Parse(setting.Value);
                         break;
-                    case "ExternalServerPort":
+                    case "externalPort":
                         Config.ExternalServerPort = int.Parse(setting.Value);
                         break;
                     case "queueRunners":
