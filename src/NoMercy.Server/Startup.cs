@@ -229,7 +229,6 @@ public class Startup(IApiVersionDescriptionProvider provider)
         services.AddResponseCompression(options => { options.EnableForHttps = true; });
 
         services.AddTransient<DynamicStaticFilesMiddleware>();
-
         // services.AddSingleton(LibraryFileWatcher.Instance);
     }
 
