@@ -24,6 +24,7 @@ public class AccessLogMiddleware
         "/styles",
         "/scripts",
         "/favicon",
+        "/transcode",
     ];
 
     private readonly string[] _ignoreExact =
@@ -39,7 +40,7 @@ public class AccessLogMiddleware
 
     private readonly string[] _ignoreIfGuest =
     [
-        "/status"
+        "/status",
     ];
 
     public async Task InvokeAsync(HttpContext context)

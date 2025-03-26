@@ -57,7 +57,7 @@ public class Networking
 
     private static string? _externalIp;
 
-    private static string ExternalIp
+    public static string ExternalIp
     {
         get => _externalIp ?? GetExternalIp();
         set => _externalIp = value;

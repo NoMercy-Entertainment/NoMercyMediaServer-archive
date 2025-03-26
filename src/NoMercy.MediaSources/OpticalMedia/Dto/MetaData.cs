@@ -7,8 +7,9 @@ public class MetaData
 {
     [JsonProperty("title")] public string Title = string.Empty;
     [JsonProperty("playlists")] public  IEnumerable<PlaylistItem>? Playlists;
-    [JsonProperty("ffprobe_data")] public FfprobeResult? FfProbeData { get; set; } = new();
+    [JsonProperty("data")] public dynamic? Data { get; set; }
     [JsonProperty("bluRay_playlists")] public List<BluRayPlaylist> BluRayPlaylists { get; set; } = [];
+    [JsonProperty("path")] public string Path { get; set; } = string.Empty;
 }
 
 public class PlaylistItem

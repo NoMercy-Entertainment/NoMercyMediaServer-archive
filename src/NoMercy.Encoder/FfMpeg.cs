@@ -127,7 +127,7 @@ public class FfMpeg : Classes
 
         return error;
     }
-    
+
     public static async Task<string> Run(string args, string cwd, ProgressMeta meta)
     {
         Process ffmpeg = new()
@@ -156,9 +156,12 @@ public class FfMpeg : Classes
         StringBuilder output2 = new();
         TimeSpan totalDuration = TimeSpan.Zero;
         bool durationFound = false;
+        bool hasOutput = false;
         TimeSpan currentTime;
 
         Regex durationRegex = new(@"Duration:\s(\d{2}):(\d{2}):(\d{2})\.(\d+)");
+
+        StringBuilder error = new();
 
         ffmpeg.ErrorDataReceived += (_, e) =>
         {
@@ -176,22 +179,31 @@ public class FfMpeg : Classes
                     totalDuration = new(0, hours, minutes, seconds, milliseconds * 10);
                     durationFound = true;
                 }
+                else
+                {
+                    error.AppendLine(e.Data);
+                }
+            }
+            else
+            {
+                error.AppendLine(e.Data);
             }
         };
 
         ffmpeg.OutputDataReceived += (_, e) =>
         {
+            hasOutput = true;
             try
             {
                 if (e.Data == null) return;
-                
+
                 output.AppendLine(e.Data);
                 output2.AppendLine(e.Data);
 
                 ProgressData? parsedData = ParseOutputData(output2.ToString(), totalDuration);
 
                 if (parsedData == null) return;
-                    
+
                 double progress = parsedData.ProgressPercentage;
                 currentTime = parsedData.CurrentTime;
                 double speed = parsedData.Speed;
@@ -200,8 +212,8 @@ public class FfMpeg : Classes
                 string bitrate = parsedData.Bitrate;
                 double remaining = parsedData.Remaining;
 
-                string remainingHms = TimeSpan.FromSeconds(remaining).ToString();
-                
+                string remainingHms = TimeSpan.FromSeconds(remaining).ToString(@"d\:hh\:mm\:ss");
+
                 string thumbnail = GetThumbnail(meta);
 
                 Progress progressData = new()
@@ -230,13 +242,12 @@ public class FfMpeg : Classes
 
                 progressData.RemainingSplit = progressData.RemainingHms
                     .Split(":")
-                    .Prepend("0")
                     .ToArray();
 
-                if(progressData.Speed == 0) return;
-                
+                if (progressData.Speed == 0) return;
+
                 Networking.Networking.SendToAll("encoder-progress", "dashboardHub", progressData);
-                
+
                 output2.Clear();
             }
             catch (Exception ex)
@@ -255,6 +266,9 @@ public class FfMpeg : Classes
             Status = "completed",
             Id = meta.Id
         });
+
+        if (!hasOutput && error.Length > 0)
+            throw new(error.ToString());
 
         return output.ToString();
     }

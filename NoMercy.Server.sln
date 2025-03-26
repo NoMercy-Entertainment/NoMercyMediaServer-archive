@@ -41,6 +41,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoMercy.Setup", "src\NoMerc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoMercy.Globals", "src\NoMercy.Globals\NoMercy.Globals.csproj", "{DB130073-6092-4034-B5AB-DEC5D34C1DD2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NoMercy.App", "src\NoMercy.App\NoMercy.App.csproj", "{038BAC6C-DCE3-450A-A2FA-39451BC03232}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -115,6 +117,10 @@ Global
 		{DB130073-6092-4034-B5AB-DEC5D34C1DD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB130073-6092-4034-B5AB-DEC5D34C1DD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB130073-6092-4034-B5AB-DEC5D34C1DD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{038BAC6C-DCE3-450A-A2FA-39451BC03232}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{038BAC6C-DCE3-450A-A2FA-39451BC03232}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{038BAC6C-DCE3-450A-A2FA-39451BC03232}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{038BAC6C-DCE3-450A-A2FA-39451BC03232}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -140,5 +146,6 @@ Global
 		{C6918DFB-387B-433B-8868-7D54577293AE} = {1A749650-7DB2-4431-93FB-EF950256BC5B}
 		{78361017-700D-4897-8E56-CC08C6AC458A} = {1A749650-7DB2-4431-93FB-EF950256BC5B}
 		{DB130073-6092-4034-B5AB-DEC5D34C1DD2} = {1A749650-7DB2-4431-93FB-EF950256BC5B}
+		{038BAC6C-DCE3-450A-A2FA-39451BC03232} = {1A749650-7DB2-4431-93FB-EF950256BC5B}
 	EndGlobalSection
 EndGlobal

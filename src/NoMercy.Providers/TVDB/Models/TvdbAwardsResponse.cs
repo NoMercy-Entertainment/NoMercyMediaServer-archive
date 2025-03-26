@@ -11,7 +11,7 @@ public class TvdbAwardExtendedResponse : TvdbResponse<TvdbAwardExtendedData>
 }
 public class TvdbAwardExtendedData
 {
-    [JsonProperty("categories")] public List<TvdbAwardCategoryData> Categories { get; set; } = new();
+    [JsonProperty("categories")] public List<TvdbAwardCategoryData> Categories { get; set; } = [];
     [JsonProperty("id")] public int Id { get; set; }
     [JsonProperty("name")] public string Name { get; set; } = string.Empty;
     [JsonProperty("score")] public int Score { get; set; }
