@@ -384,6 +384,6 @@ public class IsoLanguageMapper
     public static string? GetIsoCode(string language)
     {
         Dictionary<string, string> languageToIso = IsoToLanguage.ToDictionary(kvp => kvp.Value, kvp => kvp.Key, StringComparer.OrdinalIgnoreCase);
-        return languageToIso.TryGetValue(language, out var isoCode) ? isoCode : null;
+        return languageToIso.TryGetValue(language, out string? isoCode) ? isoCode : null;
     }
 }

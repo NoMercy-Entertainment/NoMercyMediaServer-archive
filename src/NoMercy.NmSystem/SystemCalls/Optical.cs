@@ -160,7 +160,7 @@ public static class Optical
 
     private static bool IsOpticalDrive(string drivePath)
     {
-        DriveInfo driveInfo = new DriveInfo(drivePath);
+        DriveInfo driveInfo = new(drivePath);
         return driveInfo.DriveType == DriveType.CDRom;
     }
     

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Newtonsoft.Json;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
+using Serilog.Events;
 
 namespace NoMercy.Setup;
 
@@ -63,40 +64,124 @@ public static class Auth
 
     private static void TokenByBrowserOrPassword()
     {
-        Logger.Auth("Trying to authenticate by browser or password");
-        while (true)
+        Logger.Auth("Trying to authenticate by browser, QR code or password", LogEventLevel.Verbose);
+
+        if (IsDesktopEnvironment() && Environment.OSVersion.Platform != PlatformID.Unix)
         {
-            if (IsDesktopEnvironment())
+            TokenByBrowser();
+            return;
+        }
+
+        Console.WriteLine("Select login method:");
+        Console.WriteLine("1. QR code / device login (recommended)");
+        Console.WriteLine("2. Password login");
+        Console.WriteLine("Auto-selecting QR code login in 15 seconds...");
+
+        Task timeoutTask = Task.Delay(TimeSpan.FromSeconds(15));
+        Task<ConsoleKeyInfo> inputTask = Task.Run(() =>
+        {
+            while (!Console.KeyAvailable && !timeoutTask.IsCompleted)
             {
-                TokenByBrowser();
+                Thread.Sleep(100);
             }
-            else
+            return Console.KeyAvailable ? Console.ReadKey(true) : default;
+        });
+
+        Task completedTask = Task.WhenAny(timeoutTask, inputTask).Result;
+
+        if (completedTask == timeoutTask || inputTask.Result == default)
+        {
+            TokenByDeviceGrant();
+            return;
+        }
+
+        ConsoleKeyInfo key = inputTask.Result;
+        Console.WriteLine();
+
+        switch (key.KeyChar)
+        {
+            case '2':
+                TokenByPassword();
+                break;
+            case '1':
+            default:
+                TokenByDeviceGrant();
+                break;
+        }
+    }
+    
+    private static void TokenByDeviceGrant()
+    {
+        if (Config.TokenClientId == null)
+            throw new("Auth keys not initialized");
+
+        Logger.Auth("Authenticating via device grant", LogEventLevel.Verbose);
+
+        using HttpClient client = new();
+        client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+
+        List<KeyValuePair<string, string>> deviceCodeBody =
+        [
+            new("client_id", Config.TokenClientId),
+            new("scope", "openid offline_access email profile")
+        ];
+
+        string deviceCodeResponse = client.PostAsync($"{BaseUrl}protocol/openid-connect/auth/device",
+                new FormUrlEncodedContent(deviceCodeBody))
+            .Result.Content.ReadAsStringAsync().Result;
+        
+        DeviceAuthResponse deviceData = JsonConvert.DeserializeObject<DeviceAuthResponse>(deviceCodeResponse)
+                                      ?? throw new("Failed to get device code");
+        
+        Logger.Auth($"Scan QR code or visit: {deviceData.VerificationUriComplete}");
+        
+        ConsoleQrCode.Display(deviceData.VerificationUriComplete);
+
+        List<KeyValuePair<string, string>> tokenBody =
+        [
+            new("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
+            new("client_id", Config.TokenClientId),
+            new("device_code", deviceData.DeviceCode)
+        ];
+
+        DateTime expiresAt = DateTime.Now.AddSeconds(deviceData.ExpiresIn);
+        bool authenticated = false;
+
+        while (DateTime.Now < expiresAt && !authenticated)
+        {
+            Thread.Sleep(deviceData.Interval * 1000);
+            try
             {
-                Console.WriteLine("Enter your email:");
-                string? email = Console.ReadLine();
+                var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(tokenBody))
+                    .Result;
 
-                if (string.IsNullOrEmpty(email))
+                if (response.IsSuccessStatusCode)
                 {
-                    Console.WriteLine("Email cannot be empty");
-                    continue;
+                    string content = response.Content.ReadAsStringAsync().Result;
+                    SetTokens(content);
+                    authenticated = true;
+                    Console.Clear();
                 }
-
-                Console.WriteLine("Enter your password:");
-                string password = ReadPassword();
-
-                if (string.IsNullOrEmpty(password))
+                else
                 {
-                    Console.WriteLine("Password cannot be empty");
-                    continue;
+                    var error = JsonConvert.DeserializeObject<dynamic>(response.Content.ReadAsStringAsync().Result);
+                    if (error?.error.ToString() != "authorization_pending")
+                    {
+                        Logger.Auth($"Error: {error?.error_description}");
+                        return;
+                    }
                 }
-
-                Console.WriteLine("Enter your 2 factor authentication code (if enabled):");
-                string? otp = Console.ReadLine();
-
-                TokenByPasswordGrant(email, password, otp);
             }
+            catch (Exception ex)
+            {
+                Logger.Auth($"Error: {ex.Message}");
+                return;
+            }
+        }
 
-            break;
+        if (!authenticated)
+        {
+            throw new("Device authorization timed out");
         }
     }
 
@@ -237,6 +322,37 @@ public static class Auth
         PublicKey = data.public_key;
     }
 
+    private static void TokenByPassword()
+    {
+        while (true)
+        {
+            Console.WriteLine("Enter your email:");
+            string? email = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(email))
+            {
+                Console.WriteLine("Email cannot be empty");
+                continue;
+            }
+
+            Console.WriteLine("Enter your password:");
+            string password = ReadPassword();
+
+            if (string.IsNullOrEmpty(password))
+            {
+                Console.WriteLine("Password cannot be empty");
+                continue;
+            }
+
+            Console.WriteLine(
+                "Enter your 2 factor authentication code (if enabled, hit enter if you don't have it setup):");
+            string? otp = Console.ReadLine();
+
+            TokenByPasswordGrant(email, password, otp);
+            break;
+        }
+    }
+
     private static void TokenByPasswordGrant(string username, string password, string? otp = "")
     {
         if (Config.TokenClientId == null || Config.TokenClientSecret == null)
@@ -336,5 +452,26 @@ public static class Auth
         if (string.IsNullOrEmpty(Info.GpuVendors.FirstOrDefault())) return false;
 
         return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY"));
+    }
+    
+    private class DeviceAuthResponse
+    {
+        [JsonProperty("device_code")]
+        public string DeviceCode { get; set; } = string.Empty;
+
+        [JsonProperty("user_code")]
+        public string UserCode { get; set; } = string.Empty;
+
+        [JsonProperty("verification_uri")]
+        public string VerificationUri { get; set; } = string.Empty;
+
+        [JsonProperty("verification_uri_complete")]
+        public string VerificationUriComplete { get; set; } = string.Empty;
+
+        [JsonProperty("expires_in")]
+        public int ExpiresIn { get; set; }
+
+        [JsonProperty("interval")]
+        public int Interval { get; set; }
     }
 }
