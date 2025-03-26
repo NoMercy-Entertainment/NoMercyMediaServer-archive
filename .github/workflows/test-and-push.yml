@@ -53,7 +53,6 @@ jobs:
           dotnet test NoMercy.Server.sln 
           --configuration Release
           --runtime linux-x64
-          --self-contained true
           --collect:"XPlat Code Coverage"
           --settings tests/coverletArgs.runsettings
           --verbosity minimal
