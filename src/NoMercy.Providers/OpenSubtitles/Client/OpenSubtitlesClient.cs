@@ -43,7 +43,7 @@ public class OpenSubtitlesClient : OpenSubtitlesBaseClient
             ]
         };
 
-        var x = await  Post<Login, LoginResponse>("", login);
+        LoginResponse? x = await  Post<Login, LoginResponse>("", login);
         AccessToken = x?.Params?.Param?.Value?.Struct?.Member.FirstOrDefault(member => member.Name == "token")?.Value?.String;
         
         return this;

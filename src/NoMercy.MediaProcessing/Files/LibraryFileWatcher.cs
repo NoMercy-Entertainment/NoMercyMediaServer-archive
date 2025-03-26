@@ -230,7 +230,7 @@ public class LibraryFileWatcher
         TmdbPaginatedResponse<TmdbTvShow>? paginatedTvShowResponse =
             await tmdbSearchClient.TvShow(path.Parsed.Title!, path.Parsed.Year);
 
-        if (paginatedTvShowResponse?.Results.Length <= 0) return;
+        if (paginatedTvShowResponse?.Results.Count <= 0) return;
 
         IEnumerable<TmdbTvShow> res = paginatedTvShowResponse?.Results ?? [];
         if (res.Count() is 0) return;
@@ -250,7 +250,7 @@ public class LibraryFileWatcher
         TmdbPaginatedResponse<TmdbMovie>? paginatedTvShowResponse =
             await tmdbSearchClient.Movie(path.Parsed.Title!, path.Parsed.Year);
 
-        if (paginatedTvShowResponse?.Results.Length <= 0) return;
+        if (paginatedTvShowResponse?.Results.Count <= 0) return;
 
         IEnumerable<TmdbMovie> res = paginatedTvShowResponse?.Results ?? [];
         if (res.Count() is 0) return;

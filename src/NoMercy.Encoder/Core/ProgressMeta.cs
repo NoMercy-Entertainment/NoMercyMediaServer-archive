@@ -5,7 +5,7 @@ public class ProgressMeta
 {
     [JsonProperty("has_gpu")] public bool HasGpu { get; set; }
     [JsonProperty("is_hdr")] public bool IsHdr { get; set; }
-    [JsonProperty("id")] public dynamic Id { get; set; }
+    [JsonProperty("id")] public dynamic Id { get; set; } = string.Empty;
     [JsonProperty("title")] public string Title { get; set; } = string.Empty;
     [JsonProperty("base_folder")] public string BaseFolder { get; set; } = string.Empty;
     [JsonProperty("share_path")] public string ShareBasePath { get; set; } = string.Empty;

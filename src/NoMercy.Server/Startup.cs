@@ -33,7 +33,9 @@ using System.Text.Json.Serialization;
 using NoMercy.Encoder.Core;
 using NoMercy.Helpers;
 using NoMercy.Helpers.Monitoring;
+using NoMercy.MediaSources.OpticalMedia;
 using NoMercy.Networking;
+using NoMercy.NmSystem.FileSystem;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.NmSystem.SystemCalls;
@@ -59,6 +61,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
         services.AddSingleton<Networking.Networking>();
         services.AddSingleton<StorageMonitor>();
         services.AddSingleton<ChromeCast>();
+        services.AddSingleton<DriveMonitor>();
 
         // Add DbContexts
         services.AddDbContext<QueueContext>(optionsAction =>
@@ -326,8 +329,16 @@ public class Startup(IApiVersionDescriptionProvider provider)
                     options.Transports = HttpTransportType.WebSockets;
                     options.CloseOnAuthenticationExpiration = true;
                 });
+
+                endpoints.MapHub<RipperHub>("/ripperHub", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets;
+                    options.CloseOnAuthenticationExpiration = true;
+                });
             });
 
+        Folders.EmptyFolder(AppFiles.TranscodePath);
+        
         // Static Files
         app.UseStaticFiles(new StaticFileOptions
         {

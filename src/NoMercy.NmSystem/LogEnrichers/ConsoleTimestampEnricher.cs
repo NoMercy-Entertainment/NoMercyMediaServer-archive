@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Globalization;
 using Pastel;
 using Serilog.Core;
 using Serilog.Events;
@@ -8,7 +9,7 @@ internal class ConsoleTimestampEnricher : ILogEventEnricher
 {
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
-        string? timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss").Pastel(Color.DarkGray);
+        string timestamp = DateTime.Now.ToString("g", CultureInfo.CurrentCulture).Pastel(Color.DarkGray);
 
         logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(
             "Time", timestamp));

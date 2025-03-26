@@ -10,6 +10,7 @@ using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
+using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Api.Controllers.V1.Music;
 
@@ -197,7 +198,7 @@ public class MusicController : BaseController
 
         MediaContext mediaContext = new();
         List<Artist> artists = mediaContext.Artists
-            .Where(artist => artist.Name.ToLower().Contains(request.Query.ToLower()))
+            .Where(artist => artist.Name.Contains(request.Query))
             .Include(artist => artist.ArtistTrack)
             .ThenInclude(artistTrack => artistTrack.Track)
             .ThenInclude(song => song.TrackUser)
@@ -206,7 +207,7 @@ public class MusicController : BaseController
             .ToList();
 
         List<Album> albums = mediaContext.Albums
-            .Where(album => album.Name.ToLower().Contains(request.Query.ToLower()))
+            .Where(album => album.Name.Contains(request.Query))
             .Include(album => album.AlbumTrack)
             .ThenInclude(albumTrack => albumTrack.Track)
             .ThenInclude(track => track.ArtistTrack)
@@ -217,14 +218,14 @@ public class MusicController : BaseController
             .ToList();
 
         List<Playlist> playlists = mediaContext.Playlists
-            .Where(playlist => playlist.Name.ToLower().Contains(request.Query.ToLower()))
+            .Where(playlist => playlist.Name.Contains(request.Query))
             .Include(playlist => playlist.Tracks)
             .ThenInclude(playlistTrack => playlistTrack.Track)
             .ThenInclude(song => song.TrackUser)
             .ToList();
 
         List<Track> songs = mediaContext.Tracks
-            .Where(song => song.Name.ToLower().Contains(request.Query.ToLower()))
+            .Where(song => song.Name.Contains(request.Query))
             .Include(song => song.ArtistTrack)
             .ThenInclude(artistTrack => artistTrack.Artist)
             .Include(song => song.AlbumTrack)

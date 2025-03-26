@@ -1,8 +1,10 @@
+using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Humanizer;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace NoMercy.NmSystem.Extensions;
@@ -46,11 +48,17 @@ public static partial class Str
         return dp[s1.Length, s2.Length];
     }
     
-    public static List<T> SortByMatchPercentage<T>(IEnumerable<T> array, Func<T, string> keySelector, string match)
+    public static List<T> SortByMatchPercentage<T>(IEnumerable<T> array, Func<T, string> keySelector, string match) where T : class
+    {
+        return array.OrderBy(item => MatchPercentage(match, keySelector(item))).ToList();
+    }
+    
+    public static List<T> ToSortByMatchPercentage<T>(this IEnumerable<T> array, Func<T, string> keySelector, string match) where T : class
     {
         return array.OrderBy(item => MatchPercentage(match, keySelector(item))).ToList();
     }
 
+    [Pure]
     public static string RemoveAccents(this string s)
     {
         Encoding destEncoding = Encoding.GetEncoding("ISO-8859-1");
@@ -59,6 +67,7 @@ public static partial class Str
             Encoding.Convert(Encoding.UTF8, destEncoding, Encoding.UTF8.GetBytes(s)));
     }
 
+    [Pure]
     public static string RemoveDiacritics(this string text)
     {
         string formD = text.Normalize(NormalizationForm.FormD);
@@ -291,5 +300,10 @@ public static partial class Str
     public static string TitleSort<T>(this T? self, DateTime? date = null)
     {
         return _parseTitleSort(self?.ToString(), date);
+    }
+    
+    public static string ToName(this string str)
+    {;
+        return NumberConverter.ConvertNumbersInString(str);
     }
 }
