@@ -72,50 +72,70 @@ public static class Certificate
     }
 
     [Obsolete("Obsolete")]
-    public static async Task RenewSslCertificate()
+    public static async Task RenewSslCertificate(int maxRetries = 3, int delaySeconds = 5)
     {
+        bool hasExistingCert = File.Exists(Path.Combine(AppFiles.CertFile));
         if (ValidateSslCertificate())
         {
-            Logger.Certificate(@"SSL Certificate is valid");
-            await Task.CompletedTask;
+            Logger.Certificate("SSL Certificate is valid");
             return;
         }
 
-        Logger.Certificate(@"Renewing SSL Certificate...");
-
-        HttpClient client = new();
-        client.Timeout = new(0, 10, 0);
+        Logger.Certificate(!hasExistingCert
+            ? "Generating SSL Certificate..."
+            : "Renewing SSL Certificate...");
+        
+        using HttpClient client = new();
+        client.Timeout = TimeSpan.FromMinutes(10);
         client.DefaultRequestHeaders.Accept.Add(new("application/json"));
         client.DefaultRequestHeaders.Authorization = new("Bearer", Globals.Globals.AccessToken);
 
         string serverUrl = $"{Config.ApiServerBaseUrl}certificate?server_id={Info.DeviceId}";
-
-        if (File.Exists(AppFiles.CertFile))
+        if (hasExistingCert)
             serverUrl = $"{Config.ApiServerBaseUrl}renewcertificate?server_id={Info.DeviceId}";
 
-        string response = client
-            .GetStringAsync(serverUrl)
-            .Result;
+        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync(serverUrl);
+                if (response.StatusCode == System.Net.HttpStatusCode.GatewayTimeout)
+                {
+                    if (attempt == maxRetries)
+                        throw new HttpRequestException("Max retries reached for certificate renewal");
 
-        CertificateResponse data = JsonConvert.DeserializeObject<CertificateResponse>(response)
-                                   ?? throw new("Failed to deserialize JSON");
+                    Logger.Certificate($"Gateway timeout, retrying in {delaySeconds} seconds (attempt {attempt}/{maxRetries})");
+                    await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+                    continue;
+                }
 
-        if (File.Exists(AppFiles.KeyFile))
-            File.Delete(AppFiles.KeyFile);
+                response.EnsureSuccessStatusCode();
+                string content = await response.Content.ReadAsStringAsync();
+                CertificateResponse data = JsonConvert.DeserializeObject<CertificateResponse>(content)
+                                           ?? throw new("Failed to deserialize JSON");
 
-        if (File.Exists(AppFiles.CaFile))
-            File.Delete(AppFiles.CaFile);
+                if (File.Exists(AppFiles.KeyFile))
+                    File.Delete(AppFiles.KeyFile);
+                if (File.Exists(AppFiles.CaFile))
+                    File.Delete(AppFiles.CaFile);
+                if (File.Exists(AppFiles.CertFile))
+                    File.Delete(AppFiles.CertFile);
 
-        if (File.Exists(AppFiles.CertFile))
-            File.Delete(AppFiles.CertFile);
+                await File.WriteAllTextAsync(AppFiles.KeyFile, data.PrivateKey);
+                await File.WriteAllTextAsync(AppFiles.CaFile, data.CertificateAuthority);
+                await File.WriteAllTextAsync(AppFiles.CertFile, $"{data.Certificate}\n{data.IssuerCertificate}");
 
-        await File.WriteAllTextAsync(AppFiles.KeyFile, $"{data.PrivateKey}");
-        await File.WriteAllTextAsync(AppFiles.CaFile, $"{data.CertificateAuthority}");
-        await File.WriteAllTextAsync(AppFiles.CertFile, @$"{data.Certificate}\n{data.IssuerCertificate}");
-
-        Logger.Certificate("SSL Certificate renewed");
-
-        await Task.CompletedTask;
+                Logger.Certificate(!hasExistingCert
+                    ? "SSL Certificate created"
+                    : "SSL Certificate renewed");
+                return;
+            }
+            catch (HttpRequestException ex) when (attempt < maxRetries)
+            {
+                Logger.Certificate($"Request failed: {ex.Message}, retrying in {delaySeconds} seconds (attempt {attempt}/{maxRetries})");
+                await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
+            }
+        }
     }
 
     public class CertificateResponse

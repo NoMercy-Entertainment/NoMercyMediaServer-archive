@@ -180,7 +180,7 @@ public static class FFmpegHardwareConfig
                 ManagementObjectSearcher searcher = new("SELECT * FROM Win32_VideoController");
                 ManagementObjectCollection? results = searcher.Get();
 
-                foreach (var managementBaseObject in results)
+                foreach (ManagementBaseObject? managementBaseObject in results)
                 {
                     ManagementObject? obj = (ManagementObject)managementBaseObject;
                     object? adapterRam = obj["AdapterRAM"];

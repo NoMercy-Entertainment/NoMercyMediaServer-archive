@@ -1,12 +1,18 @@
 // ReSharper disable MemberCanBePrivate.Global
 
+using NoMercy.NmSystem.SystemCalls;
+
 namespace NoMercy.NmSystem.Information;
 
 public static class AppFiles
 {
     public static readonly string ApplicationName = "NoMercy MediaServer";
-    public static readonly string AppDataPath =
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+    public static readonly string AppDataPath = Environment.OSVersion.Platform == PlatformID.Unix
+        ? Path.Combine(
+            Environment.GetEnvironmentVariable("HOME") ?? "/home/current",
+            ".local/share")
+        : Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
     public static readonly string AppPath = Path.Combine(AppDataPath, "NoMercy_C#");
 
@@ -40,14 +46,14 @@ public static class AppFiles
     public static readonly string FfmpegPath = Path.Combine(FfmpegFolder, "ffmpeg" + Info.ExecSuffix);
     public static readonly string FfProbePath = Path.Combine(FfmpegFolder, "ffprobe" + Info.ExecSuffix);
     public static readonly string FpCalcPath = Path.Combine(BinariesPath, "fpcalc", "fpcalc" + Info.ExecSuffix);
-    
+
     public static readonly string TesseractFolder = Path.Combine(RootPath, "binaries", "tesseract");
     public static readonly string TesseractModelsFolder = Path.Combine(TesseractFolder, "tessdata");
-    
+
     public static string UpdaterExePath => Path.Combine(BinariesPath, "NoMercyUpdater" + Info.ExecSuffix);
     public static string ServerExePath => Path.Combine(BinariesPath, "NoMercyMediaServer" + Info.ExecSuffix);
     public static string ServerTempExePath => Path.Combine(BinariesPath, "NoMercyMediaServer_temp" + Info.ExecSuffix);
-    
+
     public static readonly string SubtitleEdit =
         Path.Combine(BinariesPath, "subtitleedit", "SubtitleEdit" + Info.ExecSuffix);
 
@@ -60,7 +66,8 @@ public static class AppFiles
     public static readonly string SecretsStore = Path.Combine(SecretsPath, "secrets.bin");
     public static readonly string SecretsKey = Path.Combine(SecretsPath, "secrets.key");
 
-    public static readonly string AppIcon = Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon" + Info.IconSuffix);
+    public static readonly string AppIcon =
+        Path.Combine(Directory.GetCurrentDirectory(), "Assets/icon" + Info.IconSuffix);
 
     public static readonly string MediaDatabase = Path.Combine(DataPath, "media.db");
     public static readonly string QueueDatabase = Path.Combine(DataPath, "queue.db");
@@ -98,9 +105,21 @@ public static class AppFiles
             Directory.CreateDirectory(AppPath);
 
         foreach (string path in AllPaths().Where(path => !Directory.Exists(path)))
-            // Logger.Setup($"Creating directory: {path}");
+        {
+            Logger.Setup($"Creating directory: {path}");
             Directory.CreateDirectory(path);
-
+            if (Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                // Set appropriate Unix permissions (755)
+                DirectoryInfo dirInfo = new(path)
+                {
+                    UnixFileMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                                   UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+                                   UnixFileMode.OtherRead | UnixFileMode.OtherExecute
+                };
+            }
+        }
+        
         return Task.CompletedTask;
     }
 }
