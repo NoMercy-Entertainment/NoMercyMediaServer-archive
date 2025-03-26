@@ -82,7 +82,7 @@ public class TmdbBaseClient : IDisposable
 
     protected async Task<List<T>?> Paginated<T>(string url, int limit) where T : class
     {
-        List<T> list = new();
+        List<T> list = [];
 
         TmdbPaginatedResponse<T>? firstPage = await Get<TmdbPaginatedResponse<T>>(url);
         list.AddRange(firstPage?.Results ?? []);

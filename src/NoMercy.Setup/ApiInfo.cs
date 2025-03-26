@@ -1,3 +1,4 @@
+using Microsoft.Diagnostics.Tracing.AutomatedAnalysis;
 using Newtonsoft.Json;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.NewtonSoftConverters;
@@ -33,23 +34,23 @@ public partial class ApiInfo
 
     public static async Task RequestInfo()
     {
-        HttpClient client = new();
-        client.Timeout = TimeSpan.FromSeconds(120);
-        client.BaseAddress = new(Config.ApiBaseUrl);
-        client.DefaultRequestHeaders.UserAgent.ParseAdd(Config.UserAgent);
-        
-        HttpResponseMessage response = await client.GetAsync("v1/info");
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new("The NoMercy API is not available");
-        }
-        
-        string? content = await response.Content.ReadAsStringAsync();
-
-        if (content == null) throw new("Failed to get server info");
-
         try
         {
+            HttpClient client = new();
+            client.Timeout = TimeSpan.FromSeconds(120);
+            client.BaseAddress = new(Config.ApiBaseUrl);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(Config.UserAgent);
+            
+            HttpResponseMessage response = await client.GetAsync("v1/info");
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new("The NoMercy API is not available");
+            }
+            
+            string? content = await response.Content.ReadAsStringAsync();
+
+            if (content == null) throw new("Failed to get server info");
+
             ApiInfo? data = content.FromJson<ApiInfo>();
             if (data == null) throw new("Failed to deserialize server info");
 
@@ -72,9 +73,9 @@ public partial class ApiInfo
         }
         catch (Exception e)
         {
-            Logger.Setup(content, LogEventLevel.Error);
             Logger.Setup(e.Message, LogEventLevel.Error);
-            throw;
+            Logger.App("Shutting down application");
+            Environment.Exit(1);
         }
     }
 }

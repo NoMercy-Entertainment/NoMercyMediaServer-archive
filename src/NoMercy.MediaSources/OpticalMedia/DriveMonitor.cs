@@ -260,7 +260,7 @@ public partial class DriveMonitor
     {
         try
         {
-            var discType = Optical.GetDiscType(drivePath);
+            OpticalDiscType discType = Optical.GetDiscType(drivePath);
             string path = drivePath.TrimEnd(Path.DirectorySeparatorChar);
 
             return discType switch

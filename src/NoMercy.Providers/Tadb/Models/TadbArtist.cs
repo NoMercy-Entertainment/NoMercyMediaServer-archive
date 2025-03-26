@@ -59,7 +59,7 @@ public class TadbArtist
     {
         get
         {
-            List<TadbLanguageDescription> descriptions = new();
+            List<TadbLanguageDescription> descriptions = [];
             if (StrBiographyCn != null)
                 descriptions.Add(new() { Iso31661 = "CN", Description = StrBiographyCn });
             if (StrBiographyDe != null)

@@ -4,7 +4,7 @@ using Serilog.Events;
 namespace NoMercy.MediaProcessing.Files;
 public class FolderWatcher : IDisposable
 {
-    private static readonly List<FileSystemWatcher> Watchers = new();
+    private static readonly List<FileSystemWatcher> Watchers = [];
     private static FolderWatcher? _instance;
 
     public event Action<FileWatcherEventArgs>? OnChanged;
@@ -23,7 +23,7 @@ public class FolderWatcher : IDisposable
 
     private List<Action> WatchFolders(List<string> foldersToWatch)
     {
-        List<Action> disposers = new();
+        List<Action> disposers = [];
         foreach (string folder in foldersToWatch)
             if (Directory.Exists(folder))
                 disposers.Add(CreateWatcher(folder));
