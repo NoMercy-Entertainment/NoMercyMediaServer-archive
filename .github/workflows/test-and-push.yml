@@ -38,11 +38,6 @@ jobs:
         with:
           dotnet-version: "9.0.x"
           
-      - name: Install MAUI Workloads
-        run: |
-          dotnet workload install maui-android
-          dotnet workload restore
-
       # Restore dependencies for the NoMercy.Server project
       - name: Restore dependencies
         run: dotnet restore NoMercy.Server.sln
@@ -52,6 +47,7 @@ jobs:
         run: >
           dotnet test NoMercy.Server.sln 
           --configuration Release
+          --runtime linux-x64
           --collect:"XPlat Code Coverage"
           --settings tests/coverletArgs.runsettings
           --verbosity minimal
