@@ -70,15 +70,14 @@ public static class Register
             .PostAsync("assign", new FormUrlEncodedContent(serverData))
             .Result.Content.ReadAsStringAsync().Result;
         
-        Logger.Register(content, LogEventLevel.Verbose);
-
         ServerRegisterResponse? data = JsonConvert.DeserializeObject<ServerRegisterResponse>(content);
 
         if (data is null || data.Status == "error")
         {
-            Logger.Register(data, LogEventLevel.Error);
             throw new("Failed to assign Server");
         }
+        
+        Logger.Register(data, LogEventLevel.Verbose);
 
         User user = new()
         {

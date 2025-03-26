@@ -70,7 +70,7 @@ public class TadbAlbum
     {
         get
         {
-            List<TadbLanguageDescription> descriptions = new();
+            List<TadbLanguageDescription> descriptions = [];
             if (StrDescriptionCn != null)
                 descriptions.Add(new() { Iso31661 = "CN", Description = StrDescriptionCn });
             if (StrDescriptionDe != null)

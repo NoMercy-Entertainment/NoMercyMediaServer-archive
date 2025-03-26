@@ -88,15 +88,15 @@ public class EncodeVideoJob : AbstractEncoderJob
                     IsHdr = container.VideoStreams.Any(x => x.IsHdr)
                 };
 
-                // await ffmpeg.Run(fullCommand, fileMetadata.Path, progressMeta);
-                //
-                // await sprite.BuildSprite(progressMeta);
-                //
-                // await container.BuildMasterPlaylist();
-                //
-                // await container.ExtractChapters();
-                //
-                // await container.ExtractFonts();
+                await ffmpeg.Run(fullCommand, fileMetadata.Path, progressMeta);
+                
+                await sprite.BuildSprite(progressMeta);
+                
+                await container.BuildMasterPlaylist();
+                
+                await container.ExtractChapters();
+                
+                await container.ExtractFonts();
 
                 if (ffmpeg.ConvertSubtitle)
                 {
@@ -137,6 +137,8 @@ public class EncodeVideoJob : AbstractEncoderJob
                 Title = fileMetadata.Title,
                 Message = e.Message,
             });
+            
+            throw;
         }
 
     }
@@ -201,7 +203,7 @@ public class EncodeVideoJob : AbstractEncoderJob
                 .SetConstantRateFactor(profile.Crf)
                 .SetFrameRate(profile.Framerate)
                 .SetKiloBitrate(profile.Bitrate)
-                .ConvertHdrToSdr()
+                .ConvertHdrToSdr(profile.ConvertHdrToSdr)
                 .SetHlsSegmentFilename(profile.SegmentName)
                 .SetHlsPlaylistFilename(profile.PlaylistName)
                 .SetColorSpace(profile.ColorSpace)

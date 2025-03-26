@@ -86,7 +86,7 @@ public record CollectionResponseItemDto
             .ToArray();
 
         Collection = collection.CollectionMovies
-            .OrderBy(movie => movie.Movie.TitleSort)
+            .OrderBy(movie => movie.Movie.ReleaseDate)
             .Select(movie => new CollectionMovieDto(movie.Movie))
             .ToArray();
 
