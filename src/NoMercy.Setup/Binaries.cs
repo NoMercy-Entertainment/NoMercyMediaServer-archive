@@ -90,7 +90,7 @@ public static class Binaries
         {
             if (!program.NoDelete && Directory.Exists(destinationDirectoryName) && 
                 (sourceArchiveFileName.EndsWith(".zip") || sourceArchiveFileName.EndsWith(".tar.xz") ||
-                 sourceArchiveFileName.EndsWith(".tar.gz")))
+                 sourceArchiveFileName.EndsWith(".tar.gz") || sourceArchiveFileName.EndsWith("tgz")))
             {
                 Directory.Delete(destinationDirectoryName, true);
             }
@@ -101,7 +101,8 @@ public static class Binaries
                 ZipFile.ExtractToDirectory(sourceArchiveFileName, destinationDirectoryName);
                 File.Delete(sourceArchiveFileName);
             }
-            else if (sourceArchiveFileName.EndsWith(".tar.xz") || sourceArchiveFileName.EndsWith(".tar.gz"))
+            else if (sourceArchiveFileName.EndsWith(".tar.xz") || sourceArchiveFileName.EndsWith(".tar.gz") 
+                                                               || sourceArchiveFileName.EndsWith("tgz"))
             {
                 Directory.CreateDirectory(destinationDirectoryName);
                 await Shell.ExecAsync("tar", $"xf \"{sourceArchiveFileName}\" -C \"{destinationDirectoryName}\"");
