@@ -81,7 +81,7 @@ jobs:
       - name: Pull App Files
         uses: actions/checkout@v4
         with:
-          repository: https://github.com/NoMercy-Entertainment/NoMercyApp
+          repository: NoMercy-Entertainment/NoMercyApp
           path: ./src/NoMercy.App/wwwroot
           fetch-depth: 0
           ref: gh-pages
