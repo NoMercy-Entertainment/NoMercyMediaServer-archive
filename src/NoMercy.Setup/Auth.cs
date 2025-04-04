@@ -152,7 +152,7 @@ public static class Auth
             Thread.Sleep(deviceData.Interval * 1000);
             try
             {
-                var response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(tokenBody))
+                HttpResponseMessage response = client.PostAsync(TokenUrl, new FormUrlEncodedContent(tokenBody))
                     .Result;
 
                 if (response.IsSuccessStatusCode)
@@ -164,7 +164,7 @@ public static class Auth
                 }
                 else
                 {
-                    var error = JsonConvert.DeserializeObject<dynamic>(response.Content.ReadAsStringAsync().Result);
+                    dynamic? error = JsonConvert.DeserializeObject<dynamic>(response.Content.ReadAsStringAsync().Result);
                     if (error?.error.ToString() != "authorization_pending")
                     {
                         Logger.Auth($"Error: {error?.error_description}");

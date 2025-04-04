@@ -9,15 +9,6 @@
     <PropertyGroup>
         <IsTestProject>false</IsTestProject>
     </PropertyGroup>
-    
-    <ItemGroup>
-        <ProjectReference Include="..\NoMercy.Globals\NoMercy.Globals.csproj" />
-        <ProjectReference Include="..\NoMercy.Data\NoMercy.Data.csproj"/>
-        <ProjectReference Include="..\NoMercy.Helpers\NoMercy.Helpers.csproj"/>
-        <ProjectReference Include="..\NoMercy.MediaSources\NoMercy.MediaSources.csproj" />
-        <ProjectReference Include="..\NoMercy.Networking\NoMercy.Networking.csproj"/>
-        <ProjectReference Include="..\NoMercy.Providers\NoMercy.Providers.csproj"/>
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Asp.Versioning.Http" Version="8.1.0"/>
@@ -27,7 +18,7 @@
         <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.3.0"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.2" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="9.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.NewtonsoftJson" Version="10.0.0-preview.2.25164.1" />
         <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.2" />
         <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.5.0" />
         <PackageReference Include="MimeMapping" Version="3.1.0" />
@@ -38,6 +29,17 @@
         <PackageReference Include="System.Net.WebSockets" Version="4.3.0"/>
         <PackageReference Include="Ulid" Version="1.3.4"/>
         <PackageReference Include="xunit" Version="2.9.3" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0-preview.2.25164.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\NoMercy.Globals\NoMercy.Globals.csproj" />
+        <ProjectReference Include="..\NoMercy.Data\NoMercy.Data.csproj"/>
+        <ProjectReference Include="..\NoMercy.Helpers\NoMercy.Helpers.csproj"/>
+        <ProjectReference Include="..\NoMercy.MediaSources\NoMercy.MediaSources.csproj" />
+        <ProjectReference Include="..\NoMercy.Networking\NoMercy.Networking.csproj"/>
+        <ProjectReference Include="..\NoMercy.Providers\NoMercy.Providers.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
