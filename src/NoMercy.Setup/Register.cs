@@ -19,7 +19,7 @@ public static class Register
         return device?.Value ?? Environment.MachineName;
     }
 
-    public static Task Init()
+    public static async Task Init()
     {
         Dictionary<string, string> serverData = new()
         {
@@ -37,6 +37,8 @@ public static class Register
         HttpClient client = new();
         client.BaseAddress = new(Config.ApiServerBaseUrl);
         client.DefaultRequestHeaders.Accept.Add(new("application/json"));
+        client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
+        client.DefaultRequestHeaders.Authorization = new("Bearer", Globals.Globals.AccessToken);
 
         string content = client.PostAsync("register",
                 new FormUrlEncodedContent(serverData))
@@ -48,9 +50,8 @@ public static class Register
 
         Logger.Register("Server registered successfully");
 
-        AssignServer().Wait();
-
-        return Task.CompletedTask;
+        await AssignServer();
+        await GetTunnelAvailability();
     }
 
     private static Task AssignServer()
@@ -121,5 +122,49 @@ public static class Register
 #pragma warning restore CS0618 // Type or member is obsolete
 
         return Task.CompletedTask;
+    }
+
+    private static Task GetTunnelAvailability()
+    {
+        
+        HttpClient client = new();
+        client.BaseAddress = new(Config.ApiServerBaseUrl);
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.Add("User-Agent", Config.UserAgent);
+        client.DefaultRequestHeaders.Authorization = new("Bearer", Globals.Globals.AccessToken);
+        
+        HttpRequestMessage httpRequestMessage = new(HttpMethod.Post, "tunnel")
+        {
+            Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["server_id"] = Info.DeviceId.ToString()
+            })
+        };
+
+        string response = client
+            .SendAsync(httpRequestMessage)
+            .Result.Content.ReadAsStringAsync().Result;
+
+        ServerTunnelAvailabilityResponse? data = JsonConvert.DeserializeObject<ServerTunnelAvailabilityResponse>(response);
+
+        if (data is null)
+        {
+            throw new(data?.Message ?? "Failed to acquire tunnel");
+        }
+        
+        if (data.Allowed)
+        {
+            NmSystem.Config.UseCloudflareProxy = true;
+            NmSystem.Config.CloudflareTunnelToken = data.Token;
+            Logger.Register("Cloudflare tunnel is available", LogEventLevel.Verbose);
+        }
+        else
+        {
+            NmSystem.Config.UseCloudflareProxy = false;
+            Logger.Register("Cloudflare tunnel is not available", LogEventLevel.Verbose);
+        }
+
+        return Task.CompletedTask;
+        
     }
 }

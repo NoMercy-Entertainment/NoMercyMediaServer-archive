@@ -28,11 +28,13 @@ public class Networking
     }
 
     private static INatDevice? _device;
+    
+    private static bool HasFoundDevice { get; set; } = false;
 
     public static readonly ConcurrentDictionary<string, Client> SocketClients = new();
 
 
-    public static Task Discover()
+    public static async Task Discover()
     {
         Logger.Setup("Discovering Networking");
         
@@ -41,10 +43,18 @@ public class Networking
         
         NatUtility.StartDiscovery();
         
+        await Task.Delay(TimeSpan.FromSeconds(10));
+        
         if (ExternalIp == "")
             ExternalIp = GetExternalIp();
-        
-        return Task.CompletedTask;
+
+        if (!HasFoundDevice)
+        {
+            Logger.Setup("No UPNP device found");
+            Logger.Setup($"You need to manually forward port {Config.InternalServerPort} to {Config.ExternalServerPort} if you want to use the server outside your local network");
+            Logger.Setup($"For more information, visit: https://www.noip.com/support/knowledgebase/general-port-forwarding-guide");
+            NmSystem.Config.UseCloudflareProxy = true;
+        }
     }
 
     private static string? _internalIp;
@@ -92,7 +102,7 @@ public class Networking
         HttpClient client = new();
         client.BaseAddress = new(Config.ApiBaseUrl);
 
-        string externalIp = client.GetStringAsync($"v1/ip").Result.Replace("\"", "");
+        string externalIp = client.GetStringAsync("v1/ip").Result.Replace("\"", "");
 
         ExternalAddress =
             $"https://{Regex.Replace(externalIp, "\\.", "-")}.{Info.DeviceId}.nomercy.tv:{Config.ExternalServerPort}";
@@ -106,9 +116,11 @@ public class Networking
         
         _device = args.Device;
         
+        HasFoundDevice = true;
+        
         try
         {
-            Logger.Setup($"Trying to add UPNP records");
+            Logger.Setup("Trying to add UPNP records");
             
             _device.CreatePortMap(new(
                 protocol:Protocol.Tcp,
@@ -133,6 +145,8 @@ public class Networking
             Logger.Setup($"Failed to create UPNP records: {e.Message}");
             Logger.Setup($"You may need to manually forward port {Config.InternalServerPort} to {Config.ExternalServerPort}");
             Logger.Setup($"For more information, visit: https://www.noip.com/support/knowledgebase/general-port-forwarding-guide");
+            NmSystem.Config.UseCloudflareProxy = true;
+            HasFoundDevice = false;
         }
 
         NatUtility.StopDiscovery();

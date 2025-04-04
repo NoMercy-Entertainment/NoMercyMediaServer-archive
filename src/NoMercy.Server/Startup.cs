@@ -39,6 +39,7 @@ using NoMercy.NmSystem.FileSystem;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.NewtonSoftConverters;
 using NoMercy.NmSystem.SystemCalls;
+using NoMercy.Server.services;
 using CollectionRepository = NoMercy.Data.Repositories.CollectionRepository;
 using LibraryRepository = NoMercy.Data.Repositories.LibraryRepository;
 using MovieRepository = NoMercy.Data.Repositories.MovieRepository;
@@ -100,7 +101,9 @@ public class Startup(IApiVersionDescriptionProvider provider)
         services.AddScoped<PersonManager>();
 
         services.AddScoped<HomeController>();
-
+        
+        services.AddHostedService<ServerRegistrationService>();
+        
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         services.AddScoped<ILocalizer, Localizer>();
 
@@ -216,6 +219,7 @@ public class Startup(IApiVersionDescriptionProvider provider)
                         .WithOrigins("http://192.168.2.201:5501")
                         .WithOrigins("http://192.168.2.201:5502")
                         .WithOrigins("http://localhost")
+                        .WithOrigins("http://localhost:7625")
                         .WithOrigins("https://localhost")
                         .AllowAnyMethod()
                         .AllowCredentials()
@@ -270,6 +274,8 @@ public class Startup(IApiVersionDescriptionProvider provider)
 
         // Static Files Middleware
         app.UseMiddleware<DynamicStaticFilesMiddleware>();
+        
+        app.UseMiddleware<WebRtcFallbackMiddleware>();
         
         // Swagger Middleware
         app.Use(async (context, next) =>
@@ -332,6 +338,12 @@ public class Startup(IApiVersionDescriptionProvider provider)
                 endpoints.MapHub<RipperHub>("/ripperHub", options =>
                 {
                     options.Transports = HttpTransportType.WebSockets;
+                    options.CloseOnAuthenticationExpiration = true;
+                });
+                
+                endpoints.MapHub<WebRtcHub>("/webrtc", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets | HttpTransportType.LongPolling;
                     options.CloseOnAuthenticationExpiration = true;
                 });
             });
