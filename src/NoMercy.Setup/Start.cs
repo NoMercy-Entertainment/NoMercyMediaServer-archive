@@ -15,6 +15,7 @@ public class Start
     [DllImport("User32.dll")]
     private static extern bool ShowWindow(IntPtr hWnd, int cmdShow);
 
+    public static int AppProcessStarted { get; set; }
     public static int ConsoleVisible { get; set; } = 1;
 
     public static void VsConsoleWindow(int i)

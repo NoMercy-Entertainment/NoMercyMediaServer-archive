@@ -104,7 +104,7 @@ public static class Certificate
                     if (attempt == maxRetries)
                         throw new HttpRequestException("Max retries reached for certificate renewal");
 
-                    Logger.Certificate($"Gateway timeout, retrying in {delaySeconds} seconds (attempt {attempt}/{maxRetries})");
+                    // Logger.Certificate($"Gateway timeout, retrying in {delaySeconds} seconds (attempt {attempt}/{maxRetries})");
                     await Task.Delay(TimeSpan.FromSeconds(delaySeconds));
                     continue;
                 }

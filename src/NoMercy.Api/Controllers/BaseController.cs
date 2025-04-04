@@ -228,7 +228,7 @@ public class BaseController : Controller
             type: "/docs/errors/unavailable-for-legal-reasons");
     }
 
-    protected IActionResult GetPaginatedResponse<T>(IEnumerable<T> data, PageRequestDto request)
+    protected IActionResult GetPaginatedResponse<T>(IEnumerable<T> data, [FromQuery] PageRequestDto request)
     {
         List<T> newData = data.ToList();
         bool hasMore = newData.Count() >= request.Take;
