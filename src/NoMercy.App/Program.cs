@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Photino.NET;
 using Photino.NET.Server;
 using Monitor = Photino.NET.Monitor;
@@ -7,8 +8,6 @@ namespace NoMercy.App;
 
 class Program
 {
-    private static readonly bool IsDebugMode = true;
-    
     private static PhotinoWindow Window { get; set; } = null!;
     private static int WindowWidth { get; set; } = 1280;
     private static int WindowHeight { get; set; } = 720;
@@ -24,7 +23,7 @@ class Program
             .CreateStaticFileServer(args, 7625, 100, "wwwroot", out string baseUrl)
             .RunAsync();
 
-        string appUrl = IsDebugMode ? "https://app-dev.nomercy.tv" : baseUrl;
+        string appUrl = Debugger.IsAttached ? "https://app-dev.nomercy.tv" : baseUrl;
 
         string windowTitle = "NoMercy TV";
         
