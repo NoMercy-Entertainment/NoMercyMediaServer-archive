@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using H.NotifyIcon.Core;
+using NoMercy.NmSystem.Information;
 
 namespace NoMercy.Setup;
 
@@ -23,6 +25,16 @@ public class TrayIcon
     }
     
     private static readonly Icon Icon = LoadIcon();
+    
+    private static Process Process { get; set; } = new()
+    {
+        StartInfo =
+        {
+            FileName = AppFiles.AppExePath,
+            UseShellExecute = true,
+            CreateNoWindow = false
+        }
+    };
 
     private readonly TrayIconWithContextMenu _trayIcon = new()
     {
@@ -36,8 +48,10 @@ public class TrayIcon
         {
             Items =
             {
-                new PopupMenuItem("Show App", (_, _) => Toggle()),
-                new PopupMenuItem("Hide App", (_, _) => Toggle()),
+                new PopupMenuItem("Show Console", (_, _) => ToggleConsole()),
+                new PopupMenuItem("Hide Console", (_, _) => ToggleConsole()),
+                new PopupMenuItem("Show App", (_, _) => ToggleApp()),
+                new PopupMenuItem("Hide App", (_, _) => ToggleApp()),
                 new PopupMenuSeparator(),
                 new PopupMenuItem("Pause Server", (_, _) => Pause()),
                 new PopupMenuItem("Restart Server", (_, _) => Restart()),
@@ -50,6 +64,12 @@ public class TrayIcon
             _trayIcon.ContextMenu.Items.ElementAt(0).Visible = true;
             _trayIcon.ContextMenu.Items.ElementAt(1).Visible = false;
         }
+        
+        if (_trayIcon.ContextMenu?.Items.ElementAt(3) is not null)
+        {
+            _trayIcon.ContextMenu.Items.ElementAt(2).Visible = true;
+            _trayIcon.ContextMenu.Items.ElementAt(3).Visible = false;
+        }
 
         _trayIcon.Create();
     }
@@ -58,7 +78,7 @@ public class TrayIcon
     {
     }
     
-    private void Toggle()
+    private void ToggleConsole()
     {
         Start.VsConsoleWindow(Start.ConsoleVisible == 1 ? 0 : 1);
 
@@ -72,7 +92,26 @@ public class TrayIcon
             _trayIcon.ContextMenu.Items.ElementAt(0).Visible = true;
             _trayIcon.ContextMenu.Items.ElementAt(1).Visible = false;
         }
-
+    }
+    
+    private void ToggleApp()
+    {
+        if (Start.AppProcessStarted == 1)
+        {
+            Start.AppProcessStarted = 0;
+            if (_trayIcon.ContextMenu?.Items.ElementAt(3) is null) return;
+            _trayIcon.ContextMenu.Items.ElementAt(2).Visible = true;
+            _trayIcon.ContextMenu.Items.ElementAt(3).Visible = false;
+            StopApp(); 
+        }
+        else
+        {
+            Start.AppProcessStarted = 1;
+            if (_trayIcon.ContextMenu?.Items.ElementAt(3) is null) return;
+            _trayIcon.ContextMenu.Items.ElementAt(2).Visible = false;
+            _trayIcon.ContextMenu.Items.ElementAt(3).Visible = true;
+            StartApp();
+        }
     }
 
     private static void Restart()
@@ -94,5 +133,33 @@ public class TrayIcon
         }
 
         return Task.CompletedTask;
+    }
+    
+    
+    private void StartApp()
+    {
+        Process = new()
+        {
+            StartInfo =
+            {
+                FileName = AppFiles.AppExePath,
+            },
+            EnableRaisingEvents = true
+        };
+        
+        Process.Exited += (_, _) =>
+        {
+            Start.AppProcessStarted = 0;
+            if (_trayIcon.ContextMenu?.Items.ElementAt(3) is null) return;
+            _trayIcon.ContextMenu.Items.ElementAt(2).Visible = true;
+            _trayIcon.ContextMenu.Items.ElementAt(3).Visible = false;
+        };
+
+        Process.Start();
+    }
+    
+    private void StopApp()
+    {
+       Process.Kill(); 
     }
 }

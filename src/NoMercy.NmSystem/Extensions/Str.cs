@@ -95,15 +95,26 @@ public static partial class Str
         return Regex.Replace(path, @"[\/\\]", DirectorySeparator);
     }
 
-    public static int ToInt(this string path)
+    public static int ToInt(this string value)
     {
-        if (string.IsNullOrEmpty(path)) return 0;
-        return int.Parse(path);
+        if (string.IsNullOrEmpty(value)) return 0;
+        return (int)Math.Round(double.Parse(value, CultureInfo.InvariantCulture));
     }
 
     public static int ToInt(this double value)
     {
         return Convert.ToInt32(value);
+    }
+
+    public static double ToDouble(this string value)
+    {
+        if (string.IsNullOrEmpty(value)) return 0;
+        return double.Parse(value, CultureInfo.InvariantCulture);
+    }
+
+    public static double ToDouble(this int value)
+    {
+        return Convert.ToDouble(value);
     }
     
     public static bool ToBoolean(this string value)

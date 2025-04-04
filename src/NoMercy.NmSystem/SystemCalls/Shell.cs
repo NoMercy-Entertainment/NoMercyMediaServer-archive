@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NoMercy.NmSystem.SystemCalls;
@@ -151,5 +152,37 @@ public static class Shell
         options ??= new() { CaptureStdErr = true, CaptureStdOut = false };
         return ExecSync(executable, arguments, options).StandardError;
     }
+        public static class ProcessHelper
+        {
+    #if WINDOWS
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern bool AttachConsole(uint dwProcessId);
+    
+            [DllImport("kernel32.dll", SetLastError = true, ExactSpelling = true)]
+            private static extern bool FreeConsole();
+    
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern bool GenerateConsoleCtrlEvent(CtrlTypes dwCtrlEvent, uint dwProcessGroupId);
+    
+            private enum CtrlTypes : uint
+            {
+                CTRL_C_EVENT = 0
+            }
+    
+            public static void SendCtrlC(Process process)
+            {
+                if (AttachConsole((uint)process.Id))
+                {
+                    GenerateConsoleCtrlEvent(CtrlTypes.CTRL_C_EVENT, 0);
+                    FreeConsole();
+                }
+            }
+    #else
+            public static void SendCtrlC(Process process)
+            {
+                throw new PlatformNotSupportedException("SendCtrlC is only supported on Windows platforms.");
+            }
+    #endif
+        }
 }
 
