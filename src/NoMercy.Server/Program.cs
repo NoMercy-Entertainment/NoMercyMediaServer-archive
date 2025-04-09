@@ -47,12 +47,15 @@ public static class Program
             Console.Clear();
             Console.Title = AppFiles.ApplicationName;
         }
+        
+        ConsoleMessages.Logo();
+        
+        options.ApplySettings(out bool shouldSeedMarvel);
 
         Version version = Assembly.GetExecutingAssembly().GetName().Version!;
         Software.Version = version;
         Logger.App($"NoMercy MediaServer version: v{version.Major}.{version.Minor}.{version.Build}");
 
-        options.ApplySettings(out bool shouldSeedMarvel);
 
         Stopwatch stopWatch = new();
         stopWatch.Start();
@@ -61,7 +64,6 @@ public static class Program
         [
             new (() => Seed.Init(shouldSeedMarvel)),
             new (Dev.Run),
-            new (DriveMonitor.Start),
         ];
 
         await Setup.Start.Init(startupTasks);
@@ -90,6 +92,8 @@ public static class Program
 
         new Thread(() => app.RunAsync()).Start();
 
+        await DriveMonitor.Start();
+        
         await Task.Delay(-1);
     }
 

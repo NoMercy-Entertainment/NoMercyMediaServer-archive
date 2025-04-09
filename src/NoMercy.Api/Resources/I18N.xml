@@ -264,4 +264,12 @@
     <Key>Movie not found</Key>
     <Value lang="nl">Movie not found</Value>
   </Entry>
+  <Entry>
+    <Key>{0}: {1}</Key>
+    <Value lang="nl">{0}: {1}</Value>
+  </Entry>
+  <Entry>
+    <Key>You do not have permission to view optical drives</Key>
+    <Value lang="nl">You do not have permission to view optical drives</Value>
+  </Entry>
 </I18N>

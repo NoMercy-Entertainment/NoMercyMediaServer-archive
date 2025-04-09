@@ -80,7 +80,7 @@ public class Seed : IDisposable, IAsyncDisposable
 
     private static async Task Users()
     {
-        Logger.Setup("Adding Users");
+        Logger.Setup("Adding Users", LogEventLevel.Verbose);
 
         HttpClient client = new();
         client.BaseAddress = new(Config.ApiServerBaseUrl);
@@ -100,7 +100,7 @@ public class Seed : IDisposable, IAsyncDisposable
 
         ServerUserDto[] serverUsers = content.FromJson<ServerUserDto[]>() ?? [];
 
-        Logger.Setup($"Found {serverUsers.Length} users");
+        Logger.Setup($"Found {serverUsers.Length} users", LogEventLevel.Verbose);
 
         _users = serverUsers.Select(serverUser => new User
             {
@@ -165,7 +165,7 @@ public class Seed : IDisposable, IAsyncDisposable
         bool hasGenres = await MediaContext.Genres.AnyAsync();
         if (hasGenres) return;
 
-        Logger.Setup("Adding Genres");
+        Logger.Setup("Adding Genres", LogEventLevel.Verbose);
 
         List<Genre> genres = [];
         List<Genre>? movieGenres = (await TmdbMovieClient.Genres())?
@@ -199,7 +199,7 @@ public class Seed : IDisposable, IAsyncDisposable
 
         await Parallel.ForEachAsync(_languages.Where(g => g.Iso6391 != "en"), async (language, _) =>
         {
-            Logger.Setup($"Adding Genres for {language.Name}");
+            Logger.Setup($"Adding Genres for {language.Name}", LogEventLevel.Verbose);
 
             List<Translation>? mg = (await TmdbMovieClient.Genres(language.Iso6391))?.Genres
                 .Where(g => g.Name != null)
@@ -226,7 +226,7 @@ public class Seed : IDisposable, IAsyncDisposable
             translations.AddRange(tg ?? []);
         });
 
-        Logger.Setup($"Adding {translations.Count} genre translations");
+        Logger.Setup($"Adding {translations.Count} genre translations", LogEventLevel.Verbose);
 
         await MediaContext.Translations.UpsertRange(translations.Where(genre => genre.Name != null))
             .On(v => new { v.GenreId, v.Iso6391 })
@@ -244,7 +244,7 @@ public class Seed : IDisposable, IAsyncDisposable
         bool hasCertifications = await MediaContext.Certifications.AnyAsync();
         if (hasCertifications) return;
 
-        Logger.Setup("Adding Certifications");
+        Logger.Setup("Adding Certifications", LogEventLevel.Verbose);
 
         List<Certification> certifications = [];
 
@@ -287,7 +287,7 @@ public class Seed : IDisposable, IAsyncDisposable
         bool hasLanguages = await MediaContext.Languages.AnyAsync();
         if (hasLanguages) return;
 
-        Logger.Setup("Adding Languages");
+        Logger.Setup("Adding Languages", LogEventLevel.Verbose);
 
         _languages = (await TmdbConfigClient.Languages())?.ToList()
             .ConvertAll<Language>(language => new()
@@ -313,7 +313,7 @@ public class Seed : IDisposable, IAsyncDisposable
         bool hasCountries = await MediaContext.Countries.AnyAsync();
         if (hasCountries) return;
 
-        Logger.Setup("Adding Countries");
+        Logger.Setup("Adding Countries", LogEventLevel.Verbose);
 
         Country[] countries = (await TmdbConfigClient.Countries())?.ToList()
             .ConvertAll<Country>(country => new()
@@ -339,7 +339,7 @@ public class Seed : IDisposable, IAsyncDisposable
         bool hasMusicGenres = await MediaContext.MusicGenres.AnyAsync();
         if (hasMusicGenres) return;
 
-        Logger.Setup("Adding Music Genres");
+        Logger.Setup("Adding Music Genres", LogEventLevel.Verbose);
 
         MusicBrainzGenreClient musicBrainzGenreClient = new();
 
@@ -364,7 +364,7 @@ public class Seed : IDisposable, IAsyncDisposable
 
     private static async Task AddEncoderProfiles()
     {
-        Logger.Setup("Adding Encoder Profiles");
+        Logger.Setup("Adding Encoder Profiles", LogEventLevel.Verbose);
 
         List<EncoderProfile> encoderProfiles;
         if (File.Exists(AppFiles.EncoderProfilesSeedFile))
@@ -422,7 +422,7 @@ public class Seed : IDisposable, IAsyncDisposable
         {
             if (!File.Exists(AppFiles.FolderRootsSeedFile)) return;
 
-            Logger.Setup("Adding Folder Roots");
+            Logger.Setup("Adding Folder Roots", LogEventLevel.Verbose);
 
             _folders = File.ReadAllTextAsync(AppFiles.FolderRootsSeedFile)
                 .Result.FromJson<Folder[]>() ?? [];
@@ -448,7 +448,7 @@ public class Seed : IDisposable, IAsyncDisposable
         {
             if (!File.Exists(AppFiles.LibrariesSeedFile)) return;
 
-            Logger.Setup("Adding Libraries");
+            Logger.Setup("Adding Libraries", LogEventLevel.Verbose);
 
             LibrarySeedDto[] librarySeed = File.ReadAllTextAsync(AppFiles.LibrariesSeedFile)
                 .Result.FromJson<LibrarySeedDto[]>() ?? [];
