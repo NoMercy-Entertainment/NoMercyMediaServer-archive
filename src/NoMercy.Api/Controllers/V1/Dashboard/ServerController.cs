@@ -749,11 +749,6 @@ public partial class ServerController(IHostApplicationLifetime appLifetime, Medi
             },
             new()
             {
-                Key = "Metadata",
-                Value = AppFiles.MetadataPath
-            },
-            new()
-            {
                 Key = "Transcodes",
                 Value = AppFiles.TranscodePath
             },

@@ -10,7 +10,6 @@ using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
-using NoMercy.NmSystem.Extensions;
 
 namespace NoMercy.Api.Controllers.V1.Music;
 

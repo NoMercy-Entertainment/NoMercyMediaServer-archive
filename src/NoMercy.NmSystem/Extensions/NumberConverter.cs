@@ -1,7 +1,6 @@
-namespace NoMercy.NmSystem.Extensions;
-using System;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
+
+namespace NoMercy.NmSystem.Extensions;
 
 public partial class NumberConverter
 {

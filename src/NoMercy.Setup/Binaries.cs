@@ -32,8 +32,6 @@ public static class Binaries
         Task.Run(async () =>
         {
             Logger.Setup("Downloading Binaries");
-            // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
-            StopUpdater();
             
             foreach (Download program in Downloads)
             {
@@ -57,14 +55,15 @@ public static class Binaries
 
     private static async Task Download(Download program)
     {
-        Logger.Setup($"Downloading {program.Name}");
+        Logger.Setup($"Downloading {program.Name}", LogEventLevel.Verbose);
 
+        string baseName = Path.GetFileName(program.Url?.ToString() ?? "");
+        string filePath = Path.Combine(AppFiles.BinariesPath, baseName);
+        
         HttpResponseMessage result = await HttpClient.GetAsync(program.Url);
         byte[] content = await result.Content.ReadAsByteArrayAsync();
 
-        string baseName = Path.GetFileName(program.Url?.ToString() ?? "");
-
-        await File.WriteAllBytesAsync(Path.Combine(AppFiles.BinariesPath, baseName), content);
+        await File.WriteAllBytesAsync(filePath, content);
     }
 
     private static async Task Extract(Download program)
@@ -75,12 +74,18 @@ public static class Binaries
             Path.Combine(AppFiles.BinariesPath, Path.GetFileName(program.Url?.ToString() ?? ""));
         string destinationDirectoryName = Path.Combine(AppFiles.BinariesPath, program.Path, program.Name);
         
-        Logger.Setup($"Extracting {program.Name} to {destinationDirectoryName}");
+        Logger.Setup($"Extracting {program.Name} to {destinationDirectoryName}", LogEventLevel.Verbose);
         
         string extension = Path.GetExtension(program.Url!.ToString());
         if (!program.NoDelete && (string.IsNullOrEmpty(extension) || extension == ".exe"))
         {
             string file = Path.Combine(AppFiles.BinariesPath, program.Path, program.Name + Info.ExecSuffix);
+            
+            if (IsFileLocked(file))
+            {
+                CloseApplicationLockingFile(file);
+            }
+            
             File.Delete(file);
             File.Move(sourceArchiveFileName, file);
             return;
@@ -138,23 +143,44 @@ public static class Binaries
         Directory.Delete(workingDir);
     }
     
-    private static void StopUpdater()
+    private static bool IsFileLocked(string filePath)
     {
+        try
+        {
+            using FileStream stream = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+            stream.Close();
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    private static void CloseApplicationLockingFile(string filePath)
+    {
+        Logger.Setup($"Closing application locking {filePath}", LogEventLevel.Verbose);
+
         foreach (Process process in Process.GetProcesses())
         {
-            if (!process.ProcessName.StartsWith("NoMercyUpdater")) continue;
             try
             {
-                Logger.Setup("Stopping NoMercyUpdater...");
-                
-                process.Kill();
-                process.WaitForExit();
+                if (process.MainModule?.FileName == null) continue;
+                if (process.MainModule.FileName.Equals(filePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    process.Kill();
+                    process.WaitForExit();
+                    Logger.Setup($"Closed application {process.ProcessName} locking {filePath}", LogEventLevel.Verbose);
+                    break;
+                }
             }
-            catch (Exception ex)
+            catch (System.ComponentModel.Win32Exception ex)
             {
-                Logger.Setup($"Failed to stop server: {ex.Message}");
-                Logger.Setup("Please stop the server manually and restart the updater.");
-                throw;
+                // Ignore the error if the process is not accessible
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.Setup($"Process {process.ProcessName} has already exited: {ex.Message}", LogEventLevel.Warning);
             }
         }
     }

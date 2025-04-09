@@ -79,12 +79,11 @@ public abstract class ConsoleMessages
         return today.Ticks > xmasBeginDate && xmasEndDate < today.Ticks;
     }
 
-    public static Task Logo()
+    public static void Logo()
     {
-        ClearConsole();
-        // SetConsoleSize(180, 40);
+        if (Console.IsOutputRedirected) return;
         
-        if (Console.IsOutputRedirected) return Task.CompletedTask;
+        Console.Clear();
 
         StringBuilder builder = new();
         string outputString = "║  NoMercy MediaServer  ║";
@@ -130,7 +129,6 @@ public abstract class ConsoleMessages
         // Console.WriteLine($"{_()}" + CreateQuote(Quote, totalWidth, 4) + $"{(isXmas() ? ConsoleLetters.ColossalXmas : ConsoleLetters.Colossal)["║"][0].Pastel(Colors[0])}");        
         Console.WriteLine($"{("╚" + Repeat("═", magicSpacer) + "╝").Pastel(Colors[0])}");
 
-        return Task.CompletedTask;
     }
 
     public static Task Welcome()

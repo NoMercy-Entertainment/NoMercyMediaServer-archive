@@ -48,7 +48,7 @@ public record GenresResponseItemDto
         NumberOfItems = movie.Movie.VideoFiles.Count;
         Type = "movie";
         MediaType = "movie";
-        Link = new($"/movie/{Id}", UriKind.Relative);
+        Link = new($"/movie/{movie.Movie.Id}", UriKind.Relative);
         Genres = movie.Movie.GenreMovies
             .Select(genreMovie => new GenreDto(genreMovie))
             .ToArray();
@@ -75,7 +75,7 @@ public record GenresResponseItemDto
 
         Type = "tv";
         MediaType = "tv";
-        Link = new($"/tv/{Id}", UriKind.Relative);
+        Link = new($"/tv/{tv.Tv.Id}", UriKind.Relative);
         NumberOfItems = tv.Tv.NumberOfEpisodes;
         HaveItems = tv.Tv.Episodes
             .Count(episode => episode.VideoFiles.Any(videoFile => videoFile.Folder != null));
@@ -106,7 +106,7 @@ public record GenresResponseItemDto
         TitleSort = movie.Movie.Title
             .TitleSort(movie.Movie.ReleaseDate);
         Type = "movie";
-        Link = new($"/movie/{Id}", UriKind.Relative);
+        Link = new($"/movie/{movie.Movie.Id}", UriKind.Relative);
         HaveItems = movie.Movie.VideoFiles
             .Count(videoFile => videoFile.Folder != null);
         NumberOfItems = movie.Movie.VideoFiles.Count;
@@ -148,7 +148,7 @@ public record GenresResponseItemDto
 
         MediaType = "collection";
         Type = "collection";
-        Link = new($"/collection/{Id}", UriKind.Relative);
+        Link = new($"/collection/{collection.Id}", UriKind.Relative);
         NumberOfItems = collection.Parts;
         HaveItems = collection.CollectionMovies
             .Count(collectionMovie => collectionMovie.Movie.VideoFiles.Any(v => v.Folder != null));
@@ -175,7 +175,7 @@ public record GenresResponseItemDto
 
         MediaType = "genres";
         Type = "genres";
-        Link = new($"/genre/{Id}", UriKind.Relative);
+        Link = new($"/genre/{genre.Id}", UriKind.Relative);
         NumberOfItems = genre.GenreMovies.Count + genre.GenreTvShows.Count;
         HaveItems = genre.GenreMovies.Count(genreMovie => genreMovie.Movie.VideoFiles
                 .Any(v => v.Folder != null))

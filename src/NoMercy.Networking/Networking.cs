@@ -53,7 +53,7 @@ public class Networking
             Logger.Setup("No UPNP device found");
             Logger.Setup($"You need to manually forward port {Config.InternalServerPort} to {Config.ExternalServerPort} if you want to use the server outside your local network");
             Logger.Setup($"For more information, visit: https://www.noip.com/support/knowledgebase/general-port-forwarding-guide");
-            NmSystem.Config.UseCloudflareProxy = true;
+            Config.UseCloudflareProxy = true;
         }
     }
 
@@ -145,7 +145,7 @@ public class Networking
             Logger.Setup($"Failed to create UPNP records: {e.Message}");
             Logger.Setup($"You may need to manually forward port {Config.InternalServerPort} to {Config.ExternalServerPort}");
             Logger.Setup($"For more information, visit: https://www.noip.com/support/knowledgebase/general-port-forwarding-guide");
-            NmSystem.Config.UseCloudflareProxy = true;
+            Config.UseCloudflareProxy = true;
             HasFoundDevice = false;
         }
 
