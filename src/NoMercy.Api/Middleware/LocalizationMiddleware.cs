@@ -2,6 +2,7 @@ using System.Reflection;
 using I18N.DotNet;
 using Microsoft.AspNetCore.Http;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Information;
 
 namespace NoMercy.Api.Middleware;
 

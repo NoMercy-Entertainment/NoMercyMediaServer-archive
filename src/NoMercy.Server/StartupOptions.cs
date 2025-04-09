@@ -36,8 +36,6 @@ public class StartupOptions
 
         if (Dev)
         {
-            Logger.App("Running in development mode.");
-
             Config.IsDev = true;
 
             Config.AppBaseUrl = "https://app-dev.nomercy.tv/";
@@ -46,6 +44,8 @@ public class StartupOptions
 
             Config.AuthBaseUrl = "https://auth-dev.nomercy.tv/realms/NoMercyTV/";
             Config.TokenClientSecret = "1lHWBazSTHfBpuIzjAI6xnNjmwUnryai";
+            
+            Logger.App("Running in development mode.");
         }
 
         if (Seed)
