@@ -27,6 +27,7 @@ public class Start
             ShowWindow(hWnd, i);
         }
     }
+    
     public static async Task Init(List<TaskDelegate> tasks)
     {
         await ApiInfo.RequestInfo();
@@ -38,7 +39,6 @@ public class Start
 
         List<TaskDelegate> startupTasks =
         [
-            new (ConsoleMessages.Logo),
             new (AppFiles.CreateAppFolders),
             new (Networking.Networking.Discover),
             new (Auth.Init),

@@ -20,7 +20,7 @@ public class NoMercyUpdater
         try
         {
             Console.Title = "NoMercy Updater";
-            await ConsoleMessages.Logo();
+            ConsoleMessages.Logo();
 
             HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd(Config.UserAgent);
 

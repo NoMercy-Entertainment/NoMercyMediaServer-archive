@@ -3,7 +3,6 @@ using System.Text;
 using Pastel;
 using Serilog.Core;
 using Serilog.Events;
-using Logger = NoMercy.NmSystem.SystemCalls.Logger;
 
 namespace NoMercy.NmSystem.LogEnrichers;
 internal class ConsoleTypeEnricher : ILogEventEnricher
@@ -37,9 +36,9 @@ internal class ConsoleTypeEnricher : ILogEventEnricher
 
         string type = value?.ToString().Replace("\"", "") ?? "app";
 
-        Color color = Logger.GetColor(type);
+        Color color = SystemCalls.Logger.GetColor(type);
 
         logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty(
-            "ConsoleType", Spacer(Logger.Capitalize[type], 12, true).Pastel(color)));
+            "ConsoleType", Spacer(SystemCalls.Logger.Capitalize[type], 12, true).Pastel(color)));
     }
 }

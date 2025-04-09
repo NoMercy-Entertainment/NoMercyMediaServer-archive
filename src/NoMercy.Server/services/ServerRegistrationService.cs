@@ -10,21 +10,21 @@ public class ServerRegistrationService : IHostedService
 
     public ServerRegistrationService()
     {
-        if (string.IsNullOrEmpty(NmSystem.Config.CloudflareTunnelToken))
+        if (string.IsNullOrEmpty(Config.CloudflareTunnelToken))
         {
             Logger.Setup("Cloudflare tunnel token is not set, skipping registration.");
             return;
         }
         
         _tunnelService = new(
-            NmSystem.Config.CloudflareTunnelToken,
+            Config.CloudflareTunnelToken,
             $"nomercy-mediaserver-{Info.DeviceId}"
         );
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (NmSystem.Config.UseCloudflareProxy)
+        if (Config.UseCloudflareProxy)
         {
             await _tunnelService.StartAsync(cancellationToken);
         }

@@ -6,10 +6,9 @@ using NoMercy.Encoder.Format.Image;
 using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
-using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.Information;
-using Serilog.Events;
 using NoMercy.NmSystem.SystemCalls;
+using Serilog.Events;
 
 namespace NoMercy.Encoder.Core;
 
@@ -422,11 +421,7 @@ public partial class VideoAudioFile(MediaAnalysis fMediaAnalysis, string ffmpegP
 
             Task<string> execTask = Shell.ExecStdErrAsync(AppFiles.FfmpegPath, ocrCommand, new()
             {
-                WorkingDirectory = Path.Combine(BasePath, "subtitles"),
-                EnvironmentVariables = new()
-                {
-                    ["TESSDATA_PREFIX"] = AppFiles.TesseractModelsFolder
-                }
+                WorkingDirectory = Path.Combine(BasePath, "subtitles")
             });
 
             Task progressTask = Task.Run(async () =>

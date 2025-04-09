@@ -1,4 +1,3 @@
-using NoMercy.NmSystem.SystemCalls;
 using QRCoder;
 
 namespace NoMercy.Setup;

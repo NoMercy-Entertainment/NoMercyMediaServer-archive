@@ -2,9 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NoMercy.Database;
 using NoMercy.Database.Models;
-using NoMercy.NmSystem.Information;
 using Serilog.Events;
 using NoMercy.Helpers;
+using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Setup.Dto;
 
@@ -154,13 +154,13 @@ public static class Register
         
         if (data.Allowed)
         {
-            NmSystem.Config.UseCloudflareProxy = true;
-            NmSystem.Config.CloudflareTunnelToken = data.Token;
+            Config.UseCloudflareProxy = true;
+            Config.CloudflareTunnelToken = data.Token;
             Logger.Register("Cloudflare tunnel is available", LogEventLevel.Verbose);
         }
         else
         {
-            NmSystem.Config.UseCloudflareProxy = false;
+            Config.UseCloudflareProxy = false;
             Logger.Register("Cloudflare tunnel is not available", LogEventLevel.Verbose);
         }
 

@@ -4,6 +4,7 @@ using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Dto;
+using NoMercy.NmSystem.Information;
 using NoMercy.Queue;
 using Serilog.Events;
 using Logger = NoMercy.NmSystem.SystemCalls.Logger;
