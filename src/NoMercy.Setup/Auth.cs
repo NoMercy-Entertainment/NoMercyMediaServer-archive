@@ -167,14 +167,14 @@ public static class Auth
                     dynamic? error = JsonConvert.DeserializeObject<dynamic>(response.Content.ReadAsStringAsync().Result);
                     if (error?.error.ToString() != "authorization_pending")
                     {
-                        Logger.Auth($"Error: {error?.error_description}");
+                        Logger.Auth($"Error: {error?.error_description}", LogEventLevel.Error);
                         return;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Auth($"Error: {ex.Message}");
+                Logger.Auth($"Error: {ex.Message}", LogEventLevel.Error);
                 return;
             }
         }
@@ -309,7 +309,7 @@ public static class Auth
 
     private static void AuthKeys()
     {
-        Logger.Auth("Getting auth keys");
+        Logger.Auth("Getting auth keys", LogEventLevel.Verbose);
 
         HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(new("application/json"));
@@ -406,7 +406,7 @@ public static class Auth
 
     public static void TokenByAuthorizationCode(string code)
     {
-        Logger.Auth(@"Getting token by authorization code");
+        Logger.Auth("Getting token by authorization code", LogEventLevel.Verbose);
         if (Config.TokenClientId == null || Config.TokenClientSecret == null)
             throw new("Auth keys not initialized");
 

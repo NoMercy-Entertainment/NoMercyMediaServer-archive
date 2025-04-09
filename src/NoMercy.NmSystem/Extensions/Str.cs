@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using Humanizer;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace NoMercy.NmSystem.Extensions;

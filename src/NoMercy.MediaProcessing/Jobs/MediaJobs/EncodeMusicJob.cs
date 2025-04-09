@@ -4,6 +4,7 @@ using NoMercy.Database.Models;
 using NoMercy.MediaProcessing.Libraries;
 using NoMercy.NmSystem;
 using NoMercy.NmSystem.Dto;
+using NoMercy.NmSystem.Information;
 
 namespace NoMercy.MediaProcessing.Jobs.MediaJobs;
 

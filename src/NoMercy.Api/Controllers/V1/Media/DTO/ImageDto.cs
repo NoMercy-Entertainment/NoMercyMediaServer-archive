@@ -19,7 +19,9 @@ public record ImageDto
     public ImageDto(Image media)
     {
         Id = media.Id;
-        Src = media.FilePath;
+        Src = media.Site == "https://image.tmdb.org/t/p/" 
+            ? new Uri(media.FilePath, UriKind.Relative).ToString() 
+            : new Uri($"/images/music{media.FilePath}", UriKind.Relative).ToString();
         Width = media.Width ?? 0;
         Type = media.Type;
         Height = media.Height ?? 0;
