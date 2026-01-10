@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NoMercy.Api.Controllers.V1.Dashboard.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Api.Controllers.V1.Media.DTO.Components;
 using NoMercy.Data.Repositories;
-using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
 
@@ -52,18 +52,41 @@ public class LibrariesController(
         string language = Language();
         string country = Country();
 
-        IEnumerable<Library> libraries = await libraryRepository.GetLibraries(userId);
+        // Start all independent queries in parallel
+        Task<List<Library>> librariesTask = libraryRepository.GetLibraries(userId);
+        Task<List<Collection>> collectionsTask = collectionRepository.GetCollectionItems(userId, language, country, 10, 0);
+        Task<List<Special>> specialsTask = specialRepository.GetSpecialItems(userId, language, country, 10, 0);
+        Task<Tv?> randomTvTask = libraryRepository.GetRandomTvShow(userId, language);
+        Task<Movie?> randomMovieTask = libraryRepository.GetRandomMovie(userId, language);
+
+        await Task.WhenAll(librariesTask, collectionsTask, specialsTask, randomTvTask, randomMovieTask);
+
+        List<Library> libraries = librariesTask.Result;
+        List<Collection> collections = collectionsTask.Result;
+        List<Special> specials = specialsTask.Result;
+        Tv? tv = randomTvTask.Result;
+        Movie? movie = randomMovieTask.Result;
+
+        // Fetch library data in parallel for all non-music libraries using optimized projection queries
+        Library[] nonMusicLibraries = libraries.Where(lib => lib.Type != "music").ToArray();
+
+        Task<(Library library, List<MovieCardDto> movies, List<TvCardDto> shows)>[] libraryDataTasks = nonMusicLibraries
+            .Select(async library =>
+            {
+                Task<List<MovieCardDto>> moviesTask = libraryRepository.GetLibraryMovieCardsAsync(userId, library.Id, country, 10, 0);
+                Task<List<TvCardDto>> showsTask = libraryRepository.GetLibraryTvCardsAsync(userId, library.Id, country, 10, 0);
+                await Task.WhenAll(moviesTask, showsTask);
+                return (library, moviesTask.Result, showsTask.Result);
+            })
+            .ToArray();
+
+        (Library library, List<MovieCardDto> movies, List<TvCardDto> shows)[] libraryDataResults = await Task.WhenAll(libraryDataTasks);
 
         List<NmCarouselDto<NmCardDto>> list = [];
 
-        foreach (Library library in libraries.Where(lib => lib.Type != "music" ))
+        foreach ((Library library, List<MovieCardDto> libraryMovies, List<TvCardDto> libraryShows) in libraryDataResults)
         {
-            List<Movie> movies =
-                libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc").ToList();
-            List<Tv> shows =
-                libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc").ToList();
-            
-            Uri moreLink = library.LibraryMovies.Count + library.LibraryTvs.Count > 300
+            Uri moreLink = library.LibraryMovies.Count + library.LibraryTvs.Count > 500
                 ? new($"/libraries/{library.Id}/letter/A", UriKind.Relative)
                 : new($"/libraries/{library.Id}", UriKind.Relative);
 
@@ -71,16 +94,11 @@ public class LibrariesController(
             {
                 Title = library.Title,
                 MoreLink = moreLink,
-                Items = movies.Select(movie => new NmCardDto(movie, country))
-                    .Concat(shows.Select(tv => new NmCardDto(tv, country)))
+                Items = libraryMovies.Select(m => new NmCardDto(m, country))
+                    .Concat(libraryShows.Select(t => new NmCardDto(t, country)))
                     .ToList()
             });
         }
-
-        IEnumerable<Collection> collections =
-            collectionRepository.GetCollectionItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
-        IEnumerable<Special> specials =
-            specialRepository.GetSpecialItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
 
         list.Add(new()
         {
@@ -89,7 +107,7 @@ public class LibrariesController(
             Items = collections.Select(collection => new NmCardDto(collection, country))
                 .ToList()
         });
-        
+
         list.Add(new()
         {
             Title = "Specials",
@@ -98,10 +116,6 @@ public class LibrariesController(
                 .Select(special => new NmCardDto(special, country))
                 .ToList()
         });
-
-        Tv? tv = await libraryRepository.GetRandomTvShow(userId, language);
-
-        Movie? movie = await libraryRepository.GetRandomMovie(userId, language);
 
         List<NmCardDto> genres = [];
         if (tv != null)
@@ -113,42 +127,45 @@ public class LibrariesController(
         NmCardDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
             .Randomize().FirstOrDefault();
 
-        return Ok(new Render
+        List<ComponentEnvelope> components = new();
+        
+        // Add home card
+        if (homeCardItem != null)
         {
-            Data =
-            [
-                new ComponentBuilder<NmCardDto?>()
-                    .WithComponent("NMHomeCard")
-                    .WithUpdate("pageLoad", "/home/card")
-                    .WithProps((props, _) => props
-                        .WithNextId("continue")
-                        .WithPreviousId("")
-                        .WithData(homeCardItem))
-                    .Build(),
+            HomeCardData homeCardData = new(homeCardItem);
+            dynamic? homeCard = Component.HomeCard()
+                .WithId("home_card")
+                .WithTitle(homeCardData.Title)
+                .WithData(homeCardData)
+                .WithNavigation(null, list.FirstOrDefault()?.Id)
+                .WithUpdate("pageLoad", "/home/card")
+                ;
+            components.Add(homeCard);
+        }
+        
+        // Add carousels for each library
+        for (int index = 0; index < list.Count; index++)
+        {
+            NmCarouselDto<NmCardDto> carouselData = list[index];
+            ComponentEnvelope carousel = Component.Carousel()
+                .WithId($"library_{carouselData.Id}")
+                .WithTitle(carouselData.Title)
+                .WithMoreLink(carouselData.MoreLink)
+                .WithNavigation(
+                    index == 0 ? "home_card" : $"library_{list[index - 1].Id}",
+                    index == list.Count - 1 ? null : $"library_{list[index + 1].Id}")
+                .WithItems(carouselData.Items.Select(item => Component.Card()
+                    .WithData(new(item))));
+            
+            components.Add(carousel);
+        }
+        
+        ComponentEnvelope response = Component.Container()
+            .WithId("mobile-libraries")
+            .WithItems(components)
+            ;
 
-                ..list.Select((genre, index) => new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithProps((props, _) => props
-                        .WithId($"library_{genre.Id}")
-                        .WithPreviousId(index == 0
-                            ? "continue"
-                            : $"library_{list.ElementAtOrDefault(list.IndexOf(genre) - 1)?.Id}")
-                        .WithNextId(index == list.Count - 1
-                            ? $"library_{genres.FirstOrDefault()?.Id}"
-                            : $"library_{list.ElementAtOrDefault(list.IndexOf(genre) + 1)?.Id}")
-                        .WithTitle(genre.Title)
-                        .WithMoreLink(genre.MoreLink)
-                        .WithItems(
-                            genre.Items.Select(item =>
-                                new ComponentBuilder<NmCardDto>()
-                                    .WithComponent("NMCard")
-                                    .WithProps((p, _) => p
-                                        .WithData(item)
-                                        .WithWatch())
-                                    .Build())))
-                    .Build())
-            ]
-        });
+        return Ok(ComponentResponse.From(response));
     }
 
     [HttpGet]
@@ -162,34 +179,52 @@ public class LibrariesController(
         string language = Language();
         string country = Country();
 
-        IEnumerable<Library> libraries = await libraryRepository.GetLibraries(userId);
+        // Start all independent queries in parallel
+        Task<List<Library>> librariesTask = libraryRepository.GetLibraries(userId);
+        Task<List<Collection>> collectionsTask = collectionRepository.GetCollectionItems(userId, language, country, 6, 0);
+        Task<List<Special>> specialsTask = specialRepository.GetSpecialItems(userId, language, country, 6, 0);
+        Task<Tv?> randomTvTask = libraryRepository.GetRandomTvShow(userId, language);
+        Task<Movie?> randomMovieTask = libraryRepository.GetRandomMovie(userId, language);
+
+        await Task.WhenAll(librariesTask, collectionsTask, specialsTask, randomTvTask, randomMovieTask);
+
+        List<Library> libraries = librariesTask.Result;
+        List<Collection> collections = collectionsTask.Result;
+        List<Special> specials = specialsTask.Result;
+        Tv? tv = randomTvTask.Result;
+        Movie? movie = randomMovieTask.Result;
+
+        // Fetch library data in parallel for all libraries using optimized projection queries
+        Task<(Library library, List<MovieCardDto> movies, List<TvCardDto> shows)>[] libraryDataTasks = libraries
+            .Select(async library =>
+            {
+                Task<List<MovieCardDto>> moviesTask = libraryRepository.GetLibraryMovieCardsAsync(userId, library.Id, country, 6, 0);
+                Task<List<TvCardDto>> showsTask = libraryRepository.GetLibraryTvCardsAsync(userId, library.Id, country, 6, 0);
+                await Task.WhenAll(moviesTask, showsTask);
+                return (library, moviesTask.Result, showsTask.Result);
+            })
+            .ToArray();
+
+        (Library library, List<MovieCardDto> movies, List<TvCardDto> shows)[] libraryDataResults = await Task.WhenAll(libraryDataTasks);
 
         List<NmCarouselDto<NmCardDto>> list = [];
 
-        foreach (Library library in libraries)
+        foreach ((Library library, List<MovieCardDto> libraryMovies, List<TvCardDto> libraryShows) in libraryDataResults)
         {
-            List<Movie> movies =
-                libraryRepository.GetLibraryMovies(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc").ToList();
-            List<Tv> shows =
-                libraryRepository.GetLibraryShows(userId, library.Id, language, 10, 0, m => m.CreatedAt, "desc").ToList();
-
             list.Add(new()
             {
+                Id = "library_" + library.Id,
                 Title = library.Title,
                 MoreLink = new($"/libraries/{library.Id}", UriKind.Relative),
-                Items = movies.Select(movie => new NmCardDto(movie, country))
-                    .Concat(shows.Select(tv => new NmCardDto(tv, country)))
+                Items = libraryMovies.Select(m => new NmCardDto(m, country))
+                    .Concat(libraryShows.Select(t => new NmCardDto(t, country)))
                     .ToList()
             });
         }
 
-        IEnumerable<Collection> collections =
-            collectionRepository.GetCollectionItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
-        IEnumerable<Special> specials =
-            specialRepository.GetSpecialItems(userId, language, 10, 0, m => m.CreatedAt, "desc");
-
         list.Add(new()
         {
+            Id = "library_collections",
             Title = "Collections",
             MoreLink = new("/collection", UriKind.Relative),
             Items = collections.Select(collection => new NmCardDto(collection, country))
@@ -198,17 +233,12 @@ public class LibrariesController(
 
         list.Add(new()
         {
+            Id = "library_specials",
             Title = "Specials",
             MoreLink = new("/specials", UriKind.Relative),
             Items = specials.Select(special => new NmCardDto(special, country))
                 .ToList()
         });
-
-        await using MediaContext mediaContext = new();
-
-        Tv? tv = await libraryRepository.GetRandomTvShow(userId, language);
-
-        Movie? movie = await libraryRepository.GetRandomMovie(userId, language);
 
         List<NmCardDto> genres = [];
         if (tv != null)
@@ -220,38 +250,46 @@ public class LibrariesController(
         NmCardDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
             .Randomize().FirstOrDefault();
 
-        return Ok(new Render
+        List<ComponentEnvelope> components = new();
+        
+        // Add home card
+        if (homeCardItem != null)
         {
-            Data =
-            [
-                new ComponentBuilder<NmCardDto?>()
-                    .WithComponent("NMHomeCard")
-                    .WithUpdate("pageLoad", "/home/card")
-                    .WithProps((props, _) => props
-                        .WithNextId("continue")
-                        .WithPreviousId("")
-                        .WithData(homeCardItem))
-                    .Build(),
+            HomeCardData homeCardData = new(homeCardItem);
+            dynamic? homeCard = Component.HomeCard()
+                .WithId("home_card")
+                .WithTitle(homeCardData.Title)
+                .WithData(homeCardData)
+                .WithNavigation(null, list.FirstOrDefault()?.Id)
+                .WithUpdate("pageLoad", "/home/card")
+                ;
+            components.Add(homeCard);
+        }
+        
+        // Add carousels for each library
+        for (int index = 0; index < list.Count; index++)
+        {
+            NmCarouselDto<NmCardDto> carouselData = list[index];
+            dynamic? carousel = Component.Carousel()
+                .WithId(carouselData.Id)
+                .WithTitle(carouselData.Title)
+                .WithMoreLink(carouselData.MoreLink)
+                .WithNavigation(
+                    index == 0 ? "home_card" : list[index - 1].Id,
+                    index == list.Count - 1 ? null : list[index + 1].Id)
+                .WithItems(carouselData.Items.Take(6).Select(item => Component.Card()
+                    .WithData(new(item))
+                    ))
+                ;
+            components.Add(carousel);
+        }
+        
+        ComponentEnvelope response = Component.Container()
+            .WithId("tv-libraries")
+            .WithItems(components)
+            ;
 
-                ..list.Select(genre => new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithProps((props, _) => props
-                        .WithId(genre.Id)
-                        .WithNextId(list.ElementAtOrDefault(list.IndexOf(genre) + 1)?.Id ?? "continue")
-                        .WithPreviousId(list.ElementAtOrDefault(list.IndexOf(genre) - 1)?.Id ?? "continue")
-                        .WithTitle(genre.Title)
-                        .WithMoreLink(genre.MoreLink)
-                        .WithItems(
-                            genre.Items.Select(item =>
-                                new ComponentBuilder<NmCardDto>()
-                                    .WithComponent("NMCard")
-                                    .WithProps((props, _) => props
-                                        .WithData(item)
-                                        .WithWatch())
-                                    .Build())))
-                    .Build())
-            ]
-        });
+        return Ok(ComponentResponse.From(response));
     }
 
     [HttpGet]
@@ -263,66 +301,73 @@ public class LibrariesController(
             return UnauthorizedResponse("You do not have permission to view library");
 
         string language = Language();
+        string country = Country();
 
-        List<Movie> movies = libraryRepository
-            .GetLibraryMovies(userId, libraryId, language, request.Take, request.Page).ToList();
-        List<Tv> shows = libraryRepository
-            .GetLibraryShows(userId, libraryId, language, request.Take, request.Page).ToList();
+        // Fetch movies and shows in parallel using optimized projection queries
+        Task<List<MovieCardDto>> moviesTask = libraryRepository.GetLibraryMovieCardsAsync(userId, libraryId, country, request.Take, request.Page * request.Take);
+        Task<List<TvCardDto>> showsTask = libraryRepository.GetLibraryTvCardsAsync(userId, libraryId, country, request.Take, request.Page * request.Take);
+
+        await Task.WhenAll(moviesTask, showsTask);
+
+        List<MovieCardDto> libraryMovies = moviesTask.Result;
+        List<TvCardDto> libraryShows = showsTask.Result;
 
         if (request.Version != "lolomo")
         {
-            IOrderedEnumerable<LibraryResponseItemDto> concat = movies
-                .Select(movie => new LibraryResponseItemDto(movie))
-                .Concat(shows.Select(tv => new LibraryResponseItemDto(tv)))
-                .OrderBy(item => item.TitleSort);
+            List<CardData> cardItems = libraryMovies
+                .Select(movie => new CardData(movie, country))
+                .Concat(libraryShows.Select(tv => new CardData(tv, country)))
+                .OrderBy(item => item.TitleSort)
+                .ToList();
 
-            return Ok(new Render
-            {
-                Data =
-                [
-                    new ComponentBuilder<LibraryResponseItemDto>()
-                        .WithComponent("NMGrid")
-                        .WithProps((props, _) => props
-                            .WithProperties(new(){})
-                            .WithItems(
-                                concat.Select(item =>
-                                    new ComponentBuilder<LibraryResponseItemDto>()
-                                        .WithComponent("NMCard")
-                                        .WithProps((props, _) => props
-                                            .WithData(item)
-                                            .WithWatch())
-                                        .Build())))
-                        .Build()
-                ]
-            });
+            ComponentEnvelope response = Component.Grid()
+                .WithId($"library-{libraryId}")
+                .WithItems(cardItems.Select(item => Component.Card()
+                    .WithData(item)
+                    ))
+                ;
+
+            return Ok(ComponentResponse.From(response));
         }
 
-        return Ok(new Render
-        {
-            Data = Letters.Select(genre => new ComponentBuilder<NmCarouselDto<NmCardDto>>()
-                .WithComponent("NMCarousel")
-                .WithProps((props, _) => props
-                    .WithId(genre)
-                    .WithTitle(genre)
-                    .WithItems(
-                        movies.Select(movie => new LibraryResponseItemDto(movie))
-                            .Where(item =>
-                                genre == "#"
-                                    ? Numbers.Any(p => item.Title.StartsWith(p))
-                                    : item.Title.StartsWith(genre))
-                            .Concat(shows.Select(tv => new LibraryResponseItemDto(tv))
-                                .Where(item =>
-                                    genre == "#"
-                                        ? Numbers.Any(p => item.Title.StartsWith(p))
-                                        : item.Title.StartsWith(genre)))
-                            .Select(item => new ComponentBuilder<LibraryResponseItemDto>()
-                                .WithComponent("NMCard")
-                                .WithProps((props, _) => props
-                                    .WithData(item)
-                                    .WithWatch())
-                                .Build())))
-                .Build())
-        });
+        List<ComponentEnvelope> carousels = Letters
+            .Select((letter, index) =>
+            {
+                List<CardData> carouselItems = libraryMovies
+                    .Select(movie => new CardData(movie, country))
+                    .Where(collection => letter == "#"
+                        ? Numbers.Any(p => collection.Title.StartsWith(p))
+                        : collection.Title.StartsWith(letter))
+                    .Concat(libraryShows.Select(tv => new CardData(tv, country))
+                        .Where(collection => letter == "#"
+                            ? Numbers.Any(p => collection.Title.StartsWith(p))
+                            : collection.Title.StartsWith(letter)))
+                    .OrderBy(item => item.TitleSort)
+                    .ToList();
+
+                if (carouselItems.Count == 0)
+                    return null;
+
+                return Component.Carousel()
+                    .WithId(letter)
+                    .WithTitle(letter)
+                    .WithMoreLink($"/libraries/{libraryId}/letter/{letter}")
+                    .WithNavigation(
+                        index == 0 ? null : Letters.ElementAtOrDefault(index - 1) ?? null,
+                        index == Letters.Length - 1 ? null : Letters.ElementAtOrDefault(index + 1) ?? null)
+                    .WithItems(carouselItems.Select(item => Component.Card()
+                        .WithData(item)
+                        ));
+            })
+            .Where(c => c != null)
+            .Cast<ComponentEnvelope>()
+            .ToList();
+
+        ComponentEnvelope containerResponse = Component.Container()
+            .WithId($"library-{libraryId}-letters")
+            .WithItems(carousels);
+
+        return Ok(containerResponse);
     }
 
     [HttpGet]
@@ -334,40 +379,33 @@ public class LibrariesController(
             return UnauthorizedResponse("You do not have permission to view library");
 
         string language = Language();
+        string country = Country();
 
-        IEnumerable<Movie> movies = await libraryRepository
-            .GetPaginatedLibraryMovies(userId, libraryId, letter, language, request.Take, request.Page);
+        // Fetch movies and shows in parallel
+        Task<List<Movie>> moviesTask = libraryRepository
+            .GetPaginatedLibraryMovies(userId, libraryId, letter, language, country, request.Take, request.Page);
+        Task<List<Tv>> showsTask = libraryRepository
+            .GetPaginatedLibraryShows(userId, libraryId, letter, language, country, request.Take, request.Page);
 
-        IEnumerable<Tv> shows = await libraryRepository
-            .GetPaginatedLibraryShows(userId, libraryId, letter, language, request.Take, request.Page);
+        await Task.WhenAll(moviesTask, showsTask);
 
-        List<LibraryResponseItemDto> concat = movies
-            .Select(movie => new LibraryResponseItemDto(movie))
-            .Concat(shows.Select(tv => new LibraryResponseItemDto(tv)))
+        List<Movie> movies = moviesTask.Result;
+        List<Tv> shows = showsTask.Result;
+
+        List<CardData> concat = movies
+            .Select(movie => new CardData(movie, country))
+            .Concat(shows.Select(tv => new CardData(tv, country)))
             .OrderBy(item => item.TitleSort)
             .ToList();
 
-        return Ok(new Render
-        {
-            Data =
-            [
-                new ComponentBuilder<LibraryResponseItemDto>()
-                    .WithComponent("NMGrid")
-                    .WithProps((props, _) => props
-                        .WithProperties(new()
-                        {
-                            { "paddingTop", 16 },
-                        })
-                        .WithItems(
-                            concat.Select(item =>
-                                new ComponentBuilder<LibraryResponseItemDto>()
-                                    .WithComponent("NMCard")
-                                    .WithProps((props, _) => props
-                                        .WithData(item)
-                                        .WithWatch())
-                                    .Build())))
-                    .Build()
-            ]
-        });
+        ComponentEnvelope response = Component.Grid()
+            .WithId($"library-{libraryId}-{letter}")
+            .WithTitle(letter)
+            .WithItems(concat.Select(item => Component.Card()
+                .WithData(item)
+                ))
+            ;
+
+        return Ok(ComponentResponse.From(response));
     }
 }

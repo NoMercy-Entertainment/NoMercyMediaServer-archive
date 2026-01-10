@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Api.Controllers.V1.Media.DTO.Components;
 using NoMercy.Data.Repositories;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
@@ -29,55 +30,52 @@ public class CollectionsController(CollectionRepository collectionRepository) : 
         string language = Language();
         string country = Country();
 
-        List<Collection> collections =
-            await collectionRepository.GetCollectionsAsync(userId, language, request.Take, request.Page);
+        // Use optimized query that projects only needed data
+        List<CollectionListDto> collectionDtos =
+            await collectionRepository.GetCollectionsListAsync(userId, language, country, request.Take, request.Page);
 
         if (request.Version != "lolomo")
         {
-            IEnumerable<NmCardDto> concat = collections
-                .Select(collection => new NmCardDto(collection, country));
+            List<CardData> cardItems = collectionDtos
+                .Select(dto => new CardData(dto))
+                .ToList();
 
-            return Ok(new Render
-            {
-                Data =
-                [
-                    new ComponentBuilder<NmCardDto>()
-                        .WithComponent("NMGrid")
-                        .WithProps((props, _) => props
-                            .WithProperties(new(){})
-                            .WithItems(
-                                concat.Select(item =>
-                                    new ComponentBuilder<NmCardDto>()
-                                        .WithComponent("NMCard")
-                                        .WithProps((props, _) => props
-                                            .WithData(item)
-                                            .WithWatch())
-                                        .Build())))
-                        .Build()
-                ]
-            });
+            ComponentEnvelope response = Component.Grid()
+                .WithItems(cardItems.Select(item => Component.Card()
+                    .WithData(item)
+                    ))
+                ;
+
+            return Ok(ComponentResponse.From(response));
         }
 
-        return Ok(new Render
-        {
-            Data = Letters.Select(genre => new ComponentBuilder<NmCarouselDto<NmCardDto>>()
-                .WithComponent("NMCarousel")
-                .WithProps((props, _) => props
-                    .WithId(genre)
-                    .WithTitle(genre)
-                    .WithItems(
-                        collections.Select(movie => new NmCardDto(movie, country))
-                            .Where(item => genre == "#"
-                                ? Numbers.Any(p => item.Title.StartsWith(p))
-                                : item.Title.StartsWith(genre))
-                            .Select(item => new ComponentBuilder<NmCardDto>()
-                                .WithComponent("NMCard")
-                                .WithProps((props, _) => props
-                                    .WithData(item)
-                                    .WithWatch())
-                                .Build())))
-                .Build())
-        });
+        List<ComponentEnvelope> carousels = Letters
+            .Select((letter, index) =>
+            {
+                List<CardData> letterItems = collectionDtos
+                    .Where(dto => letter == "#"
+                        ? Numbers.Any(p => dto.Title.StartsWith(p))
+                        : dto.Title.StartsWith(letter))
+                    .Select(dto => new CardData(dto))
+                    .OrderBy(item => item.TitleSort)
+                    .ToList();
+
+                return Component.Carousel()
+                    .WithId(letter)
+                    .WithTitle(letter)
+                    .WithNavigation(
+                        index == 0 ? null : Letters[index - 1],
+                        index == Letters.Length - 1 ? null : Letters[index + 1])
+                    .WithItems(letterItems.Select(item => Component.Card()
+                        .WithData(item)))
+                    .Build();
+            })
+            .ToList();
+
+        ComponentEnvelope containerResponse = Component.Container()
+            .WithItems(carousels);
+
+        return Ok(containerResponse);
     }
 
     [HttpGet]
@@ -138,14 +136,24 @@ public class CollectionsController(CollectionRepository collectionRepository) : 
             .Any();
 
         if (!available)
-            return NotFound(new AvailableResponseDto
+            return NotFound(new StatusResponseDto<AvailableResponseDto>
             {
-                Available = false
+                Data = new()
+                {
+                    Available = false
+                },
+                Status = "error",
+                Message = "Collection not found"
             });
 
-        return Ok(new AvailableResponseDto
+        return Ok(new StatusResponseDto<AvailableResponseDto>
         {
-            Available = true
+            Data = new()
+            {
+                Available = true
+            },
+            Status = "ok",
+            Message = "Collection is available"
         });
     }
 

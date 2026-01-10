@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using NoMercy.Api.Controllers.Socket.music;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Api.Controllers.V1.Media.DTO.Components;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
@@ -43,41 +44,33 @@ public class ArtistsController : BaseController
 
         List<ArtistsResponseItemDto> artists = [];
 
-        foreach (Artist artist in _musicRepository.GetArtists(_mediaContext, userId, letter))
+        foreach (Artist artist in _musicRepository.GetArtistsAsync(userId, letter))
             artists.Add(new(artist));
 
-        List<ArtistTrack> tracks = await _musicRepository.GetArtistTracksForCollection(_mediaContext,
-            artists.Select(a => a.Id)
-                .ToList());
+        List<ArtistTrack> tracks = await _musicRepository.GetArtistTracksForCollectionAsync(
+            artists.Select(a => a.Id).ToList());
 
         foreach (ArtistsResponseItemDto artist in artists)
             artist.Tracks = tracks.Count(track => track.ArtistId == artist.Id);
         
-        return Ok(new Render
-        {
-            Data =
-            [
-                new ComponentBuilder<ArtistsResponseItemDto>()
-                    .WithComponent("NMGrid")
-                    .WithProps((props, _) => props
-                        .WithProperties(new()
-                        {
-                            { "paddingTop", 16 },
-                        })
-                        .WithItems(
-                            artists
-                                .Where(response => response.Tracks > 0)
-                                .OrderBy(artist => artist.Name)
-                                .Select(item =>
-                                    new ComponentBuilder<ArtistsResponseItemDto>()
-                                        .WithComponent("NMMusicCard")
-                                        .WithProps((p, _) => p
-                                            .WithData(item)
-                                            .WithWatch())
-                                        .Build())))
-                    .Build()
-            ]
-        });
+        ComponentEnvelope response = Component.Grid()
+            .WithItems(artists
+                .Where(response => response.Tracks > 0)
+                .OrderBy(artist => artist.Name)
+                .Select(item => Component.MusicCard(new()
+                {
+                    Id = item.Id.ToString(),
+                    Name = item.Name,
+                    Cover = item.Cover,
+                    Type = "artist",
+                    Link = $"/music/artist/{item.Id}",
+                    ColorPalette = null,
+                    Disambiguation = item.Disambiguation,
+                    Description = item.Description,
+                    Tracks = item.Tracks
+                })));
+
+        return Ok(ComponentResponse.From(response));
     }
 
     [HttpGet]
@@ -88,7 +81,7 @@ public class ArtistsController : BaseController
         if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view artists");
 
-        Artist? artist = await _musicRepository.GetArtist(_mediaContext, userId, id);
+        Artist? artist = await _musicRepository.GetArtistAsync(userId, id);
 
         string country = Country();
 

@@ -48,4 +48,6 @@ public static class Config
     {
         MaxDegreeOfParallelism = (int)Math.Floor(Environment.ProcessorCount / 2.0),
     };
+
+    public static string? AllowAdultContent { get; set; } = "false";
 }

@@ -679,6 +679,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("MovieId");
 
+                    b.HasIndex("MovieId", "CollectionId");
+
                     b.ToTable("CollectionMovie");
                 });
 
@@ -1260,6 +1262,10 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("TvdbId");
 
+                    b.HasIndex("TvId", "SeasonNumber");
+
+                    b.HasIndex("TvId", "SeasonNumber", "EpisodeNumber");
+
                     b.ToTable("Episodes", t =>
                         {
                             t.HasTrigger("update_Episodes_updated_at");
@@ -1517,6 +1523,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("TvId");
 
+                    b.HasIndex("CollectionId", "Type");
+
                     b.HasIndex("FilePath", "AlbumId")
                         .IsUnique();
 
@@ -1549,6 +1557,12 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("FilePath", "TvId")
                         .IsUnique();
+
+                    b.HasIndex("MovieId", "Type");
+
+                    b.HasIndex("TvId", "Type");
+
+                    b.HasIndex("Type", "Iso6391");
 
                     b.ToTable("Images", t =>
                         {
@@ -2182,6 +2196,8 @@ namespace NoMercy.Database.Migrations
                     b.HasIndex("Title");
 
                     b.HasIndex("TitleSort");
+
+                    b.HasIndex("LibraryId", "TitleSort");
 
                     b.ToTable("Movies", t =>
                         {
@@ -3582,6 +3598,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("TvdbId");
 
+                    b.HasIndex("LibraryId", "TitleSort");
+
                     b.ToTable("Tvs", t =>
                         {
                             t.HasTrigger("update_Tvs_updated_at");
@@ -3751,6 +3769,8 @@ namespace NoMercy.Database.Migrations
 
                     b.HasIndex("VideoFileId");
 
+                    b.HasIndex("UserId", "LastPlayedDate");
+
                     b.HasIndex("VideoFileId", "UserId", "CollectionId")
                         .IsUnique();
 
@@ -3858,6 +3878,10 @@ namespace NoMercy.Database.Migrations
                     b.HasIndex("MovieId");
 
                     b.HasIndex("Quality");
+
+                    b.HasIndex("EpisodeId", "Folder");
+
+                    b.HasIndex("MovieId", "Folder");
 
                     b.ToTable("VideoFiles", t =>
                         {

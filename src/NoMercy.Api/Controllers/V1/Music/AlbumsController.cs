@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using NoMercy.Api.Controllers.Socket.music;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Api.Controllers.V1.Media.DTO.Components;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
@@ -40,13 +41,13 @@ public class AlbumsController : BaseController
 
         string language = Language();
 
-        foreach (Album album in _musicRepository.GetAlbums(_mediaContext, userId, letter))
+        foreach (Album album in _musicRepository.GetAlbumsAsync(userId, letter))
         {
             albums.Add(new(album, language));
         }
 
-        List<AlbumTrack> tracks = await _musicRepository.GetAlbumTracksForIds(_mediaContext, albums.Select(a => a.Id)
-            .ToList());
+        List<AlbumTrack> tracks = await _musicRepository.GetAlbumTracksForIdsAsync(
+            albums.Select(a => a.Id).ToList());
 
         if (tracks.Count == 0)
             return NotFoundResponse("Albums not found");
@@ -56,31 +57,24 @@ public class AlbumsController : BaseController
             album.Tracks = tracks.Count(track => track.AlbumId == album.Id);
         }
         
-        return Ok(new Render
-        {
-            Data =
-            [
-                new ComponentBuilder<AlbumsResponseItemDto>()
-                    .WithComponent("NMGrid")
-                    .WithProps((props, _) => props
-                        .WithProperties(new()
-                        {
-                            { "paddingTop", 16 },
-                        })
-                        .WithItems(
-                            albums
-                                .Where(response => response.Tracks > 0)
-                                .OrderBy(album => album.Name)                            
-                                .Select(item =>
-                                    new ComponentBuilder<AlbumsResponseItemDto>()
-                                        .WithComponent("NMMusicCard")
-                                        .WithProps((p, _) => p
-                                            .WithData(item)
-                                            .WithWatch())
-                                        .Build())))
-                    .Build()
-            ]
-        });
+        ComponentEnvelope response = Component.Grid()
+            .WithItems(albums
+                .Where(response => response.Tracks > 0)
+                .OrderBy(album => album.Name)
+                .Select(item => Component.MusicCard(new()
+                {
+                    Id = item.Id.ToString(),
+                    Name = item.Name,
+                    Cover = item.Cover,
+                    Type = "artist",
+                    Link = $"/music/album/{item.Id}",
+                    ColorPalette = null,
+                    Disambiguation = item.Disambiguation,
+                    Description = item.Description,
+                    Tracks = item.Tracks
+                })));
+
+        return Ok(ComponentResponse.From(response));
     }
 
     [HttpGet]
@@ -93,7 +87,7 @@ public class AlbumsController : BaseController
 
         string language = Language();
 
-        Album? album = await _musicRepository.GetAlbum(_mediaContext, userId, id);
+        Album? album = await _musicRepository.GetAlbumAsync(userId, id);
 
         if (album is null)
             return NotFoundResponse("Albums not found");
@@ -112,12 +106,12 @@ public class AlbumsController : BaseController
         if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to like albums");
 
-        Album? album = await _musicRepository.GetAlbum(_mediaContext, userId, id);
+        Album? album = await _musicRepository.GetAlbumAsync(userId, id);
 
         if (album is null)
             return UnprocessableEntityResponse("Albums not found");
 
-        await _musicRepository.LikeAlbum(userId, album, request.Value);
+        await _musicRepository.LikeAlbumAsync(userId, album, request.Value);
 
         Networking.Networking.SendToAll("RefreshLibrary", "videoHub", new RefreshLibraryDto
         {

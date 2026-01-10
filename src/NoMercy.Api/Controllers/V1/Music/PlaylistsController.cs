@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Api.Controllers.V1.Media.DTO.Components;
 using NoMercy.Api.Controllers.V1.Music.DTO;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
@@ -37,13 +38,19 @@ public class PlaylistsController : BaseController
 
         List<CarouselResponseItemDto> playlists = [];
 
-        foreach (CarouselResponseItemDto playlist in await _musicRepository.GetPlaylists(_mediaContext, userId))
+        foreach (CarouselResponseItemDto playlist in await _musicRepository.GetPlaylistsAsync(userId))
             playlists.Add(playlist);
 
-        return Ok(new Render
-        {
-            Data = playlists
-        });
+        List<MusicCardData> musicCards = playlists
+            .Select(p => new MusicCardData(p))
+            .ToList();
+
+        ComponentEnvelope response = Component.Grid()
+            .WithItems(musicCards.Select(item => Component.MusicCard(item)
+                ))
+            ;
+
+        return Ok(ComponentResponse.From(response));
     }
 
     [HttpGet]
@@ -54,7 +61,7 @@ public class PlaylistsController : BaseController
         if (!User.IsAllowed())
             return UnauthorizedResponse("You do not have permission to view playlists");
 
-        Playlist? playlist = await _musicRepository.GetPlaylist(_mediaContext, userId, id);
+        Playlist? playlist = await _musicRepository.GetPlaylistAsync(userId, id);
 
         if (playlist == null)
             return NotFoundResponse("Playlist not found");

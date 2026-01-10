@@ -1,5 +1,6 @@
 using NoMercy.Api.Controllers.V1.Media;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Api.Controllers.V1.Media.DTO.Components;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.Helpers;
@@ -12,7 +13,7 @@ namespace NoMercy.Api.Services;
 public class HomeService
 {
     private const int MaximumCardsInCarousel = 36;
-    private const int MaximumItemsPerPage = 300;
+    private const int MaximumItemsPerPage = 500;
     private const string TvMediaType = "tv";
     private const string MovieMediaType = "movie";
     private const string AnimeMediaType = "anime";
@@ -20,7 +21,6 @@ public class HomeService
     private readonly MediaContext _mediaContext;
     private readonly LibraryRepository _libraryRepository;
     private readonly HomeRepository _homeRepository;
-
 
     public HomeService(HomeRepository homeRepository, LibraryRepository libraryRepository, MediaContext mediaContext)
     {
@@ -38,12 +38,9 @@ public class HomeService
         List<Genre> genreItems = await HomeResponseDto
             .GetHome(_mediaContext, userId, language, request.Take, request.Page);
 
-        List<GenreRowDto<GenreRowItemDto>> genres = FetchGenres(genreItems)
-            .ToList();
-
-        List<Tv> tvData = await FetchTvData(language, genres);
-
-        List<Movie> movieData = await FetchMovieData(language, genres);
+        List<GenreRowDto<GenreRowItemDto>> genres = FetchGenres(genreItems).ToList();
+        List<Tv> tvData = await FetchTvData(language, country, genres);
+        List<Movie> movieData = await FetchMovieData(language, country, genres);
 
         foreach (GenreRowDto<GenreRowItemDto> genre in genres)
         {
@@ -61,65 +58,36 @@ public class HomeService
         List<Tv> tvData,
         List<Movie> movieData)
     {
-        switch (source.MediaType)
+        return source.MediaType switch
         {
-            case TvMediaType:
-            {
-                Tv? tv = tvData.FirstOrDefault(tv => tv.Id == source.Id);
-
-                return tv?.Id == null
-                    ? null
-                    : new GenreRowItemDto(tv,
-                        language);
-            }
-            case MovieMediaType:
-            {
-                Movie? movie = movieData.FirstOrDefault(movie => movie.Id == source.Id);
-
-                return movie?.Id == null
-                    ? null
-                    : new GenreRowItemDto(movie,
-                        language);
-            }
-            default:
-            {
-                return null;
-            }
-        }
+            TvMediaType => tvData.FirstOrDefault(tv => tv.Id == source.Id) is { } tv
+                ? new GenreRowItemDto(tv, language)
+                : null,
+            MovieMediaType => movieData.FirstOrDefault(movie => movie.Id == source.Id) is { } movie
+                ? new GenreRowItemDto(movie, language)
+                : null,
+            _ => null
+        };
     }
 
-    private async Task<List<Movie>> FetchMovieData(string language, IEnumerable<GenreRowDto<GenreRowItemDto>> genres)
+    private async Task<List<Movie>> FetchMovieData(string language, string country, IEnumerable<GenreRowDto<GenreRowItemDto>> genres)
     {
         List<int> movieIds = genres
             .SelectMany(s => s.Source
                 .Where(s => s.MediaType == MovieMediaType)
                 .Select(s => s.Id)).ToList();
 
-        List<Movie> movieData = [];
-
-        await foreach (Movie movie in _homeRepository.GetHomeMoviesQuery(_mediaContext, movieIds, language))
-        {
-            movieData.Add(movie);
-        }
-
-        return movieData;
+        return await _homeRepository.GetHomeMovies(_mediaContext, movieIds, language, country);
     }
 
-    private async Task<List<Tv>> FetchTvData(string language, IEnumerable<GenreRowDto<GenreRowItemDto>> genres)
+    private async Task<List<Tv>> FetchTvData(string language, string country, IEnumerable<GenreRowDto<GenreRowItemDto>> genres)
     {
         List<int> tvIds = genres
             .SelectMany(genre => genre.Source
                 .Where(source => source.MediaType == TvMediaType)
                 .Select(source => source.Id)).ToList();
 
-        List<Tv> tvData = [];
-
-        await foreach (Tv tv in _homeRepository.GetHomeTvsQuery(_mediaContext, tvIds, language))
-        {
-            tvData.Add(tv);
-        }
-
-        return tvData;
+        return await _homeRepository.GetHomeTvs(_mediaContext, tvIds, language, country);
     }
 
     private IEnumerable<GenreRowDto<GenreRowItemDto>> FetchGenres(List<Genre> genreItems)
@@ -131,7 +99,6 @@ public class HomeService
                 Title = name,
                 MoreLink = new($"/genre/{genre.Id}", UriKind.Relative),
                 Id = genre.Id.ToString(),
-
                 Source = genre.GenreMovies.Select(movie => new HomeSourceDto(movie.MovieId, MovieMediaType))
                     .Concat(genre.GenreTvShows.Select(tv => new HomeSourceDto(tv.TvId, TvMediaType)))
                     .Randomize()
@@ -139,228 +106,263 @@ public class HomeService
             };
     }
 
-    public async Task<Render> GetHomeData(Guid userId, string language, string country)
+    public async Task<ComponentResponse> GetHomeData(Guid userId, string language, string country)
     {
-        List<UserData> continueWatching = _homeRepository
-            .GetContinueWatching(_mediaContext, userId, language, country)
-            .ToList();
+        // Run initial independent queries in parallel
+        Task<HashSet<UserData>> continueWatchingTask = _homeRepository
+            .GetContinueWatchingAsync(_mediaContext, userId, language, country);
+        Task<List<Genre>> genreItemsTask = _homeRepository
+            .GetHomeGenresAsync(_mediaContext, userId, language, MaximumItemsPerPage);
+        Task<List<Library>> librariesTask = _homeRepository
+            .GetLibrariesAsync(_mediaContext, userId);
+        Task<int> animeCountTask = _homeRepository.GetAnimeCountAsync(_mediaContext, userId);
+        Task<int> movieCountTask = _homeRepository.GetMovieCountAsync(_mediaContext, userId);
+        Task<int> tvCountTask = _homeRepository.GetTvCountAsync(_mediaContext, userId);
 
-        List<NmCarouselDto<NmCardDto>> genres = [];
+        await Task.WhenAll(continueWatchingTask, genreItemsTask, librariesTask, animeCountTask, movieCountTask, tvCountTask);
 
+        HashSet<UserData> continueWatching = continueWatchingTask.Result;
+        List<Genre> genreItems = genreItemsTask.Result;
+        List<Library> libraries = librariesTask.Result;
+        int animeCount = animeCountTask.Result;
+        int movieCount = movieCountTask.Result;
+        int tvCount = tvCountTask.Result;
+
+        // Collect genre source data
+        List<GenreSourceData> genreSourceList = [];
         List<int> movieIds = [];
         List<int> tvIds = [];
 
-        HashSet<Genre> genreItems =
-            await _homeRepository.GetHomeGenres(_mediaContext, userId, language, MaximumItemsPerPage);
-
         foreach (Genre genre in genreItems)
         {
-            IEnumerable<HomeSourceDto> movies = genre
-                .GenreMovies.Select(movie => new HomeSourceDto(movie.MovieId, MovieMediaType));
-
-            IEnumerable<HomeSourceDto> tvs = genre
-                .GenreTvShows.Select(tv => new HomeSourceDto(tv.TvId, TvMediaType));
+            IEnumerable<HomeSourceDto> movies = genre.GenreMovies
+                .Select(movie => new HomeSourceDto(movie.MovieId, MovieMediaType));
+            IEnumerable<HomeSourceDto> tvs = genre.GenreTvShows
+                .Select(tv => new HomeSourceDto(tv.TvId, TvMediaType));
 
             string name = genre.Translations.FirstOrDefault()?.Name ?? genre.Name;
-            NmCarouselDto<NmCardDto> nmCarouselDto = new()
-            {
-                Title = name,
-                MoreLink = new($"/genre/{genre.Id}", UriKind.Relative),
-                Id = genre.Id.ToString(),
-                Source = movies
-                    .Concat(tvs)
-                    .Randomize()
-                    .Take(MaximumCardsInCarousel)
-            };
+            List<HomeSourceDto> source = movies.Concat(tvs).Randomize().Take(MaximumCardsInCarousel).ToList();
 
-            tvIds.AddRange(nmCarouselDto.Source
-                .Where(source => source.MediaType == TvMediaType)
-                .Select(source => source.Id));
+            tvIds.AddRange(source.Where(s => s.MediaType == TvMediaType).Select(s => s.Id));
+            movieIds.AddRange(source.Where(s => s.MediaType == MovieMediaType).Select(s => s.Id));
 
-            movieIds.AddRange(nmCarouselDto.Source
-                .Where(source => source.MediaType == MovieMediaType)
-                .Select(source => source.Id));
-
-            genres.Add(nmCarouselDto);
+            genreSourceList.Add(new(genre.Id.ToString(), name,
+                new($"/genre/{genre.Id}", UriKind.Relative), source));
         }
 
-        List<Tv> tvData = [];
-        await foreach (Tv tv in _homeRepository.GetHomeTvsQuery(_mediaContext, tvIds, language)) 
-            tvData.Add(tv);
+        // Fetch media data in parallel
+        Task<List<Tv>> tvDataTask = _homeRepository.GetHomeTvs(_mediaContext, tvIds, language, country);
+        Task<List<Movie>> movieDataTask = _homeRepository.GetHomeMovies(_mediaContext, movieIds, language, country);
 
-        List<Movie> movieData = [];
-        await foreach (Movie movie in _homeRepository.GetHomeMoviesQuery(_mediaContext, movieIds, language))
-            movieData.Add(movie);
+        await Task.WhenAll(tvDataTask, movieDataTask);
 
-        foreach (NmCarouselDto<NmCardDto> genre in genres)
-            genre.Items = genre.Source
-                .Select(source =>
+        List<Tv> tvData = tvDataTask.Result;
+        List<Movie> movieData = movieDataTask.Result;
+
+        // Build genre carousels with resolved items
+        List<GenreCarouselData> genreCarousels = genreSourceList
+            .Select(g => new GenreCarouselData(
+                g.Id,
+                g.Title,
+                g.MoreLink,
+                g.Source.Select(source => ResolveCardData(source, tvData, movieData, country))
+                    .Where(c => c != null)
+                    .Cast<CardData>()
+                    .ToList()
+            ))
+            .Where(g => g.Items.Count > 0)
+            .ToList();
+
+        // Get random home card
+        CardData? homeCardItem = genreCarousels
+            .Where(g => !string.IsNullOrEmpty(g.Title))
+            .SelectMany(g => g.Items)
+            .Where(c => !string.IsNullOrWhiteSpace(c.Title))
+            .Randomize()
+            .FirstOrDefault();
+
+        // Build library carousels - fetch all library data in parallel - each task needs its own MediaContext for thread safety
+        List<GenreCarouselData> libraryCarousels = [];
+
+        List<Task<(Library library, List<Movie> movies, List<Tv> shows)>> libraryTasks = libraries
+            .Select(async library =>
+            {
+                MediaContext context = new();
+                List<Movie> libraryMovies = [];
+                await foreach (Movie movie in _libraryRepository
+                    .GetLibraryMovies(context, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
                 {
-                    switch (source.MediaType)
-                    {
-                        case TvMediaType:
-                        {
-                            Tv? tv = tvData.FirstOrDefault(tv => tv.Id == source.Id);
-                            return tv?.Id == null
-                                ? null
-                                : new NmCardDto(tv, language);
-                        }
-                        case MovieMediaType:
-                        {
-                            Movie? movie = movieData.FirstOrDefault(movie => movie.Id == source.Id);
-                            return movie?.Id == null
-                                ? null
-                                : new NmCardDto(movie, language);
-                        }
-                        default:
-                        {
-                            return new();
-                        }
-                    }
-                })
-                .Where(genreRow => genreRow != null)
-                .ToList() as List<NmCardDto>;
+                    libraryMovies.Add(movie);
+                }
 
-        genres = genres.Where(genre => genre.Items.Count != 0).ToList();
+                List<Tv> libraryShows = [];
+                await foreach (Tv tv in _libraryRepository
+                    .GetLibraryShows(context, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
+                {
+                    libraryShows.Add(tv);
+                }
 
-        NmCardDto? homeCardItem = EnsureNoEmptyCard(genres);
+                return (library, libraryMovies, libraryShows);
+            })
+            .ToList();
 
-        List<Library> libraries = await _homeRepository.GetLibrariesQuery(_mediaContext, userId);
-        List<NmCarouselDto<NmCardDto>> list = [];
+        (Library library, List<Movie> movies, List<Tv> shows)[] libraryResults = await Task.WhenAll(libraryTasks);
 
-        int animeCount = await _homeRepository.GetAnimeCountQuery(_mediaContext, userId);
-        int movieCount = await _homeRepository.GetMovieCountQuery(_mediaContext, userId);
-        int tvCount = await _homeRepository.GetTvCountQuery(_mediaContext, userId);
-
-        foreach (Library library in libraries)
+        foreach ((Library library, List<Movie> libraryMovies, List<Tv> libraryShows) in libraryResults)
         {
-            List<Movie> movies = 
-                _libraryRepository.GetLibraryMovies(userId, library.Id, language, 32, 0, m => m.CreatedAt,"desc").ToList();
-            List<Tv> shows = 
-                _libraryRepository.GetLibraryShows(userId, library.Id, language, 32, 0, m => m.CreatedAt, "desc").ToList();
-
             bool shouldPaginate = (library.Type == MovieMediaType && movieCount > MaximumItemsPerPage)
                                   || (library.Type == TvMediaType && tvCount > MaximumItemsPerPage)
                                   || (library.Type == AnimeMediaType && animeCount > MaximumItemsPerPage);
 
-            NmCarouselDto<NmCardDto> item = new()
-            {
-                Id = library.Id.ToString(),
-                Title = library.Title,
-                MoreLink = shouldPaginate
-                    ? new($"/libraries/{library.Id}/letter/A", UriKind.Relative)
-                    : new($"/libraries/{library.Id}", UriKind.Relative),
-                // MoreLink = new($"/libraries/{library.Id}", UriKind.Relative),
-                Items = movies.Select(movie => new NmCardDto(movie, country))
-                    .Concat(shows.Select(tv => new NmCardDto(tv, country)))
-                    .ToList()
-            };
+            List<CardData> items = libraryMovies.Select(m => new CardData(m, country))
+                .Concat(libraryShows.Select(t => new CardData(t, country)))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToList();
 
-            if (item.Items.Count != 0)
-                list.Add(item);
+            if (items.Count > 0)
+            {
+                Uri moreLink = shouldPaginate
+                    ? new($"/libraries/{library.Id}/letter/A", UriKind.Relative)
+                    : new Uri($"/libraries/{library.Id}", UriKind.Relative);
+
+                libraryCarousels.Add(new(library.Id.ToString(), library.Title, moreLink, items));
+            }
         }
 
-        return new()
+        // Build components
+        List<ComponentEnvelope> components = [];
+
+        // Home card
+        if (homeCardItem != null)
         {
-            Data =
-            [
-                ..homeCardItem != null
-                    ? new[]
+            components.Add(
+                Component.HomeCard(new()
                     {
-                        new ComponentBuilder<NmCardDto>()
-                            .WithComponent("NMHomeCard")
-                            .WithUpdate("pageLoad", "/home/card")
-                            .WithProps((props, id) => props.WithData(homeCardItem))
-                            .Build()
-                    }
-                    : [],
+                        Id = homeCardItem.Id,
+                        Title = homeCardItem.Title,
+                        Overview = homeCardItem.Overview,
+                        Backdrop = homeCardItem.Backdrop,
+                        Poster = homeCardItem.Poster,
+                        Logo = homeCardItem.Logo,
+                        Year = homeCardItem.Year,
+                        ColorPalette = homeCardItem.ColorPalette,
+                        Link = homeCardItem.Link,
+                        MediaType = homeCardItem.Type
+                    })
+                    .WithUpdate("pageLoad", "/home/card")
+                    .Build()
+            );
+        }
 
-                new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithUpdate("pageLoad", "/home/continue")
-                    .WithProps((props, id) => props
-                        .WithId("continue")
-                        .WithNextId($"library_{list.ElementAtOrDefault(0)?.Id}")
-                        .WithTitle("Continue watching".Localize())
-                        .WithMoreLink(null)
-                        .WithItems(GetContinueWatchingItems(continueWatching, country, id)))
-                    .Build(),
+        // Continue watching carousel
+        components.Add(
+            Component.Carousel()
+                .WithId("continue")
+                .WithNavigation(null, libraryCarousels.Count > 0 ? $"library_{libraryCarousels[0].Id}" : null)
+                .WithTitle("Continue watching".Localize())
+                .WithUpdate("pageLoad", "/home/continue")
+                .WithItems(BuildContinueWatchingCards(continueWatching, country))
+                .Build()
+        );
 
-                ..list.Select((genre, index) => new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithProps((props, id) => props
-                        .WithId($"library_{genre.Id}")
-                        .WithPreviousId(index == 0
-                            ? "continue"
-                            : $"library_{list.ElementAtOrDefault(index - 1)?.Id}")
-                        .WithNextId(index == list.Count - 1
-                            ? $"library_{genres.FirstOrDefault()?.Id}"
-                            : $"library_{list.ElementAtOrDefault(index + 1)?.Id}")
-                        .WithTitle("Latest in " + genre.Title)
-                        .WithMoreLink(genre.MoreLink)
-                        .WithItems(
-                            genre.Items.Select(item =>
-                                new ComponentBuilder<NmCardDto>()
-                                    .WithComponent("NMCard")
-                                    .WithProps((p, _) => p
-                                        .WithData(item)
-                                        .WithWatch())
-                                    .Build())))
-                    .Build()),
+        // Library carousels
+        for (int i = 0; i < libraryCarousels.Count; i++)
+        {
+            GenreCarouselData lib = libraryCarousels[i];
 
-                ..genres.Select((genre, index) => new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithProps((props, id) => props
-                        .WithId($"library_{genre.Id}")
-                        .WithPreviousId(index == 0
-                            ? "continue"
-                            : $"library_{list.ElementAtOrDefault(index - 1)?.Id}")
-                        .WithNextId(index == genres.Count - 1
-                            ? $"library_{list.FirstOrDefault()?.Id}"
-                            : $"library_{genres.ElementAtOrDefault(index + 1)?.Id}")
-                        .WithTitle(genre.Title)
-                        .WithMoreLink(genre.MoreLink)
-                        .WithItems(
-                            genre.Items.Select(item =>
-                                new ComponentBuilder<NmCardDto?>()
-                                    .WithComponent("NMCard")
-                                    .WithProps((p, _) => p
-                                        .WithData(item)
-                                        .WithWatch())
-                                    .Build())))
-                    .Build())
-            ]
+            string? prevId = i == 0 ? "continue" : $"library_{libraryCarousels[i - 1].Id}";
+            string? nextId = i == libraryCarousels.Count - 1
+                ? (genreCarousels.Count > 0 ? $"genre_{genreCarousels[0].Id}" : null)
+                : $"library_{libraryCarousels[i + 1].Id}";
+
+            components.Add(
+                Component.Carousel()
+                    .WithId($"library_{lib.Id}")
+                    .WithNavigation(prevId, nextId)
+                    .WithTitle($"Latest in {lib.Title}")
+                    .WithMoreLink(lib.MoreLink)
+                    .WithItems(lib.Items.Select(item =>
+                        Component.Card(item).WithWatch().Build()))
+                    .Build()
+            );
+        }
+
+        // Genre carousels
+        for (int i = 0; i < genreCarousels.Count; i++)
+        {
+            GenreCarouselData genre = genreCarousels[i];
+
+            string? prevId = i == 0
+                ? (libraryCarousels.Count > 0 ? $"library_{libraryCarousels[^1].Id}" : "continue")
+                : $"genre_{genreCarousels[i - 1].Id}";
+            string? nextId = i == genreCarousels.Count - 1
+                ? (libraryCarousels.Count > 0 ? $"library_{libraryCarousels[0].Id}" : "continue")
+                : $"genre_{genreCarousels[i + 1].Id}";
+
+            components.Add(
+                Component.Carousel()
+                    .WithId($"genre_{genre.Id}")
+                    .WithNavigation(prevId, nextId)
+                    .WithTitle(genre.Title)
+                    .WithMoreLink(genre.MoreLink)
+                    .WithItems(genre.Items.Select(item =>
+                        Component.Card(item).WithWatch().Build()))
+                    .Build()
+            );
+        }
+
+        return new() { Data = components };
+    }
+
+    private static CardData? ResolveCardData(HomeSourceDto source, List<Tv> tvData, List<Movie> movieData, string country, bool watch = false)
+    {
+        return source.MediaType switch
+        {
+            TvMediaType => tvData.FirstOrDefault(tv => tv.Id == source.Id) is { } tv
+                ? new CardData(tv, country, watch)
+                : null,
+            MovieMediaType => movieData.FirstOrDefault(m => m.Id == source.Id) is { } movie
+                ? new CardData(movie, country, watch)
+                : null,
+            _ => null
         };
     }
 
-    private static NmCardDto? EnsureNoEmptyCard(List<NmCarouselDto<NmCardDto>> genres)
+    private static IEnumerable<ComponentEnvelope> BuildContinueWatchingCards(IEnumerable<UserData> continueWatching, string country)
     {
-        return genres.Where(g => g.Title != string.Empty)
-            .Randomize().FirstOrDefault()
-            ?.Items.Randomize().FirstOrDefault() ?? genres.Where(g => g.Title != string.Empty)
-            .Randomize().FirstOrDefault()
-            ?.Items.Randomize().FirstOrDefault() ?? genres.Where(g => g.Title != string.Empty)
-            .Randomize().FirstOrDefault()
-            ?.Items.Randomize().FirstOrDefault() ?? genres.Where(g => g.Title != string.Empty)
-            .Randomize().FirstOrDefault()
-            ?.Items.Randomize().FirstOrDefault();
+        return continueWatching
+            .Select(item => Component.Card(new(item, country))
+                .WithWatch()
+                .WithContextMenu([
+                    new()
+                    {
+                        Title = "Remove from watchlist".Localize(),
+                        Icon = "mooooom-trash",
+                        Method = "DELETE",
+                        Confirm = "Are you sure you want to remove this from continue watching?".Localize(),
+                        Args = new()
+                        {
+                            { "url", new Uri("/userdata/continue", UriKind.Relative) }
+                        }
+                    }
+                ])
+                .Build())
+            .DistinctBy(c => ((LeafProps<CardData>)c.Props).Data?.Link);
     }
 
-    public async Task<Render> GetHomeCard(Guid userId, string language, Ulid replaceId)
+    public async Task<ComponentResponse> GetHomeCard(Guid userId, string language, Ulid replaceId)
     {
         Tv? tv = await _libraryRepository.GetRandomTvShow(userId, language);
-
         Movie? movie = await _libraryRepository.GetRandomMovie(userId, language);
 
-        List<NmCardDto> genres = [];
+        List<CardData> candidates = [];
         if (tv != null)
-            genres.Add(new(tv, language));
-
+            candidates.Add(new(tv, language));
         if (movie != null)
-            genres.Add(new(movie, language));
+            candidates.Add(new(movie, language));
 
-        NmCardDto? homeCardItem = genres
-            .Where(g => !string.IsNullOrWhiteSpace(g.Title))
+        CardData? homeCardItem = candidates
+            .Where(c => !string.IsNullOrWhiteSpace(c.Title))
             .Randomize()
             .FirstOrDefault();
 
@@ -368,11 +370,23 @@ public class HomeService
         {
             Data =
             [
-                new ComponentBuilder<NmCardDto?>()
-                    .WithComponent("NMHomeCard")
+                Component.HomeCard(homeCardItem != null
+                        ? new()
+                        {
+                            Id = homeCardItem.Id,
+                            Title = homeCardItem.Title,
+                            Overview = homeCardItem.Overview,
+                            Backdrop = homeCardItem.Backdrop,
+                            Poster = homeCardItem.Poster,
+                            Logo = homeCardItem.Logo,
+                            Year = homeCardItem.Year,
+                            ColorPalette = homeCardItem.ColorPalette,
+                            Link = homeCardItem.Link,
+                            MediaType = homeCardItem.Type
+                        }
+                        : new HomeCardData())
                     .WithUpdate("pageLoad", "/home/card")
                     .WithReplacing(replaceId)
-                    .WithProps((props, _) => props.WithData(homeCardItem))
                     .Build()
             ]
         };
@@ -380,7 +394,7 @@ public class HomeService
 
     public async Task<ScreensaverDto> GetScreensaverContent(Guid userId)
     {
-        HashSet<Image> data = await _homeRepository.GetScreensaverImagesQuery(_mediaContext, userId);
+        HashSet<Image> data = await _homeRepository.GetScreensaverImagesAsync(_mediaContext, userId);
 
         IEnumerable<Image> logos = data.Where(image => image.Type == "logo");
 
@@ -403,219 +417,192 @@ public class HomeService
         };
     }
 
-    public async Task<Render> GetHomeTvContent(Guid userId, string language, string country)
+    public async Task<ComponentResponse> GetHomeTvContent(Guid userId, string language, string country)
     {
-        IEnumerable<UserData> continueWatching = _homeRepository
-            .GetContinueWatching(_mediaContext, userId, language, country)
-            .Where(item => item.Tv?.Episodes.Last().VideoFiles.First().Id != item.VideoFileId ||
-                           item.Time < item.VideoFile.Duration.ToSeconds() * 0.8);
+        HashSet<UserData> continueWatching = await _homeRepository
+            .GetContinueWatchingAsync(_mediaContext, userId, language, country);
 
-        List<NmCarouselDto<NmCardDto?>> genres = [];
-
-        HashSet<Genre> genreItems =
-            await _homeRepository.GetHomeGenres(_mediaContext, userId, language, MaximumItemsPerPage);
+        // Collect genre source data
+        List<GenreSourceData> genreSourceList = [];
         List<int> movieIds = [];
         List<int> tvIds = [];
 
+        List<Genre> genreItems = await _homeRepository.GetHomeGenresAsync(_mediaContext, userId, language, MaximumItemsPerPage);
+
         foreach (Genre genre in genreItems)
         {
-            IEnumerable<HomeSourceDto> movies =
-                genre.GenreMovies.Select(movie => new HomeSourceDto(movie.MovieId, MovieMediaType));
-            IEnumerable<HomeSourceDto> tvs = genre.GenreTvShows.Select(tv => new HomeSourceDto(tv.TvId, TvMediaType));
+            IEnumerable<HomeSourceDto> movies = genre.GenreMovies
+                .Select(movie => new HomeSourceDto(movie.MovieId, MovieMediaType));
+            IEnumerable<HomeSourceDto> tvs = genre.GenreTvShows
+                .Select(tv => new HomeSourceDto(tv.TvId, TvMediaType));
 
             string name = genre.Translations.FirstOrDefault()?.Name ?? genre.Name;
-            NmCarouselDto<NmCardDto?> nmCarouselDto = new()
-            {
-                Title = name,
-                MoreLink = new($"/genre/{genre.Id}", UriKind.Relative),
-                Id = genre.Id.ToString(),
-                Source = movies.Concat(tvs).Randomize().Take(28)
-            };
+            List<HomeSourceDto> source = movies.Concat(tvs).Randomize().Take(MaximumCardsInCarousel).ToList();
 
-            tvIds.AddRange(nmCarouselDto.Source
-                .Where(s => s.MediaType == TvMediaType)
-                .Select(s => s.Id));
-            
-            movieIds.AddRange(nmCarouselDto.Source
-                .Where(s => s.MediaType == MovieMediaType)
-                .Select(s => s.Id));
+            tvIds.AddRange(source.Where(s => s.MediaType == TvMediaType).Select(s => s.Id));
+            movieIds.AddRange(source.Where(s => s.MediaType == MovieMediaType).Select(s => s.Id));
 
-            genres.Add(nmCarouselDto);
+            genreSourceList.Add(new(genre.Id.ToString(), name,
+                new($"/genre/{genre.Id}", UriKind.Relative), source));
         }
 
-        List<Tv> tvData = [];
-        List<Movie> movieData = [];
+        // Fetch data
+        List<Tv> tvData = await _homeRepository.GetHomeTvs(_mediaContext, tvIds, language, country);
+        List<Movie> movieData = await _homeRepository.GetHomeMovies(_mediaContext, movieIds, language, country);
 
-        await foreach (Tv tv in _homeRepository.GetHomeTvsQuery(_mediaContext, tvIds, language))
-            tvData.Add(tv);
+        // Build genre carousels
+        List<GenreCarouselData> genreCarousels = genreSourceList
+            .Select(g => new GenreCarouselData(
+                g.Id,
+                g.Title,
+                g.MoreLink,
+                g.Source.Select(source => ResolveCardData(source, tvData, movieData, country, watch: true))
+                    .Where(c => c != null)
+                    .Cast<CardData>()
+                    .ToList()
+            ))
+            .Where(g => g.Items.Count > 0)
+            .ToList();
 
-        await foreach (Movie movie in _homeRepository.GetHomeMoviesQuery(_mediaContext, movieIds, language))
-            movieData.Add(movie);
+        // Build library carousels
+        List<Library> libraries = await _homeRepository.GetLibrariesAsync(_mediaContext, userId);
+        List<GenreCarouselData> libraryCarousels = [];
 
-        // Process genres and items
-        foreach (NmCarouselDto<NmCardDto?> genre in genres)
-            genre.Items = genre.Source
-                .Select(source => source.MediaType switch
-                {
-                    TvMediaType => tvData.FirstOrDefault(t => t.Id == source.Id)?.Id == null
-                        ? null
-                        : new NmCardDto(tvData.First(t => t.Id == source.Id), country),
-                    MovieMediaType => movieData.FirstOrDefault(m => m.Id == source.Id)?.Id == null
-                        ? null
-                        : new NmCardDto(movieData.First(m => m.Id == source.Id), country),
-                    _ => null
-                })
-                .Where(item => item != null)
-                .ToList();
-
-        genres = genres.Where(genre => genre.Items.Count != 0).ToList();
-        
-        // NmCardDto? homeCardItem = genres.Where(g => g.Title != string.Empty)
-        //     .Randomize().FirstOrDefault()?.Items.Randomize().FirstOrDefault();
-
-        IEnumerable<Library> libraries = await _libraryRepository.GetLibraries(userId);
-        List<NmCarouselDto<NmCardDto>> list = [];
+        int animeCount = await _homeRepository.GetAnimeCountAsync(_mediaContext, userId);
+        int movieCount = await _homeRepository.GetMovieCountAsync(_mediaContext, userId);
+        int tvCount = await _homeRepository.GetTvCountAsync(_mediaContext, userId);
 
         foreach (Library library in libraries)
         {
-            List<Movie> movies =
-                _libraryRepository.GetLibraryMovies(userId, library.Id, language, 32, 0, m => m.CreatedAt, "desc").ToList();
-            List<Tv> shows =
-                _libraryRepository.GetLibraryShows(userId, library.Id, language, 32, 0, m => m.CreatedAt, "desc").ToList();
-
-            list.Add(new()
+            List<Movie> libraryMovies = new();
+            await foreach (Movie movie in _libraryRepository
+                               .GetLibraryMovies(_mediaContext, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
             {
-                Title = library.Title,
-                MoreLink = new($"/libraries/{library.Id}", UriKind.Relative),
-                Items = movies.Select(movie => new NmCardDto(movie, country))
-                    .Concat(shows.Select(tv => new NmCardDto(tv, country)))
-                    .ToList()
-            });
+                libraryMovies.Add(movie);
+            }
+            
+            List<Tv> libraryShows = new();
+            await foreach (Tv tv in _libraryRepository
+                               .GetLibraryShows(_mediaContext, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
+            {
+                libraryShows.Add(tv);
+            }
+
+            bool shouldPaginate = (library.Type == MovieMediaType && movieCount > MaximumItemsPerPage)
+                                  || (library.Type == TvMediaType && tvCount > MaximumItemsPerPage)
+                                  || (library.Type == AnimeMediaType && animeCount > MaximumItemsPerPage);
+
+            List<CardData> items = libraryMovies.Select(m => new CardData(m, country, watch: true))
+                .Concat(libraryShows.Select(t => new CardData(t, country, watch: true)))
+                .ToList();
+
+            if (items.Count > 0)
+            {
+                Uri moreLink = shouldPaginate
+                    ? new($"/libraries/{library.Id}/letter/A", UriKind.Relative)
+                    : new Uri($"/libraries/{library.Id}", UriKind.Relative);
+
+                libraryCarousels.Add(new(library.Id.ToString(), library.Title, moreLink, items));
+            }
         }
 
-        return new()
+        // Build components
+        List<ComponentEnvelope> components = [];
+
+        // Continue watching
+        components.Add(
+            Component.Carousel()
+                .WithId("continue")
+                .WithNavigation(null, libraryCarousels.Count > 0 ? $"library_{libraryCarousels[0].Id}" : null)
+                .WithTitle("Continue watching".Localize())
+                .WithUpdate("pageLoad", "/home/continue")
+                .WithItems(BuildContinueWatchingCards(continueWatching, country))
+                .Build()
+        );
+
+        // Library carousels
+        for (int i = 0; i < libraryCarousels.Count; i++)
         {
-            Data =
-            [
-                // new ComponentBuilder<NmCardDto?>()
-                //     .WithComponent("NMHomeCard")
-                //     .WithUpdate("pageLoad", "/home/card")
-                //     .WithProps((props, id) => props.WithData(homeCardItem))
-                //     .Build(),
+            GenreCarouselData lib = libraryCarousels[i];
 
-                new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithUpdate("pageLoad", "/home/continue")
-                    .WithProps((props, id) => props
-                        .WithNextId(genres.FirstOrDefault()?.Id ?? "continue")
-                        .WithPreviousId("continue")
-                        .WithTitle("Continue watching".Localize())
-                        .WithMoreLink(null)
-                        .WithItems(GetContinueWatchingItems(continueWatching, country, id)))
-                    .Build(),
+            string prevId = i == 0 ? "continue" : $"library_{libraryCarousels[i - 1].Id}";
+            string? nextId = i == libraryCarousels.Count - 1
+                ? (genreCarousels.Count > 0 ? $"genre_{genreCarousels[0].Id}" : null)
+                : $"library_{libraryCarousels[i + 1].Id}";
 
-                ..list.Select((genre, index) => new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithProps((props, id) => props
-                        .WithId(genre.Id)
-                        .WithPreviousId(index == 0
-                            ? "continue"
-                            : $"library_{list.ElementAtOrDefault(index - 1)?.Id}")
-                        .WithNextId(index == list.Count - 1
-                            ? genres.FirstOrDefault()?.Id ?? "continue"
-                            : $"library_{list.ElementAtOrDefault(index + 1)?.Id}")
-                        .WithTitle("Latest in " + genre.Title)
-                        .WithMoreLink(genre.MoreLink)
-                        .WithItems(
-                            genre.Items.Select(item =>
-                                new ComponentBuilder<NmCardDto>()
-                                    .WithComponent("NMCard")
-                                    .WithProps((p, _) => p
-                                        .WithData(item)
-                                        .WithWatch())
-                                    .Build())))
-                    .Build()),
+            components.Add(
+                Component.Carousel()
+                    .WithId($"library_{lib.Id}")
+                    .WithNavigation(prevId, nextId)
+                    .WithTitle($"Latest in {lib.Title}")
+                    .WithMoreLink(lib.MoreLink)
+                    .WithItems(lib.Items
+                        .Select(item => Component
+                            .Card(item)
+                            .WithWatch()
+                            .Build()
+                        ))
+                    .Build()
+            );
+        }
 
-                ..genres.Select((genre, index) => new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
-                    .WithProps((props, id) => props
-                        .WithId(genre.Id)
-                        .WithPreviousId(index == 0
-                            ? $"library_{list.LastOrDefault()?.Id ?? "continue"}"
-                            : genres.ElementAtOrDefault(index - 1)?.Id ?? "continue")
-                        .WithNextId(index == genres.Count - 1
-                            ? "continue"
-                            : genres.ElementAtOrDefault(index + 1)?.Id ?? "continue")
-                        .WithTitle(genre.Title)
-                        .WithMoreLink(genre.MoreLink)
-                        .WithItems(
-                            genre.Items.Select(item =>
-                                new ComponentBuilder<NmCardDto>()
-                                    .WithComponent("NMCard")
-                                    .WithProps((p, _) => p
-                                        .WithData(item ?? new())
-                                        .WithWatch())
-                                    .Build())))
-                    .Build())
-            ]
-        };
+        // Genre carousels (limited to 6 items for TV)
+        for (int i = 0; i < genreCarousels.Count; i++)
+        {
+            GenreCarouselData genre = genreCarousels[i];
+
+            string prevId = i == 0
+                ? (libraryCarousels.Count > 0 ? $"library_{libraryCarousels[^1].Id}" : "continue")
+                : $"genre_{genreCarousels[i - 1].Id}";
+            string nextId = i == genreCarousels.Count - 1
+                ? (libraryCarousels.Count > 0 ? $"library_{libraryCarousels[0].Id}" : "continue")
+                : $"genre_{genreCarousels[i + 1].Id}";
+
+            components.Add(
+                Component.Carousel()
+                    .WithId($"genre_{genre.Id}")
+                    .WithNavigation(prevId, nextId)
+                    .WithTitle(genre.Title)
+                    .WithMoreLink(genre.MoreLink)
+                    .WithItems(genre.Items
+                        .Take(6)
+                        .Select(item => Component
+                            .Card(item)
+                            .WithWatch()
+                            .Build()
+                        ))
+                    .Build()
+            );
+        }
+
+        return new() { Data = components };
     }
 
-    public async Task<Render> GetHomeContinueContent(Guid userId, string language, string country, Ulid replaceId)
+    public async Task<ComponentResponse> GetHomeContinueContent(Guid userId, string language, string country, Ulid replaceId)
     {
-        IEnumerable<UserData> continueWatching = _homeRepository
-            .GetContinueWatching(_mediaContext, userId, language, country)
-            .Where(item => item.Tv?.Episodes.Last().VideoFiles.First().Id != item.VideoFileId ||
-                           item.Time < item.VideoFile.Duration.ToSeconds() * 0.8);
+        HashSet<UserData> continueWatching = await _homeRepository
+            .GetContinueWatchingAsync(_mediaContext, userId, language, country);
+
+        IEnumerable<UserData> filtered = continueWatching
+            .Where(item => item.Tv?.Episodes.LastOrDefault()?.VideoFiles.FirstOrDefault()?.Id != item.VideoFileId ||
+                           item.Time < (item.VideoFile?.Duration?.ToSeconds() ?? 0) * 0.8);
 
         return new()
         {
             Data =
             [
-                new ComponentBuilder<NmCardDto>()
-                    .WithComponent("NMCarousel")
+                Component.Carousel()
+                    .WithId("continue")
+                    .WithNavigation("continue", 28)
+                    .WithTitle("Continue watching".Localize())
                     .WithUpdate("pageLoad", "/home/continue")
-                    .WithProps((props, id) => props
-                        .WithNextId(28)
-                        .WithPreviousId("continue")
-                        .WithTitle("Continue watching".Localize())
-                        .WithMoreLink(null)
-                        .WithItems(GetContinueWatchingItems(continueWatching, country, id)))
+                    .WithItems(BuildContinueWatchingCards(filtered, country))
                     .Build()
             ]
         };
     }
 
-    private static IEnumerable<ComponentDto<NmCardDto>> GetContinueWatchingItems(IEnumerable<UserData> continueWatching,
-        string country, Ulid id)
-    {
-        return continueWatching
-            .Select(item => new ComponentDto<NmCardDto>
-            {
-                Component = "NMCard",
-                Props =
-                {
-                    Data = new(item, country),
-                    Watch = true,
-                    ContextMenuItems =
-                    [
-                        new()
-                        {
-                            { "label", "Remove from watchlist".Localize() },
-                            { "icon", "mooooom-trash" },
-                            { "method", "DELETE" },
-                            { "confirm", "Are you sure you want to remove this from continue watching?".Localize() },
-                            {
-                                "args", new Dictionary<string, object>
-                                {
-                                    { "url", new Uri("/userdata/continue", UriKind.Relative) },
-                                    { "replaceKey", id }
-                                }
-                            }
-                        }
-                    ]
-                }
-            })
-            .DistinctBy(item => item.Props.Data?.Link);
-    }
+    // Helper records for intermediate data
+    private record GenreSourceData(string Id, string Title, Uri MoreLink, List<HomeSourceDto> Source);
+    private record GenreCarouselData(string Id, string Title, Uri MoreLink, List<CardData> Items);
 }
