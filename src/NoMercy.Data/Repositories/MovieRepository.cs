@@ -8,7 +8,25 @@ namespace NoMercy.Data.Repositories;
 
 public class MovieRepository(MediaContext context)
 {
-    public readonly Func<MediaContext, Guid, int, string, string, Task<Movie?>> GetMovieAsync =
+    public Task<Movie?> GetMovieAsync(Guid userId, int id, string language, string country)
+    {
+        return context.Movies
+            .AsNoTracking()
+            .Where(movie => movie.Id == id)
+            .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId == userId))
+            .Include(movie => movie.MovieUser.Where(mu => mu.UserId == userId))
+            .Include(movie => movie.Translations.Where(t => t.Iso6391 == language))
+            .Include(movie => movie.Images.Where(i => i.Type == "logo").Take(1))
+            .Include(movie => movie.CertificationMovies
+                .Where(c => c.Certification.Iso31661 == "US" || c.Certification.Iso31661 == country)
+                .Take(1))
+                .ThenInclude(c => c.Certification)
+            .Include(movie => movie.VideoFiles.Where(v => v.Folder != null))
+                .ThenInclude(v => v.UserData.Where(ud => ud.UserId == userId))
+            .FirstOrDefaultAsync();
+    }
+
+    public readonly Func<MediaContext, Guid, int, string, string, Task<Movie?>> GetMovieDetailAsync =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language, string country) =>
             mediaContext.Movies.AsNoTracking()
                 .Where(movie => movie.Id == id)
@@ -59,14 +77,14 @@ public class MovieRepository(MediaContext context)
                     .ThenInclude(ctv => ctv.Company)
                 .FirstOrDefault());
 
-    public readonly Func<MediaContext, Guid, int, string, string, Task<bool>> GetMovieAvailableAsync =
-        EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language, string country) =>
-            mediaContext.Movies.AsNoTracking()
-                .Where(movie => movie.Library.LibraryUsers
-                    .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
-                .Where(movie => movie.Id == id)
-                .Include(movie => movie.VideoFiles)
-                .Any());
+    public Task<bool> GetMovieAvailableAsync(Guid userId, int id)
+    {
+        return context.Movies
+            .AsNoTracking()
+            .Where(movie => movie.Library.LibraryUsers.Any(u => u.UserId == userId))
+            .Where(movie => movie.Id == id)
+            .AnyAsync(movie => movie.VideoFiles.Any(v => v.Folder != null));
+    }
 
     public async Task<List<Movie>> GetMoviePlaylistAsync(Guid userId, int id, string language, string country)
     {
@@ -99,7 +117,7 @@ public class MovieRepository(MediaContext context)
         try
         {
             MovieUser? movieUser = await context.MovieUser
-                .FirstOrDefaultAsync(mu => mu.MovieId == id && mu.UserId.Equals(userId));
+                .FirstOrDefaultAsync(mu => mu.MovieId == id && mu.UserId == userId);
 
             if (like)
             {
@@ -129,14 +147,14 @@ public class MovieRepository(MediaContext context)
 
     public async Task AddMovieAsync(int id)
     {
-        Library? tvLibrary = await context.Libraries
+        Library? movieLibrary = await context.Libraries
             .Where(f => f.Type == "movie")
             .FirstOrDefaultAsync();
 
-        if (tvLibrary == null) return;
+        if (movieLibrary == null) return;
 
         JobDispatcher jobDispatcher = new();
-        jobDispatcher.DispatchJob<AddMovieJob>(id, tvLibrary.Id);
+        jobDispatcher.DispatchJob<AddMovieJob>(id, movieLibrary.Id);
     }
 
     public Task DeleteMovieAsync(int id)

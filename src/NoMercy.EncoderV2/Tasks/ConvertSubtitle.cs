@@ -93,7 +93,9 @@ public partial class ConvertSubtitle: ITaskContract
         List<Subtitle> subtitles = [];
         string fileContent = File.ReadAllText(filePath);
 
-        MatchCollection matches = OcrRegex().Matches(fileContent);
+        MatchCollection matches = new Regex(
+                @"pts_time:(?<start>\d+(\.\d+)?)\nlavfi\.ocr\.text=(?<text>.+(\n.+)?)\n\n.*?pts_time:(?<end>\d+(\.\d+)?)",
+                RegexOptions.Multiline).Matches(fileContent);
 
         foreach (Match match in matches)
         {
@@ -127,8 +129,4 @@ public partial class ConvertSubtitle: ITaskContract
         return string.Format("{0:00}:{1:00}:{2:00}.{3:000}",
             timeSpan.Hours, timeSpan.Minutes, timeSpan.Seconds, timeSpan.Milliseconds);
     }
-
-    [GeneratedRegex(@"pts_time:(?<start>\d+(\.\d+)?)\nlavfi\.ocr\.text=(?<text>.+(\n.+)?)\n\n.*?pts_time:(?<end>\d+(\.\d+)?)", RegexOptions.Multiline)]
-    private static partial Regex OcrRegex();
-
 }

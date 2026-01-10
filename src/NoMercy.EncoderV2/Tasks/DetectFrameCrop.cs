@@ -28,7 +28,7 @@ public partial class DetectFrameCrop: ITaskContract
         double step = Math.Floor(max / sections);
 
         ConcurrentDictionary<string, int> counts = new();
-        Regex regex = CropDetectRegex();
+        Regex regex = new(@"crop=(\d+:\d+:\d+:\d+)", RegexOptions.Compiled);
 
         //List<string> results = [];
         ConcurrentBag<string> results = new();
@@ -85,6 +85,4 @@ public partial class DetectFrameCrop: ITaskContract
         return maxKey;
     }
     
-    [GeneratedRegex(@"crop=(\d+:\d+:\d+:\d+)", RegexOptions.Multiline)]
-    private static partial Regex CropDetectRegex();
 }

@@ -12,6 +12,7 @@ namespace NoMercy.Data.Repositories;
 
 public class TvShowRepository(MediaContext context)
 {
+    
     public readonly Func<MediaContext, Guid, int, string, string, Task<Tv?>> GetTvAsync =
         EF.CompileAsyncQuery((MediaContext mediaContext, Guid userId, int id, string language, string country) =>
             mediaContext.Tvs.AsNoTracking()
@@ -94,14 +95,11 @@ public class TvShowRepository(MediaContext context)
 
     public Task<bool> GetTvAvailableAsync(Guid userId, int id)
     {
-        return context.Tvs.AsNoTracking()
-            .Where(tv => tv.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
+        return context.Tvs
+            .AsNoTracking()
+            .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId == userId))
             .Where(tv => tv.Id == id)
-            .Include(tv => tv.Episodes)
-                .ThenInclude(tv => tv.VideoFiles)
-            .AnyAsync(tv => tv.Episodes
-                .Any(episode => episode.VideoFiles.Count != 0));
+            .AnyAsync(tv => tv.Episodes.Any(e => e.VideoFiles.Any(v => v.Folder != null)));
     }
 
     public async Task<Tv?> GetTvPlaylistAsync(Guid userId, int id, string language, string country)
@@ -160,7 +158,7 @@ public class TvShowRepository(MediaContext context)
     public async Task<bool> LikeTvAsync(int id, Guid userId, bool like)
     {
         TvUser? tvUser = await context.TvUser
-            .FirstOrDefaultAsync(tu => tu.TvId == id && tu.UserId.Equals(userId));
+            .FirstOrDefaultAsync(tu => tu.TvId == id && tu.UserId == userId);
 
         if (like)
         {
@@ -176,7 +174,6 @@ public class TvShowRepository(MediaContext context)
         else if (tvUser != null)
         {
             context.TvUser.Remove(tvUser);
-
             await context.SaveChangesAsync();
         }
 
@@ -209,43 +206,20 @@ public class TvShowRepository(MediaContext context)
             .Where(tv => tv.Id == id)
             .ExecuteDeleteAsync();
     }
-    
+
     public async Task<IEnumerable<Episode>> GetMissingLibraryShows(Guid userId, int id, string language)
     {
-        List<Episode> episodes = [];
-
-        IQueryable<Tv> query = context.Tvs
+        Tv? tv = await context.Tvs
             .AsNoTracking()
             .Where(tv => tv.Id == id)
-            .Where(tv => tv.Library.LibraryUsers
-                .FirstOrDefault(u => u.UserId.Equals(userId)) != null)
+            .Where(tv => tv.Library.LibraryUsers.Any(u => u.UserId == userId))
+            .Include(tv => tv.Episodes.Where(e => e.VideoFiles.Count == 0))
+                .ThenInclude(e => e.Translations.Where(t => t.Iso6391 == language))
+            .FirstOrDefaultAsync();
 
-            .Include(tv => tv.Episodes)
-            .ThenInclude(episode => episode.Translations.Where(t => t.Iso6391 == language))
-
-            .Include(tv => tv.Episodes)
-            .ThenInclude(episode => episode.VideoFiles)
-            .ThenInclude(file => file.UserData
-                .Where(userData => userData.UserId.Equals(userId)));
-        
-        Tv? tv = await query.FirstOrDefaultAsync();
-        
         if (tv == null)
-            return episodes;
+            return [];
 
-        foreach (Episode episode in tv.Episodes)
-        {
-            if (episode.VideoFiles.Count > 0)
-                continue;
-
-            Translation? episodeTranslation = episode.Translations.FirstOrDefault();
-            
-            if (episodeTranslation == null)
-                continue;
-
-            episodes.Add(episode);
-        }
-        
-        return episodes;
+        return tv.Episodes.Where(e => e.Translations.Any());
     }
 }

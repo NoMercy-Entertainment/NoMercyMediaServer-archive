@@ -1,6 +1,9 @@
 using System.Runtime.InteropServices;
+using NoMercy.Encoder.Core;
 using NoMercy.Networking;
 using NoMercy.NmSystem;
+using NoMercy.NmSystem.Capabilities;
+using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Queue;
 using AppFiles = NoMercy.NmSystem.Information.AppFiles;
 
@@ -35,41 +38,48 @@ public class Start
         List<TaskDelegate> startupTasks =
         [
             // new (ApiInfo.RequestInfo),
-            new(AppFiles.CreateAppFolders),
-            new(Auth.Init),
-            new(Networking.Networking.Discover),
+            AppFiles.CreateAppFolders,
+            Auth.Init,
+            Networking.Networking.Discover,
             ..tasks,
-            new(Register.Init),
-            new(Binaries.DownloadAll),
-            new(ChromeCast.Init),
-            new(UpdateChecker.StartPeriodicUpdateCheck),
+            Register.Init,
+            Binaries.DownloadAll,
+            ChromeCast.Init,
+            UpdateChecker.StartPeriodicUpdateCheck,
 
-            new(delegate
+            delegate
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                     && OperatingSystem.IsWindowsVersionAtLeast(10, 0, 18362))
                     return TrayIcon.Make();
                 return Task.CompletedTask;
-            }),
-            new(delegate
+            },
+            delegate
             {
                 DesktopIconCreator.CreateDesktopIcon(AppFiles.ApplicationName, AppFiles.ServerExePath,
                     AppFiles.AppIcon);
                 return Task.CompletedTask;
-            })
+            }
         ];
 
         await RunStartup(startupTasks);
 
-        Thread queues = new(new Task(() => QueueRunner.Initialize().Wait()).Start)
+        // Delay heavy initialization tasks to run in the background after server is ready
+        _ = Task.Run(async () =>
         {
-            Name = "Queue workers",
-            Priority = ThreadPriority.Lowest,
-            IsBackground = true
-        };
-        queues.Start();
+            // Wait a bit for the server to fully start and be responsive
+            await Task.Delay(TimeSpan.FromSeconds(3));
 
-        // GPU detection handled by GpuDeviceDetector in NmSystem
+            // Initialize hardware acceleration detection in background
+            await FFmpegHardwareConfig.InitializeAsync();
+            foreach (GpuAccelerator accelerator in FFmpegHardwareConfig.Accelerators)
+                Logger.Encoder(
+                    $"Found a dedicated GPU. Vendor: {accelerator.Vendor}, Accelerator: {accelerator.Accelerator}");
+
+            // Start queue workers after a short delay
+            await Task.Delay(TimeSpan.FromSeconds(2));
+            await QueueRunner.Initialize();
+        });
     }
 
     private static async Task RunStartup(List<TaskDelegate> startupTasks)

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NoMercy.Api.Controllers.V1.DTO;
 using NoMercy.Api.Controllers.V1.Media.DTO;
+using NoMercy.Api.Controllers.V1.Media.DTO.Components;
 using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
@@ -32,48 +33,43 @@ public class SpecialController(SpecialRepository specialRepository, MediaContext
         List<Special> specials = await specialRepository.GetSpecialsAsync(userId, language, request.Take, request.Page);
 
         if (request.Version != "lolomo")
-            return Ok(new Render
-            {
-                Data =
-                [
-                    new ComponentBuilder<SpecialsResponseItemDto>()
-                        .WithComponent("NMGrid")
-                        .WithProps((props, _) => props
-                            .WithProperties(new(){})
-                            .WithItems(
-                                specials
-                                    .Select(special => new SpecialsResponseItemDto(special))
-                                    .Select(item =>
-                                        new ComponentBuilder<SpecialsResponseItemDto>()
-                                            .WithComponent("NMCard")
-                                            .WithProps((props, _) => props
-                                                .WithData(item)
-                                                .WithWatch())
-                                            .Build())))
-                        .Build()
-                ]
-            });
-
-        return Ok(new Render
         {
-            Data = Letters.Select(genre => new ComponentBuilder<NmCarouselDto<NmCardDto>>()
-                .WithComponent("NMCarousel")
-                .WithProps((props, _) => props
-                    .WithId(genre)
-                    .WithTitle(genre)
-                    .WithItems(
-                        specials.Select(movie => new NmCardDto(movie, country))
-                            .Where(item => genre == "#"
-                                ? Numbers.Any(p => item.Title.StartsWith(p))
-                                : item.Title.StartsWith(genre))
-                            .Select(item => new ComponentBuilder<NmCardDto>()
-                                .WithComponent("NMCard")
-                                .WithProps((props, _) => props
-                                    .WithData(item)
-                                    .WithWatch())
-                                .Build())))
-                .Build())
-        });
+            List<CardData> cardItems = specials
+                .Select(special => new CardData(special, country))
+                .ToList();
+
+            ComponentEnvelope response = Component.Grid()
+                .WithItems(cardItems.Select(item => Component.Card()
+                    .WithData(item)
+                    ))
+                ;
+
+            return Ok(ComponentResponse.From(response));
+        }
+
+        List<ComponentEnvelope> carousels = Letters
+            .Select(letter =>
+            {
+                List<CardData> letterItems = specials
+                    .Select(movie => new CardData(new NmCardDto(movie, country)))
+                    .Where(item => letter == "#"
+                        ? Numbers.Any(p => item.Title.StartsWith(p))
+                        : item.Title.StartsWith(letter))
+                    .ToList();
+
+                return Component.Carousel()
+                    .WithId(letter)
+                    .WithTitle(letter)
+                    .WithItems(letterItems.Select(item => Component.Card()
+                        .WithData(item)
+                        )).Build();
+            })
+            .ToList();
+
+        ComponentEnvelope containerResponse = Component.Container()
+            .WithItems(carousels);
+
+        return Ok(containerResponse);
     }
 
     [HttpGet]
@@ -102,17 +98,32 @@ public class SpecialController(SpecialRepository specialRepository, MediaContext
             .Select(episode => episode!.Tv)
             .Select(tv => tv.Id);
 
-        List<SpecialItemsDto> items = [];
+        // Fetch movies and TVs in parallel
+        Task<List<SpecialItemsDto>> moviesTask = Task.Run(async () =>
+        {
+            MediaContext mediaContext = new();
+            List<SpecialItemsDto> movieItems = [];
+            IAsyncEnumerable<Movie> specialMovies =
+                SpecialResponseDto.GetSpecialMovies(mediaContext, userId, movieIds, language, country);
+            await foreach (Movie movie in specialMovies)
+                movieItems.Add(new(movie));
+            return movieItems;
+        });
 
-        IAsyncEnumerable<Movie> specialMovies =
-            SpecialResponseDto.GetSpecialMovies(context, userId, movieIds, language, country);
-        await foreach (Movie movie in specialMovies)
-            items.Add(new(movie));
+        Task<List<SpecialItemsDto>> tvsTask = Task.Run(async () =>
+        {
+            MediaContext mediaContext = new();
+            List<SpecialItemsDto> tvItems = [];
+            IAsyncEnumerable<Tv> specialTvs =
+                SpecialResponseDto.GetSpecialTvs(mediaContext, userId, tvIds, language, country);
+            await foreach (Tv tv in specialTvs)
+                tvItems.Add(new(tv));
+            return tvItems;
+        });
 
-        IAsyncEnumerable<Tv> specialTvs =
-            SpecialResponseDto.GetSpecialTvs(context, userId, tvIds, language, country);
-        await foreach (Tv tv in specialTvs)
-            items.Add(new(tv));
+        await Task.WhenAll(moviesTask, tvsTask);
+
+        List<SpecialItemsDto> items = [..moviesTask.Result, ..tvsTask.Result];
 
         return Ok(new DataResponseDto<SpecialResponseItemDto>
         {
@@ -141,14 +152,24 @@ public class SpecialController(SpecialRepository specialRepository, MediaContext
         );
 
         if (!hasFiles)
-            return NotFound(new AvailableResponseDto
+            return NotFound(new StatusResponseDto<AvailableResponseDto>
             {
-                Available = false
+                Data = new()
+                {
+                    Available = false
+                },
+                Status = "error",
+                Message = "Special not found"
             });
 
-        return Ok(new AvailableResponseDto
+        return Ok(new StatusResponseDto<AvailableResponseDto>
         {
-            Available = true
+            Data = new()
+            {
+                Available = true
+            },
+            Status = "ok",
+            Message = "Special is available"
         });
     }
 
@@ -164,7 +185,7 @@ public class SpecialController(SpecialRepository specialRepository, MediaContext
         string country = Country();
 
         Special? special = await specialRepository
-            .GetSpecialPlaylist(context, userId, id, language, country);
+            .GetSpecialPlaylistAsync(userId, id, language, country);
 
         if (special is null)
             return NotFoundResponse("Special not found");

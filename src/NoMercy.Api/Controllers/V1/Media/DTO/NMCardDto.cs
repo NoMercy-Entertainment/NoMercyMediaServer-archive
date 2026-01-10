@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using NoMercy.Data.Repositories;
 using NoMercy.Database;
 using NoMercy.Database.Models;
 using NoMercy.NmSystem.Extensions;
@@ -9,7 +10,7 @@ namespace NoMercy.Api.Controllers.V1.Media.DTO;
 public class NmCardDto
 {
     [JsonProperty("id")] public dynamic? Id { get; set; }
-    [JsonProperty("title")] public string Title { get; set; } = null!;
+    [JsonProperty("title")] public string Title { get; set; } = string.Empty;
     [JsonProperty("titleSort")] public string? TitleSort { get; set; }
     [JsonProperty("overview")] public string? Overview { get; set; }
     [JsonProperty("link")] public Uri Link { get; set; } = null!;
@@ -17,6 +18,7 @@ public class NmCardDto
     [JsonProperty("year")] public int? Year { get; set; }
     [JsonProperty("duration")] public int? Duration { get; set; }
     [JsonProperty("type")] public string? Type { get; set; }
+    [JsonProperty("created_at")] public DateTime CreatedAt { get; set; }
     
     [JsonProperty("backdrop")] public string? Backdrop { get; set; }
     [JsonProperty("poster")] public string? Poster { get; set; }
@@ -55,6 +57,7 @@ public class NmCardDto
         HaveItems = movie.VideoFiles.Count(v => v.Folder != null);
 
         ColorPalette = movie.ColorPalette;
+        CreatedAt = movie.CreatedAt;
 
         Rating = movie.CertificationMovies
             .Where(certificationMovie => certificationMovie.Certification.Iso31661 == "US"
@@ -86,6 +89,7 @@ public class NmCardDto
         TitleSort = tv.Title.TitleSort(tv.FirstAirDate);
         Year = tv.FirstAirDate.ParseYear();
         Type = "tv";
+        CreatedAt = tv.CreatedAt;
 
         Link = new($"/tv/{Id}", UriKind.Relative);
         NumberOfItems = tv.NumberOfEpisodes;
@@ -132,6 +136,7 @@ public class NmCardDto
             .Count(movie => movie.Movie.VideoFiles.Any(v => v.Folder != null));
 
         ColorPalette = collection.ColorPalette;
+        CreatedAt = collection.CreatedAt;
 
         Rating = collection.CollectionMovies
             .SelectMany(collectionMovie => collectionMovie.Movie.CertificationMovies)
@@ -162,6 +167,7 @@ public class NmCardDto
         Link = new($"/specials/{Id}", UriKind.Relative);
 
         NumberOfItems = special.Items.Count;
+        CreatedAt = special.CreatedAt;
 
         int haveMovies = special.Items
             .Select(item => item.Movie)
@@ -204,12 +210,14 @@ public class NmCardDto
             Title = item.Special.Title;
             TitleSort = item.Special.Title.TitleSort();
             Overview = item.Special.Overview;
+            Logo = item.Special.Logo;
             Duration = item.VideoFile.Duration?.ToSeconds();
             Type = "special";
 
             Link = new($"/specials/{Id}/watch", UriKind.Relative);
 
             NumberOfItems = item.Special.Items.Count;
+            CreatedAt = item.Special.CreatedAt;
             
             int availableMovies = item.Special.Items
                 .Count(specialItem => specialItem.MovieId != null && specialItem.Movie?.VideoFiles.Count != 0);
@@ -249,6 +257,7 @@ public class NmCardDto
             Title = item.Collection.Title;
             TitleSort = item.Collection.Title.TitleSort();
             Overview = item.Collection.Overview;
+            Logo = item.Collection.Images.FirstOrDefault(i => i.Type == "logo")?.FilePath;
             Duration = item.VideoFile?.Duration?.ToSeconds();
             Year = item.Collection.CollectionMovies
                 .MinBy(movie => movie.Movie.ReleaseDate?.ParseYear())
@@ -256,6 +265,7 @@ public class NmCardDto
             Type = "collection";
 
             Link = new($"/collection/{Id}/watch", UriKind.Relative);
+            CreatedAt = item.Collection.CreatedAt;
 
             NumberOfItems = item.Collection.CollectionMovies.Count;
             HaveItems = item.Collection.CollectionMovies
@@ -283,9 +293,11 @@ public class NmCardDto
             Title = item.Movie.Title;
             TitleSort = item.Movie.Title.TitleSort(item.Movie.ReleaseDate);
             Overview = item.Movie.Overview;
+            Logo = item.Movie.Images.FirstOrDefault(i => i.Type == "logo")?.FilePath;
             Duration = item.VideoFile?.Duration?.ToSeconds();
             Link = new($"/movie/{Id}/watch", UriKind.Relative);
             Type = "movie";
+            CreatedAt = item.Movie.CreatedAt;
 
             NumberOfItems = 1;
             HaveItems = item.Movie.VideoFiles.Count(v => v.Folder != null);
@@ -311,9 +323,11 @@ public class NmCardDto
             TitleSort = item.Tv.Title.TitleSort(item.Tv.FirstAirDate);
             HaveItems = item.Tv.HaveEpisodes;
             Overview = item.Tv.Overview;
+            Logo = item.Tv.Images.FirstOrDefault(i => i.Type == "logo")?.FilePath;
             Duration = item.VideoFile?.Duration?.ToSeconds();
             Link = new($"/tv/{Id}/watch", UriKind.Relative);
             Type = "tv";
+            CreatedAt = item.Tv.CreatedAt;
 
             NumberOfItems = item.Tv.NumberOfEpisodes;
             HaveItems = item.Tv.Episodes
@@ -348,5 +362,69 @@ public class NmCardDto
         Year = tmdbMovie.ReleaseDate.ParseYear();
         NumberOfItems = 1;
         HaveItems = 0;
+    }
+
+    public NmCardDto(MovieCardDto movie, string country)
+    {
+        Id = movie.Id;
+        Title = movie.Title;
+        TitleSort = movie.TitleSort;
+        Overview = movie.Overview;
+        Poster = movie.Poster;
+        Backdrop = movie.Backdrop;
+        Logo = movie.Logo;
+        Year = movie.ReleaseDate.ParseYear();
+        Type = "movie";
+        CreatedAt = movie.CreatedAt;
+
+        Link = new($"/movie/{Id}", UriKind.Relative);
+        NumberOfItems = 1;
+        HaveItems = movie.VideoFileCount;
+
+        ColorPalette = !string.IsNullOrEmpty(movie.ColorPalette)
+            ? JsonConvert.DeserializeObject<IColorPalettes>(movie.ColorPalette)
+            : null;
+
+        if (movie.CertificationRating != null)
+        {
+            Rating = new()
+            {
+                Rating = movie.CertificationRating,
+                Iso31661 = movie.CertificationCountry,
+                Image = new($"/{movie.CertificationCountry}/{movie.CertificationCountry}_{movie.CertificationRating}.svg")
+            };
+        }
+    }
+
+    public NmCardDto(TvCardDto tv, string country)
+    {
+        Id = tv.Id;
+        Title = tv.Title;
+        TitleSort = tv.TitleSort;
+        Overview = tv.Overview;
+        Poster = tv.Poster;
+        Backdrop = tv.Backdrop;
+        Logo = tv.Logo;
+        Year = tv.FirstAirDate.ParseYear();
+        Type = "tv";
+        CreatedAt = tv.CreatedAt;
+
+        Link = new($"/tv/{Id}", UriKind.Relative);
+        NumberOfItems = tv.NumberOfEpisodes;
+        HaveItems = tv.EpisodesWithVideo;
+
+        ColorPalette = !string.IsNullOrEmpty(tv.ColorPalette)
+            ? JsonConvert.DeserializeObject<IColorPalettes>(tv.ColorPalette)
+            : null;
+
+        if (tv.CertificationRating != null)
+        {
+            Rating = new()
+            {
+                Rating = tv.CertificationRating,
+                Iso31661 = tv.CertificationCountry,
+                Image = new($"/{tv.CertificationCountry}/{tv.CertificationCountry}_{tv.CertificationRating}.svg")
+            };
+        }
     }
 }

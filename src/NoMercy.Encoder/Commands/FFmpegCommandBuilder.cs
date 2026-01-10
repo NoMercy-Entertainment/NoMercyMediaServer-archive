@@ -7,21 +7,27 @@ using NoMercy.Encoder.Format.Rules;
 using NoMercy.Encoder.Format.Subtitle;
 using NoMercy.Encoder.Format.Video;
 using NoMercy.NmSystem.Capabilities;
+using NoMercy.NmSystem;
 
 namespace NoMercy.Encoder.Commands;
 
 public class FFmpegCommandBuilder
 {
     private readonly BaseContainer _container;
-    private readonly MediaAnalysis _mediaAnalysis;
+    private readonly FfProbeData _FfProbeData;
     private readonly List<GpuAccelerator> _accelerators;
     private readonly bool _priority;
 
-    public FFmpegCommandBuilder(BaseContainer container, MediaAnalysis mediaAnalysis, List<GpuAccelerator>? accelerators = null, bool priority = false)
+    // public FFmpegCommandBuilder(BaseContainer container, MediaAnalysis mediaAnalysis, List<GpuAccelerator>? accelerators = null, bool priority = false)
+    // {
+    //     _container = container;
+    //     _mediaAnalysis = mediaAnalysis;
+    //     _accelerators = accelerators ?? new();
+    public FFmpegCommandBuilder(BaseContainer container, FfProbeData ffProbeData, List<GpuAccelerator> accelerators, bool priority = false)
     {
         _container = container;
-        _mediaAnalysis = mediaAnalysis;
-        _accelerators = accelerators ?? new();
+        _FfProbeData = ffProbeData;
+        _accelerators = accelerators;
         _priority = priority;
         
         // Apply container-specific flags (adds -f, HLS options, etc.)
@@ -91,10 +97,10 @@ public class FFmpegCommandBuilder
         // Scale Override #1: Set height if missing (with proper double division fix)
         if (stream.Scale.H == 0)
         {
-            double aspectRatio = (double)_mediaAnalysis.PrimaryVideoStream!.Height / _mediaAnalysis.PrimaryVideoStream.Width;
+            double aspectRatio = (double)_FfProbeData.PrimaryVideoStream!.Height / _FfProbeData.PrimaryVideoStream.Width;
             stream.Scale = new()
             {
-                W = stream.VideoStream?.Width ?? _mediaAnalysis.PrimaryVideoStream!.Width,
+                W = stream.VideoStream?.Width ?? _FfProbeData.PrimaryVideoStream!.Width,
                 H = (int)(stream.Scale.W * aspectRatio)  // FIXED: proper double division
             };
         }
