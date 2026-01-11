@@ -46,7 +46,7 @@ public static class Config
     
     public static readonly ParallelOptions ParallelOptions = new()
     {
-        MaxDegreeOfParallelism = (int)Math.Floor(Environment.ProcessorCount / 2.0),
+        MaxDegreeOfParallelism = (int)Math.Floor(Environment.ProcessorCount / 4.0),
     };
 
     public static string? AllowAdultContent { get; set; } = "false";
