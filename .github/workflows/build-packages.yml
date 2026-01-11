@@ -18,12 +18,13 @@ jobs:
     strategy:
       matrix:
         package-type: [deb, rpm, arch]
-    
+
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 1
-          fetch-tags: false
+          ref: master
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Download build artifacts
         uses: actions/download-artifact@v5

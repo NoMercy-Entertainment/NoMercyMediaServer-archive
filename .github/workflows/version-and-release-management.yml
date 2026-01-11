@@ -143,6 +143,10 @@ jobs:
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
+
+          # Wait a moment to ensure version bump is fully pushed
+          sleep 5
+
           git fetch origin
           git checkout master
           git pull --rebase origin master
@@ -151,6 +155,9 @@ jobs:
           git checkout dev
           git rebase master
           git push --force-with-lease origin dev
+
+          # Verify the merge completed
+          echo "✅ Successfully merged dev into master with updated version"
 
       - name: Check deployment conditions
         id: check-deploy
