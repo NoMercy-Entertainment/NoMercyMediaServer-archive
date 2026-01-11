@@ -169,8 +169,12 @@ public static class ServiceConfiguration
 
         services.AddLocalization(options => options.ResourcesPath = "Resources");
         services.AddScoped<ILocalizer, Localizer>();
-        
-        services.AddFfmpegProcessExecutor();
+
+        // EncoderV2 services with proper DI
+        services.AddEncoderV2Services();
+
+        // SignalR broadcaster for EncoderV2 progress updates
+        services.AddScoped<NoMercy.EncoderV2.Progress.ISignalRBroadcaster, NoMercy.Api.Services.EncodingSignalRBroadcaster>();
     }
 
     

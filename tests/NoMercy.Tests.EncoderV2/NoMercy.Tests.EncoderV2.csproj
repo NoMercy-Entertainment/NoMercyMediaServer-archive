@@ -29,6 +29,12 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\NoMercy.EncoderV2\NoMercy.EncoderV2.csproj" />
+        <ProjectReference Include="..\..\src\NoMercy.Database\NoMercy.Database.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
     </ItemGroup>
     
     <ItemGroup>

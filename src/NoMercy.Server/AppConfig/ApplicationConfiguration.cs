@@ -161,6 +161,13 @@ public static class ApplicationConfiguration
                     options.TransportSendTimeout = TimeSpan.FromSeconds(40);
                     options.CloseOnAuthenticationExpiration = true;
                 });
+
+                endpoints.MapHub<EncodingHub>("/encodingHub", options =>
+                {
+                    options.Transports = HttpTransportType.WebSockets;
+                    options.TransportSendTimeout = TimeSpan.FromSeconds(40);
+                    options.CloseOnAuthenticationExpiration = true;
+                });
             });
     }
 
