@@ -158,39 +158,64 @@ public class EncodingService : IEncodingService
             analysis,
             hlsSpec);
 
-        // Build FFmpeg command with separate streams mode
-        FFmpegCommandBuilder commandBuilder = new(
-            analysis,
-            profile,
-            accelerators,
-            inputFile,
-            outputFolder,
-            _codecSelector,
-            HLSOutputMode.SeparateStreams);
+        DateTime startTime = DateTime.Now;
+        bool allSuccessful = true;
+        string lastError = string.Empty;
+        int lastExitCode = 0;
 
-        commandBuilder.SetHLSOutputStructure(outputStructure);
-        string command = commandBuilder.BuildCommand();
+        // Encode each video stream separately
+        foreach (HLSVideoOutput videoOutput in outputStructure.VideoOutputs)
+        {
+            FFmpegExecutionResult result = await EncodeVideoStreamAsync(
+                inputFile,
+                videoOutput,
+                analysis,
+                profile,
+                accelerators,
+                progressCallback,
+                cancellationToken);
 
-        // Execute encoding
-        FFmpegExecutionResult executionResult = await _ffmpegService.ExecuteAsync(
-            command,
-            outputFolder,
-            progressCallback,
-            cancellationToken);
+            if (!result.Success && result.ExitCode != 0)
+            {
+                allSuccessful = false;
+                lastError = $"Video stream encoding failed: {result.ErrorMessage}\nFFmpeg stderr: {result.StandardError}";
+                lastExitCode = result.ExitCode;
+            }
+        }
+
+        // Encode each audio stream separately
+        foreach (HLSAudioOutput audioOutput in outputStructure.AudioOutputs)
+        {
+            FFmpegExecutionResult result = await EncodeAudioStreamAsync(
+                inputFile,
+                audioOutput,
+                analysis,
+                profile,
+                accelerators,
+                progressCallback,
+                cancellationToken);
+
+            if (!result.Success && result.ExitCode != 0)
+            {
+                allSuccessful = false;
+                lastError = $"Audio stream encoding failed: {result.ErrorMessage}\nFFmpeg stderr: {result.StandardError}";
+                lastExitCode = result.ExitCode;
+            }
+        }
 
         // Generate playlists
-        if (executionResult.Success || executionResult.ExitCode == 0)
+        if (allSuccessful)
         {
             await _hlsOrchestrator.GeneratePlaylistsAsync(outputStructure, analysis.Duration);
         }
 
         return new EncodingResult
         {
-            Success = executionResult.Success,
+            Success = allSuccessful,
             OutputPath = outputFolder,
-            Duration = executionResult.ExecutionTime,
-            ErrorMessage = executionResult.ErrorMessage,
-            ExitCode = executionResult.ExitCode,
+            Duration = DateTime.Now - startTime,
+            ErrorMessage = allSuccessful ? null : lastError,
+            ExitCode = lastExitCode,
             HLSOutputStructure = outputStructure
         };
     }
@@ -246,6 +271,159 @@ public class EncodingService : IEncodingService
             ErrorMessage = executionResult.ErrorMessage,
             ExitCode = executionResult.ExitCode
         };
+    }
+
+    private async Task<FFmpegExecutionResult> EncodeVideoStreamAsync(
+        string inputFile,
+        HLSVideoOutput videoOutput,
+        StreamAnalysis analysis,
+        EncoderProfile profile,
+        List<GpuAccelerator> accelerators,
+        Action<string>? progressCallback,
+        CancellationToken cancellationToken)
+    {
+        Database.IVideoProfile? videoProfile = profile.VideoProfiles?.FirstOrDefault();
+        if (videoProfile == null)
+        {
+            return FFmpegExecutionResult.Failure("No video profile found");
+        }
+
+        string hwAccelArgs = accelerators.Count > 0
+            ? accelerators[0].FfmpegArgs
+            : string.Empty;
+
+        List<string> commandParts = [];
+
+        commandParts.Add("-y");
+        commandParts.Add("-hide_banner");
+
+        if (!string.IsNullOrEmpty(hwAccelArgs))
+        {
+            commandParts.Add(hwAccelArgs.Trim());
+        }
+
+        commandParts.Add($"-i \"{inputFile}\"");
+        commandParts.Add($"-map 0:v:0");
+
+        string selectedCodec = videoProfile.Codec.ToLower() switch
+        {
+            "h264" or "libx264" => _codecSelector.SelectH264Codec(),
+            "h265" or "hevc" or "libx265" => _codecSelector.SelectH265Codec(),
+            _ => videoProfile.Codec
+        };
+        commandParts.Add($"-c:v {selectedCodec}");
+
+        if (videoProfile.Bitrate > 0)
+        {
+            commandParts.Add($"-b:v {videoProfile.Bitrate}k");
+        }
+
+        if (!string.IsNullOrEmpty(videoProfile.Preset))
+        {
+            commandParts.Add($"-preset {videoProfile.Preset}");
+        }
+
+        List<string> filters = [];
+        if (videoProfile.Width > 0 && videoProfile.Height > 0)
+        {
+            filters.Add($"scale={videoProfile.Width}:{videoProfile.Height}");
+        }
+
+        if (videoProfile.ConvertHdrToSdr && analysis.IsHDR)
+        {
+            string tonemapChain = "zscale=tin=smpte2084:min=bt2020nc:pin=bt2020:rin=tv:t=smpte2084:m=bt2020nc:p=bt2020:r=tv," +
+                                 "zscale=t=linear:npl=100," +
+                                 "format=gbrpf32le," +
+                                 "zscale=p=bt709," +
+                                 "tonemap=tonemap=hable:desat=0," +
+                                 "zscale=t=bt709:m=bt709:r=tv," +
+                                 "format=yuv420p";
+            filters.Add(tonemapChain);
+        }
+
+        if (filters.Count > 0)
+        {
+            commandParts.Add($"-vf \"{string.Join(",", filters)}\"");
+        }
+
+        commandParts.Add("-an");
+        commandParts.Add("-f hls");
+        commandParts.Add($"-hls_time 6");
+        commandParts.Add($"-hls_playlist_type vod");
+        commandParts.Add($"-hls_segment_filename \"{Path.Combine(videoOutput.FolderPath, videoOutput.SegmentPattern)}\"");
+        commandParts.Add($"\"{videoOutput.PlaylistPath}\"");
+
+        string command = string.Join(" ", commandParts);
+
+        return await _ffmpegService.ExecuteAsync(
+            command,
+            videoOutput.FolderPath,
+            progressCallback,
+            cancellationToken);
+    }
+
+    private async Task<FFmpegExecutionResult> EncodeAudioStreamAsync(
+        string inputFile,
+        HLSAudioOutput audioOutput,
+        StreamAnalysis analysis,
+        EncoderProfile profile,
+        List<GpuAccelerator> accelerators,
+        Action<string>? progressCallback,
+        CancellationToken cancellationToken)
+    {
+        Database.IAudioProfile? audioProfile = profile.AudioProfiles?.FirstOrDefault(a =>
+            a.Codec.Contains(audioOutput.Codec, StringComparison.OrdinalIgnoreCase));
+
+        if (audioProfile == null)
+        {
+            audioProfile = profile.AudioProfiles?.FirstOrDefault();
+        }
+
+        if (audioProfile == null)
+        {
+            return FFmpegExecutionResult.Failure("No audio profile found");
+        }
+
+        List<string> commandParts = [];
+
+        commandParts.Add("-y");
+        commandParts.Add("-hide_banner");
+        commandParts.Add($"-i \"{inputFile}\"");
+        commandParts.Add($"-map 0:a:0");
+        commandParts.Add($"-c:a {audioProfile.Codec}");
+
+        if (audioProfile.Channels > 0)
+        {
+            commandParts.Add($"-ac {audioProfile.Channels}");
+        }
+
+        if (audioProfile.SampleRate > 0)
+        {
+            commandParts.Add($"-ar {audioProfile.SampleRate}");
+        }
+
+        if (audioProfile.Opts != null && audioProfile.Opts.Length > 0)
+        {
+            foreach (string opt in audioProfile.Opts)
+            {
+                commandParts.Add(opt);
+            }
+        }
+
+        commandParts.Add("-vn");
+        commandParts.Add("-f hls");
+        commandParts.Add($"-hls_time 6");
+        commandParts.Add($"-hls_playlist_type vod");
+        commandParts.Add($"-hls_segment_filename \"{Path.Combine(audioOutput.FolderPath, audioOutput.SegmentPattern)}\"");
+        commandParts.Add($"\"{audioOutput.PlaylistPath}\"");
+
+        string command = string.Join(" ", commandParts);
+
+        return await _ffmpegService.ExecuteAsync(
+            command,
+            audioOutput.FolderPath,
+            progressCallback,
+            cancellationToken);
     }
 }
 

@@ -9,9 +9,25 @@ namespace NoMercy.EncoderV2.Hardware;
 public class HardwareAccelerationService : IHardwareAccelerationService
 {
     private readonly List<GpuAccelerator> _cachedAccelerators;
+    private static bool _detectorInitialized = false;
+    private static readonly object _initLock = new();
 
     public HardwareAccelerationService()
     {
+        // Initialize FFmpegAccelerationDetector if not already done
+        if (!_detectorInitialized)
+        {
+            lock (_initLock)
+            {
+                if (!_detectorInitialized)
+                {
+                    string ffmpegPath = "ffmpeg"; // Will use ffmpeg from PATH
+                    _ = new FFmpegAccelerationDetector(ffmpegPath);
+                    _detectorInitialized = true;
+                }
+            }
+        }
+
         _cachedAccelerators = FFmpegAccelerationDetector.Accelerators;
     }
 
