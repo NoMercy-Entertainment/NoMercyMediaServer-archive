@@ -21,12 +21,13 @@ jobs:
         project: [Server, Updater, App]
     outputs:
       artifact-names: ${{ steps.set-names.outputs.names }}
-    
+
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 1
-          fetch-tags: false
+          ref: master
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Build ${{ matrix.project }}
         uses: ./.github/actions/build-dotnet-project
