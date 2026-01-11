@@ -11,6 +11,16 @@ public class FFmpegExecutionResult
     public string StandardError { get; set; } = string.Empty;
     public TimeSpan ExecutionTime { get; set; }
     public string? ErrorMessage { get; set; }
+
+    public static FFmpegExecutionResult Failure(string errorMessage)
+    {
+        return new FFmpegExecutionResult
+        {
+            Success = false,
+            ErrorMessage = errorMessage,
+            ExitCode = -1
+        };
+    }
 }
 
 /// <summary>
