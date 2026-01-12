@@ -112,7 +112,7 @@ public class MusicController : BaseController
         items.Add(Component.Carousel()
             .WithId("favorite-artists")
             .WithTitle("Favorite Artists".Localize())
-            .WithNavigation("favorite-albums", "favorite-albums")
+            .WithNavigation("", "favorite-albums")
             .WithItems(favoriteArtists.Select(item => Component.MusicCard(new(item)))));
 
         items.Add(Component.Carousel()
