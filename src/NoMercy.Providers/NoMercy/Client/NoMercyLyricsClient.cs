@@ -26,7 +26,6 @@ public static partial class NoMercyLyricsClient
             {
                 case 0:
                 case 4:
-                    lyrics = await musixmatchClient.SongSearch(new() { Album = albumName, Artist = artistNames, Title = track.Name, Duration = duration, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     if (recursiveCount == 4)
                     {
                         lyric = await lrclibClient.SongSearch(
@@ -38,13 +37,13 @@ public static partial class NoMercyLyricsClient
                         lyric ??= ToFormatLyrics(lyrics);
                         break;
                     }
+                    lyrics = await musixmatchClient.SongSearch(new() { Album = albumName, Artist = artistNames, Title = track.Name, Duration = duration, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     lyric = lyrics?.Message?.Body?.MacroCalls?.TrackSubtitlesGet?.Message?.Body?.SubtitleList
                         .FirstOrDefault()
                         ?.Subtitle?.SubtitleBody;
                     break;
                 case 1:
                 case 5:
-                    lyrics = await musixmatchClient.SongSearch(new() { Artist = artistNames, Title = track.Name, Duration = duration, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     if (recursiveCount == 5)
                     {
                         lyric = await lrclibClient.SongSearch(
@@ -55,13 +54,13 @@ public static partial class NoMercyLyricsClient
                         lyric ??= ToFormatLyrics(lyrics);
                         break;
                     }
+                    lyrics = await musixmatchClient.SongSearch(new() { Artist = artistNames, Title = track.Name, Duration = duration, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     lyric = lyrics?.Message?.Body?.MacroCalls?.TrackSubtitlesGet?.Message?.Body?.SubtitleList
                         .FirstOrDefault()
                         ?.Subtitle?.SubtitleBody;
                     break;
                 case 2:
                 case 6:
-                    lyrics = await musixmatchClient.SongSearch(new() { Artist = artistNames, Title = track.Name, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     if (recursiveCount == 6)
                     {
                         lyric = await lrclibClient.SongSearch(
@@ -71,18 +70,19 @@ public static partial class NoMercyLyricsClient
                         lyric ??= ToFormatLyrics(lyrics);
                         break;
                     }
+                    lyrics = await musixmatchClient.SongSearch(new() { Artist = artistNames, Title = track.Name, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     lyric = lyrics?.Message?.Body?.MacroCalls?.TrackSubtitlesGet?.Message?.Body?.SubtitleList
                         .FirstOrDefault()
                         ?.Subtitle?.SubtitleBody;
                     break;
                 case 3:
                 case 7:
-                    lyrics = await musixmatchClient.SongSearch(new() { Title = track.Name, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     if (recursiveCount == 7)
                     {
                         lyric = ToFormatLyrics(lyrics);
                         break;
                     }
+                    lyrics = await musixmatchClient.SongSearch(new() { Title = track.Name, Sort = MusixMatchTrackSearchParameters.MusixMatchSortStrategy.TrackRatingDesc });
                     lyric = lyrics?.Message?.Body?.MacroCalls?.TrackSubtitlesGet?.Message?.Body?.SubtitleList
                         .FirstOrDefault()
                         ?.Subtitle?.SubtitleBody;

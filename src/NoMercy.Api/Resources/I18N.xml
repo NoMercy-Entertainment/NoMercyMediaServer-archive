@@ -445,4 +445,12 @@
     <Key>Artist</Key>
     <Value lang="nl">Artist</Value>
   </Entry>
+  <Entry>
+    <Key>Movie deleted</Key>
+    <Value lang="nl">Movie verwijderd</Value>
+  </Entry>
+  <Entry>
+    <Key>Movie is available</Key>
+    <Value lang="nl">Movie is beschikbaar</Value>
+  </Entry>
 </I18N>
