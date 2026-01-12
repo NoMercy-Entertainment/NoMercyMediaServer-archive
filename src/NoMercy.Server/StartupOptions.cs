@@ -3,6 +3,7 @@ using NoMercy.NmSystem.Extensions;
 using NoMercy.NmSystem.Information;
 using NoMercy.NmSystem.SystemCalls;
 using NoMercy.Server.Seeds;
+using NoMercy.Setup;
 using Serilog.Events;
 
 namespace NoMercy.Server;
@@ -39,8 +40,9 @@ public class StartupOptions
 
     public void ApplySettings()
     {
+        Dictionary<string, string> options = new();
+        
         DatabaseSeeder.ShouldSeedMarvel = ShouldSeed;
-
         if (Development)
         {
             Config.IsDev = true;
@@ -61,30 +63,35 @@ public class StartupOptions
         {
             Logger.App($"Setting log level to: {LogLevel}.");
             Logger.SetLogLevel(Enum.Parse<LogEventLevel>(LogLevel.ToTitleCase()));
+            options.Add("loglevel", LogLevel);
         }
 
         if (InternalPort != 0)
         {
             Logger.App("Setting internal port to " + InternalPort);
             Config.InternalServerPort = InternalPort;
+            options.Add("internalPort", InternalPort.ToString());
         }
 
         if (ExternalPort != 0)
         {
             Logger.App("Setting external port to " + ExternalPort);
             Config.ExternalServerPort = ExternalPort;
+            options.Add("externalPort", ExternalPort.ToString());
         }
 
         if (!string.IsNullOrEmpty(InternalIp))
         {
             Logger.App("Setting internal ip to " + InternalIp);
             Networking.Networking.InternalIp = InternalIp;
+            options.Add("internalIp", InternalIp);
         }
 
         if (!string.IsNullOrEmpty(ExternalIp))
         {
             Logger.App("Setting external ip to " + ExternalIp);
             Networking.Networking.ExternalIp = ExternalIp;
+            options.Add("externalIp", ExternalIp);
         }
 
         if (Sentry)
@@ -103,5 +110,7 @@ public class StartupOptions
 
             Logger.App("Sentry is enabled.");
         }
+
+        // UserSettings.ApplySettings(options);
     }
 }
