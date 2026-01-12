@@ -247,24 +247,7 @@ public class LibrariesController(
         if (movie != null)
             genres.Add(new(movie, language));
 
-        NmCardDto? homeCardItem = genres.Where(g => !string.IsNullOrWhiteSpace(g.Title))
-            .Randomize().FirstOrDefault();
-
         List<ComponentEnvelope> components = new();
-        
-        // Add home card
-        if (homeCardItem != null)
-        {
-            HomeCardData homeCardData = new(homeCardItem);
-            dynamic? homeCard = Component.HomeCard()
-                .WithId("home_card")
-                .WithTitle(homeCardData.Title)
-                .WithData(homeCardData)
-                .WithNavigation(null, list.FirstOrDefault()?.Id)
-                .WithUpdate("pageLoad", "/home/card")
-                ;
-            components.Add(homeCard);
-        }
         
         // Add carousels for each library
         for (int index = 0; index < list.Count; index++)
@@ -284,12 +267,7 @@ public class LibrariesController(
             components.Add(carousel);
         }
         
-        ComponentEnvelope response = Component.Container()
-            .WithId("tv-libraries")
-            .WithItems(components)
-            ;
-
-        return Ok(ComponentResponse.From(response));
+        return Ok(ComponentResponse.From(components));
     }
 
     [HttpGet]
@@ -329,45 +307,41 @@ public class LibrariesController(
 
             return Ok(ComponentResponse.From(response));
         }
+        List<ComponentEnvelope> components = new();
 
-        List<ComponentEnvelope> carousels = Letters
-            .Select((letter, index) =>
-            {
-                List<CardData> carouselItems = libraryMovies
-                    .Select(movie => new CardData(movie, country))
+        foreach (string letter in Letters)
+        {
+            int index = Array.IndexOf(Letters, letter);
+            
+            List<CardData> carouselItems = libraryMovies
+                .Select(movie => new CardData(movie, country))
+                .Where(collection => letter == "#"
+                    ? Numbers.Any(p => collection.Title.StartsWith(p))
+                    : collection.Title.StartsWith(letter))
+                .Concat(libraryShows.Select(tv => new CardData(tv, country))
                     .Where(collection => letter == "#"
                         ? Numbers.Any(p => collection.Title.StartsWith(p))
-                        : collection.Title.StartsWith(letter))
-                    .Concat(libraryShows.Select(tv => new CardData(tv, country))
-                        .Where(collection => letter == "#"
-                            ? Numbers.Any(p => collection.Title.StartsWith(p))
-                            : collection.Title.StartsWith(letter)))
-                    .OrderBy(item => item.TitleSort)
-                    .ToList();
+                        : collection.Title.StartsWith(letter)))
+                .OrderBy(item => item.TitleSort)
+                .ToList();
 
-                if (carouselItems.Count == 0)
-                    return null;
+            if (carouselItems.Count == 0)
+                continue;
+            
+            components.Add(Component.Carousel()
+                .WithId(letter)
+                .WithTitle(letter)
+                .WithMoreLink($"/libraries/{libraryId}/letter/{letter}")
+                .WithNavigation(
+                    index == 0 ? null : Letters.ElementAtOrDefault(index - 1) ?? null,
+                    index == Letters.Length - 1 ? null : Letters.ElementAtOrDefault(index + 1) ?? null)
+                .WithItems(carouselItems.Select(item => Component.Card()
+                    .WithData(item)
+                )));
 
-                return Component.Carousel()
-                    .WithId(letter)
-                    .WithTitle(letter)
-                    .WithMoreLink($"/libraries/{libraryId}/letter/{letter}")
-                    .WithNavigation(
-                        index == 0 ? null : Letters.ElementAtOrDefault(index - 1) ?? null,
-                        index == Letters.Length - 1 ? null : Letters.ElementAtOrDefault(index + 1) ?? null)
-                    .WithItems(carouselItems.Select(item => Component.Card()
-                        .WithData(item)
-                        ));
-            })
-            .Where(c => c != null)
-            .Cast<ComponentEnvelope>()
-            .ToList();
+        }
 
-        ComponentEnvelope containerResponse = Component.Container()
-            .WithId($"library-{libraryId}-letters")
-            .WithItems(carousels);
-
-        return Ok(containerResponse);
+        return Ok(new ComponentResponse() { Data = components });
     }
 
     [HttpGet]
