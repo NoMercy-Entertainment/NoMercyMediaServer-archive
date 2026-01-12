@@ -468,43 +468,43 @@ public class HomeService
         List<Library> libraries = await _homeRepository.GetLibrariesAsync(_mediaContext, userId);
         List<GenreCarouselData> libraryCarousels = [];
 
-        int animeCount = await _homeRepository.GetAnimeCountAsync(_mediaContext, userId);
-        int movieCount = await _homeRepository.GetMovieCountAsync(_mediaContext, userId);
-        int tvCount = await _homeRepository.GetTvCountAsync(_mediaContext, userId);
+        // int animeCount = await _homeRepository.GetAnimeCountAsync(_mediaContext, userId);
+        // int movieCount = await _homeRepository.GetMovieCountAsync(_mediaContext, userId);
+        // int tvCount = await _homeRepository.GetTvCountAsync(_mediaContext, userId);
+        //
+        // foreach (Library library in libraries)
+        // {
+        //     List<Movie> libraryMovies = new();
+        //     await foreach (Movie movie in _libraryRepository
+        //                        .GetLibraryMovies(_mediaContext, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
+        //     {
+        //         libraryMovies.Add(movie);
+        //     }
+        //     
+        //     List<Tv> libraryShows = new();
+        //     await foreach (Tv tv in _libraryRepository
+        //                        .GetLibraryShows(_mediaContext, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
+        //     {
+        //         libraryShows.Add(tv);
+        //     }
 
-        foreach (Library library in libraries)
-        {
-            List<Movie> libraryMovies = new();
-            await foreach (Movie movie in _libraryRepository
-                               .GetLibraryMovies(_mediaContext, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
-            {
-                libraryMovies.Add(movie);
-            }
-            
-            List<Tv> libraryShows = new();
-            await foreach (Tv tv in _libraryRepository
-                               .GetLibraryShows(_mediaContext, userId, library.Id, language, 6, 0, m => m.CreatedAt, "desc"))
-            {
-                libraryShows.Add(tv);
-            }
+            // bool shouldPaginate = (library.Type == MovieMediaType && movieCount > MaximumItemsPerPage)
+            //                       || (library.Type == TvMediaType && tvCount > MaximumItemsPerPage)
+            //                       || (library.Type == AnimeMediaType && animeCount > MaximumItemsPerPage);
+            //
+            // List<CardData> items = libraryMovies.Select(m => new CardData(m, country, watch: true))
+            //     .Concat(libraryShows.Select(t => new CardData(t, country, watch: true)))
+            //     .ToList();
 
-            bool shouldPaginate = (library.Type == MovieMediaType && movieCount > MaximumItemsPerPage)
-                                  || (library.Type == TvMediaType && tvCount > MaximumItemsPerPage)
-                                  || (library.Type == AnimeMediaType && animeCount > MaximumItemsPerPage);
-
-            List<CardData> items = libraryMovies.Select(m => new CardData(m, country, watch: true))
-                .Concat(libraryShows.Select(t => new CardData(t, country, watch: true)))
-                .ToList();
-
-            if (items.Count > 0)
-            {
-                Uri moreLink = shouldPaginate
-                    ? new($"/libraries/{library.Id}/letter/A", UriKind.Relative)
-                    : new Uri($"/libraries/{library.Id}", UriKind.Relative);
-
-                libraryCarousels.Add(new(library.Id.ToString(), library.Title, moreLink, items));
-            }
-        }
+        //     if (items.Count > 0)
+        //     {
+        //         Uri moreLink = shouldPaginate
+        //             ? new($"/libraries/{library.Id}/letter/A", UriKind.Relative)
+        //             : new Uri($"/libraries/{library.Id}", UriKind.Relative);
+        //
+        //         libraryCarousels.Add(new(library.Id.ToString(), library.Title, moreLink, items));
+        //     }
+        // }
 
         // Build components
         List<ComponentEnvelope> components = [];
@@ -521,30 +521,30 @@ public class HomeService
         );
 
         // Library carousels
-        for (int i = 0; i < libraryCarousels.Count; i++)
-        {
-            GenreCarouselData lib = libraryCarousels[i];
-
-            string prevId = i == 0 ? "continue" : $"library_{libraryCarousels[i - 1].Id}";
-            string? nextId = i == libraryCarousels.Count - 1
-                ? (genreCarousels.Count > 0 ? $"genre_{genreCarousels[0].Id}" : null)
-                : $"library_{libraryCarousels[i + 1].Id}";
-
-            components.Add(
-                Component.Carousel()
-                    .WithId($"library_{lib.Id}")
-                    .WithNavigation(prevId, nextId)
-                    .WithTitle($"Latest in {lib.Title}")
-                    .WithMoreLink(lib.MoreLink)
-                    .WithItems(lib.Items
-                        .Select(item => Component
-                            .Card(item)
-                            .WithWatch()
-                            .Build()
-                        ))
-                    .Build()
-            );
-        }
+        // for (int i = 0; i < libraryCarousels.Count; i++)
+        // {
+        //     GenreCarouselData lib = libraryCarousels[i];
+        //
+        //     string prevId = i == 0 ? "continue" : $"library_{libraryCarousels[i - 1].Id}";
+        //     string? nextId = i == libraryCarousels.Count - 1
+        //         ? (genreCarousels.Count > 0 ? $"genre_{genreCarousels[0].Id}" : null)
+        //         : $"library_{libraryCarousels[i + 1].Id}";
+        //
+        //     components.Add(
+        //         Component.Carousel()
+        //             .WithId($"library_{lib.Id}")
+        //             .WithNavigation(prevId, nextId)
+        //             .WithTitle($"Latest in {lib.Title}")
+        //             .WithMoreLink(lib.MoreLink)
+        //             .WithItems(lib.Items
+        //                 .Select(item => Component
+        //                     .Card(item)
+        //                     .WithWatch()
+        //                     .Build()
+        //                 ))
+        //             .Build()
+        //     );
+        // }
 
         // Genre carousels (limited to 6 items for TV)
         for (int i = 0; i < genreCarousels.Count; i++)
