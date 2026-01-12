@@ -22,9 +22,22 @@ public static class Config
 
     public static NatStatus NatStatus { get; set; } = NatStatus.None;
     public static bool PortForwarded { get; set; }
+    
+    private static int? _internalServerPort = null;
 
-    public static int InternalServerPort { get; set; } = 7626;
-    public static int ExternalServerPort { get; set; } = 7626;
+    public static int InternalServerPort
+    {
+        get => _internalServerPort ?? 7626;
+        set => _internalServerPort = value;
+    }
+    
+    private static int? _externalServerPort = null;
+
+    public static int ExternalServerPort
+    {
+        get => _externalServerPort ?? 7626;
+        set => _externalServerPort = value;
+    }
 
     public static bool Swagger { get; set; } = true;
 
