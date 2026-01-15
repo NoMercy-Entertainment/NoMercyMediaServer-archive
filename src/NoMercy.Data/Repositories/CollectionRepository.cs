@@ -325,4 +325,57 @@ public class CollectionRepository(MediaContext context)
 
         return true;
     }
+
+    public async Task<bool> AddToWatchListAsync(int collectionId, Guid userId, bool add = true)
+    {
+        Collection? collection = await context.Collections
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == collectionId);
+    
+        if (collection is null)
+            return false;
+    
+        if (add)
+        {
+            // Find the first movie in the collection with a video file
+            CollectionMovie? firstMovieWithVideo = await context.CollectionMovie
+                .Where(cm => cm.CollectionId == collectionId)
+                .Include(cm => cm.Movie)
+                    .ThenInclude(m => m.VideoFiles)
+                .OrderBy(cm => cm.Movie.TitleSort)
+                .FirstOrDefaultAsync();
+    
+            if (firstMovieWithVideo?.Movie?.VideoFiles.FirstOrDefault(vf => vf.Folder != null) is { } videoFile)
+            {
+                // Check if userdata already exists for this video file
+                UserData? existingUserData = await context.UserData
+                    .FirstOrDefaultAsync(ud => ud.UserId == userId && ud.VideoFileId == videoFile.Id);
+    
+                if (existingUserData is null)
+                {
+                    context.UserData.Add(new()
+                    {
+                        UserId = userId,
+                        VideoFileId = videoFile.Id,
+                        CollectionId = collectionId,
+                        Time = 0,
+                        LastPlayedDate = DateTime.UtcNow.ToString("o"),
+                        Type = "collection"
+                    });
+                }
+            }
+        }
+        else
+        {
+            // Remove all userdata for this collection
+            List<UserData> userDataToRemove = await context.UserData
+                .Where(ud => ud.UserId == userId && ud.CollectionId == collectionId)
+                .ToListAsync();
+    
+            context.UserData.RemoveRange(userDataToRemove);
+        }
+    
+        await context.SaveChangesAsync();
+        return true;
+    }
 }

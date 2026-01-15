@@ -172,6 +172,26 @@ public class TvShowsController(
     }
 
     [HttpPost]
+    [Route("watch-list")]
+    public async Task<IActionResult> AddToWatchList(int id, [FromBody] WatchListRequestDto request)
+    {
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to manage watch list");
+
+        bool success = await tvShowRepository.AddToWatchListAsync(id, userId, request.Add);
+
+        if (!success)
+            return UnprocessableEntityResponse("Tv show not found");
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = request.Add ? "Tv show added to watch list" : "Tv show removed from watch list"
+        });
+    }
+
+    [HttpPost]
     [Route("rescan")]
     public async Task<IActionResult> Rescan(int id)
     {
@@ -346,4 +366,5 @@ public class TvShowsController(
                         
                 }))));
     }
+    
 }

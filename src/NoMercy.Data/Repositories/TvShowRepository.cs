@@ -222,4 +222,56 @@ public class TvShowRepository(MediaContext context)
 
         return tv.Episodes.Where(e => e.Translations.Any());
     }
+    
+    public async Task<bool> AddToWatchListAsync(int tvId, Guid userId, bool add = true)
+    {
+        Tv? tv = await context.Tvs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == tvId);
+    
+        if (tv is null)
+            return false;
+    
+        if (add)
+        {
+            // Find season 1, episode 1 with its video file
+            Episode? season1Episode1 = await context.Episodes
+                .Include(e => e.VideoFiles)
+                .FirstOrDefaultAsync(e => e.TvId == tvId && e.SeasonNumber == 1 && e.EpisodeNumber == 1);
+    
+            if (season1Episode1 is not null && season1Episode1.VideoFiles.Any())
+            {
+                VideoFile videoFile = season1Episode1.VideoFiles.First();
+                
+                // Check if userdata already exists for this video file
+                UserData? existingUserData = await context.UserData
+                    .FirstOrDefaultAsync(ud => ud.UserId == userId && ud.VideoFileId == videoFile.Id);
+    
+                if (existingUserData is null)
+                {
+                    context.UserData.Add(new()
+                    {
+                        UserId = userId,
+                        VideoFileId = videoFile.Id,
+                        TvId = tvId,
+                        Time = 0,
+                        LastPlayedDate = DateTime.UtcNow.ToString("o"),
+                        Type = "tv"
+                    });
+                }
+            }
+        }
+        else
+        {
+            // Remove all userdata for this tv show
+            List<UserData> userDataToRemove = await context.UserData
+                .Where(ud => ud.UserId == userId && ud.TvId == tvId)
+                .ToListAsync();
+    
+            context.UserData.RemoveRange(userDataToRemove);
+        }
+    
+        await context.SaveChangesAsync();
+        return true;
+    }
 }

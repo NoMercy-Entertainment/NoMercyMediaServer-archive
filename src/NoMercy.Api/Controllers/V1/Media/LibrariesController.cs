@@ -137,9 +137,9 @@ public class LibrariesController(
                 .WithId("home_card")
                 .WithTitle(homeCardData.Title)
                 .WithData(homeCardData)
-                .WithNavigation(null, list.FirstOrDefault()?.Id)
                 .WithUpdate("pageLoad", "/home/card")
-                ;
+                .Build();
+
             components.Add(homeCard);
         }
         
@@ -162,8 +162,7 @@ public class LibrariesController(
         
         ComponentEnvelope response = Component.Container()
             .WithId("mobile-libraries")
-            .WithItems(components)
-            ;
+            .WithItems(components);
 
         return Ok(ComponentResponse.From(response));
     }
@@ -302,8 +301,7 @@ public class LibrariesController(
                 .WithId($"library-{libraryId}")
                 .WithItems(cardItems.Select(item => Component.Card()
                     .WithData(item)
-                    ))
-                ;
+                ));
 
             return Ok(ComponentResponse.From(response));
         }
