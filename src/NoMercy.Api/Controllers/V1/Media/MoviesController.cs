@@ -155,6 +155,26 @@ public class MoviesController(
     }
 
     [HttpPost]
+    [Route("watch-list")]
+    public async Task<IActionResult> AddToWatchList(int id, [FromBody] WatchListRequestDto request)
+    {
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to manage watch list");
+
+        bool success = await movieRepository.AddToWatchListAsync(id, userId, request.Add);
+
+        if (!success)
+            return UnprocessableEntityResponse("Movie not found");
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = request.Add ? "Movie added to watch list" : "Movie removed from watch list"
+        });
+    }
+
+    [HttpPost]
     [Route("rescan")]
     public async Task<IActionResult> Rescan(int id)
     {

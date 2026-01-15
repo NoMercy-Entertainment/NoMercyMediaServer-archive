@@ -163,4 +163,54 @@ public class MovieRepository(MediaContext context)
             .Where(movie => movie.Id == id)
             .ExecuteDeleteAsync();
     }
+
+    public async Task<bool> AddToWatchListAsync(int movieId, Guid userId, bool add = true)
+    {
+        Movie? movie = await context.Movies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.Id == movieId);
+    
+        if (movie is null)
+            return false;
+    
+        if (add)
+        {
+            // Find the movie's video file
+            VideoFile? videoFile = await context.VideoFiles
+                .Where(vf => vf.MovieId == movieId && vf.Folder != null)
+                .FirstOrDefaultAsync();
+    
+            if (videoFile is not null)
+            {
+                // Check if userdata already exists for this video file
+                UserData? existingUserData = await context.UserData
+                    .FirstOrDefaultAsync(ud => ud.UserId == userId && ud.VideoFileId == videoFile.Id);
+    
+                if (existingUserData is null)
+                {
+                    context.UserData.Add(new()
+                    {
+                        UserId = userId,
+                        VideoFileId = videoFile.Id,
+                        MovieId = movieId,
+                        Time = 0,
+                        LastPlayedDate = DateTime.UtcNow.ToString("o"),
+                        Type = "movie"
+                    });
+                }
+            }
+        }
+        else
+        {
+            // Remove all userdata for this movie
+            List<UserData> userDataToRemove = await context.UserData
+                .Where(ud => ud.UserId == userId && ud.MovieId == movieId)
+                .ToListAsync();
+    
+            context.UserData.RemoveRange(userDataToRemove);
+        }
+    
+        await context.SaveChangesAsync();
+        return true;
+    }
 }

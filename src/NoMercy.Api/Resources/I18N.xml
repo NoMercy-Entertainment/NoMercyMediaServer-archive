@@ -453,4 +453,12 @@
     <Key>Movie is available</Key>
     <Value lang="nl">Movie is beschikbaar</Value>
   </Entry>
+  <Entry>
+    <Key>Movie added to watch list</Key>
+    <Value lang="nl">Movie added to watch list</Value>
+  </Entry>
+  <Entry>
+    <Key>Movie removed from watch list</Key>
+    <Value lang="nl">Movie removed from watch list</Value>
+  </Entry>
 </I18N>

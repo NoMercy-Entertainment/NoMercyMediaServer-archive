@@ -141,4 +141,65 @@ public class SpecialRepository(MediaContext context)
                 .ThenInclude(c => c.Certification)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<bool> AddToWatchListAsync(Ulid specialId, Guid userId, bool add = true)
+    {
+        Special? special = await context.Specials
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == specialId);
+    
+        if (special is null)
+            return false;
+    
+        if (add)
+        {
+            // Find the first item in the special with a video file (prefer movies)
+            SpecialItem? firstItemWithVideo = await context.SpecialItems
+                .Where(si => si.SpecialId == specialId)
+                .Include(si => si.Movie)
+                    .ThenInclude(m => m!.VideoFiles)
+                .Include(si => si.Episode)
+                    .ThenInclude(e => e!.VideoFiles)
+                .OrderBy(si => si.Order)
+                .FirstOrDefaultAsync();
+    
+            if (firstItemWithVideo is not null)
+            {
+                VideoFile? videoFile = firstItemWithVideo.Movie?.VideoFiles.FirstOrDefault(vf => vf.Folder != null)
+                    ?? firstItemWithVideo.Episode?.VideoFiles.FirstOrDefault(vf => vf.Folder != null);
+    
+                if (videoFile is not null)
+                {
+                    // Check if userdata already exists for this video file
+                    UserData? existingUserData = await context.UserData
+                        .FirstOrDefaultAsync(ud => ud.UserId == userId && ud.VideoFileId == videoFile.Id);
+    
+                    if (existingUserData is null)
+                    {
+                        context.UserData.Add(new()
+                        {
+                            UserId = userId,
+                            VideoFileId = videoFile.Id,
+                            SpecialId = specialId,
+                            Time = 0,
+                            LastPlayedDate = DateTime.UtcNow.ToString("o"),
+                            Type = "special"
+                        });
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Remove all userdata for this special
+            List<UserData> userDataToRemove = await context.UserData
+                .Where(ud => ud.UserId == userId && ud.SpecialId == specialId)
+                .ToListAsync();
+    
+            context.UserData.RemoveRange(userDataToRemove);
+        }
+    
+        await context.SaveChangesAsync();
+        return true;
+    }
 }

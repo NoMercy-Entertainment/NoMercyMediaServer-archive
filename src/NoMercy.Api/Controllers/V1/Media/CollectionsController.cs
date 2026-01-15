@@ -200,4 +200,24 @@ public class CollectionsController(CollectionRepository collectionRepository) : 
             }
         });
     }
+
+    [HttpPost]
+    [Route("{id:int}/watch-list")]
+    public async Task<IActionResult> AddToWatchList(int id, [FromBody] WatchListRequestDto request)
+    {
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to manage watch list");
+
+        bool success = await collectionRepository.AddToWatchListAsync(id, userId, request.Add);
+
+        if (!success)
+            return UnprocessableEntityResponse("Collection not found");
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = request.Add ? "Collection added to watch list" : "Collection removed from watch list"
+        });
+    }
 }

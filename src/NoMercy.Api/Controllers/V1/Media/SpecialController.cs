@@ -253,4 +253,24 @@ public class SpecialController(SpecialRepository specialRepository, MediaContext
             }
         });
     }
+
+    [HttpPost]
+    [Route("{id:ulid}/watch-list")]
+    public async Task<IActionResult> AddToWatchList(Ulid id, [FromBody] WatchListRequestDto request)
+    {
+        Guid userId = User.UserId();
+        if (!User.IsAllowed())
+            return UnauthorizedResponse("You do not have permission to manage watch list");
+
+        bool success = await specialRepository.AddToWatchListAsync(id, userId, request.Add);
+
+        if (!success)
+            return UnprocessableEntityResponse("Special not found");
+
+        return Ok(new StatusResponseDto<string>
+        {
+            Status = "ok",
+            Message = request.Add ? "Special added to watch list" : "Special removed from watch list"
+        });
+    }
 }

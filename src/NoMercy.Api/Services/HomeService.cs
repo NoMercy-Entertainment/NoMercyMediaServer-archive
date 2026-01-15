@@ -519,6 +519,7 @@ public class HomeService
                     .WithTitle("Continue watching".Localize())
                     .WithUpdate("pageLoad", "/home/continue")
                     .WithItems(BuildContinueWatchingCards(filtered, country))
+                    .WithReplacing(replaceId)
                     .Build()
             ]
         };
